@@ -26,6 +26,7 @@ import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.TransactionSubject;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerConfig;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo;
+import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -142,6 +143,21 @@ public class NamedConsumer {
         if (val instanceof MessageResponse messageResponse) {
           MessageEvent msg = messageResponse.getResponse();
           if (msg != null) {
+            String filter = config.getFilterSubject();
+            if (filter != null && !filter.isBlank()) {
+              String published = msg.getMessage().getMeta() == null ? null
+                  : msg.getMessage().getMeta().get("nats.subject");
+              if (published == null) {
+                published = stream.getSubject().replace('/', '.');
+              }
+              if (!NamespaceManager.matchesSubject(filter, published)) {
+                // Consume only this consumer's unmatched state; leave the archive
+                // and every other consumer untouched.
+                stream.getSubscribedEventManager().ackReceived(msg.getMessage().getIdentifier());
+                x--;
+                continue;
+              }
+            }
             index = (index + 1) % streams.size();
             return msg;
           }

@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.NatsJetStreamSubscriptions;
 import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
@@ -79,7 +80,8 @@ public class DeleteHandler extends JetStreamFrameHandler {
           continue;
         }
         if (namedConsumer.getMapsSession() != null) {
-          namedConsumer.getMapsSession().removeSubscription(subscription.getSubscriptionAlias());
+          NatsJetStreamSubscriptions.remove(
+              namedConsumer.getMapsSession(), subscription.getSubscribedEventManager());
         } else {
           sessionState.removeSubscription(subscription.getSubscriptionAlias());
         }

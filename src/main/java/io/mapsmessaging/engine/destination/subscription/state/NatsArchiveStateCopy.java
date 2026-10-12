@@ -19,6 +19,11 @@
 
 package io.mapsmessaging.engine.destination.subscription.state;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Objects;
+import java.util.function.LongPredicate;
+
 /**
  * NATS JetStream-only entry point for seeding a new, ordinary MAPS subscription.
  *
@@ -33,6 +38,12 @@ public final class NatsArchiveStateCopy {
   }
 
   public static int copyAtRest(MessageStateManager archiveState, MessageStateManager consumerState) {
+    return copyAtRest(archiveState, consumerState, id -> true);
+  }
+
+  public static int copyAtRest(MessageStateManager archiveState, MessageStateManager consumerState,
+                               LongPredicate included) {
+    Objects.requireNonNull(included, "included");
     if (!(archiveState instanceof MessageStateManagerImpl archive)
         || !(consumerState instanceof MessageStateManagerImpl consumer)
         || archive == consumer) {
@@ -44,9 +55,30 @@ public final class NatsArchiveStateCopy {
     // naturally deduplicated by the priority-backed bitset queues.
     synchronized (archive) {
       synchronized (consumer) {
+        if (archive.hasMessagesInFlight() || consumer.hasMessagesInFlight()) {
+          throw new IllegalStateException("JetStream seeding requires unconsumed synchronous subscriptions");
+        }
+        if (consumer instanceof LimitedMessageStateManager) {
+          throw new IllegalArgumentException("JetStream archive seeding cannot bypass a bounded subscription limit");
+        }
+        Set<Long> excluded = new HashSet<>();
+        Set<Long> candidates = new HashSet<>(archive.getAllAtRest());
+        candidates.addAll(consumer.getAllAtRest());
+        for (Long id : candidates) {
+          if (!included.test(id)) {
+            excluded.add(id);
+          }
+        }
+        // Copy priority buckets first. Filtering removes IDs without re-registering
+        // them at a different priority, and never mutates the source archive.
+        // Build independent state using the target's own persistent priority queues.
         int before = consumer.pending();
         consumer.messagesAtRest.addAll(archive.messagesAtRest);
-        return consumer.pending() - before;
+        for (Long id : excluded) {
+          consumer.messagesAtRest.remove(id);
+          consumer.retainedReplays.remove(id);
+        }
+        return Math.max(0, consumer.pending() - before);
       }
     }
   }

@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handler
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.NatsJetStreamDestinations;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
@@ -71,13 +72,13 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
     String streamName = parts[4];
 
     // Process subjects
-    if (!json.has(SUBJECTS_KEY) || !json.get(SUBJECTS_KEY).isJsonArray()) {
+    if (json == null || !json.has(SUBJECTS_KEY) || !json.get(SUBJECTS_KEY).isJsonArray()) {
       return new ErrFrame("Missing or invalid 'subjects' array");
     }
     PayloadFrame result = (PayloadFrame) msg;
     StreamInfoList info = NamespaceManager.getInstance().getStream(streamName);
     if (info == null) {
-      result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_delete_response").getBytes());
+      result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_update_response").getBytes());
       return result;
     }
     JsonArray subjectsArray = json.getAsJsonArray(SUBJECTS_KEY);
@@ -86,7 +87,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
     subjectsArray.forEach(e -> newSubjects.add(e.getAsString()));
 
     Set<String> currentSubjects = info.getSubjects().stream()
-        .map(s -> s.getSubject())
+        .map(s -> s.getSubject().replace('/', '.'))
         .collect(Collectors.toSet());
 
 // Subjects to add
@@ -97,28 +98,38 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
     Set<String> toRemove = new HashSet<>(currentSubjects);
     toRemove.removeAll(newSubjects);
     List<String> removedTopics = info.getSubjects().stream()
-        .filter(existing -> toRemove.contains(existing.getSubject()))
+        .filter(existing -> toRemove.contains(existing.getSubject().replace('/', '.')))
         .map(existing -> existing.getDestination().getFullyQualifiedNamespace())
         .toList();
 
+    if (!toRemove.isEmpty() && !sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
+      return buildError("io.nats.jetstream.api.v1.stream_update_response", 403,
+          "Stream subject removal is not permitted", frame.getReplyTo(), sessionState);
+    }
     List<CompletableFuture<Destination>> futures = new ArrayList<>();
 
     toAdd.stream()
         .map(subjectName -> constructDestinationFromSubject(streamName, subjectName, sessionState))
         .forEachOrdered(futures::add);
 
-    List<CompletableFuture<Void>> deletes = new ArrayList<>();
-    if (sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
-      for (String subjectName : toRemove) {
-        info.getSubjects().stream()
-            .filter(s -> s.getSubject().equals(subjectName))
-            .findFirst()
-            .ifPresent(s -> deletes.add(sessionState.getSession().deleteDestinationImpl(s.getDestination())));
+    List<Destination> removed = new ArrayList<>();
+    try {
+      for (String topic : removedTopics) {
+        Destination destination = sessionState.getSession().findDestination(topic, DestinationType.TOPIC)
+            .get(20, TimeUnit.SECONDS);
+        NatsJetStreamDestinations.checkRemoval(destination);
+        removed.add(destination);
       }
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+          "Interrupted resolving removed subjects", frame.getReplyTo(), sessionState);
+    } catch (ExecutionException | TimeoutException | IOException failure) {
+      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+          "Unable to remove stream subjects: " + failure.getMessage(), frame.getReplyTo(), sessionState);
     }
     try {
       List<CompletableFuture<?>> futureList = new ArrayList<>();
-      futureList.addAll(deletes);
       futureList.addAll(futures);
       CompletableFuture<?> all = CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0]));
       all.get(20, TimeUnit.SECONDS);
@@ -142,14 +153,23 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
       try {
         JetStreamArchiveManager.getInstance().ensureArchive(sessionState, streamName,
             destination.getFullyQualifiedNamespace());
+        NatsJetStreamDestinations.enable(destination);
       } catch (IOException failure) {
         return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
             "Unable to initialise JetStream archive: " + failure.getMessage(),
             frame.getReplyTo(), sessionState);
       }
     }
-    if (sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
+    try {
+      for (Destination destination : removed) {
+        JetStreamArchiveManager.getInstance().ensureArchive(sessionState, streamName,
+            destination.getFullyQualifiedNamespace());
+        NatsJetStreamDestinations.disable(destination);
+      }
       JetStreamArchiveManager.getInstance().releaseTopics(streamName, removedTopics);
+    } catch (IOException failure) {
+      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+          "Unable to release stream subjects: " + failure.getMessage(), frame.getReplyTo(), sessionState);
     }
     PayloadFrame payloadFrame = (PayloadFrame) msg;
     JsonObject responseJson = new JsonObject();

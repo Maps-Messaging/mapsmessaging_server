@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class JetStreamArchiveManagerIdentityTest {
 
@@ -34,4 +35,18 @@ class JetStreamArchiveManagerIdentityTest {
     assertTrue(orders.startsWith("nats-jetstream-archive-"));
     assertFalse(orders.contains("alice"));
   }
+  @Test
+  void archive_rejects_a_connection_without_authenticated_identity() {
+    var connection = mock(io.mapsmessaging.network.protocol.impl.nats.state.SessionState.class);
+    var session = mock(io.mapsmessaging.api.Session.class);
+    var security = mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    when(connection.getSession()).thenReturn(session);
+    when(session.getSecurityContext()).thenReturn(security);
+    assertThrows(java.io.IOException.class,
+        () -> JetStreamArchiveManager.getInstance().ensureArchive(connection, "AUTH_CHECK", "AUTH_CHECK/events"));
+    when(security.isLoggedIn()).thenReturn(true);
+    assertThrows(java.io.IOException.class,
+        () -> JetStreamArchiveManager.getInstance().ensureArchive(connection, "AUTH_CHECK", "AUTH_CHECK/events"));
+  }
+
 }

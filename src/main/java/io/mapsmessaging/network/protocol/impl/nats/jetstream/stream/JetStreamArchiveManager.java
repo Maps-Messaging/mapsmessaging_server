@@ -20,6 +20,8 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 
 import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.NatsJetStreamSubscriptions;
+import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
@@ -28,7 +30,6 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.engine.session.security.SecurityContext;
-import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
@@ -81,7 +82,8 @@ public final class JetStreamArchiveManager {
     String sessionId = archiveSessionId(user, stream);
     Archive archive = archives.get(sessionId);
     if (archive == null || archive.session().isClosed()) {
-      archive = new Archive(stream, openArchive(connection, user, sessionId), new HashSet<>());
+      Session opened = openArchive(connection, user, sessionId);
+      archive = new Archive(stream, opened, new HashSet<>(NatsJetStreamSubscriptions.filters(opened)));
       archives.put(sessionId, archive);
     }
 
@@ -91,15 +93,16 @@ public final class JetStreamArchiveManager {
         throw new IOException("MAPS topic not found for JetStream archive: " + topic);
       }
       SubscribedEventManager restored = archive.session().isRestored()
-          ? archive.session().resume(destination) : null;
+          ? NatsJetStreamSubscriptions.restore(archive.session(), destination) : null;
       if (restored == null) {
         SubscriptionContextBuilder builder = new SubscriptionContextBuilder(
             topic, ClientAcknowledgement.INDIVIDUAL);
         builder.setAlias(archiveAlias(stream, topic));
         builder.setSync(true);
+        builder.setRetainHandler(RetainHandler.DO_NOT_SEND);
         builder.setNoLocalMessages(false);
         builder.setReceiveMaximum(1);
-        if (archive.session().addSubscription(builder.build()) == null) {
+        if (NatsJetStreamSubscriptions.subscribe(archive.session(), destination, builder.build()) == null) {
           throw new IOException("MAPS did not register the JetStream archive for " + topic);
         }
       }
@@ -112,7 +115,7 @@ public final class JetStreamArchiveManager {
    * Stop retaining topics removed from an updated JetStream stream. The archive
    * belongs to NATS, not to the publishing TCP connection.
    */
-  public synchronized void releaseTopics(String stream, Collection<String> topics) {
+  public synchronized void releaseTopics(String stream, Collection<String> topics) throws IOException {
     for (Iterator<Map.Entry<String, Archive>> iterator = archives.entrySet().iterator(); iterator.hasNext();) {
       Map.Entry<String, Archive> entry = iterator.next();
       Archive archive = entry.getValue();
@@ -121,11 +124,11 @@ public final class JetStreamArchiveManager {
       }
       for (String topic : topics) {
         if (archive.topics().remove(topic)) {
-          archive.session().removeSubscription(archiveAlias(stream, topic));
+          archive.session().removeSubscription(topic);
         }
       }
       if (archive.topics().isEmpty()) {
-        SessionManager.getInstance().closeAsync(archive.session(), true);
+        await(SessionManager.getInstance().closeAsync(archive.session(), true));
         iterator.remove();
       }
     }
@@ -135,15 +138,15 @@ public final class JetStreamArchiveManager {
    * A deleted stream must release its archive subscriptions so the persistent
    * MAPS session does not keep an orphaned destination alive.
    */
-  public synchronized void releaseStream(String stream) {
+  public synchronized void releaseStream(String stream) throws IOException {
     for (Iterator<Map.Entry<String, Archive>> iterator = archives.entrySet().iterator(); iterator.hasNext();) {
       Map.Entry<String, Archive> entry = iterator.next();
       Archive archive = entry.getValue();
       if (archive.stream().equals(stream)) {
         for (String topic : archive.topics()) {
-          archive.session().removeSubscription(archiveAlias(stream, topic));
+          archive.session().removeSubscription(topic);
         }
-        SessionManager.getInstance().closeAsync(archive.session(), true);
+        await(SessionManager.getInstance().closeAsync(archive.session(), true));
         iterator.remove();
       }
     }
@@ -165,7 +168,7 @@ public final class JetStreamArchiveManager {
 
   private Session openArchive(SessionState connection, String user, String sessionId) throws IOException {
     SessionContextBuilder builder = new SessionContextBuilder(sessionId,
-        new ProtocolClientConnection(connection.getProtocol()));
+        new NatsArchiveConnection(connection.getProtocol()));
     builder.setUsername(user);
     builder.isAuthorized(true);
     builder.setPersistentSession(true);

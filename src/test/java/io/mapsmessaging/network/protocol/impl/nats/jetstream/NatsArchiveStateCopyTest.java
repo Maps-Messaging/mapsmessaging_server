@@ -92,6 +92,42 @@ class NatsArchiveStateCopyTest {
     }
   }
 
+  @Test
+  void filtered_copy_preserves_priority_and_does_not_remove_source_ids() throws Exception {
+    MessageStateManagerImpl archive = manager(501);
+    MessageStateManagerImpl consumer = manager(502);
+    try {
+      archive.register(message(1, Priority.LOWEST));
+      archive.register(message(2, Priority.NORMAL));
+      archive.register(message(3, Priority.HIGHEST));
+      assertEquals(2, NatsArchiveStateCopy.copyAtRest(archive, consumer, id -> id != 2));
+      assertEquals(3L, consumer.nextMessageId());
+      assertFalse(consumer.hasMessage(2));
+      assertEquals(3, archive.pending());
+    } finally {
+      consumer.close();
+      archive.close();
+    }
+  }
+
+  @Test
+  void refuses_to_reseed_a_consumer_with_inflight_messages() throws Exception {
+    MessageStateManagerImpl archive = manager(601);
+    MessageStateManagerImpl consumer = manager(602);
+    try {
+      Message high = message(1, Priority.HIGHEST);
+      archive.register(high);
+      consumer.register(high);
+      consumer.allocate(high);
+      assertThrows(IllegalStateException.class, () -> NatsArchiveStateCopy.copyAtRest(archive, consumer));
+      assertEquals(0, consumer.pending());
+      assertEquals(1, consumer.size());
+    } finally {
+      consumer.close();
+      archive.close();
+    }
+  }
+
   private static MessageStateManagerImpl manager(long id) {
     return new MessageStateManagerImpl("nats-copy-" + id, id,
         new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));

@@ -23,6 +23,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.NatsJetStreamDestinations;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
@@ -98,6 +99,7 @@ public class StreamCreateHandler extends JetStreamFrameHandler {
       try {
         JetStreamArchiveManager.getInstance().ensureArchive(sessionState, streamName,
             destination.getFullyQualifiedNamespace());
+        NatsJetStreamDestinations.enable(destination);
       } catch (IOException failure) {
         return buildError(RESPONSE_TYPE, 500, "Unable to initialise JetStream archive: "
             + failure.getMessage(), frame.getReplyTo(), sessionState);

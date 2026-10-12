@@ -20,12 +20,17 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.api.message.Filter;
+import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
+import io.mapsmessaging.selector.SelectorParser;
+import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.state.NatsArchiveStateCopy;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -45,6 +50,11 @@ public final class JetStreamSubscriptionInitializer {
 
   public static int seedFromArchive(DestinationImpl destination, String archiveSessionId,
                                     String consumerSessionId) throws IOException {
+    return seedFromArchive(destination, archiveSessionId, consumerSessionId, null);
+  }
+
+  public static int seedFromArchive(DestinationImpl destination, String archiveSessionId,
+                                    String consumerSessionId, String subjectFilter) throws IOException {
     Objects.requireNonNull(destination, "destination");
     if (archiveSessionId == null || archiveSessionId.equals(consumerSessionId)) {
       throw new IOException("A JetStream consumer must use a separate MAPS session from its archive");
@@ -56,11 +66,32 @@ public final class JetStreamSubscriptionInitializer {
         throw new IOException("JetStream archive or consumer subscription is missing for "
             + destination.getFullyQualifiedNamespace());
       }
-      if (!archive.isSync()) {
+      if (!archive.isSync() || !consumer.isSync()) {
         throw new IOException("JetStream archive must be synchronous and unconsumed");
       }
+      String selector = consumer.getContext() == null ? null : consumer.getContext().getSelector();
+      ParserExecutor parser = selector == null || selector.isBlank() ? null : SelectorParser.compile(selector);
       return new LongResponse(NatsArchiveStateCopy.copyAtRest(
-          archive.getMessageStateManager(), consumer.getMessageStateManager()));
+          archive.getMessageStateManager(), consumer.getMessageStateManager(), id -> {
+            try {
+              var message = destination.getMessage(id);
+              if (message == null || !Filter.getInstance().filterMessage(parser, message, destination)) {
+                return false;
+              }
+              if (subjectFilter == null || subjectFilter.isBlank()) {
+                return true;
+              }
+              String published = message.getMeta() == null ? null : message.getMeta().get("nats.subject");
+              if (published == null) {
+                String path = destination.getFullyQualifiedNamespace();
+                int separator = path.indexOf('/');
+                published = separator < 0 ? path : path.substring(separator + 1).replace('/', '.');
+              }
+              return NamespaceManager.matchesSubject(subjectFilter, published);
+            } catch (IOException failure) {
+              throw new UncheckedIOException(failure);
+            }
+          }));
     });
     try {
       Response result = future.get(30, TimeUnit.SECONDS);

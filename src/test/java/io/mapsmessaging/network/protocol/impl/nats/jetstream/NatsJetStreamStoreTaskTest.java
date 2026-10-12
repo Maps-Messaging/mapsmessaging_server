@@ -43,6 +43,8 @@ class NatsJetStreamStoreTaskTest {
     when(destination.handleTask(any())).thenReturn(1);
     when(original.getIdentifier()).thenReturn(0L);
     when(effective.getIdentifier()).thenReturn(71L);
+    when(destination.getMessage(71L)).thenReturn(effective);
+    inlineQueue(destination);
 
     assertEquals(71L, NatsJetStreamStoreTask.store(destination, original));
     verify(destination).applyMessageOverrides(original);
@@ -65,6 +67,36 @@ class NatsJetStreamStoreTaskTest {
   }
 
   @Test
+  void cannot_acknowledge_an_identifier_without_a_stored_message() throws Exception {
+    DestinationImpl destination = mock(DestinationImpl.class);
+    Message original = mock(Message.class);
+    Message effective = mock(Message.class);
+    when(destination.getResourceType()).thenReturn(DestinationType.TOPIC);
+    when(destination.applyMessageOverrides(original)).thenReturn(effective);
+    when(destination.handleTask(any())).thenReturn(1);
+    when(effective.getIdentifier()).thenReturn(91L);
+    inlineQueue(destination);
+    assertThrows(IOException.class, () -> NatsJetStreamStoreTask.store(destination, original));
+    verify(destination).getMessage(91L);
+  }
+
+  @Test
+  void delayed_override_is_rejected_before_the_storage_task_runs() {
+    DestinationImpl destination = mock(DestinationImpl.class);
+    Message original = mock(Message.class);
+    Message effective = mock(Message.class);
+    when(destination.getResourceType()).thenReturn(DestinationType.TOPIC);
+    when(destination.applyMessageOverrides(original)).thenReturn(effective);
+    when(effective.getDelayed()).thenReturn(100L);
+    assertThrows(IOException.class, () -> NatsJetStreamStoreTask.store(destination, original));
+    try {
+      verify(destination, never()).handleTask(any());
+    } catch (IOException failure) {
+      fail(failure);
+    }
+  }
+
+  @Test
   void refusesDelayedOrAlreadyBoundMessages() {
     DestinationImpl destination = mock(DestinationImpl.class);
     Message original = mock(Message.class);
@@ -72,4 +104,17 @@ class NatsJetStreamStoreTaskTest {
     when(original.isBound()).thenReturn(true);
     assertThrows(IOException.class, () -> NatsJetStreamStoreTask.store(destination, original));
   }
+  private static void inlineQueue(DestinationImpl destination) {
+    doAnswer(invocation -> {
+      java.util.concurrent.Callable<io.mapsmessaging.engine.tasks.Response> task = invocation.getArgument(0);
+      var future = new java.util.concurrent.CompletableFuture<io.mapsmessaging.engine.tasks.Response>();
+      try {
+        future.complete(task.call());
+      } catch (Exception failure) {
+        future.completeExceptionally(failure);
+      }
+      return future;
+    }).when(destination).submit(any(java.util.concurrent.Callable.class));
+  }
+
 }

@@ -64,6 +64,15 @@ public class PubListener implements FrameListener {
     }
 
     String publisherReply = msgFrame.getReplyTo();
+    if (publisherReply != null && !publisherReply.isBlank()) {
+      for (String namespace : destinations) {
+        if (!namespace.equals(lookup) && !supportsDestinationSequence(namespace)) {
+          sendPublishError(engine, publisherReply,
+              "JetStream stream-global sequences across multiple MAPS destinations are not implemented", 501);
+          return;
+        }
+      }
+    }
     String publishedStream = null;
     long publishedSequence = 0;
     boolean streamPublication = false;
@@ -134,8 +143,12 @@ public class PubListener implements FrameListener {
   }
 
   private void sendPublishError(SessionState engine, String replyTo, String description) {
+    sendPublishError(engine, replyTo, description, 500);
+  }
+
+  private void sendPublishError(SessionState engine, String replyTo, String description, int code) {
     JsonObject error = new JsonObject();
-    error.addProperty("code", 500);
+    error.addProperty("code", code);
     error.addProperty("description", description);
     JsonObject body = new JsonObject();
     body.add("error", error);
@@ -148,6 +161,10 @@ public class PubListener implements FrameListener {
     response.setSubscriptionId(engine.getJetStreamRequestManager().getSid(replyTo));
     response.setPayload(body.toString().getBytes(StandardCharsets.UTF_8));
     engine.send(response);
+  }
+
+  protected boolean supportsDestinationSequence(String namespace) {
+    return NamespaceManager.getInstance().supportsDestinationSequence(namespace);
   }
 
   protected void ensureArchiveForStream(SessionState connection, String stream, String destination) throws IOException {

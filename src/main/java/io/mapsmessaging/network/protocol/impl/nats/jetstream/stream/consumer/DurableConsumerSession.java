@@ -20,6 +20,8 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer;
 
 import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.NatsJetStreamSubscriptions;
+import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
@@ -150,8 +152,11 @@ public final class DurableConsumerSession {
   }
 
   public static CompletableFuture<Session> close(SessionState connection, Session durable) {
-    ATTACHED.remove(durable.getName(), connection);
-    return SessionManager.getInstance().closeAsync(durable, false);
+    return SessionManager.getInstance().closeAsync(durable, false).whenComplete((closed, failure) -> {
+      if (failure == null) {
+        ATTACHED.remove(durable.getName(), connection);
+      }
+    });
   }
 
   /**
@@ -166,7 +171,7 @@ public final class DurableConsumerSession {
       throw new IOException("No MAPS destination for durable JetStream consumer: " + destination);
     }
     if (persistent.isRestored()) {
-      SubscribedEventManager resumed = persistent.resume(bound);
+      SubscribedEventManager resumed = NatsJetStreamSubscriptions.restore(persistent, bound);
       if (resumed != null) {
         return resumed;
       }
@@ -174,9 +179,10 @@ public final class DurableConsumerSession {
     SubscriptionContextBuilder builder = new SubscriptionContextBuilder(destination.replace('.', '/'), acknowledgement);
     builder.setAlias(alias);
     builder.setSync(true);
+    builder.setRetainHandler(RetainHandler.DO_NOT_SEND);
     builder.setNoLocalMessages(false);
     builder.setReceiveMaximum(receiveMaximum);
-    SubscribedEventManager manager = persistent.addSubscription(builder.build());
+    SubscribedEventManager manager = NatsJetStreamSubscriptions.subscribe(persistent, bound, builder.build());
     return manager;
   }
 

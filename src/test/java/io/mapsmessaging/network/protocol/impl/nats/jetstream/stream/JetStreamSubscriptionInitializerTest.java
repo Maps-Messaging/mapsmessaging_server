@@ -50,6 +50,9 @@ class JetStreamSubscriptionInitializerTest {
       DestinationSubscription archive = mock(DestinationSubscription.class);
       DestinationSubscription consumer = mock(DestinationSubscription.class);
       when(archive.isSync()).thenReturn(true);
+      when(consumer.isSync()).thenReturn(true);
+      when(destination.getMessage(1L)).thenReturn(message(1L, Priority.LOWEST));
+      when(destination.getMessage(2L)).thenReturn(message(2L, Priority.HIGHEST));
       when(archive.getMessageStateManager()).thenReturn(source);
       when(consumer.getMessageStateManager()).thenReturn(target);
       when(destination.getSubscription("nats-archive")).thenReturn(archive);
@@ -80,6 +83,136 @@ class JetStreamSubscriptionInitializerTest {
     assertThrows(IOException.class,
         () -> JetStreamSubscriptionInitializer.seedFromArchive(destination, "same", "same"));
     verify(destination, never()).submit(any(Callable.class));
+  }
+
+  @Test
+  void concurrent_publication_and_seeding_leave_no_gaps_or_duplicate_deliveries() throws Exception {
+    var queue = java.util.concurrent.Executors.newSingleThreadExecutor();
+    var publisher = java.util.concurrent.Executors.newSingleThreadExecutor();
+    var start = new java.util.concurrent.CountDownLatch(1);
+    DestinationImpl destination = mock(DestinationImpl.class);
+    MessageStateManagerImpl archiveState = manager(81);
+    MessageStateManagerImpl consumerState = manager(82);
+    MessageStateManagerImpl independentState = manager(83);
+    try {
+      DestinationSubscription archive = mock(DestinationSubscription.class);
+      DestinationSubscription consumer = mock(DestinationSubscription.class);
+      DestinationSubscription independent = mock(DestinationSubscription.class);
+      when(archive.isSync()).thenReturn(true);
+      when(consumer.isSync()).thenReturn(true);
+      when(independent.isSync()).thenReturn(true);
+      when(archive.getMessageStateManager()).thenReturn(archiveState);
+      when(consumer.getMessageStateManager()).thenReturn(consumerState);
+      when(independent.getMessageStateManager()).thenReturn(independentState);
+      when(destination.getSubscription("archive")).thenReturn(archive);
+      when(destination.getSubscription("consumer")).thenReturn(consumer);
+      when(destination.getSubscription("independent")).thenReturn(independent);
+      when(destination.getMessage(anyLong())).thenAnswer(invocation ->
+          message(invocation.getArgument(0), Priority.NORMAL));
+      doAnswer(invocation -> queue.submit((Callable<Response>) invocation.getArgument(0)))
+          .when(destination).submit(any(Callable.class));
+      for (long id = 1; id <= 100; id++) {
+        archiveState.register(message(id, Priority.NORMAL));
+      }
+      var publication = publisher.submit(() -> {
+        start.await();
+        for (long id = 101; id <= 500; id++) {
+          var event = message(id, Priority.NORMAL);
+          destination.submit(() -> {
+            archiveState.register(event);
+            consumerState.register(event);
+            independentState.register(event);
+            return new io.mapsmessaging.engine.tasks.LongResponse(3);
+          }).get(5, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        return null;
+      });
+      start.countDown();
+      JetStreamSubscriptionInitializer.seedFromArchive(destination, "archive", "consumer");
+      JetStreamSubscriptionInitializer.seedFromArchive(destination, "archive", "independent");
+      publication.get(10, java.util.concurrent.TimeUnit.SECONDS);
+      assertEquals(500, archiveState.pending());
+      assertEquals(500, consumerState.pending());
+      assertEquals(500, independentState.pending());
+      for (long id = 1; id <= 500; id++) {
+        assertEquals(id, consumerState.nextMessageId());
+        consumerState.allocate(message(id, Priority.NORMAL));
+        assertTrue(consumerState.rollback(id));
+        consumerState.allocate(message(id, Priority.NORMAL));
+        consumerState.commit(id);
+      }
+      assertEquals(-1L, consumerState.nextMessageId());
+      assertEquals(500, archiveState.pending());
+      assertEquals(500, independentState.pending());
+    } finally {
+      publisher.shutdownNow();
+      queue.shutdownNow();
+      publisher.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+      queue.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+      archiveState.close();
+      consumerState.close();
+      independentState.close();
+    }
+  }
+
+  @Test
+  void missing_physical_messages_are_not_copied_from_stale_archive_references() throws Exception {
+    DestinationImpl destination = destinationWithInlineSubscriptionQueue();
+    MessageStateManagerImpl archiveState = manager(91);
+    MessageStateManagerImpl consumerState = manager(92);
+    try {
+      archiveState.register(message(1, Priority.NORMAL));
+      archiveState.register(message(2, Priority.HIGHEST));
+      DestinationSubscription archive = mock(DestinationSubscription.class);
+      DestinationSubscription consumer = mock(DestinationSubscription.class);
+      when(archive.isSync()).thenReturn(true);
+      when(consumer.isSync()).thenReturn(true);
+      when(archive.getMessageStateManager()).thenReturn(archiveState);
+      when(consumer.getMessageStateManager()).thenReturn(consumerState);
+      when(destination.getSubscription("archive")).thenReturn(archive);
+      when(destination.getSubscription("consumer")).thenReturn(consumer);
+      when(destination.getMessage(2L)).thenReturn(message(2, Priority.HIGHEST));
+      assertEquals(1, JetStreamSubscriptionInitializer.seedFromArchive(destination, "archive", "consumer"));
+      assertFalse(consumerState.hasMessage(1));
+      assertEquals(2L, consumerState.nextMessageId());
+      assertEquals(2, archiveState.pending(), "The generic engine's archive expiry semantics remain unchanged");
+    } finally {
+      archiveState.close();
+      consumerState.close();
+    }
+  }
+
+  @Test
+  void historical_subject_filter_excludes_other_events_without_changing_priorities() throws Exception {
+    DestinationImpl destination = destinationWithInlineSubscriptionQueue();
+    MessageStateManagerImpl archiveState = manager(101);
+    MessageStateManagerImpl consumerState = manager(102);
+    try {
+      var included = new MessageBuilder().setId(1).setPriority(Priority.HIGHEST)
+          .setMeta(java.util.Map.of("nats.subject", "orders.created")).setOpaqueData(new byte[]{1}).build();
+      var excluded = new MessageBuilder().setId(2).setPriority(Priority.NORMAL)
+          .setMeta(java.util.Map.of("nats.subject", "orders.deleted")).setOpaqueData(new byte[]{2}).build();
+      archiveState.register(included);
+      archiveState.register(excluded);
+      DestinationSubscription archive = mock(DestinationSubscription.class);
+      DestinationSubscription consumer = mock(DestinationSubscription.class);
+      when(archive.isSync()).thenReturn(true);
+      when(consumer.isSync()).thenReturn(true);
+      when(archive.getMessageStateManager()).thenReturn(archiveState);
+      when(consumer.getMessageStateManager()).thenReturn(consumerState);
+      when(destination.getSubscription("archive")).thenReturn(archive);
+      when(destination.getSubscription("consumer")).thenReturn(consumer);
+      when(destination.getMessage(1L)).thenReturn(included);
+      when(destination.getMessage(2L)).thenReturn(excluded);
+      assertEquals(1, JetStreamSubscriptionInitializer.seedFromArchive(
+          destination, "archive", "consumer", "orders.created"));
+      assertEquals(1L, consumerState.nextMessageId());
+      assertFalse(consumerState.hasMessage(2));
+      assertEquals(2, archiveState.pending());
+    } finally {
+      archiveState.close();
+      consumerState.close();
+    }
   }
 
   private static DestinationImpl destinationWithInlineSubscriptionQueue() {

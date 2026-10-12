@@ -20,6 +20,9 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.NatsJetStreamDestinations;
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
@@ -32,7 +35,6 @@ import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -69,24 +71,35 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
       return result;
     }
 
-    List<CompletableFuture<Void>> deletes = new ArrayList<>();
-
-    info.getSubjects().stream()
-        .map(streamInfo -> sessionState.getSession().deleteDestinationImpl(streamInfo.getDestination()))
-        .forEachOrdered(deletes::add);
-
+    // Resolve through the authenticated session and preflight every permission.
+    // A JetStream stream is logical membership, not ownership of MAPS data.
+    List<Destination> destinations = new ArrayList<>();
     try {
-      CompletableFuture<Void> all = CompletableFuture.allOf(deletes.toArray(new CompletableFuture[0]));
-      all.get(20, TimeUnit.SECONDS); // Optional timeout
-    } catch (TimeoutException e) {
-      return new ErrFrame("Timed out while deleting stream destinations");
-    } catch (InterruptedException e) {
+      for (var streamInfo : info.getSubjects()) {
+        var destination = sessionState.getSession().findDestination(
+            streamInfo.getDestination().getFullyQualifiedNamespace(),
+            DestinationType.TOPIC).get(20, TimeUnit.SECONDS);
+        NatsJetStreamDestinations.checkRemoval(destination);
+        destinations.add(destination);
+      }
+      for (var destination : destinations) {
+        // Also reconnect the persistent archive after a server restart so removal
+        // releases the restored MAPS subscription rather than just the local cache.
+        JetStreamArchiveManager.getInstance().ensureArchive(sessionState, streamName,
+            destination.getFullyQualifiedNamespace());
+      }
+      for (var destination : destinations) {
+        NatsJetStreamDestinations.disable(destination);
+      }
+      JetStreamArchiveManager.getInstance().releaseStream(streamName);
+    } catch (InterruptedException interrupted) {
       Thread.currentThread().interrupt();
-      return new ErrFrame("Error while deleting stream destinations");
-    } catch (ExecutionException e) {
-      return new ErrFrame("Error while deleting stream destinations");
+      return buildError("io.nats.jetstream.api.v1.stream_delete_response", 500,
+          "Interrupted removing stream membership", frame.getReplyTo(), sessionState);
+    } catch (ExecutionException | TimeoutException | IOException failure) {
+      return buildError("io.nats.jetstream.api.v1.stream_delete_response", 500,
+          "Unable to remove stream membership: " + failure.getMessage(), frame.getReplyTo(), sessionState);
     }
-    JetStreamArchiveManager.getInstance().releaseStream(streamName);
     result.setPayload(success().getBytes());
 
     return result;

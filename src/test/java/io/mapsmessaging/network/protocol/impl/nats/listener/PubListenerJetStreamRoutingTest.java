@@ -131,6 +131,11 @@ class PubListenerJetStreamRoutingTest {
     }
 
     @Override
+    protected boolean supportsDestinationSequence(String namespace) {
+      return true;
+    }
+
+    @Override
     protected void ensureArchiveForStream(SessionState connection, String stream, String destination) {
       // Live archive wiring is exercised by JetStream's integration tests.
     }
@@ -204,4 +209,26 @@ class PubListenerJetStreamRoutingTest {
     assertTrue(body.has("error"));
     assertFalse(body.has("seq"));
   }
+  @Test
+  void unsupported_stream_global_sequences_fail_before_any_message_is_stored() throws Exception {
+    SessionState state = setup(true);
+    PubFrame frame = publish("ack.order");
+    frame.setReplyTo("_INBOX.publish");
+    RecordingListener listener = new RecordingListener(List.of("ACK/ack/order")) {
+      @Override
+      protected boolean supportsDestinationSequence(String namespace) {
+        return false;
+      }
+    };
+    listener.frameEvent(frame, state, true);
+    verify(state.getSession(), never()).findDestination(anyString(), any());
+    ArgumentCaptor<io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame> sent =
+        ArgumentCaptor.forClass(io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame.class);
+    verify(state).send(sent.capture());
+    MsgFrame response = assertInstanceOf(MsgFrame.class, sent.getValue());
+    var body = JsonParser.parseString(new String(response.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject();
+    assertEquals(501, body.getAsJsonObject("error").get("code").getAsInt());
+    assertFalse(body.has("seq"));
+  }
+
 }

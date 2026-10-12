@@ -152,4 +152,31 @@ class NamedConsumerPendingTest {
     verify(manager, never()).getNext();
   }
 
+  @Test
+  void pull_filters_actual_subject_metadata_inside_a_wildcard_destination() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo stream = mock(StreamSubscriptionInfo.class);
+    when(stream.getSubscribedEventManager()).thenReturn(manager);
+    when(stream.getSubject()).thenReturn("orders/>");
+    var excluded = new io.mapsmessaging.api.MessageBuilder().setId(1)
+        .setMeta(java.util.Map.of("nats.subject", "orders.deleted")).setOpaqueData(new byte[]{1}).build();
+    var included = new io.mapsmessaging.api.MessageBuilder().setId(2)
+        .setMeta(java.util.Map.of("nats.subject", "orders.created")).setOpaqueData(new byte[]{2}).build();
+    var excludedEvent = new io.mapsmessaging.api.MessageEvent("EVENTS/orders/>", manager, excluded, () -> {});
+    var includedEvent = new io.mapsmessaging.api.MessageEvent("EVENTS/orders/>", manager, included, () -> {});
+    when(manager.getNext()).thenReturn(
+        java.util.concurrent.CompletableFuture.completedFuture(new io.mapsmessaging.engine.tasks.MessageResponse(excludedEvent)),
+        java.util.concurrent.CompletableFuture.completedFuture(new io.mapsmessaging.engine.tasks.MessageResponse(includedEvent)));
+    ConsumerConfig config = new ConsumerConfig();
+    config.setFilterSubject("orders.created");
+    NamedConsumer consumer = new NamedConsumer("consumer", "EVENTS", config, List.of(stream));
+    try {
+      org.junit.jupiter.api.Assertions.assertSame(includedEvent, consumer.getNextMessage(true));
+      verify(manager).ackReceived(1);
+      verify(manager, never()).ackReceived(2);
+    } finally {
+      consumer.close();
+    }
+  }
+
 }

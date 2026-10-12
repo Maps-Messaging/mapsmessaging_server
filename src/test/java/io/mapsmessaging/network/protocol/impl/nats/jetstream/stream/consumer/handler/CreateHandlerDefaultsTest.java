@@ -74,11 +74,16 @@ class CreateHandlerDefaultsTest {
     ConsumerConfig config = new ConsumerConfig();
     CreateHandler.applyDefaults(config);
 
-    assertNull(new CreateHandler().subscribeConsumerSubject(session, config, stream,
-        "orders_stream", "jetstream:orders_stream:consumer:0"));
-    verify(session).addSubscription(argThat((SubscriptionContext context) ->
-        context.getAlias().equals("jetstream:orders_stream:consumer:0")
-            && context.isSync() && context.getAcknowledgementController() == ClientAcknowledgement.INDIVIDUAL));
+    try (var subscriptions = mockStatic(io.mapsmessaging.api.NatsJetStreamSubscriptions.class)) {
+      assertNull(new CreateHandler().subscribeConsumerSubject(session, config, stream,
+          "orders_stream", "jetstream:orders_stream:consumer:0"));
+      subscriptions.verify(() -> io.mapsmessaging.api.NatsJetStreamSubscriptions.subscribe(
+          eq(session), any(Destination.class), argThat((SubscriptionContext context) ->
+              context.getAlias().equals("jetstream:orders_stream:consumer:0")
+                  && context.isSync()
+                  && context.getRetainHandler() == io.mapsmessaging.api.features.RetainHandler.DO_NOT_SEND
+                  && context.getAcknowledgementController() == ClientAcknowledgement.INDIVIDUAL)));
+    }
   }
   @Test
   void wrappedOfficialConsumerConfigurationRetainsDurableFields() {
@@ -99,10 +104,27 @@ class CreateHandlerDefaultsTest {
   @Test
   void filterSubjectUsesNatsTokensNotMapsSlashes() {
     assertTrue(CreateHandler.matchesFilter("orders/created", "orders.*"));
+    assertTrue(CreateHandler.matchesFilter("orders/*", "orders.created"));
+    assertTrue(CreateHandler.matchesFilter("orders/>", "orders.created.new"));
     assertTrue(CreateHandler.matchesFilter("orders/created/new", "orders.>"));
     assertFalse(CreateHandler.matchesFilter("orders/created", "other.*"));
     assertFalse(CreateHandler.matchesFilter("orders", "orders.>"));
     assertFalse(CreateHandler.matchesFilter("orders/created/new", "orders.*"));
     assertFalse(CreateHandler.matchesFilter("orders/created", "orders.created.extra"));
   }
+  @Test
+  void unknown_delivery_policy_is_rejected_instead_of_defaulting_to_all() {
+    JsonObject config = new JsonObject();
+    config.addProperty("deliver_policy", "unsupported_start_position");
+    assertThrows(IllegalArgumentException.class, () -> new CreateHandler().parseConfig(config));
+  }
+
+  @Test
+  void known_unimplemented_starting_policy_is_preserved_for_explicit_rejection() {
+    ConsumerConfig config = new ConsumerConfig();
+    config.setDeliverPolicy(DeliverPolicy.LAST);
+    CreateHandler.applyDefaults(config);
+    assertEquals(DeliverPolicy.LAST, config.getDeliverPolicy());
+  }
+
 }

@@ -22,8 +22,13 @@ package io.mapsmessaging.engine.destination;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.tasks.NonDelayedStoreMessageTask;
+import io.mapsmessaging.engine.tasks.LongResponse;
+import io.mapsmessaging.engine.tasks.Response;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * NATS-specific persisted-identifier publish operation. Uses the normal MAPS
@@ -54,6 +59,20 @@ public final class NatsJetStreamStoreTask {
     if (interested <= 0 || id <= 0) {
       throw new IOException("JetStream message was not retained by an archive subscription");
     }
-    return id;
+    // getMessage can expire subscription state. Verify on the same subscription
+    // task queue as registration, ACK and expiry, rather than on the NATS thread.
+    try {
+      Response proof = destination.submit(() -> new LongResponse(
+          destination.getMessage(id) == null ? 0 : id)).get(30, TimeUnit.SECONDS);
+      if (!(proof instanceof LongResponse storedId) || storedId.getResponse() != id) {
+        throw new IOException("JetStream message is no longer stored");
+      }
+      return id;
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted verifying JetStream storage", interrupted);
+    } catch (ExecutionException | TimeoutException failure) {
+      throw new IOException("Unable to verify JetStream storage", failure);
+    }
   }
 }

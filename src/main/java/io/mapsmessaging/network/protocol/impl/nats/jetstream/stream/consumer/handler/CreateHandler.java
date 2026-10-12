@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.NatsJetStreamSubscriptions;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
@@ -76,7 +77,12 @@ public class CreateHandler extends JetStreamFrameHandler {
       return buildError(TYPE, "Stream '" + stream + "' not found", replyTo, sessionState);
     }
 
-    ConsumerConfig config = parseConfig(json);
+    ConsumerConfig config;
+    try {
+      config = parseConfig(json);
+    } catch (IllegalArgumentException invalid) {
+      return buildError(TYPE, 400, invalid.getMessage(), replyTo, sessionState);
+    }
     applyDefaults(config);
     String name = parts.length == 6 ? parts[5] : consumerName(config);
     config.setName(name);
@@ -92,6 +98,10 @@ public class CreateHandler extends JetStreamFrameHandler {
     }
 
     List<StreamInfo> subjects = streamInfoList.getSubjects();
+    if (subjects.stream().map(info -> info.getDestination().getFullyQualifiedNamespace()).distinct().count() > 1) {
+      return buildError(TYPE, 501,
+          "JetStream stream-global sequences across multiple MAPS destinations are not implemented", replyTo, sessionState);
+    }
     if (config.getFilterSubject() != null && !config.getFilterSubject().isBlank()) {
       subjects = subjects.stream().filter(info -> matchesFilter(info.getSubject(), config.getFilterSubject())).toList();
       if (subjects.isEmpty()) {
@@ -122,11 +132,11 @@ public class CreateHandler extends JetStreamFrameHandler {
           if (manager == null) {
             throw new IOException("Unable to register consumer subscription " + streamInfo.getSubject());
           }
+          registered.add(new StreamSubscriptionInfo(manager, streamInfo, subscriptionAlias));
           if (!resumed && config.getDeliverPolicy() == DeliverPolicy.ALL) {
             JetStreamSubscriptionInitializer.seedFromArchive(
-                streamInfo.getDestination(), archiveId, consumerSession.getName());
+                streamInfo.getDestination(), archiveId, consumerSession.getName(), config.getFilterSubject());
           }
-          registered.add(new StreamSubscriptionInfo(manager, streamInfo, subscriptionAlias));
         }
         consumer = new NamedConsumer(name, stream, config, registered);
         if (!sessionState.addNamedConsumer(consumer)) {
@@ -158,7 +168,7 @@ public class CreateHandler extends JetStreamFrameHandler {
     }
     if (!consumerSession.isRestored()) {
       for (StreamSubscriptionInfo subscription : registered) {
-        consumerSession.removeSubscription(subscription.getSubscriptionAlias());
+        NatsJetStreamSubscriptions.remove(consumerSession, subscription.getSubscribedEventManager());
       }
     }
     DurableConsumerSession.close(state, consumerSession);
@@ -188,6 +198,10 @@ public class CreateHandler extends JetStreamFrameHandler {
       return new ConsumerConfig();
     }
     ConsumerConfig consumerConfig = gson.fromJson(config, ConsumerConfig.class);
+    if (consumerConfig != null && consumerConfig.getDeliverPolicy() == null
+        && config.has("deliver_policy") && !config.get("deliver_policy").isJsonNull()) {
+      throw new IllegalArgumentException("Unknown JetStream delivery policy");
+    }
     return consumerConfig == null ? new ConsumerConfig() : consumerConfig;
   }
 
@@ -224,19 +238,26 @@ public class CreateHandler extends JetStreamFrameHandler {
     if (filter == null || filter.isBlank()) {
       return true;
     }
-    String[] subjectTokens = subject.replace('/', '.').split("\\.");
-    String[] filterTokens = filter.split("\\.");
+    String[] subjectTokens = subject.replace('/', '.').split("\\.", -1);
+    String[] filterTokens = filter.split("\\.", -1);
     int position = 0;
-    for (int tokenIndex = 0; tokenIndex < filterTokens.length; tokenIndex++) {
-      String token = filterTokens[tokenIndex];
-      if (">".equals(token)) {
-        return tokenIndex == filterTokens.length - 1 && position < subjectTokens.length;
+    while (position < subjectTokens.length && position < filterTokens.length) {
+      String source = subjectTokens[position];
+      String requested = filterTokens[position];
+      if (source.isEmpty() || requested.isEmpty()) {
+        return false;
       }
-      if (position >= subjectTokens.length || (!"*".equals(token) && !token.equals(subjectTokens[position]))) {
+      if (">".equals(source)) {
+        return position == subjectTokens.length - 1;
+      }
+      if (">".equals(requested)) {
+        return position == filterTokens.length - 1;
+      }
+      if (!"*".equals(source) && !"*".equals(requested) && !source.equals(requested)) {
         return false;
       }
       position++;
     }
-    return position == subjectTokens.length;
+    return position == subjectTokens.length && position == filterTokens.length;
   }
 }

@@ -49,21 +49,32 @@ class JetStreamApiDispatchTest {
     when(sessionState.getSession()).thenReturn(session);
     when(sessionState.getJetStreamRequestManager()).thenReturn(requests);
     when(requests.getSid("_INBOX.api.reply")).thenReturn("sid-api");
+    Destination destination = mock(Destination.class);
+    when(destination.getFullyQualifiedNamespace()).thenReturn("EVENTS/telemetry/data");
     when(session.findDestination("EVENTS/telemetry/data", DestinationType.TOPIC))
-        .thenReturn(CompletableFuture.completedFuture(mock(Destination.class)));
+        .thenReturn(CompletableFuture.completedFuture(destination));
 
     MsgFrame request = new MsgFrame(1024);
     request.setSubject("$JS.API.STREAM.CREATE.EVENTS");
     request.setReplyTo("_INBOX.api.reply");
     request.setPayload("{\"name\":\"EVENTS\",\"subjects\":[\"telemetry.data\"]}".getBytes(StandardCharsets.UTF_8));
 
-    NatsFrame response = new JetStreamApiManager().process(request.getSubject(), request, sessionState);
+    NatsFrame response;
+    JetStreamArchiveManager archive = mock(JetStreamArchiveManager.class);
+    try (var archives = mockStatic(JetStreamArchiveManager.class);
+         var memberships = mockStatic(io.mapsmessaging.api.NatsJetStreamDestinations.class)) {
+      archives.when(JetStreamArchiveManager::getInstance).thenReturn(archive);
+      response = new JetStreamApiManager().process(request.getSubject(), request, sessionState);
+      verify(archive).ensureArchive(sessionState, "EVENTS", "EVENTS/telemetry/data");
+      memberships.verify(() -> io.mapsmessaging.api.NatsJetStreamDestinations.enable(destination));
+    }
 
     PayloadFrame reply = assertInstanceOf(PayloadFrame.class, response);
     assertEquals("_INBOX.api.reply", reply.getSubject());
     assertEquals("sid-api", reply.getSubscriptionId());
     JsonObject body = JsonParser.parseString(new String(reply.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject();
     assertEquals("io.nats.jetstream.api.v1.stream_create_response", body.get("type").getAsString());
+    assertFalse(body.has("error"), body.toString());
     assertEquals("EVENTS", body.getAsJsonObject("config").get("name").getAsString());
     verify(session).findDestination("EVENTS/telemetry/data", DestinationType.TOPIC);
   }

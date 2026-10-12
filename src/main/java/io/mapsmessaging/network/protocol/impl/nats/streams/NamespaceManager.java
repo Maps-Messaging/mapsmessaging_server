@@ -59,7 +59,7 @@ public class NamespaceManager implements DestinationManagerListener {
   @Override
   public void created(DestinationImpl destination) {
     String namespace = destination.getFullyQualifiedNamespace();
-    if (namespace.startsWith("$")) return;
+    if (namespace.startsWith("$") || !NatsStreamMembership.isEnabled(destination)) return;
     if (namespace.contains("/")) {
       String trimmed = namespace.startsWith("/") ? namespace.substring(1) : namespace;
       int firstSlash = trimmed.indexOf('/');
@@ -151,7 +151,7 @@ public class NamespaceManager implements DestinationManagerListener {
     return List.copyOf(destinations);
   }
 
-  static boolean matchesSubject(String filter, String subject) {
+  public static boolean matchesSubject(String filter, String subject) {
     if (filter == null || subject == null || filter.isBlank() || subject.isBlank()) {
       return false;
     }
@@ -170,6 +170,13 @@ public class NamespaceManager implements DestinationManagerListener {
       index++;
     }
     return index == tokens.length;
+  }
+
+  public boolean supportsDestinationSequence(String namespace) {
+    int separator = namespace.indexOf('/');
+    StreamInfoList stream = separator < 0 ? null : streams.get(namespace.substring(0, separator));
+    return stream != null && stream.getSubjects().stream()
+        .map(info -> info.getDestination().getFullyQualifiedNamespace()).distinct().count() == 1;
   }
 
   public StreamInfoList getStream(final String streamName) {
