@@ -45,7 +45,6 @@ public class LinkRemoteDetachEventListener extends BaseEventListener {
       Link link = event.getLink();
       SubscribedEventManager eventManager = (SubscribedEventManager) link.getContext();
       if (eventManager != null) {
-        event.getSession().setContext(null);
         SubscriptionContext context = eventManager.getContext();
         if (context != null) {
           String alias = context.getAlias();
