@@ -304,10 +304,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
       }
 
       String token = templateTokens[index];
-      if ("+".equals(token)) {
-        resolved.append(wildcardValues.get(wildcardIndex));
-        wildcardIndex++;
-      } else if ("#".equals(token)) {
+      if ("+".equals(token) || "#".equals(token)) {
         resolved.append(wildcardValues.get(wildcardIndex));
         wildcardIndex++;
       } else {
