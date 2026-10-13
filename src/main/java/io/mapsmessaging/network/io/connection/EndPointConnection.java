@@ -83,12 +83,15 @@ public class EndPointConnection extends EndPointServerStatus {
   private Future<?> futureTask;
 
   @Getter
+  @SuppressWarnings("java:S3077") // stateLock guards transitions; volatile publishes the selected state, whose lifecycle has its own synchronization.
   private volatile State state;
 
   @Getter
+  @SuppressWarnings("java:S3077") // stateLock guards endpoint ownership; volatile publishes the current transport reference to callbacks.
   private volatile EndPoint endPoint;
 
   @Getter
+  @SuppressWarnings("java:S3077") // stateLock guards protocol ownership; volatile publishes the reference, not mutable protocol internals.
   private volatile Protocol protocol;
 
   @Getter
