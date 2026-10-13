@@ -373,31 +373,39 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
       if (state != null && state.getContext() != null) {
         state.getContext().processPacket(packet);
       } else {
-        MqttSnVersionDetector.Version version =
-            MqttSnVersionDetector.detect(packet.getRawBuffer().asReadOnlyBuffer());
-        if (version == MqttSnVersionDetector.Version.V2_0 || isProtectedV2(packet)) {
-          acceptV2Connection(packet);
-        } else if (version == MqttSnVersionDetector.Version.V1_2) {
-          processIncomingPacket(packet, packetFactory[0]);
-        } else {
-          processUnconnectedDiscovery(packet);
-        }
+        processUnconnectedPacket(packet);
       }
     } catch (IOException e) {
-      if (state != null && state.getContext() instanceof MqttSn2Protocol protocol) {
-        // An invalid frame or illegal protocol transition invalidates only this v2
-        // virtual connection. Legacy 1.2 error handling is unchanged.
-        close(packet.getFromAddress(), protocol);
-        try {
-          protocol.close();
-        } catch (IOException closeFailure) {
-          e.addSuppressed(closeFailure);
-        }
-      }
+      closeInvalidV2Connection(packet, state, e);
       logger.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, e);
     }
     selectorTask.register(SelectionKey.OP_READ);
     return true;
+  }
+
+  private void processUnconnectedPacket(Packet packet) throws IOException {
+    MqttSnVersionDetector.Version version =
+        MqttSnVersionDetector.detect(packet.getRawBuffer().asReadOnlyBuffer());
+    if (version == MqttSnVersionDetector.Version.V2_0 || isProtectedV2(packet)) {
+      acceptV2Connection(packet);
+    } else if (version == MqttSnVersionDetector.Version.V1_2) {
+      processIncomingPacket(packet, packetFactory[0]);
+    } else {
+      processUnconnectedDiscovery(packet);
+    }
+  }
+
+  private void closeInvalidV2Connection(Packet packet, UDPSessionState<Protocol> state, IOException e) {
+    if (state != null && state.getContext() instanceof MqttSn2Protocol protocol) {
+      // An invalid frame or illegal protocol transition invalidates only this v2
+      // virtual connection. Legacy 1.2 error handling is unchanged.
+      close(packet.getFromAddress(), protocol);
+      try {
+        protocol.close();
+      } catch (IOException closeFailure) {
+        e.addSuppressed(closeFailure);
+      }
+    }
   }
 
   private static boolean isProtectedV2(Packet packet) {
