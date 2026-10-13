@@ -24,17 +24,38 @@ import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.ConnAck5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ConnAckListener5Test {
+
+  @Test
+  void successful_connack_without_connection_identity_is_rejected_cleanly() throws Exception {
+    MQTT5Protocol protocol = mock(MQTT5Protocol.class);
+    EndPoint endPoint = mock(EndPoint.class);
+    EndPointConnectionServerConfigDTO config = mock(EndPointConnectionServerConfigDTO.class);
+    when(endPoint.getConfig()).thenReturn(config);
+    when(config.getAuthConfig()).thenReturn(new AuthConfigDTO());
+    ConnAck5 connAck = new ConnAck5();
+    connAck.setStatusCode(StatusCode.SUCCESS);
+
+    MalformedException error = assertThrows(MalformedException.class,
+        () -> new ConnAckListener5().handlePacket(connAck, null, endPoint, protocol));
+
+    assertTrue(error.getMessage().contains("session identifier"));
+    verify(endPoint).close();
+    verify(protocol, never()).setConnected(true);
+  }
 
   @Test
   void alreadyConnectedSessionIsResumedWithoutRecreatingIt() throws Exception {

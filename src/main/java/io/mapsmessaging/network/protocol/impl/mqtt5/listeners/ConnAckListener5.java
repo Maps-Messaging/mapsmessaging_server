@@ -73,6 +73,11 @@ public class ConnAckListener5 extends PacketListener5 {
       return null;
     }
 
+    if (sess == null) {
+      closeEndPoint(endPoint);
+      throw new MalformedException("MQTT 5 connection session identifier is required");
+    }
+
     SessionContextBuilder scb = new SessionContextBuilder(sess, new ProtocolClientConnection(protocol));
     MessageProperty receiveMaximum = connAck.getProperties().get(MessagePropertyFactory.RECEIVE_MAXIMUM);
     scb.setReceiveMaximum(receiveMaximum == null
