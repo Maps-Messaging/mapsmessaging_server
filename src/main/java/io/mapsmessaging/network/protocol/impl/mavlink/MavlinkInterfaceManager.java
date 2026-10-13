@@ -67,6 +67,9 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
   public MavlinkInterfaceManager(EndPoint endPoint) throws IOException {
     this.endPoint = endPoint;
     mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig(MAVLINK_NAME);
+    if(mavlinkConfig == null) {
+      throw new IOException("Mavlink config not found");
+    }
     long timeout = mavlinkConfig.getIdleSessionTimeout();
     currentSessions = new MavLinkSessionManager<>(timeout);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
