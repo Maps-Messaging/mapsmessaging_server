@@ -220,32 +220,12 @@ public final class TopicAliasRegistry {
     if (b.getInt() != MAGIC || b.getInt() != VERSION) throw new IOException("Unsupported alias snapshot");
     int savedNext = b.getInt();
     int count = b.getInt();
-    if (savedNext < 1 || savedNext > maximum + 1 || count < 0 || count > maximum
-        || count > (bytes.length - 20) / 7
-        || b.getInt(bytes.length - 4) != crc(bytes, bytes.length - 4)) {
-      throw new IOException("Corrupt alias snapshot");
-    }
+    validateSnapshotHeader(bytes, b, savedNext, count);
     Map<Integer, String> ids = new HashMap<>();
     Map<String, Integer> names = new HashMap<>();
     int highest = 0;
     for (int i = 0; i < count; i++) {
-      if (b.remaining() < 10) throw new IOException("Truncated alias entry");
-      int id = b.getInt();
-      int size = Short.toUnsignedInt(b.getShort());
-      if (id < 1 || id > maximum || size < 1 || size > MAX_TOPIC_BYTES
-          || b.remaining() < size + 4) throw new IOException("Invalid alias entry");
-      byte[] raw = new byte[size];
-      b.get(raw);
-      String topic;
-      try {
-        topic = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(raw)).toString();
-      } catch (CharacterCodingException e) {
-        throw new IOException("Invalid alias topic UTF-8", e);
-      }
-      validateTopic(topic);
-      if (ids.putIfAbsent(id, topic) != null || names.putIfAbsent(topic, id) != null) {
-        throw new IOException("Duplicate alias or topic");
-      }
+      int id = readAliasEntry(b, ids, names);
       highest = Math.max(highest, id);
     }
     if (b.position() != bytes.length - 4 || highest >= savedNext) {
@@ -256,6 +236,40 @@ public final class TopicAliasRegistry {
     byTopic.clear();
     byTopic.putAll(names);
     nextAlias = savedNext;
+  }
+
+  private void validateSnapshotHeader(byte[] bytes, ByteBuffer b, int savedNext, int count) throws IOException {
+    if (savedNext < 1 || savedNext > maximum + 1 || count < 0 || count > maximum
+        || count > (bytes.length - 20) / 7
+        || b.getInt(bytes.length - 4) != crc(bytes, bytes.length - 4)) {
+      throw new IOException("Corrupt alias snapshot");
+    }
+  }
+
+  private int readAliasEntry(ByteBuffer b, Map<Integer, String> ids, Map<String, Integer> names) throws IOException {
+    if (b.remaining() < 10) throw new IOException("Truncated alias entry");
+    int id = b.getInt();
+    int size = Short.toUnsignedInt(b.getShort());
+    if (id < 1 || id > maximum || size < 1 || size > MAX_TOPIC_BYTES
+        || b.remaining() < size + 4) throw new IOException("Invalid alias entry");
+    String topic = readTopic(b, size);
+    if (ids.putIfAbsent(id, topic) != null || names.putIfAbsent(topic, id) != null) {
+      throw new IOException("Duplicate alias or topic");
+    }
+    return id;
+  }
+
+  private static String readTopic(ByteBuffer b, int size) throws IOException {
+    byte[] raw = new byte[size];
+    b.get(raw);
+    String topic;
+    try {
+      topic = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(raw)).toString();
+    } catch (CharacterCodingException e) {
+      throw new IOException("Invalid alias topic UTF-8", e);
+    }
+    validateTopic(topic);
+    return topic;
   }
 
   private void checkUsable() throws IOException {
