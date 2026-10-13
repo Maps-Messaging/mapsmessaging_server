@@ -390,7 +390,11 @@ class MQTT311ProtocolCoverageTest {
     assertEquals(1, subscribe.getSubscriptionList().size());
     assertEquals("/remote/source", subscribe.getSubscriptionList().get(0).getTopicName());
     assertEquals(qos, subscribe.getSubscriptionList().get(0).getQualityOfService());
-    verify(fixture.endPoint).completedConnection();
+    verify(fixture.endPoint, never()).completedConnection();
+    var acknowledged = fixture.protocol.getRemoteSubscriptionTracker().awaitAcknowledgements();
+    assertFalse(acknowledged.isDone());
+    fixture.protocol.getRemoteSubscriptionTracker().acknowledge(subscribe.getMessageId(), new int[] {1});
+    assertDoesNotThrow(acknowledged::join);
   }
 
   @ParameterizedTest

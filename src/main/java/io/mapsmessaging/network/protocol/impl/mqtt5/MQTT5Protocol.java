@@ -43,6 +43,8 @@ import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MqttKeepAliveManager;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
+import io.mapsmessaging.network.protocol.impl.mqtt.RemoteSubscriptionProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.RemoteSubscriptionTracker;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.SubscriptionInfo;
 import io.mapsmessaging.network.protocol.impl.mqtt5.listeners.PacketListenerFactory5;
@@ -72,7 +74,7 @@ import java.util.concurrent.TimeUnit;
 
 // Between MQTT 3/4 and 5 there is duplicate code base, yes this is by design
 @java.lang.SuppressWarnings("DuplicatedBlocks")
-public class MQTT5Protocol extends Protocol {
+public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtocol {
 
   private final Logger logger;
   private final PacketFactory5 packetFactory;
@@ -117,6 +119,9 @@ public class MQTT5Protocol extends Protocol {
   @Getter
   private final MqttConfig mqttConfig;
 
+  @Getter
+  private final RemoteSubscriptionTracker remoteSubscriptionTracker;
+
   private ScheduledFuture<?> connectionTimeOut = null;
 
 
@@ -148,6 +153,7 @@ public class MQTT5Protocol extends Protocol {
     packetFactory = new PacketFactory5(this);
     closed = false;
     packetIdManager = new PacketIdManager();
+    remoteSubscriptionTracker = new RemoteSubscriptionTracker(packetIdManager);
     BitSetFactory bitsetFactory = new BitSetFactoryImpl(DefaultConstants.BITSET_BLOCK_SIZE);
     clientOutstanding = new NaturalOrderedLongList(0, bitsetFactory);
     SaslConfigDTO saslConfig = endPoint.getConfig().getSaslConfig();
@@ -173,6 +179,11 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    remoteSubscriptionTracker.close();
     try {
       if (authenticationContext != null) {
         authenticationContext.close();
@@ -185,10 +196,7 @@ public class MQTT5Protocol extends Protocol {
       if(session != null && !session.isClosed()){
         SessionManager.getInstance().close(session, false);
       }
-      if (!closed) {
-        closed = true;
-        super.close();
-      }
+      super.close();
     }
   }
 
@@ -500,10 +508,9 @@ public class MQTT5Protocol extends Protocol {
   public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
     super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics, linkProperties);
     Subscribe5 subscribe = new Subscribe5();
-    subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
+    subscribe.setMessageId(remoteSubscriptionTracker.register(List.of(resource)));
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, qos));
     writeFrame(subscribe);
-    completedConnection();
   }
 
   @Override

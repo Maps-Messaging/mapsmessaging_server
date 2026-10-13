@@ -64,7 +64,7 @@ import java.util.concurrent.TimeUnit;
 
 
 @java.lang.SuppressWarnings("DuplicatedBlocks")
-public class MQTTProtocol extends Protocol {
+public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol {
 
   private final Logger logger;
   private final PacketFactory packetFactory;
@@ -81,6 +81,9 @@ public class MQTTProtocol extends Protocol {
   private volatile boolean closed;
   @Getter
   private Session session;
+
+  @Getter
+  private final RemoteSubscriptionTracker remoteSubscriptionTracker;
 
   private ScheduledFuture<?> connectionTimeOut = null;
   private volatile boolean rejectingConnection;
@@ -101,6 +104,7 @@ public class MQTTProtocol extends Protocol {
     packetFactory = new PacketFactory(this);
     closed = false;
     packetIdManager = new PacketIdManager();
+    remoteSubscriptionTracker = new RemoteSubscriptionTracker(packetIdManager);
   }
 
   public MQTTProtocol(EndPoint endPoint, Packet packet) throws IOException {
@@ -111,16 +115,18 @@ public class MQTTProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    remoteSubscriptionTracker.close();
     if(selectorTask.isOpen()){
       selectorTask.close();
     }
     if(session != null && !session.isClosed()){
       SessionManager.getInstance().close(session, false);
     }
-    if (!closed) {
-      closed = true;
-      super.close();
-    }
+    super.close();
   }
 
   @Override
@@ -174,10 +180,9 @@ public class MQTTProtocol extends Protocol {
   public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor parser, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
     super.subscribeRemote(resource,mappedResource, qos, parser, transformer,statistics, linkProperties);
     Subscribe subscribe = new Subscribe();
-    subscribe.setMessageId(packetIdManager.nextPacketIdentifier());
+    subscribe.setMessageId(remoteSubscriptionTracker.register(List.of(resource)));
     subscribe.getSubscriptionList().add(new SubscriptionInfo(resource, qos));
     writeFrame(subscribe);
-    completedConnection();
   }
 
   @Override

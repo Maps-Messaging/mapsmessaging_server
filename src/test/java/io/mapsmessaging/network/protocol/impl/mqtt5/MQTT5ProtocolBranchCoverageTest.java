@@ -396,7 +396,11 @@ class MQTT5ProtocolBranchCoverageTest {
     assertEquals("/remote/source", subscribe.getSubscriptionList().get(0).getTopicName());
     assertEquals(QualityOfService.AT_LEAST_ONCE,
         subscribe.getSubscriptionList().get(0).getQualityOfService());
-    verify(fixture.endPoint).completedConnection();
+    verify(fixture.endPoint, never()).completedConnection();
+    var acknowledged = fixture.protocol.getRemoteSubscriptionTracker().awaitAcknowledgements();
+    assertFalse(acknowledged.isDone());
+    fixture.protocol.getRemoteSubscriptionTracker().acknowledge(subscribe.getMessageId(), new int[] {1});
+    assertDoesNotThrow(acknowledged::join);
   }
 
   @Test

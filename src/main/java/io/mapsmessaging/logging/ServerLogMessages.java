@@ -127,6 +127,8 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="End Point Connection Management">
   END_POINT_CONNECTION_STARTING(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Starting connection manager"),
+  MQTT_REMOTE_SUBSCRIPTION_REJECTED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Remote subscription rejected: topic {}, SUBACK code {}, packet ID {}"),
+  END_POINT_CONNECTION_SUBSCRIPTION_ACK_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Remote subscription acknowledgement failed: {}"),
   END_POINT_CONNECTION_SUBSCRIPTION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to establish a {} subscription in between {} and {} "),
   END_POINT_CONNECTION_CLOSE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Exception raised while closing end point"),
   END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Established a {} subscription between {} and {}"),

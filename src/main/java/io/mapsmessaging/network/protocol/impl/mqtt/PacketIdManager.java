@@ -153,6 +153,12 @@ public class PacketIdManager {
     return nextAvailablePacketIdentifier();
   }
 
+  public synchronized int nextControlPacketIdentifier() {
+    int identifier = nextPacketIdentifier();
+    outstandingPacketId.put(identifier, new PacketIdentifierMap(identifier, null, -1));
+    return identifier;
+  }
+
   public synchronized boolean hasAvailablePacketIdentifier() {
     return outstandingPacketId.size() < maxPacketIdentifier;
   }
