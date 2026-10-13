@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class PropertiesEncoder {
@@ -63,7 +64,7 @@ public class PropertiesEncoder {
     }
     if (properties.getAbsoluteExpiryTime() != null) {
       long absoluteExpiry = properties.getAbsoluteExpiryTime().getTime();
-      messageBuilder.setMeta(Map.of(ORIGINAL_ABSOLUTE_EXPIRY, Long.toString(absoluteExpiry)));
+      messageBuilder.setMeta(new LinkedHashMap<>(Map.of(ORIGINAL_ABSOLUTE_EXPIRY, Long.toString(absoluteExpiry))));
       // The engine stores remaining lifetime, while the original absolute
       // JMSExpiration must survive the AMQP -> MAPS -> AMQP translation exactly.
       long remaining = Math.max(0L, absoluteExpiry - System.currentTimeMillis());

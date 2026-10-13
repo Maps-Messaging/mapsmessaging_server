@@ -61,8 +61,8 @@ public class BaseMessageTranslator implements MessageTranslator {
         // TTL. Recomputing TTL on forward introduces millisecond drift.
         long originalExpiry = props.getCreationTime().getTime()
             + protonMessage.getHeader().getTtl().longValue();
-        messageBuilder.setMeta(Map.of(
-            PropertiesEncoder.ORIGINAL_ABSOLUTE_EXPIRY, Long.toString(originalExpiry)));
+        messageBuilder.setMeta(new LinkedHashMap<>(Map.of(
+            PropertiesEncoder.ORIGINAL_ABSOLUTE_EXPIRY, Long.toString(originalExpiry))));
       }
     }
     ApplicationMapEncoder.unpackApplicationMap(dataMap, protonMessage);
