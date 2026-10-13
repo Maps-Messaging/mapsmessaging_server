@@ -558,11 +558,29 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
         localPrefix += "/";
       }
       if (suffix.isEmpty() && local.endsWith("#") && !destinationName.endsWith("/")) {
-        localPrefix = localPrefix.replaceAll("/+$", "");
+        localPrefix = trimTrailingSeparators(localPrefix);
       }
       return (localPrefix + suffix).replaceAll("/{2,}", "/");
     }
     return destinationName;
+  }
+
+  private static String trimTrailingSeparators(String prefix) {
+    int suffixStart = prefix.length();
+    // Preserve the old regex end anchor's treatment of a final line terminator.
+    if (prefix.endsWith("\r\n")) {
+      suffixStart -= 2;
+    } else if (suffixStart > 0) {
+      suffixStart = switch (prefix.charAt(suffixStart - 1)) {
+        case '\n', '\r', '\u0085', '\u2028', '\u2029' -> suffixStart - 1;
+        default -> suffixStart;
+      };
+    }
+    int end = suffixStart;
+    while (end > 0 && prefix.charAt(end - 1) == '/') {
+      end--;
+    }
+    return end == suffixStart ? prefix : prefix.substring(0, end) + prefix.substring(suffixStart);
   }
 
   protected Session buildSession(String sessionId, int expiry) throws ExecutionException, InterruptedException, TimeoutException {

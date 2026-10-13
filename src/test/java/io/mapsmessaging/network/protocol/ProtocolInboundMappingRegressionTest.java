@@ -45,13 +45,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.security.auth.Subject;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -173,6 +176,32 @@ class ProtocolInboundMappingRegressionTest {
     protocol.setTopicMapping("remote/#", "local/#");
     protocol.setTopicMapping("remote/device", "exact");
     assertEquals("exact", protocol.parseForLookup("remote/device"));
+  }
+
+  @Test
+  void large_empty_topic_levels_map_without_excessive_backtracking() {
+    protocol.setTopicMapping("remote/#", "/".repeat(300000) + "local//#");
+    assertTimeoutPreemptively(Duration.ofSeconds(5),
+        () -> assertEquals("/local", protocol.parseForLookup("remote")));
+  }
+
+  @ParameterizedTest
+  @CsvSource(value = {
+      "local////#|local",
+      "////#|''",
+      "local#|local",
+      "local///tail////#|local/tail"
+  }, delimiter = '|')
+  void empty_suffix_trims_only_trailing_separators(String local, String expected) {
+    protocol.setTopicMapping("remote/#", local);
+    assertEquals(expected, protocol.parseForLookup("remote"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"\n", "\r", "\r\n", "\u0085", "\u2028", "\u2029"})
+  void final_line_terminator_preserves_existing_suffix_trimming(String terminator) {
+    protocol.setTopicMapping("remote/#", "local///" + terminator + "#");
+    assertEquals("local" + terminator, protocol.parseForLookup("remote"));
   }
 
   private static Message message() {
