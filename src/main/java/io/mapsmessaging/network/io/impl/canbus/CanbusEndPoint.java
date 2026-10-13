@@ -39,7 +39,8 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
   private final CanbusConfigDTO config;
   private final Object deviceLock;
 
-  private volatile CanDevice canDevice;
+  // Device ownership is guarded by deviceLock; IO uses a captured device outside that lock.
+  private CanDevice canDevice;
   private SerialPort activeSerialPort;
   private String activeSerialPortName;
 
@@ -89,7 +90,7 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
   }
 
   public InterfaceInformation getInterfaceInformation() {
-    CanDevice currentDevice = canDevice;
+    CanDevice currentDevice = getCurrentDevice();
     if (currentDevice == null) {
       throw new IllegalStateException("CAN bus device is not currently bound");
     }
@@ -169,14 +170,12 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
       throw new IOException("CanbusEndPoint is closed");
     }
 
-    CanDevice currentDevice = canDevice;
+    CanDevice currentDevice = getCurrentDevice();
     if (currentDevice != null) {
       try {
         return currentDevice.readFrame();
       } catch (EOFException e) {
-        if(currentDevice instanceof SerialCanDevice){
-          unbind(activeSerialPort);
-        }
+        unbindFailedDevice(currentDevice);
       }
     }
 
@@ -195,9 +194,11 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
       throw new IOException("CanbusEndPoint is closed");
     }
 
-    CanDevice currentDevice = canDevice;
+    CanDevice currentDevice = getCurrentDevice();
     if (currentDevice != null) {
-      currentDevice.writeFrame(frame);
+      synchronized (currentDevice) {
+        currentDevice.writeFrame(frame);
+      }
     }
   }
 
@@ -207,9 +208,11 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
       throw new IOException("CanbusEndPoint is closed");
     }
 
-    CanDevice currentDevice = canDevice;
+    CanDevice currentDevice = getCurrentDevice();
     if (currentDevice != null) {
-      currentDevice.writeFrames(frames);
+      synchronized (currentDevice) {
+        currentDevice.writeFrames(frames);
+      }
     }
   }
 
@@ -287,6 +290,32 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     IOException exception = closeDevice(deviceToClose);
     closePort(portToClose);
 
+    if (exception != null) {
+      throw exception;
+    }
+  }
+
+  private CanDevice getCurrentDevice() {
+    synchronized (deviceLock) {
+      return canDevice;
+    }
+  }
+
+  private void unbindFailedDevice(CanDevice failedDevice) throws IOException {
+    SerialPort portToClose;
+    synchronized (deviceLock) {
+      // An old read may finish after hotplug has installed a replacement.
+      if (canDevice != failedDevice || activeSerialPort == null) {
+        return;
+      }
+      portToClose = activeSerialPort;
+      canDevice = null;
+      activeSerialPort = null;
+      activeSerialPortName = null;
+      name = config.getDeviceName();
+    }
+    IOException exception = closeDevice(failedDevice);
+    closePort(portToClose);
     if (exception != null) {
       throw exception;
     }
