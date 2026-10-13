@@ -76,7 +76,7 @@ class StompSessionStateCoverageTest {
     first.setAlias("duplicate-id");
     SubscriptionContext second = new SubscriptionContext("/topic/b");
     second.setAlias("duplicate-id");
-    when(session.addSubscription(first)).thenReturn(existing);
+    when(session.addSubscription(same(first))).thenReturn(existing);
     fixture.state.setSession(session);
 
     assertSame(existing, fixture.state.createSubscription(first));
@@ -85,8 +85,9 @@ class StompSessionStateCoverageTest {
 
     assertTrue(failure.getMessage().contains("duplicate-id"));
     assertSame(existing, fixture.state.findSubscription("duplicate-id"));
-    verify(session).addSubscription(first);
-    verify(session, never()).addSubscription(second);
+    verify(session).addSubscription(same(first));
+    verify(session, never()).addSubscription(same(second));
+    verify(session, times(1)).addSubscription(any());
   }
 
   @Test
