@@ -130,6 +130,23 @@ class Mqtt5SubscribeConformanceRegressionTest {
     }
   }
 
+  @Test
+  void maximum_subscription_identifier_is_valid() throws Exception {
+    var info = parseSubscribe(65535,
+        new byte[] {0x0b, (byte) 0xff, (byte) 0xff, (byte) 0xff, 0x7f}, "温度/#", 2)
+        .getSubscriptionList().get(0);
+    assertEquals(268435455, info.getSubscriptionIdentifier().getSubscriptionIdentifier());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"$SHARE/group/+", "$shareholder/+"})
+  void similar_prefixes_are_ordinary_filters_and_allow_no_local(String filter) throws Exception {
+    var info = parseSubscribe(1, new byte[0], filter, 4).getSubscriptionList().get(0);
+    assertFalse(info.isSharedSubscription());
+    assertTrue(info.noLocalMessages());
+    assertEquals(filter, info.getTopicName());
+  }
+
   private static Subscribe5 parseSubscribe(int packetId, byte[] properties, String filter,
                                            int options) throws Exception {
     byte[] utf8 = filter.getBytes(StandardCharsets.UTF_8);
