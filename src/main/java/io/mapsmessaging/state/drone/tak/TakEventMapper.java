@@ -274,6 +274,7 @@ public class TakEventMapper {
     return sanitiseIdentifier(rawValue);
   }
 
+  @SuppressWarnings("java:S8786") // Repeated hyphens are collapsed before trailing-hyphen removal, bounding each matched run to one.
   private String sanitiseIdentifier(String value) {
     if (value == null || value.isBlank()) {
       return UNKNOWN_VALUE;

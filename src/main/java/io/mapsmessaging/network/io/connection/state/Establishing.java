@@ -48,6 +48,7 @@ public class Establishing extends State {
     super(connection);
   }
 
+  @SuppressWarnings("java:S3077") // CompletableFuture is thread-safe; volatile publishes the current acknowledgement future.
   private volatile CompletableFuture<Void> acknowledgements;
   private volatile boolean cancelled;
 

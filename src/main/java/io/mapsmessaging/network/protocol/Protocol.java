@@ -164,6 +164,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     topicNameMapping.put(resource, mappedResource);
   }
 
+  @SuppressWarnings("java:S1172") // Keep the shared protocol subscription signature; implementations use QoS and link properties.
   public void subscribeRemote(
       @NonNull @NotNull String resource,
       @NonNull @NotNull String mappedResource,
@@ -185,6 +186,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     }
   }
 
+  @SuppressWarnings("java:S1172") // Keep the shared protocol subscription signature; implementations use selector, QoS and link properties.
   public void subscribeLocal(
       @NonNull @NotNull String resource,
       @NonNull @NotNull String mappedResource,

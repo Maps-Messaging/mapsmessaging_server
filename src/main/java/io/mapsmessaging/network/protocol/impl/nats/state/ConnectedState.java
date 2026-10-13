@@ -90,6 +90,7 @@ public class ConnectedState implements State {
     return true;
   }
 
+  @SuppressWarnings("java:S2445") // Subscription snapshots must use the same SessionState monitor as subscription changes.
   private List<SubscriptionContext> resolveSubscriptionContexts(SessionState engine, String destinationName, SubscriptionContext deliveredContext) {
     synchronized (engine) {
       Map<String, List<SubscriptionContext>> subscriptions = engine.getSubscriptions();

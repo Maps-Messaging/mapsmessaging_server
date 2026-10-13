@@ -240,6 +240,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     return copy;
   }
 
+  @SuppressWarnings("java:S1168") // Null denotes no topic match; an empty list denotes a successful match without wildcards.
   private List<String> matchAndExtract(String templateTopic, String destinationTopic) {
     String[] templateTokens = templateTopic.split("/", -1);
     String[] destinationTokens = destinationTopic.split("/", -1);

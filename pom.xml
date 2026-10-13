@@ -113,7 +113,7 @@
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <sonar.java.test.binaries>target/test-classes</sonar.java.test.binaries>
 
-    <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
+    <sonar.issue.ignore.multicriteria>IgnoreVar,AmqpDateBoundary,ResourceDateContract,ResourceDateFactory</sonar.issue.ignore.multicriteria>
     <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
     <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
       **/*.java
@@ -122,6 +122,15 @@
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.language>java</sonar.language>
+
+    <!-- Qpid AMQP Properties uses Date; preserve its timestamp API boundary. -->
+    <sonar.issue.ignore.multicriteria.AmqpDateBoundary.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.AmqpDateBoundary.ruleKey>
+    <sonar.issue.ignore.multicriteria.AmqpDateBoundary.resourceKey>src/main/java/io/mapsmessaging/network/protocol/impl/amqp/proton/transformers/impl/encoders/PropertiesEncoder.java</sonar.issue.ignore.multicriteria.AmqpDateBoundary.resourceKey>
+    <!-- ResourceProperties is a public, persisted YAML contract consumed by ResourceFactory. -->
+    <sonar.issue.ignore.multicriteria.ResourceDateContract.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.ResourceDateContract.ruleKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateContract.resourceKey>src/main/java/io/mapsmessaging/engine/resources/ResourceProperties.java</sonar.issue.ignore.multicriteria.ResourceDateContract.resourceKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateFactory.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.ResourceDateFactory.ruleKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateFactory.resourceKey>src/main/java/io/mapsmessaging/engine/resources/ResourceFactory.java</sonar.issue.ignore.multicriteria.ResourceDateFactory.resourceKey>
 
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>maps-messaging</sonar.organization>

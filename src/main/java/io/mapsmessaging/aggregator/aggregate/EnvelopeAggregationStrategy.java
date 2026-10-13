@@ -120,6 +120,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
     return entry;
   }
 
+  @SuppressWarnings("java:S1168") // Null denotes absent or conflicting correlation data; an empty byte array is a distinct value.
   private static byte[] computeCommonCorrelationData(Message[] contributions) {
     byte[] candidate = null;
 
@@ -146,6 +147,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
     return candidate;
   }
 
+  @SuppressWarnings("java:S1168") // Null denotes absent common metadata and preserves the aggregate message contract.
   private static Map<String, TypedData> computeCommonDataMap(Message[] contributions) {
     Message firstMessage = firstNonNull(contributions);
     if (firstMessage == null) {

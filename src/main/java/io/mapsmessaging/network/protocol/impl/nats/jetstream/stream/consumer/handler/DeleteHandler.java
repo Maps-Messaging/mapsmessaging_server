@@ -45,6 +45,7 @@ public class DeleteHandler extends JetStreamFrameHandler {
   }
 
   @Override
+  @SuppressWarnings("java:S2445") // Coordinate consumer removal with the synchronized SessionState operations and creation handler.
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
     String replyTo = frame.getReplyTo();

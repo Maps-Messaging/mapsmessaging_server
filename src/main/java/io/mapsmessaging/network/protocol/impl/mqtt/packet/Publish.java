@@ -161,6 +161,7 @@ public class Publish extends MQTTPacket implements ServerPublishPacket {
   }
 
   @Override
+  @SuppressWarnings("javabugs:S2259") // Both constructors initialize the final payload; null input becomes an empty array.
   public Packet[] packAdvancedFrame(Packet packet) {
     packHeader(packet);
     if(payload.length < packet.available()) {

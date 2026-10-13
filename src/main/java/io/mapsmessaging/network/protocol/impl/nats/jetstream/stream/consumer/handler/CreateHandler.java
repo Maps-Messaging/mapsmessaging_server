@@ -58,6 +58,7 @@ public class CreateHandler extends JetStreamFrameHandler {
   }
 
   @Override
+  @SuppressWarnings("java:S2445") // Coordinate consumer registration with the synchronized SessionState operations and deletion handler.
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     String replyTo = frame.getReplyTo();
     if (replyTo == null || replyTo.isBlank()) {

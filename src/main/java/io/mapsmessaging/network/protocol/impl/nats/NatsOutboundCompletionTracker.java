@@ -36,6 +36,7 @@ public class NatsOutboundCompletionTracker {
   private final Set<NatsFrame> pending = ConcurrentHashMap.newKeySet();
   private boolean closing;
 
+  @SuppressWarnings("java:S2445") // Callback replacement must coordinate with NatsFrame.complete(), which locks the frame.
   public void track(NatsFrame frame) {
     boolean completeImmediately;
     synchronized (frame) {

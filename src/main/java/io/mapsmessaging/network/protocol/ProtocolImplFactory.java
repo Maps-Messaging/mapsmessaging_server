@@ -47,6 +47,7 @@ public abstract class ProtocolImplFactory implements Service {
     return null;
   }
 
+  @SuppressWarnings("java:S1172") // The endpoint-aware SPI hook is overridden by protocol factories that need endpoint context.
   public ServerPacket getInitialPacket(EndPoint endPoint) {
     return getInitialPacket();
   }

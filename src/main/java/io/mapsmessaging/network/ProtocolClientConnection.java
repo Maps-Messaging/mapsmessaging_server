@@ -148,6 +148,7 @@ public class ProtocolClientConnection implements ClientConnection {
   }
 
   @Override
+  @SuppressWarnings("javabugs:S2259") // Protocol constructors require a non-null endpoint and retain it in a final field.
   public String getAuthenticationConfig() {
     return protocol.getEndPoint().getAuthenticationConfig();
   }

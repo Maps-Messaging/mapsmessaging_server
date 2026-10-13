@@ -130,6 +130,7 @@ public class AuthDbStoreManager implements AutoCloseable {
     deleteQuietly(oldPath);
   }
 
+  @SuppressWarnings("java:S2095") // Migration closes both owning databases after copying; their maps share that lifetime.
   private void copyAllMaps(DB oldDb, DB newDb) throws IOException {
     // The migration owns both DBs and closes them after copying; their maps share that lifetime.
     Map<UUID, UserIdMap> oldUserMap = oldDb.hashMap(USER_ID_MAP_NAME, new UUIDSerializer(), new UserIdSerializer()).createOrOpen();

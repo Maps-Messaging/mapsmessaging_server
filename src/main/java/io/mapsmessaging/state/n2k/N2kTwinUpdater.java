@@ -46,6 +46,7 @@ public class N2kTwinUpdater {
     this.listenerRegistry = new N2kJsonListenerRegistry();
   }
 
+  @SuppressWarnings("java:S2201") // The supplier registers an absent twin; the following update resolves it through TwinManager.
   public void updateTwinState(int pgn, @NonNull @NotNull JsonObject packet, @NonNull @NotNull TwinUpdateContext context, @NonNull @NotNull N2KTwinConfig config, DroneInfoDTO droneInfo) {
     String twinId = buildTwinId(config);
     N2kJsonListener listener = listenerRegistry.getListener(pgn);
