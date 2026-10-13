@@ -18,7 +18,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.packet;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -145,6 +144,13 @@ class Mqtt5SubscribeConformanceRegressionTest {
     assertFalse(info.isSharedSubscription());
     assertTrue(info.noLocalMessages());
     assertEquals(filter, info.getTopicName());
+  }
+
+  // MQTT 5 section 2.2.2.1: Subscription Identifier must stay inside Properties.
+  @Test
+  void subscription_identifier_cannot_overrun_the_declared_property_length() {
+    Packet packet = new Packet(ByteBuffer.wrap(new byte[] {0, 1, 1, 0x0b, 1, 0, 1, 'a', 0}));
+    assertThrows(MalformedException.class, () -> new Subscribe5((byte) 0x82, 9, packet));
   }
 
   private static Subscribe5 parseSubscribe(int packetId, byte[] properties, String filter,

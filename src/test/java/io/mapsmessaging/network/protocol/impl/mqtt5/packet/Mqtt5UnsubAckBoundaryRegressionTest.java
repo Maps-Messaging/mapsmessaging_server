@@ -122,6 +122,13 @@ class Mqtt5UnsubAckBoundaryRegressionTest {
         () -> new UnsubAck5((byte) 0xb0, 268435455, packet));
   }
 
+  // MQTT 5 section 2.2.2.1: properties must fit their declared property section.
+  @Test
+  void reason_string_cannot_overrun_the_declared_property_length() {
+    Packet packet = new Packet(ByteBuffer.wrap(new byte[] {0, 1, 1, 0x1f, 0, 1, 'x', 0}));
+    assertThrows(MalformedException.class, () -> new UnsubAck5((byte) 0xb0, 8, packet));
+  }
+
   private static Packet pack(UnsubAck5 ack) {
     Packet packet = new Packet(512, false);
     int written = ack.packFrame(packet);
