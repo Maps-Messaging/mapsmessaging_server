@@ -28,13 +28,17 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class Mqtt5UnsubAckBoundaryRegressionTest {
 
   // MQTT-3.11.3-1 and MQTT-3.11.3-2: the single-filter response has a payload.
   @Test
   void single_filter_ack_has_mandatory_reason_payload() {
-    Packet packet = pack(new UnsubAck5(73));
+    Packet packet = new Packet(16, false);
+    new UnsubAck5(73).packFrame(packet);
+    packet.flip();
     byte[] actual = new byte[packet.available()];
     packet.get(actual);
     assertArrayEquals(new byte[] {(byte) 0xb0, 4, 0, 73, 0, 0}, actual);
@@ -88,6 +92,27 @@ class Mqtt5UnsubAckBoundaryRegressionTest {
     }
     Packet packet = new Packet(ByteBuffer.wrap(new byte[] {0, 0, 0, 0}));
     assertThrows(MalformedException.class, () -> new UnsubAck5((byte) 0xb0, 4, packet));
+  }
+
+  // MQTT 5 sections 1.5.5 and 3.11.1: VBI boundaries include the complete payload.
+  @ParameterizedTest
+  @ValueSource(ints = {124, 125, 126, 127, 128, 130, 16380, 16381, 16382, 20000})
+  void remaining_length_boundaries_round_trip_every_reason(int reasonCount) throws Exception {
+    StatusCode[] reasons = new StatusCode[reasonCount];
+    java.util.Arrays.fill(reasons, StatusCode.SUCCESS);
+    UnsubAck5 original = new UnsubAck5(257, reasons);
+    Packet packet = new Packet(reasonCount + 16, false);
+    int written = original.packFrame(packet);
+    assertEquals(packet.position(), written);
+    packet.flip();
+    byte fixed = packet.get();
+    long remaining = MQTTPacket.readVariableInt(packet);
+    assertEquals(reasonCount + 3, remaining);
+    assertEquals(remaining, packet.available());
+    UnsubAck5 restored = new UnsubAck5(fixed, remaining, packet);
+    assertEquals(257, restored.getPacketId());
+    assertEquals(original.getReasonCodes(), restored.getReasonCodes());
+    assertEquals(0, packet.available());
   }
 
   private static Packet pack(UnsubAck5 ack) {
