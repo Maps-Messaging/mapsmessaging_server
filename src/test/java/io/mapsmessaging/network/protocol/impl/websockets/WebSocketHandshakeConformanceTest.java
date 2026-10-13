@@ -106,6 +106,10 @@ class WebSocketHandshakeConformanceTest {
   }
 
   @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "RFC 6455 section 4.2.1: HTTP opening handshake lines end with CRLF",
+      source = SOURCE)
   void carriageReturnNotFollowedByLineFeedIsRejected() {
     String malformed = baseHeaders().replace(
         "Upgrade: websocket\r\n", "Upgrade: web\rsocket\r\n");
