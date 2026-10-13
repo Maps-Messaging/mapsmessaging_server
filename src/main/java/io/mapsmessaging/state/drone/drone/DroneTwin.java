@@ -126,6 +126,8 @@ public class DroneTwin extends EntityTwin {
   private volatile io.mapsmessaging.state.mavlink.sender.MavlinkTransmissionState missionTransmission;
 
   @Schema(description = "Latest STANAG task upload retry state, retained after completion.")
+  // Extension callers own the map and its values; the server only publishes/replaces the reference.
+  @SuppressWarnings("java:S3077")
   private volatile Map<String, Object> taskTransmission;
 
   @Schema(description = "Vehicle heading in degrees.", example = "182.4", nullable = true)
