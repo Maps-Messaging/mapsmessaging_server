@@ -190,4 +190,25 @@ class KpiCalculatorTest {
     assertEquals(1, snapshot.value(KpiId.CLASSIFICATION_CORRECTNESS).denominator());
     assertEquals(1.0, snapshot.value(KpiId.CLASSIFICATION_CORRECTNESS).value());
   }
+
+  @Test
+  void compute_overlap_counts_once_and_scripted_false_still_counts_in_denominator() {
+    KpiSnapshot snapshot = KpiCalculator.compute(List.of(
+        new AssetAssessment("z", true, false, HOLD, null, false),
+        new AssetAssessment("a", true, true, GO, RESOLVED, true),
+        new AssetAssessment("a", true, true, GO, RESOLVED, null),
+        new AssetAssessment("outside", false, false, GO, null, null)));
+
+    assertEquals(new KpiSnapshot.Value(2, 4), snapshot.value(KpiId.UNKNOWN_DEGRADED));
+    assertEquals(new KpiSnapshot.Value(1, 4), snapshot.value(KpiId.DEGRADED));
+    assertEquals(new KpiSnapshot.Value(1, 2), snapshot.value(KpiId.CLASSIFICATION_CORRECTNESS));
+    assertEquals(new KpiSnapshot.Value(3, 3), snapshot.value(KpiId.COVERAGE));
+    assertEquals(new KpiSnapshot.Value(2, 4), snapshot.value(KpiId.POSITION_STALE));
+    assertEquals(List.of("a", "z"), List.copyOf(snapshot.freshMtiUids()));
+    assertEquals(List.of(NO_MTI, MTI_UNKNOWN, MTI_STALE, UNRESOLVED_CLASSIFICATION),
+        List.copyOf(snapshot.unknownReasons().keySet()));
+    assertEquals(2, snapshot.unknownReasons().get(UNRESOLVED_CLASSIFICATION));
+    assertEquals(List.of(KpiId.values()), List.copyOf(snapshot.values().keySet()));
+  }
+
 }
