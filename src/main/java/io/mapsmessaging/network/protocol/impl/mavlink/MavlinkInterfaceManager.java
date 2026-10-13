@@ -123,28 +123,34 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
   }
 
   private void workThroughPackets(List<byte[]> packets, Packet packet, SocketAddress fromAddress, boolean forwardedSource) throws IOException {
-    for(byte[] data:packets) {
-      writeTlog(data);
-      int systemId = MavlinkFrameExtractor.getSystemId(data);
-      int componentId = MavlinkFrameExtractor.getComponentId(data);
-      if (systemId == 0 || componentId == 0) {
-        continue;
-      }
-      if (!isAllowedSystem(systemId)) {
-        if (!forwardedSource) {
-          forwardPacket(data);
-        }
-      }
-      else {
-        MavlinkDeviceKey key = buildKey(packet, systemId);
-        UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
-        if (state != null && state.getContext() != null) {
-          state.getContext().processRawFrame(data, fromAddress.toString());
-          if (!forwardedSource) {
-            forwardPacket(data);
-          }
-        }
-      }
+    for (byte[] data : packets) {
+      processFrame(data, packet, fromAddress, forwardedSource);
+    }
+  }
+
+  private void processFrame(byte[] data, Packet packet, SocketAddress fromAddress, boolean forwardedSource) throws IOException {
+    writeTlog(data);
+    int systemId = MavlinkFrameExtractor.getSystemId(data);
+    int componentId = MavlinkFrameExtractor.getComponentId(data);
+    if (systemId == 0 || componentId == 0) {
+      return;
+    }
+    if (!isAllowedSystem(systemId)) {
+      forwardUnlessForwarded(data, forwardedSource);
+      return;
+    }
+
+    MavlinkDeviceKey key = buildKey(packet, systemId);
+    UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
+    if (state != null && state.getContext() != null) {
+      state.getContext().processRawFrame(data, fromAddress.toString());
+      forwardUnlessForwarded(data, forwardedSource);
+    }
+  }
+
+  private void forwardUnlessForwarded(byte[] data, boolean forwardedSource) {
+    if (!forwardedSource) {
+      forwardPacket(data);
     }
   }
 
