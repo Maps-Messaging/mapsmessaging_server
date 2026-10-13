@@ -44,7 +44,6 @@ class MqttSn12WireValidationSpecificationTest {
   }
 
   @Test
-  @Disabled("Known MQTT-SN 1.2 empty WILLTOPIC parsing gap: MSG-404")
   @ProtocolRequirement(
       specification = SPEC,
       value = "Sections 5.4.7 and 6.4 Will handling: an empty WILLTOPIC is exactly two octets and deletes the Will topic and message",
@@ -58,7 +57,6 @@ class MqttSn12WireValidationSpecificationTest {
   }
 
   @Test
-  @Disabled("Known MQTT-SN 1.2 empty WILLTOPICUPD parsing gap: MSG-404")
   @ProtocolRequirement(
       specification = SPEC,
       value = "Sections 5.4.22 and 6.4 Will update: an empty WILLTOPICUPD is exactly two octets and deletes the Will topic and message",

@@ -34,10 +34,14 @@ public class WillTopicUpdate extends MQTT_SNPacket {
 
   public WillTopicUpdate(Packet packet, int length) {
     super(WILLTOPICUPD);
-    flags = packet.get();
-    byte[] topicBuffer = new byte[length - 3];
-    packet.get(topicBuffer, 0, topicBuffer.length);
-    topic = new String(topicBuffer);
+    if (length == 2) {
+      topic = null;
+    } else {
+      flags = packet.get();
+      byte[] topicBuffer = new byte[length - 3];
+      packet.get(topicBuffer, 0, topicBuffer.length);
+      topic = new String(topicBuffer);
+    }
   }
 
   public boolean isRetain() {
