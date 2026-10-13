@@ -89,30 +89,50 @@ public class ModemSatelliteMessage {
   }
 
   public String toATCommand() {
-    String encodedPayload = format.encode(payload);
-    return String.format("\"%s\",%d,%d.%d,%d,%s", name, priority, sin, min, format.getCode(), encodedPayload);
+    MessageFormat outboundFormat = requireFormat();
+    String encodedPayload = outboundFormat.encode(requirePayload());
+    return String.format("\"%s\",%d,%d.%d,%d,%s", name, priority, sin, min, outboundFormat.getCode(), encodedPayload);
   }
 
   public String toOgxCommand() {
-    byte[] extended = new byte[payload.length + 2];
+    byte[] outboundPayload = requirePayload();
+    MessageFormat outboundFormat = requireFormat();
+    byte[] extended = new byte[outboundPayload.length + 2];
     extended[0] = (byte) sin;
     extended[1] = (byte) min;
-    System.arraycopy(payload, 0, extended, 2, payload.length);
-    String encodedPayload = format.encode(extended);
-    return String.format("%d,%d,%d,%d,%d,%s", messageId, OGX_SERVICE_CLASS, lifeTime, extended.length, format.getCode(), encodedPayload);
+    System.arraycopy(outboundPayload, 0, extended, 2, outboundPayload.length);
+    String encodedPayload = outboundFormat.encode(extended);
+    return String.format("%d,%d,%d,%d,%d,%s", messageId, OGX_SERVICE_CLASS, lifeTime, extended.length, outboundFormat.getCode(), encodedPayload);
   }
 
   public XmodemData toOgxXModemCommand() {
-    byte[] extended = new byte[payload.length + 2];
+    byte[] outboundPayload = requirePayload();
+    byte[] extended = new byte[outboundPayload.length + 2];
     extended[0] = (byte) sin;
     extended[1] = (byte) min;
-    System.arraycopy(payload, 0, extended, 2, payload.length);
+    System.arraycopy(outboundPayload, 0, extended, 2, outboundPayload.length);
     long crc = Xmodem.crc32Mpeg2(extended, extended.length) & 0xffffffffL;
     XmodemData data = new XmodemData();
     data.setCrc(crc);
     data.setData(extended);
     data.command = String.format("%d,%d,%d,%d,%d,%08X", messageId, OGX_SERVICE_CLASS, lifeTime, extended.length, 0, crc);
     return data;
+  }
+
+  private byte[] requirePayload() {
+    byte[] outboundPayload = payload;
+    if (outboundPayload == null) {
+      throw new IllegalStateException("Satellite message payload is required");
+    }
+    return outboundPayload;
+  }
+
+  private MessageFormat requireFormat() {
+    MessageFormat outboundFormat = format;
+    if (outboundFormat == null) {
+      throw new IllegalStateException("Satellite message format is required");
+    }
+    return outboundFormat;
   }
 
   @Data

@@ -2,12 +2,40 @@ package io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages;
 
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ModemSatelliteMessageTest {
+
+  @ParameterizedTest
+  @ValueSource(strings = {"at", "ogx", "xmodem"})
+  void missing_payload_is_rejected_with_descriptive_state_error(String command) {
+    ModemSatelliteMessage message = new ModemSatelliteMessage();
+    message.setFormat(MessageFormat.HEX);
+    IllegalStateException error = assertThrows(IllegalStateException.class, () -> encode(message, command));
+    assertTrue(error.getMessage().contains("payload"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"at", "ogx"})
+  void missing_format_is_rejected_with_descriptive_state_error(String command) {
+    ModemSatelliteMessage message = new ModemSatelliteMessage();
+    message.setPayload(new byte[0]);
+    IllegalStateException error = assertThrows(IllegalStateException.class, () -> encode(message, command));
+    assertTrue(error.getMessage().contains("format"));
+  }
+
+  private Object encode(ModemSatelliteMessage message, String command) {
+    return switch (command) {
+      case "at" -> message.toATCommand();
+      case "ogx" -> message.toOgxCommand();
+      default -> message.toOgxXModemCommand();
+    };
+  }
 
   @Test
   void legacyHexMessageDecodesMinAndPayload() {
