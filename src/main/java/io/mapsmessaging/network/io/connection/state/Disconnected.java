@@ -84,16 +84,8 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String transformationName = properties.getLinkTransformation();
 
       if(sessionId == null) {sessionId = UUID.randomUUID().toString();}
-      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(transformationName);
-      if (transformation == null) {
-        String protocolImplName = null;
-        if(protocolImplFactory != null){
-          protocolImplName = protocolImplFactory.getName();
-        }
-        if(username != null && protocolImplName != null) {
-          transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplName, username);
-        }
-      }
+      ProtocolMessageTransformation transformation = resolveTransformation(
+          transformationName, username, protocolImplFactory, endpoint);
 
       if (transformation != null) {
         sessionId = sessionId + "?Transformation=" + transformation.getName();
@@ -207,6 +199,22 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     } catch (IOException ioException) {
       // we are closing it, not too fussed about an exception here
     }
+  }
+
+  private ProtocolMessageTransformation resolveTransformation(String name, String username,
+      ProtocolImplFactory protocolFactory, EndPoint endpoint) {
+    ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(name);
+    if (transformation == null) {
+      String protocolName = null;
+      if (protocolFactory != null) {
+        protocolName = protocolFactory.getName();
+      }
+      if (username != null && protocolName != null) {
+        transformation = TransformationManager.getInstance().getTransformation(
+            endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolName, username);
+      }
+    }
+    return transformation;
   }
 
   private Map<String, String> getTopicMap(List<LinkConfigDTO> linkConfigs){

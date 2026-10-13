@@ -87,6 +87,13 @@ class DisconnectedSessionIdTest {
   }
 
   @Test
+  void username_fallback_transformation_is_included_in_remote_identity() throws Exception {
+    List<LinkConfigDTO> links = List.of(link("pull", "/local", "/remote/#"));
+    assertEquals(ConnectionSessionId.derive("bridge?Transformation=fallback", ConnectionSessionId.namespaces(links)),
+        connect("MQTT", links, null, "bridge-user"));
+  }
+
+  @Test
   void changed_schema_flag_starts_fresh_remote_session() throws Exception {
     LinkConfigDTO original = link("push", "/local", "/remote/#");
     LinkConfigDTO withSchema = link("push", "/local", "/remote/#");
@@ -113,11 +120,16 @@ class DisconnectedSessionIdTest {
   }
 
   private String connect(String factoryName, List<LinkConfigDTO> links, String transformationName) throws Exception {
+    return connect(factoryName, links, transformationName, null);
+  }
+
+  private String connect(String factoryName, List<LinkConfigDTO> links, String transformationName, String username) throws Exception {
     ConfigurationProperties configuration = new ConfigurationProperties();
     configuration.put("url", "tcp://localhost:1883");
     configuration.put("protocol", "mqtt");
     EndPointConnectionServerConfig properties = new EndPointConnectionServerConfig(configuration);
     properties.getAuthConfig().setSessionId("bridge");
+    properties.getAuthConfig().setUsername(username);
     properties.setLinkConfigs(links);
     properties.setLinkTransformation(transformationName);
     EndPointConnection connection = mock(EndPointConnection.class);
@@ -128,10 +140,11 @@ class DisconnectedSessionIdTest {
     when(connection.getUrl()).thenReturn(new EndPointURL("tcp://localhost:1883"));
     EndPoint endpoint = mock(EndPoint.class);
     when(endpoint.getConfig()).thenReturn(properties);
+    when(endpoint.getProtocol()).thenReturn("tcp");
     ProtocolImplFactory implementation = mock(ProtocolImplFactory.class);
     when(implementation.getName()).thenReturn(factoryName);
     Protocol protocol = mock(Protocol.class);
-    when(implementation.connect(eq(endpoint), anyString(), isNull(), isNull(), anyMap()))
+    when(implementation.connect(eq(endpoint), anyString(), eq(username), isNull(), anyMap()))
         .thenReturn(protocol);
     TransformationManager transformations = mock(TransformationManager.class);
     if (transformationName != null) {
@@ -139,13 +152,18 @@ class DisconnectedSessionIdTest {
       when(transformation.getName()).thenReturn(transformationName);
       when(transformations.getTransformation(transformationName)).thenReturn(transformation);
     }
+    if (username != null) {
+      ProtocolMessageTransformation fallback = mock(ProtocolMessageTransformation.class);
+      when(fallback.getName()).thenReturn("fallback");
+      when(transformations.getTransformation("tcp", "localhost", factoryName, username)).thenReturn(fallback);
+    }
     try (MockedStatic<TransformationManager> manager = mockStatic(TransformationManager.class);
          MockedConstruction<ProtocolFactory> factories = mockConstruction(ProtocolFactory.class,
              (factory, context) -> when(factory.getBoundedProtocol()).thenReturn(implementation))) {
       manager.when(TransformationManager::getInstance).thenReturn(transformations);
       state.connected(endpoint);
       ArgumentCaptor<String> sessionId = ArgumentCaptor.forClass(String.class);
-      verify(implementation).connect(eq(endpoint), sessionId.capture(), isNull(), isNull(), anyMap());
+      verify(implementation).connect(eq(endpoint), sessionId.capture(), eq(username), isNull(), anyMap());
       verify(connection).setProtocol(protocol);
       verify(connection).scheduleState(any(Connecting.class));
       assertEquals(1, factories.constructed().size());
