@@ -136,7 +136,7 @@ public class SessionManagerPipeLine {
   public Set<String> getSessionIds() {
     Set<String> sessionIds = new HashSet<>();
     disconnectedControllers.stream()
-        .map(controller -> controller.getSessionId())
+        .map(SubscriptionController::getSessionId)
         .forEachOrdered(sessionIds::add);
     return Set.copyOf(sessionIds);
   }
@@ -331,7 +331,7 @@ public class SessionManagerPipeLine {
 
     SubscriptionController controller = persistentControllers.get(context.getId());
     if (controller == null) {
-      return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
+      return createSubscriptionController(context, sessionDetails.getSubscriptionContextMap());
     }
 
     if (!cancelPendingExpiry(controller)) {
@@ -339,7 +339,7 @@ public class SessionManagerPipeLine {
       if (current == controller) {
         finaliseController(controller, ControllerCloseReason.EXPIRED);
       }
-      return createSubscriptionController(context, sessionDetails, sessionDetails.getSubscriptionContextMap());
+      return createSubscriptionController(context, sessionDetails.getSubscriptionContextMap());
     }
 
     if (context.isResetState()) {
@@ -351,7 +351,7 @@ public class SessionManagerPipeLine {
     return controller;
   }
 
-  private SubscriptionController createSubscriptionController(SessionContext context, SessionDetails sessionDetails, Map<String, SubscriptionContext> subscriptions) {
+  private SubscriptionController createSubscriptionController(SessionContext context, Map<String, SubscriptionContext> subscriptions) {
     logger.log(ServerLogMessages.SESSION_MANAGER_NO_EXISTING, context.getId());
     SubscriptionController controller = subscriptionControllerFactory.create(context, destinationManager, subscriptions);
     if (context.isPersistentSession()) {

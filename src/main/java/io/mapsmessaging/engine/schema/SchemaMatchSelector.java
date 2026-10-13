@@ -80,7 +80,11 @@ final class SchemaMatchSelector {
       score = LOOSE_SUFFIX_SCORE;
     }
 
-    return score < 0 ? null : new Match(schemaConfig, score, schemaName == null ? Integer.MAX_VALUE : schemaName.length());
+    if (score < 0) {
+      return null;
+    }
+    int nameLength = schemaName == null ? Integer.MAX_VALUE : schemaName.length();
+    return new Match(schemaConfig, score, nameLength);
   }
 
   private static boolean qualifiedSuffixMatch(String schemaName, String name) {
