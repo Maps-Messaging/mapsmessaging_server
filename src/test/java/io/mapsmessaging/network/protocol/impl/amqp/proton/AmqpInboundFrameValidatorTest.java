@@ -103,6 +103,40 @@ class AmqpInboundFrameValidatorTest {
     });
   }
 
+  @Test
+  void accepts_ulong_open_descriptor_across_every_split_boundary() {
+    byte[] descriptor = {0, (byte) 0x80, 0, 0, 0, 0, 0, 0, 0, 0x10, 0x45};
+    byte[] wire = concat(AMQP_HEADER, frame(0, 2, 0, descriptor));
+    for (int split = 1; split < wire.length; split++) {
+      AmqpInboundFrameValidator validator = new AmqpInboundFrameValidator();
+      int boundary = split;
+      assertDoesNotThrow(() -> {
+        validator.validate(ByteBuffer.wrap(wire, 0, boundary), true);
+        validator.validate(ByteBuffer.wrap(wire, boundary, wire.length - boundary), true);
+      }, "Split boundary " + split);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("invalidOpenDescriptors")
+  void rejects_invalid_ulong_descriptor_octets_and_incomplete_open(byte[] descriptor) throws Exception {
+    AmqpInboundFrameValidator validator = new AmqpInboundFrameValidator();
+    validator.validate(ByteBuffer.wrap(AMQP_HEADER), true);
+    assertThrows(IOException.class, () -> validator.validate(ByteBuffer.wrap(frame(0, 2, 0, descriptor)), true));
+  }
+
+  private static Stream<Arguments> invalidOpenDescriptors() {
+    var descriptors = new java.util.ArrayList<Arguments>();
+    for (int index = 2; index < 10; index++) {
+      byte[] descriptor = {0, (byte) 0x80, 0, 0, 0, 0, 0, 0, 0, 0x10};
+      descriptor[index] = 1;
+      descriptors.add(Arguments.of((Object) descriptor));
+    }
+    descriptors.add(Arguments.of((Object) new byte[] {0, (byte) 0x80, 0}));
+    descriptors.add(Arguments.of((Object) new byte[] {0, 0x44}));
+    return descriptors.stream();
+  }
+
   private static Stream<Arguments> invalidFrameHeaders() {
     return Stream.of(
         Arguments.of((Object) frameWithHeader(7, 2, 0, 0, new byte[0])),

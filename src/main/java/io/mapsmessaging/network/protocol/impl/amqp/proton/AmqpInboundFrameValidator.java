@@ -112,14 +112,7 @@ public final class AmqpInboundFrameValidator {
     if (type != (saslMode ? 1 : 0)) {
       throw new IOException("Unexpected AMQP frame type " + type);
     }
-    if (!saslMode && !openReceived) {
-      if (size > PRE_OPEN_MAX_FRAME) {
-        throw new IOException("AMQP frame exceeds pre-OPEN maximum of 512 bytes");
-      }
-      if (channel != 0 || size == (long) doff * 4) {
-        throw new IOException("First AMQP frame must carry OPEN on channel zero");
-      }
-    }
+    validatePreOpenFrame(size, doff, channel);
     frameRemaining = (int) size - HEADER_LENGTH;
     bodyStart = doff * 4 - HEADER_LENGTH;
     bodyRead = 0;
@@ -128,6 +121,17 @@ public final class AmqpInboundFrameValidator {
     phase = frameRemaining == 0 ? Phase.FRAME_HEADER : Phase.FRAME_BODY;
     if (frameRemaining == 0) {
       frameHeaderRead = 0;
+    }
+  }
+
+  private void validatePreOpenFrame(long size, int doff, int channel) throws IOException {
+    if (!saslMode && !openReceived) {
+      if (size > PRE_OPEN_MAX_FRAME) {
+        throw new IOException("AMQP frame exceeds pre-OPEN maximum of 512 bytes");
+      }
+      if (channel != 0 || size == (long) doff * 4) {
+        throw new IOException("First AMQP frame must carry OPEN on channel zero");
+      }
     }
   }
 
@@ -155,32 +159,40 @@ public final class AmqpInboundFrameValidator {
       throw new IOException("First AMQP frame must contain OPEN");
     }
     if (descriptorRead == 2) {
-      int kind = value & 0xff;
-      descriptorLength = switch (kind) {
-        case 0x53 -> 3;
-        case 0x80 -> 10;
-        default -> -1;
-      };
-      if (descriptorLength == -1) {
-        throw new IOException("First AMQP frame must contain OPEN descriptor");
-      }
+      readDescriptorLength(value);
     }
     if (descriptorLength != 0 && descriptorRead == descriptorLength) {
-      if (descriptorLength == 3) {
-        if ((openDescriptor[2] & 0xff) != 0x10) {
-          throw new IOException("First AMQP performative is not OPEN");
-        }
-      } else {
-        for (int i = 2; i < 9; i++) {
-          if (openDescriptor[i] != 0) {
-            throw new IOException("First AMQP performative is not OPEN");
-          }
-        }
-        if ((openDescriptor[9] & 0xff) != 0x10) {
-          throw new IOException("First AMQP performative is not OPEN");
-        }
-      }
+      validateOpenDescriptor();
       openReceived = true;
+    }
+  }
+
+  private void readDescriptorLength(byte value) throws IOException {
+    int kind = value & 0xff;
+    descriptorLength = switch (kind) {
+      case 0x53 -> 3;
+      case 0x80 -> 10;
+      default -> -1;
+    };
+    if (descriptorLength == -1) {
+      throw new IOException("First AMQP frame must contain OPEN descriptor");
+    }
+  }
+
+  private void validateOpenDescriptor() throws IOException {
+    if (descriptorLength == 3) {
+      if ((openDescriptor[2] & 0xff) != 0x10) {
+        throw new IOException("First AMQP performative is not OPEN");
+      }
+      return;
+    }
+    for (int index = 2; index < 9; index++) {
+      if (openDescriptor[index] != 0) {
+        throw new IOException("First AMQP performative is not OPEN");
+      }
+    }
+    if ((openDescriptor[9] & 0xff) != 0x10) {
+      throw new IOException("First AMQP performative is not OPEN");
     }
   }
 
