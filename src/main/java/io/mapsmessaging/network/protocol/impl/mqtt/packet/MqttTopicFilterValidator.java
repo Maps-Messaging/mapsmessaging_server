@@ -35,6 +35,11 @@ public final class MqttTopicFilterValidator {
       throw new MalformedException("MQTT Topic Filter must not be empty");
     }
 
+    String topic = topicFilter(filter);
+    validateLevels(topic);
+  }
+
+  private static String topicFilter(String filter) throws MalformedException {
     String topic = filter;
     if (isShared(filter)) {
       int separator = filter.indexOf('/', SHARED_SUBSCRIPTION_PREFIX.length());
@@ -51,6 +56,10 @@ public final class MqttTopicFilterValidator {
       }
     }
 
+    return topic;
+  }
+
+  private static void validateLevels(String topic) throws MalformedException {
     String[] levels = topic.split("/", -1);
     for (int i = 0; i < levels.length; i++) {
       String level = levels[i];

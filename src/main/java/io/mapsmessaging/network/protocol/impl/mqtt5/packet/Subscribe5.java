@@ -69,6 +69,18 @@ public class Subscribe5 extends MQTTPacket5 {
     long consumed = (long) packet.position() - start + 2;
     subscriptionList = new ArrayList<>();
 
+    SubscriptionIdentifier subscriptionIdValue = validatedSubscriptionIdentifier();
+
+    while (consumed < remainingLen) {
+      subscriptionList.add(readSubscription(packet, subscriptionIdValue));
+      consumed = (long) packet.position() - start + 2;
+    }
+    if (subscriptionList.isEmpty() || consumed != remainingLen) {
+      throw new MalformedException("Invalid MQTT 5 SUBSCRIBE payload length");
+    }
+  }
+
+  private SubscriptionIdentifier validatedSubscriptionIdentifier() throws MalformedException {
     SubscriptionIdentifier subscriptionIdValue = null;
     for (MessageProperty property : getProperties().values()) {
       if (property.getId() == MessagePropertyFactory.SUBSCRIPTION_IDENTIFIER) {
@@ -82,29 +94,28 @@ public class Subscribe5 extends MQTTPacket5 {
       }
     }
 
-    while (consumed < remainingLen) {
-      String topicFilter = readUTF8(packet);
-      MqttTopicFilterValidator.validate(topicFilter);
-      int options = packet.get() & 0xff;
-      int qosValue = options & 0x03;
-      int retainValue = (options >> 4) & 0x03;
-      if ((options & 0xc0) != 0 || qosValue == 3 || retainValue == 3) {
-        throw new MalformedException("Invalid MQTT 5 SUBSCRIBE options [MQTT-3.8.3.1]");
-      }
-      boolean noLocal = (options & 0x04) != 0;
-      if (noLocal && MqttTopicFilterValidator.isShared(topicFilter)) {
-        throw new MalformedException("No Local forbidden on shared subscriptions [MQTT-3.8.3-4]");
-      }
-      QualityOfService qos = QualityOfService.getInstance(qosValue);
-      boolean retainAsPublish = (options & 0x08) != 0;
-      RetainHandler retainHandling = RetainHandler.getInstance(retainValue);
-      subscriptionList.add(new SubscriptionInfo(topicFilter, qos, retainHandling,
-          noLocal, retainAsPublish, subscriptionIdValue));
-      consumed = (long) packet.position() - start + 2;
+    return subscriptionIdValue;
+  }
+
+  private SubscriptionInfo readSubscription(Packet packet, SubscriptionIdentifier subscriptionIdValue)
+      throws MalformedException, EndOfBufferException {
+    String topicFilter = readUTF8(packet);
+    MqttTopicFilterValidator.validate(topicFilter);
+    int options = packet.get() & 0xff;
+    int qosValue = options & 0x03;
+    int retainValue = (options >> 4) & 0x03;
+    if ((options & 0xc0) != 0 || qosValue == 3 || retainValue == 3) {
+      throw new MalformedException("Invalid MQTT 5 SUBSCRIBE options [MQTT-3.8.3.1]");
     }
-    if (subscriptionList.isEmpty() || consumed != remainingLen) {
-      throw new MalformedException("Invalid MQTT 5 SUBSCRIBE payload length");
+    boolean noLocal = (options & 0x04) != 0;
+    if (noLocal && MqttTopicFilterValidator.isShared(topicFilter)) {
+      throw new MalformedException("No Local forbidden on shared subscriptions [MQTT-3.8.3-4]");
     }
+    QualityOfService qos = QualityOfService.getInstance(qosValue);
+    boolean retainAsPublish = (options & 0x08) != 0;
+    RetainHandler retainHandling = RetainHandler.getInstance(retainValue);
+    return new SubscriptionInfo(topicFilter, qos, retainHandling,
+        noLocal, retainAsPublish, subscriptionIdValue);
   }
 
   public int getMessageId() {

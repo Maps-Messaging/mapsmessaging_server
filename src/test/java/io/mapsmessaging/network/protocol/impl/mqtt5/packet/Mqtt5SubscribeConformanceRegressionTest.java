@@ -153,6 +153,13 @@ class Mqtt5SubscribeConformanceRegressionTest {
     assertThrows(MalformedException.class, () -> new Subscribe5((byte) 0x82, 9, packet));
   }
 
+  @Test
+  void invalid_filter_precedes_invalid_options() {
+    MalformedException failure = assertThrows(MalformedException.class,
+        () -> parseSubscribe(1, new byte[0], "topic+", 0xff));
+    assertEquals("Single-level wildcard must occupy a whole level", failure.getMessage());
+  }
+
   private static Subscribe5 parseSubscribe(int packetId, byte[] properties, String filter,
                                            int options) throws Exception {
     byte[] utf8 = filter.getBytes(StandardCharsets.UTF_8);
