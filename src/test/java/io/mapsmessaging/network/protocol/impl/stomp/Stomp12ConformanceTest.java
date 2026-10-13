@@ -588,7 +588,7 @@ class Stomp12ConformanceTest extends StompBaseTest {
   @Test
   @ProtocolRequirement(
       specification = SPEC,
-      value = "Protocol Negotiation: only exact supported versions 1.0, 1.1 and 1.2 can be selected",
+      value = "Section Protocol Negotiation: only exact supported versions 1.0, 1.1 and 1.2 can be selected",
       source = SOURCE)
   void pseudoVersionsAreNeverNegotiated() throws Exception {
     for (String version : new String[] {"1.15", "1.20", "1.3", "1", "2.0"}) {
@@ -607,7 +607,7 @@ class Stomp12ConformanceTest extends StompBaseTest {
   @Test
   @ProtocolRequirement(
       specification = SPEC,
-      value = "Protocol Negotiation: unsupported version tokens do not mask the highest exact common version",
+      value = "Section Protocol Negotiation: unsupported version tokens do not mask the highest exact common version",
       source = SOURCE)
   void unsupportedVersionTokenDoesNotOverrideAnExactMatch() throws Exception {
     try (RawStompConnection connection = new RawStompConnection(8674)) {
@@ -621,7 +621,7 @@ class Stomp12ConformanceTest extends StompBaseTest {
   @Test
   @ProtocolRequirement(
       specification = SPEC,
-      value = "SEND: an unknown named transaction MUST produce ERROR, then close the connection",
+      value = "Section SEND: an unknown named transaction MUST produce ERROR, then close the connection",
       source = SOURCE)
   void sendWithUnknownTransactionReturnsErrorAndCloses() throws Exception {
     try (RawStompConnection connection = connected()) {
@@ -641,7 +641,7 @@ class Stomp12ConformanceTest extends StompBaseTest {
   @Test
   @ProtocolRequirement(
       specification = SPEC,
-      value = "SUBSCRIBE id: two subscriptions on one connection MUST NOT share an identifier",
+      value = "Section SUBSCRIBE id: two subscriptions on one connection MUST NOT share an identifier",
       source = SOURCE)
   void duplicateSubscriptionIdReturnsErrorAndCloses() throws Exception {
     try (RawStompConnection connection = connected()) {
