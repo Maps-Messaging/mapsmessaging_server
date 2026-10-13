@@ -40,7 +40,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2HmacProtectionSession;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionPolicy;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2ProtectionSession;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.MqttSn2CryptoProviders;
@@ -263,6 +262,9 @@ public class MQTTSNInterfaceManager implements SelectorCallback {
     this.endPoint = endPoint;
     this.gatewayId = gatewayId;
     mqttSnConfig = (MqttSnConfig) endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME);
+    if( mqttSnConfig == null ) {
+      throw new IOException("MQTT-SN protocol configuration is required");
+    }
     long timeout = mqttSnConfig.getIdleSessionTimeout();
     enablePortChanges = mqttSnConfig.isEnablePortChanges();
     enableAddressChanges = mqttSnConfig.isEnableAddressChanges();
