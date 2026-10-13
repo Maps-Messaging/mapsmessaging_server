@@ -173,7 +173,7 @@ public class AuthenticationStorage {
       List<UUID> groupIds = new ArrayList<>();
       List<Group> groupEntries = entry.getGroupList();
       groupEntries.stream()
-          .map(group -> group.getId())
+          .map(Group::getId)
           .forEachOrdered(groupIds::add);
       UserDetails details = new UserDetails(
           entry,
