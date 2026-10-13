@@ -139,14 +139,13 @@ def runBlock = { String stageName ->
             echo "${stageName}: running ${selectedTests.size()} test classes"
 
             def selector = selectedTests.join(",")
-            // Start each block with fresh certificates and authentication/data state.
+            // Start each block with fresh authentication and data state.
             // Keep MAPS_DATA inside this workspace even if the agent defines it globally.
             def testDataDirectory = "${pwd()}/target/data"
             withEnv(["MAPS_DATA=${testDataDirectory}"]) {
                 sh """#!/bin/bash
                     set -euo pipefail
-                    rm -f -- my-keystore.jks my-truststore.jks root.jks ca.jks root.pem ca.pem server.pem
-                    rm -rf -- .security data target/data target/.security
+                    rm -rf -- target/data
                     mvn clean test -DMAPS_DATA='${testDataDirectory}' -Dtest='${selector}' ${mavenCommon}
                 """
             }
