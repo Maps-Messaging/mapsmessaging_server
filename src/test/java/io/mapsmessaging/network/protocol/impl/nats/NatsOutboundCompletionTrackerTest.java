@@ -23,10 +23,58 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import io.mapsmessaging.network.protocol.impl.nats.frames.CompletionHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class NatsOutboundCompletionTrackerTest {
+
+  @Test
+  void close_racing_with_registration_releases_delivery_exactly_once() throws Exception {
+    NatsOutboundCompletionTracker tracker = new NatsOutboundCompletionTracker();
+    CountDownLatch callbackReplacement = new CountDownLatch(1);
+    CountDownLatch allowRegistration = new CountDownLatch(1);
+    AtomicInteger completions = new AtomicInteger();
+    MsgFrame frame = new MsgFrame(128) {
+      @Override
+      public void setCallback(CompletionHandler callback) {
+        super.setCallback(callback);
+        callbackReplacement.countDown();
+        try {
+          if (!allowRegistration.await(5, TimeUnit.SECONDS)) {
+            throw new AssertionError("Registration was not released");
+          }
+        } catch (InterruptedException interrupted) {
+          Thread.currentThread().interrupt();
+          throw new AssertionError(interrupted);
+        }
+      }
+    };
+    frame.setCompletionHandler(completions::incrementAndGet);
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var registration = executor.submit(() -> tracker.track(frame));
+      try {
+        assertTrue(callbackReplacement.await(5, TimeUnit.SECONDS));
+        var closing = executor.submit(tracker::failOutstandingWrites);
+        try {
+          closing.get(200, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException expected) {
+          // A coordinated close waits for registration to finish.
+        }
+        allowRegistration.countDown();
+        registration.get(5, TimeUnit.SECONDS);
+        closing.get(5, TimeUnit.SECONDS);
+        assertEquals(1, completions.get());
+        assertEquals(0, tracker.pendingCount());
+      } finally {
+        allowRegistration.countDown();
+      }
+    }
+  }
 
   @Test
   void successfulWriteCompletesAndRemovesPendingFrameExactlyOnce() {

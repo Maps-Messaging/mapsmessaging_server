@@ -26,7 +26,6 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Tracks pending Core NATS network writes so closing a connection also releases
@@ -35,29 +34,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class NatsOutboundCompletionTracker {
 
   private final Set<NatsFrame> pending = ConcurrentHashMap.newKeySet();
-  private final AtomicBoolean closing = new AtomicBoolean();
+  private boolean closing;
 
   public void track(NatsFrame frame) {
+    boolean completeImmediately;
     synchronized (frame) {
       CompletionHandler callback = frame.getCallback();
       if (callback == null || (!(frame instanceof MsgFrame) && !(frame instanceof HMsgFrame))) {
         return;
       }
-      if (closing.get()) {
-        frame.complete();
-        return;
+      synchronized (this) {
+        completeImmediately = closing;
+        if (!completeImmediately) {
+          frame.setCallback(() -> {
+            pending.remove(frame);
+            callback.run();
+          });
+          pending.add(frame);
+        }
       }
-      frame.setCallback(() -> {
-        pending.remove(frame);
-        callback.run();
-      });
-      pending.add(frame);
+    }
+    if (completeImmediately) {
+      frame.complete();
     }
   }
 
   public void failOutstandingWrites() {
-    closing.set(true);
-    for (NatsFrame frame : Set.copyOf(pending)) {
+    Set<NatsFrame> outstanding;
+    synchronized (this) {
+      closing = true;
+      outstanding = Set.copyOf(pending);
+    }
+    for (NatsFrame frame : outstanding) {
       frame.complete();
     }
   }
