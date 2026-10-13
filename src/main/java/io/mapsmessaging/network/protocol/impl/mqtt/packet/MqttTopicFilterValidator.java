@@ -21,11 +21,13 @@ package io.mapsmessaging.network.protocol.impl.mqtt.packet;
 /** Validates MQTT Topic Filters before registering a broker subscription. */
 public final class MqttTopicFilterValidator {
 
+  private static final String SHARED_SUBSCRIPTION_PREFIX = "$share/";
+
   private MqttTopicFilterValidator() {
   }
 
   public static boolean isShared(String filter) {
-    return filter != null && filter.startsWith("$share/");
+    return filter != null && filter.startsWith(SHARED_SUBSCRIPTION_PREFIX);
   }
 
   public static void validate(String filter) throws MalformedException {
@@ -35,11 +37,11 @@ public final class MqttTopicFilterValidator {
 
     String topic = filter;
     if (isShared(filter)) {
-      int separator = filter.indexOf('/', "$share/".length());
+      int separator = filter.indexOf('/', SHARED_SUBSCRIPTION_PREFIX.length());
       if (separator < 0) {
         throw new MalformedException("Shared subscription needs a group and Topic Filter");
       }
-      String group = filter.substring("$share/".length(), separator);
+      String group = filter.substring(SHARED_SUBSCRIPTION_PREFIX.length(), separator);
       if (group.isEmpty() || group.indexOf('+') >= 0 || group.indexOf('#') >= 0) {
         throw new MalformedException("Invalid shared subscription group");
       }

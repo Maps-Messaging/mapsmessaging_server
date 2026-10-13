@@ -66,7 +66,7 @@ public class Subscribe5 extends MQTTPacket5 {
     }
     int start = packet.position();
     loadProperties(packet);
-    long consumed = packet.position() - start + 2;
+    long consumed = (long) packet.position() - start + 2;
     subscriptionList = new ArrayList<>();
 
     SubscriptionIdentifier subscriptionIdValue = null;
@@ -100,7 +100,7 @@ public class Subscribe5 extends MQTTPacket5 {
       RetainHandler retainHandling = RetainHandler.getInstance(retainValue);
       subscriptionList.add(new SubscriptionInfo(topicFilter, qos, retainHandling,
           noLocal, retainAsPublish, subscriptionIdValue));
-      consumed = packet.position() - start + 2;
+      consumed = (long) packet.position() - start + 2;
     }
     if (subscriptionList.isEmpty() || consumed != remainingLen) {
       throw new MalformedException("Invalid MQTT 5 SUBSCRIBE payload length");

@@ -75,7 +75,7 @@ public class UnsubAck5 extends MQTTPacket5 {
     }
     int propertiesStart = packet.position();
     loadProperties(packet);
-    long propsBytes = packet.position() - propertiesStart;
+    long propsBytes = (long) packet.position() - propertiesStart;
 
     long payloadLen = remainingLen - 2 - propsBytes; // 2 = packetId
     if (payloadLen < 0) {

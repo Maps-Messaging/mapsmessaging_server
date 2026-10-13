@@ -27,6 +27,8 @@ import lombok.Getter;
 
 public class SubscriptionInfo {
 
+  private static final String SHARED_SUBSCRIPTION_PREFIX = "$share/";
+
   @Getter
   private final String topicName;
   @Getter
@@ -56,8 +58,8 @@ public class SubscriptionInfo {
     this.subscriptionIdentifier = subscriptionIdentifier;
     if (MqttTopicFilterValidator.isShared(topicName)) {
       sharedSubscription = true;
-      int groupEnd = topicName.indexOf('/', "$share/".length());
-      sharedSubscriptionName = topicName.substring("$share/".length(), groupEnd);
+      int groupEnd = topicName.indexOf('/', SHARED_SUBSCRIPTION_PREFIX.length());
+      sharedSubscriptionName = topicName.substring(SHARED_SUBSCRIPTION_PREFIX.length(), groupEnd);
       this.topicName = topicName.substring(groupEnd + 1);
     } else {
       this.topicName = topicName;
@@ -71,7 +73,7 @@ public class SubscriptionInfo {
   }
 
   public String getTopicFilter() {
-    return sharedSubscription ? "$share/" + sharedSubscriptionName + "/" + topicName : topicName;
+    return sharedSubscription ? SHARED_SUBSCRIPTION_PREFIX + sharedSubscriptionName + "/" + topicName : topicName;
   }
 
   public int length() {

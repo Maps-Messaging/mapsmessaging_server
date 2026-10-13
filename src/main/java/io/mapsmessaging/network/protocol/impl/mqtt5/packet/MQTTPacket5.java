@@ -77,7 +77,7 @@ public abstract class MQTTPacket5 extends MQTTPacket {
     } finally {
       packet.limit(originalLimit);
     }
-    return packet.position() - start;
+    return (long) packet.position() - start;
   }
 
   public static void packProperties(Packet packet, MessageProperties props, long len) {

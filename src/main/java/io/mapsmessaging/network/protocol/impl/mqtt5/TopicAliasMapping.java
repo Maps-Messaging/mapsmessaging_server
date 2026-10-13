@@ -43,7 +43,7 @@ public class TopicAliasMapping {
     logger = LoggerFactory.getLogger(TopicAliasMapping.class);
     this.aliasName = name;
     aliasMaximum = DefaultConstants.SERVER_RECEIVE_MAXIMUM;
-    registry = new TopicAliasRegistry(Math.max(1, Math.min(65535, aliasMaximum)));
+    registry = new TopicAliasRegistry(Math.clamp(aliasMaximum, 1, 65535));
   }
 
   public synchronized int size() {
@@ -98,7 +98,7 @@ public class TopicAliasMapping {
     if (requested >= 0 && requested <= DefaultConstants.SERVER_TOPIC_ALIAS_MAX) {
       aliasMaximum = requested;
       // Never preserve mappings when the negotiated connection limit changes.
-      registry = new TopicAliasRegistry(Math.max(1, Math.min(65535, requested)));
+      registry = new TopicAliasRegistry(Math.clamp(requested, 1, 65535));
       originalProperties.clear();
       logger.log(ServerLogMessages.MQTT5_TOPIC_ALIAS_SET_MAXIMUM, aliasName, requested);
     }
