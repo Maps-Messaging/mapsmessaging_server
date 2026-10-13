@@ -49,29 +49,36 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
 
   @Override
   public @Nullable SubscriptionContext getContext() {
-    if (!contextList.isEmpty()) {
-      return contextList.get(0);
+    synchronized (contextList) {
+      return contextList.isEmpty() ? null : contextList.get(0);
     }
-    return null;
   }
 
   public abstract void delete() throws IOException;
 
   public void addContext(SubscriptionContext context) {
-    contextList.add(context);
+    synchronized (contextList) {
+      contextList.add(context);
+    }
   }
 
   @Override
   public List<SubscriptionContext> getContexts() {
-    return new ArrayList<>(contextList);
+    synchronized (contextList) {
+      return new ArrayList<>(contextList);
+    }
   }
 
   public boolean isContextEmpty(){
-    return contextList.isEmpty();
+    synchronized (contextList) {
+      return contextList.isEmpty();
+    }
   }
 
   public void removeContext(SubscriptionContext context) {
-    contextList.remove(context);
+    synchronized (contextList) {
+      contextList.remove(context);
+    }
   }
 
   public void hibernate() {
@@ -87,7 +94,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("Context:");
-    for (SubscriptionContext context : contextList) {
+    for (SubscriptionContext context : getContexts()) {
       sb.append(context.toString()).append(",");
     }
     return sb.toString();
