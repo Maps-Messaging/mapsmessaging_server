@@ -29,7 +29,7 @@ public record HomeRequest(
 
     public HomeRequest {
         if (!useCurrentPosition) {
-            position = Objects.requireNonNull(position, "position must not be null when useCurrentPosition is false");
+            Objects.requireNonNull(position, "position must not be null when useCurrentPosition is false");
         }
     }
 

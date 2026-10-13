@@ -148,7 +148,8 @@ public class EventPublisher implements ClientConnection, MessageListener {
 
   private Destination locateDestination(String name) throws IOException{
     try {
-      return destination = session.findDestination(name, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
+      destination = session.findDestination(name, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
+      return destination;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IOException(e);
@@ -174,7 +175,7 @@ public class EventPublisher implements ClientConnection, MessageListener {
 
   @Override
   public void sendKeepAlive() {
-
+    // The publisher uses an internal session and has no network keep-alive to send.
   }
 
   @Override
@@ -204,6 +205,6 @@ public class EventPublisher implements ClientConnection, MessageListener {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-
+    // The publisher only sends events; inbound messages require no handling.
   }
 }

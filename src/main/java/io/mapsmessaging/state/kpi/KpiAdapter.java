@@ -241,6 +241,7 @@ public class KpiAdapter implements StateMessageAdapter, ClientConnection, Messag
 
   @Override
   public void sendKeepAlive() {
+    // The adapter uses an internal session and has no network keep-alive to send.
   }
 
   @Override

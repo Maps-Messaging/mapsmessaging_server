@@ -309,7 +309,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       droneTwin.getAttributes().put("cotClassification", knownSource.getCotClassification());
       classificationOverrideCount.increment();
     }
-    droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));
+    droneTwin.setDescriptionString(resolveDescription(env, knownSource));
     droneTwin.setCallSign(resolveCallSign(twinId, knownSource));
     droneTwin.setDisplayName(resolveDisplayName(twinId, knownSource));
     droneTwin.setSystemId(knownSource.getSystemId());
@@ -367,7 +367,6 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   }
 
   private String resolveDescription(
-      String twinId,
       ProcessedFrame env,
       MavlinkKnownSourceDTO knownSource
   ) {

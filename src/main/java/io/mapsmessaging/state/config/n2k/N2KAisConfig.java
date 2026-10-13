@@ -52,34 +52,26 @@ public class N2KAisConfig extends N2KAisConfigDTO {
 
   public boolean update(N2KAisConfigDTO newConfig) {
     boolean hasChanged = false;
-    if (pgn129039 == null && newConfig.getPgn129039() != null) {
-      pgn129039 = newConfig.getPgn129039();
-      hasChanged = true;
-    } else if (pgn129039 != null && !pgn129039.equals(newConfig.getPgn129039())) {
+    if ((pgn129039 == null && newConfig.getPgn129039() != null)
+        || (pgn129039 != null && !pgn129039.equals(newConfig.getPgn129039()))) {
       pgn129039 = newConfig.getPgn129039();
       hasChanged = true;
     }
 
-    if (pgn129040 == null && newConfig.getPgn129040() != null) {
-      pgn129040 = newConfig.getPgn129040();
-      hasChanged = true;
-    } else if (pgn129040 != null && !pgn129040.equals(newConfig.getPgn129040())) {
+    if ((pgn129040 == null && newConfig.getPgn129040() != null)
+        || (pgn129040 != null && !pgn129040.equals(newConfig.getPgn129040()))) {
       pgn129040 = newConfig.getPgn129040();
       hasChanged = true;
     }
 
-    if (pgn129809 == null && newConfig.getPgn129809() != null) {
-      pgn129809 = newConfig.getPgn129809();
-      hasChanged = true;
-    } else if (pgn129809 != null && !pgn129809.equals(newConfig.getPgn129809())) {
+    if ((pgn129809 == null && newConfig.getPgn129809() != null)
+        || (pgn129809 != null && !pgn129809.equals(newConfig.getPgn129809()))) {
       pgn129809 = newConfig.getPgn129809();
       hasChanged = true;
     }
 
-    if (pgn129810 == null && newConfig.getPgn129810() != null) {
-      pgn129810 = newConfig.getPgn129810();
-      hasChanged = true;
-    } else if (pgn129810 != null && !pgn129810.equals(newConfig.getPgn129810())) {
+    if ((pgn129810 == null && newConfig.getPgn129810() != null)
+        || (pgn129810 != null && !pgn129810.equals(newConfig.getPgn129810()))) {
       pgn129810 = newConfig.getPgn129810();
       hasChanged = true;
     }

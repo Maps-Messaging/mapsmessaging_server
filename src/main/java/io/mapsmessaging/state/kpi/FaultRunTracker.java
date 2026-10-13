@@ -42,6 +42,8 @@ import java.util.*;
  */
 final class FaultRunTracker {
 
+  private static final String NO_EFFECT = "NO_EFFECT";
+
   static final String ALL = "ALL";
 
   enum Stage {
@@ -177,7 +179,7 @@ final class FaultRunTracker {
         }
       }
       if (now.toEpochMilli() - run.injectedAt > runTimeout.toMillis()) {
-        close(run, run.degradedAt == null && run.detectedAt == null ? "NO_EFFECT" : "NOT_RESTORED", now);
+        close(run, run.degradedAt == null && run.detectedAt == null ? NO_EFFECT : "NOT_RESTORED", now);
         iterator.remove();
         closed.add(run);
       }
@@ -217,7 +219,7 @@ final class FaultRunTracker {
       return null;
     }
     open.remove(run.runId);
-    close(run, run.degradedAt == null && run.detectedAt == null ? "NO_EFFECT" : "ENDED", now);
+    close(run, run.degradedAt == null && run.detectedAt == null ? NO_EFFECT : "ENDED", now);
     return run;
   }
 
@@ -238,11 +240,11 @@ final class FaultRunTracker {
         if ("NOT_RESTORED".equals(outcome)) {
           typeStats.notRestored++;
         }
-        if ("NO_EFFECT".equals(outcome)) {
+        if (NO_EFFECT.equals(outcome)) {
           typeStats.noEffect++;
         }
       }
-      if ("NO_EFFECT".equals(outcome)) {
+      if (NO_EFFECT.equals(outcome)) {
         continue;
       }
       record(typeStats, Stage.DETECTION, run, run.detectedAt, true);

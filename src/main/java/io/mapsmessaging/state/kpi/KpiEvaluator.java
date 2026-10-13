@@ -44,6 +44,12 @@ import java.util.function.Supplier;
  */
 final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
 
+  private static final String RUN_ID = "run_id";
+  private static final String CONTROL_REJECTED = "control_rejected";
+  private static final String REASON = "reason";
+  private static final String BASELINE = "baseline";
+  private static final String TRIGGER = "trigger";
+
   /** What the evaluator needs to know about a twin. */
   record TwinInfo(String uid, TwinType twinType, Instant lastSeenAt) {
   }
@@ -108,7 +114,7 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
       fields.put("restored_open_runs", state.openRuns == null ? 0 : state.openRuns.size());
       if (rebuilds.start(CacheRebuildTracker.Trigger.RESTART, now, state.freshMti)) {
         runs.onMachineFlag("cache_rebuild:RESTART", now);
-        eventLog.log(now, "cache_rebuild_start", Map.of("trigger", "RESTART", "baseline", state.freshMti.size()));
+        eventLog.log(now, "cache_rebuild_start", Map.of(TRIGGER, "RESTART", BASELINE, state.freshMti.size()));
       }
     }
     eventLog.log(now, "kpi_start", fields);
@@ -131,7 +137,7 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
     }
     for (String removed : roster.expire(now)) {
       ClassificationRegistry.forget(removed);
-      eventLog.log(now, "roster_removed", Map.of("uid", removed, "reason", "admin_timeout"));
+      eventLog.log(now, "roster_removed", Map.of("uid", removed, REASON, "admin_timeout"));
     }
 
     List<AssetAssessment> assets = new ArrayList<>();
@@ -170,11 +176,11 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
     }
     for (CacheRebuildTracker.RebuildEvent rebuild : rebuilds.update(lastFreshMti, now)) {
       Map<String, Object> fields = new LinkedHashMap<>();
-      fields.put("trigger", rebuild.trigger().name());
+      fields.put(TRIGGER, rebuild.trigger().name());
       fields.put("target", rebuild.target().name());
       fields.put("reached", rebuild.reached());
       fields.put("seconds", rebuild.duration().toMillis() / 1000.0);
-      fields.put("baseline", rebuild.baselineSize());
+      fields.put(BASELINE, rebuild.baselineSize());
       eventLog.log(now, "cache_rebuild", fields);
     }
 
@@ -237,8 +243,16 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
       anyRed = true;
       allGreen = false;
     }
-    usableSince = anyRed ? null : (usableAt == null ? now : usableAt);
-    fullySince = allGreen ? (greenAt == null ? now : greenAt) : null;
+    if (anyRed) {
+      usableSince = null;
+    } else {
+      usableSince = usableAt == null ? now : usableAt;
+    }
+    if (allGreen) {
+      fullySince = greenAt == null ? now : greenAt;
+    } else {
+      fullySince = null;
+    }
     if (worst != overall) {
       Band previous = overall;
       overall = worst;
@@ -284,11 +298,11 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
     }
     String event = message == null ? null : text(message, "event");
     if (event == null) {
-      eventLog.log(now, "control_rejected", Map.of("reason", "not a JSON object with an event"));
+      eventLog.log(now, CONTROL_REJECTED, Map.of(REASON, "not a JSON object with an event"));
       return;
     }
     Instant at = timestamp(message, now);
-    String runId = text(message, "run_id");
+    String runId = text(message, RUN_ID);
     switch (event.toLowerCase(Locale.ROOT)) {
       case "inject" -> inject(message, runId, at, now);
       case "mitigation" -> mark(runId, FaultRunTracker.Stage.MITIGATION, at, "mitigation");
@@ -303,7 +317,7 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
         String uid = text(message, "uid");
         if (uid != null && roster.deactivate(uid)) {
           ClassificationRegistry.forget(uid);
-          eventLog.log(now, "roster_removed", Map.of("uid", uid, "reason", "deactivated"));
+          eventLog.log(now, "roster_removed", Map.of("uid", uid, REASON, "deactivated"));
         }
       }
       case "end_mission" -> {
@@ -312,7 +326,7 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
         eventLog.log(now, "end_mission", Map.of("removed", removed.size()));
       }
       case "note" -> eventLog.log(at, "note", Map.of("text", String.valueOf(text(message, "text"))));
-      default -> eventLog.log(now, "control_rejected", Map.of("reason", "unknown event " + event));
+      default -> eventLog.log(now, CONTROL_REJECTED, Map.of(REASON, "unknown event " + event));
     }
     save(now);
   }
@@ -320,7 +334,7 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
   private void inject(JsonObject message, String runId, Instant at, Instant now) {
     String failureType = text(message, "failure_type");
     if (failureType == null) {
-      eventLog.log(now, "control_rejected", Map.of("reason", "inject without failure_type"));
+      eventLog.log(now, CONTROL_REJECTED, Map.of(REASON, "inject without failure_type"));
       return;
     }
     failureType = failureType.toUpperCase(Locale.ROOT);
@@ -328,17 +342,17 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
     Map<KpiId, Band> rawBands = new EnumMap<>(KpiId.class);
     trackers.forEach((kpi, tracker) -> rawBands.put(kpi, tracker.getRaw()));
     runs.inject(id, failureType, at, rawBands, overall);
-    eventLog.log(at, "inject", Map.of("run_id", id, "failure_type", failureType, "baseline_overall", overall.name()));
+    eventLog.log(at, "inject", Map.of(RUN_ID, id, "failure_type", failureType, "baseline_overall", overall.name()));
 
     boolean clearCache = message.has("clear_mti_cache") && message.get("clear_mti_cache").getAsBoolean();
     if (clearCache) {
       if (!config.isFaultInjection()) {
-        eventLog.log(now, "control_rejected", Map.of("reason", "clear_mti_cache needs faultInjection: true"));
+        eventLog.log(now, CONTROL_REJECTED, Map.of(REASON, "clear_mti_cache needs faultInjection: true"));
       } else if (sources.clearMtiCache().getAsBoolean()) {
-        eventLog.log(now, "mti_cache_cleared", Map.of("run_id", id));
+        eventLog.log(now, "mti_cache_cleared", Map.of(RUN_ID, id));
         if (rebuilds.start(CacheRebuildTracker.Trigger.CACHE_LOSS, now, lastFreshMti)) {
           runs.onMachineFlag("cache_rebuild:CACHE_LOSS", now);
-          eventLog.log(now, "cache_rebuild_start", Map.of("trigger", "CACHE_LOSS", "baseline", lastFreshMti.size()));
+          eventLog.log(now, "cache_rebuild_start", Map.of(TRIGGER, "CACHE_LOSS", BASELINE, lastFreshMti.size()));
         }
       }
     }
@@ -346,9 +360,9 @@ final class KpiEvaluator implements MtiStatusRegistry.StatusListener {
 
   private void mark(String runId, FaultRunTracker.Stage stage, Instant at, String type) {
     if (runs.mark(runId, stage, at)) {
-      eventLog.log(at, type, Map.of("run_id", String.valueOf(runId)));
+      eventLog.log(at, type, Map.of(RUN_ID, String.valueOf(runId)));
     } else {
-      eventLog.log(at, "control_rejected", Map.of("reason", type + " without an open run"));
+      eventLog.log(at, CONTROL_REJECTED, Map.of(REASON, type + " without an open run"));
     }
   }
 

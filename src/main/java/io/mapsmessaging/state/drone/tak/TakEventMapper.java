@@ -69,7 +69,7 @@ public class TakEventMapper {
     }
 
     Instant eventTime = resolveEventTime(twin, context);
-    Instant staleTime = eventTime.plus(resolveStaleSeconds(twin), ChronoUnit.SECONDS);
+    Instant staleTime = eventTime.plus(resolveStaleSeconds(), ChronoUnit.SECONDS);
 
     GeoPosition geoPosition = twin.getGeoPosition();
     FixInfo fixInfo = twin.getFixInfo();
@@ -606,7 +606,7 @@ public class TakEventMapper {
     return Instant.now();
   }
 
-  private long resolveStaleSeconds(EntityTwin twin) {
+  private long resolveStaleSeconds() {
     return DEFAULT_STALE_SECONDS;
   }
 

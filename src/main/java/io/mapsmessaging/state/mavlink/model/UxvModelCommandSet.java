@@ -30,8 +30,8 @@ public record UxvModelCommandSet(
         List<MavlinkMessage> messages) {
 
     public UxvModelCommandSet {
-        operation = Objects.requireNonNull(operation, "operation must not be null");
-        modelName = Objects.requireNonNull(modelName, "modelName must not be null");
+        Objects.requireNonNull(operation, "operation must not be null");
+        Objects.requireNonNull(modelName, "modelName must not be null");
         messages = List.copyOf(Objects.requireNonNull(messages, "messages must not be null"));
     }
 

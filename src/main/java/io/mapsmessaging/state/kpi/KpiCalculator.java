@@ -160,7 +160,7 @@ final class KpiCalculator {
       }
       if (asset.classifiedAsExpected() != null) {
         scripted++;
-        if (asset.classifiedAsExpected()) {
+        if (asset.classifiedAsExpected().booleanValue()) {
           asExpected++;
         }
       }
