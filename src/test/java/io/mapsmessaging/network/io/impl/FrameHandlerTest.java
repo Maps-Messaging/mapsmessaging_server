@@ -52,6 +52,51 @@ import static org.mockito.Mockito.when;
 class FrameHandlerTest {
 
   @Test
+  void rejected_connect_discards_coalesced_and_later_input_until_connack_is_written() throws Exception {
+    // MQTT-3.1.2-2: an invalid version must never establish a session or bypass CONNACK.
+    WriteFixture fixture = new WriteFixture(16, new AlternatingBlockedWriter(1));
+    EndPoint endpoint = fixture.callback.getEndPoint();
+    var config = new io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO();
+    config.setEndPointConfig(new io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO("tcp"));
+    config.setProtocolConfigs(List.of(new io.mapsmessaging.config.protocol.impl.MqttConfig()));
+    when(endpoint.getConfig()).thenReturn(config);
+    when(endpoint.getName()).thenReturn("rejected-connect");
+    when(endpoint.getJMXTypePath()).thenReturn(List.of("Test=rejected-connect"));
+    var protocol = new io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol(endpoint);
+    var selector = protocol.getClass().getDeclaredField("selectorTask");
+    selector.setAccessible(true);
+    selector.set(protocol, fixture.selectorTask);
+    doAnswer(invocation -> {
+      fixture.writeTask.push(invocation.getArgument(0));
+      return null;
+    }).when(fixture.selectorTask).push(any(ServerPacket.class));
+    doAnswer(invocation -> {
+      Assertions.assertArrayEquals(new byte[] {0x20, 2, 0, 1}, fixture.output.toByteArray());
+      return null;
+    }).when(endpoint).close();
+    byte[] connect = io.mapsmessaging.network.protocol.conformance.common.MqttWireClient
+        .connectWithProtocolLevel("rejected", 6);
+    ByteBuffer coalesced = ByteBuffer.allocate(connect.length + 2);
+    coalesced.put(connect).put((byte) 0).put((byte) 0).flip();
+
+    try (var sessions = org.mockito.Mockito.mockStatic(io.mapsmessaging.api.SessionManager.class)) {
+      sessions.when(io.mapsmessaging.api.SessionManager::getInstance)
+          .thenThrow(new AssertionError("A rejected connection must not create a session"));
+      protocol.processPacket(new Packet(coalesced));
+      verify(endpoint, org.mockito.Mockito.never()).close();
+      byte[] valid = io.mapsmessaging.network.protocol.conformance.common.MqttWireClient
+          .connectWithProtocolLevel("later-connect", 4);
+      protocol.processPacket(new Packet(ByteBuffer.wrap(valid)));
+      sessions.verifyNoInteractions();
+      Assertions.assertNull(protocol.getSession());
+      fixture.runNextCallback();
+      verify(endpoint, org.mockito.Mockito.never()).close();
+      fixture.runUntilIdle();
+      verify(endpoint).close();
+    }
+  }
+
+  @Test
   void rejected_mqtt_connack_closes_only_after_all_wire_bytes_are_written() throws Exception {
     // MQTT-3.1.2-2, including non-blocking zero and partial writes.
     var frame = new io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck();
