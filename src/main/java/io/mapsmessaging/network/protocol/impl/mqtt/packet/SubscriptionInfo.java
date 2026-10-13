@@ -70,8 +70,12 @@ public class SubscriptionInfo {
     return noLocal;
   }
 
+  public String getTopicFilter() {
+    return sharedSubscription ? "$share/" + sharedSubscriptionName + "/" + topicName : topicName;
+  }
+
   public int length() {
-    return topicName.length() + 1; // Include QoS
+    return getTopicFilter().getBytes(java.nio.charset.StandardCharsets.UTF_8).length + 1;
   }
 
   @Override

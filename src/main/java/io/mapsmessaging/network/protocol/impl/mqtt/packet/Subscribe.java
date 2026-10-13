@@ -94,7 +94,7 @@ public class Subscribe extends MQTTPacket {
     writeVariableInt(packet, length);
     writeShort(packet, messageId);
     for (SubscriptionInfo info : subscriptionList) {
-      writeUTF8(packet, info.getTopicName());
+      writeUTF8(packet, info.getTopicFilter());
       packet.put((byte) info.getQualityOfService().getLevel());
     }
 

@@ -131,12 +131,12 @@ public class Subscribe5 extends MQTTPacket5 {
   public int packFrame(Packet packet) {
     int remainingLength = 2; // Packet Identifier
 
-    // Properties (none for now): must encode a VarInt length of 0
-    remainingLength += 1;
+    int propertiesLength = propertiesSize();
+    remainingLength += lengthSize(propertiesLength) + propertiesLength;
 
     // Payload: each subscription = UTF-8 topic (2 + bytes) + 1 options byte
     for (SubscriptionInfo info : subscriptionList) {
-      int utf8Len = info.getTopicName().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+      int utf8Len = info.getTopicFilter().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
       remainingLength += 2 + utf8Len + 1;
     }
 
@@ -146,11 +146,11 @@ public class Subscribe5 extends MQTTPacket5 {
 
     // Variable header
     writeShort(packet, messageId);
-    writeVariableInt(packet, 0); // properties length = 0
+    packProperties(packet, propertiesLength);
 
     // Payload
     for (SubscriptionInfo info : subscriptionList) {
-      writeUTF8(packet, info.getTopicName());
+      writeUTF8(packet, info.getTopicFilter());
 
       int qos = info.getQualityOfService().getLevel() & 0b11;
       int noLocal = info.noLocalMessages() ? 0b100 : 0;
