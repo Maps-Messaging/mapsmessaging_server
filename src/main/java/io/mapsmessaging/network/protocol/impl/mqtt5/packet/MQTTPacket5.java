@@ -54,21 +54,30 @@ public abstract class MQTTPacket5 extends MQTTPacket {
   public long loadProperties(Packet packet, MessageProperties props)
       throws MalformedException, EndOfBufferException {
 
+    int start = packet.position();
     long values = MQTTPacket.readVariableInt(packet);
-    if (values != 0) {
-      long end = packet.position() + values;
-      while (packet.position() < end) {
+    if (values > packet.available()) {
+      throw new EndOfBufferException("MQTT 5 Properties are incomplete");
+    }
+    int originalLimit = packet.limit();
+    int propertyEnd = packet.position() + (int) values;
+    packet.limit(propertyEnd);
+    try {
+      while (packet.position() < propertyEnd) {
         byte id = packet.get();
         MessageProperty property = MessagePropertyFactory.getInstance().find(id);
-        if (property != null) {
-          property.load(packet);
-          props.add(property);
-        } else {
-          throw new MalformedException("Unknown connect payload " + id);
+        if (property == null) {
+          throw new MalformedException("Unknown MQTT 5 property " + id);
         }
+        property.load(packet);
+        props.add(property);
       }
+    } catch (java.nio.BufferUnderflowException | EndOfBufferException incomplete) {
+      throw new MalformedException("MQTT 5 property exceeds its declared section", incomplete);
+    } finally {
+      packet.limit(originalLimit);
     }
-    return values + 1;
+    return packet.position() - start;
   }
 
   public static void packProperties(Packet packet, MessageProperties props, long len) {
