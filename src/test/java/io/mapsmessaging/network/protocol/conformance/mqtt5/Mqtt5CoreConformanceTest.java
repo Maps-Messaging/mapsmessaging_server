@@ -10,7 +10,6 @@ import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.test.BaseTestConfig;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -77,7 +76,6 @@ class Mqtt5CoreConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-386")
   @ProtocolRequirement(specification = "MQTT-5.0", value = "Section 3.11 UNSUBACK", source = ProtocolRequirement.MQTT_5_SOURCE)
   void unsubscribeReturnsSuccessfulUnsubAck() throws Exception {
     int subscribeId = 151;
