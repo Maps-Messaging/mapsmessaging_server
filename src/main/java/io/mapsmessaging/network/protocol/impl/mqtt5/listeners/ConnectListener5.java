@@ -49,15 +49,7 @@ public class ConnectListener5 extends PacketListener5 {
 
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session shouldBeNull, EndPoint endPoint, Protocol protocol) throws MalformedException {
-    if (shouldBeNull != null) {
-      logger.log(ServerLogMessages.MQTT5_SECOND_CONNECT);
-      try {
-        protocol.close();
-      } catch (IOException e) {
-        // Ignore this size we know its an issue and the end point may already be closed
-      }
-      throw new MalformedException("[MQTT-3.1.0-2]");
-    }
+    rejectSecondConnect(shouldBeNull, protocol);
     Connect5 connect = (Connect5) mqttPacket;
     ConnAck5 connAck = new ConnAck5();
     AuthenticationMethod requestedMethod = (AuthenticationMethod) connect.getProperties()
@@ -69,14 +61,7 @@ public class ConnectListener5 extends PacketListener5 {
       // MQTT-4.12.0-1: an unsupported enhanced authentication method cannot
       // fall through into ordinary username/password session establishment.
       connAck.setStatusCode(StatusCode.BAD_AUTHENTICATION_METHOD);
-      ((MQTT5Protocol) protocol).setClosing(true);
-      connAck.setCallback(() -> {
-        try {
-          endPoint.close();
-        } catch (IOException e) {
-          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
-        }
-      });
+      closeAfterAcknowledgement((MQTT5Protocol) protocol, connAck, endPoint);
       return connAck;
     }
 
@@ -101,20 +86,36 @@ public class ConnectListener5 extends PacketListener5 {
     }
 
     if (connAck.getStatusCode() != StatusCode.SUCCESS) {
-      ((MQTT5Protocol) protocol).setClosing(true);
-      connAck.setCallback(() -> {
-        try {
-          endPoint.close();
-        } catch (IOException e) {
-          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
-        }
-      });
+      closeAfterAcknowledgement((MQTT5Protocol) protocol, connAck, endPoint);
       logger.log(ServerLogMessages.MQTT5_CONNECTION_FAILED, connAck.toString());
     }
     if (sendResponseInfo) {
       connAck.add(new ResponseInformation(connAck.getStatusCode().getDescription()));
     }
     return connAck;
+  }
+
+  private void rejectSecondConnect(Session session, Protocol protocol) throws MalformedException {
+    if (session != null) {
+      logger.log(ServerLogMessages.MQTT5_SECOND_CONNECT);
+      try {
+        protocol.close();
+      } catch (IOException e) {
+        // Ignore this size we know its an issue and the end point may already be closed
+      }
+      throw new MalformedException("[MQTT-3.1.0-2]");
+    }
+  }
+
+  private void closeAfterAcknowledgement(MQTT5Protocol protocol, ConnAck5 connAck, EndPoint endPoint) {
+    protocol.setClosing(true);
+    connAck.setCallback(() -> {
+      try {
+        endPoint.close();
+      } catch (IOException e) {
+        logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
+      }
+    });
   }
 
   private void handleSessionCreation(Protocol protocol, String sessionId, Connect5 connect, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint)
