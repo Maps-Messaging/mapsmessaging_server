@@ -162,34 +162,41 @@ public class QuantileStatistics extends AdvancedStatistics {
 
     private void adjust(int i) {
       double d = np[i] - n[i];
-      int s = (d >= 1.0) ? 1 : (d <= -1.0 ? -1 : 0);
+      int s;
+      if (d >= 1.0) {
+        s = 1;
+      } else if (d <= -1.0) {
+        s = -1;
+      } else {
+        s = 0;
+      }
       if (s == 0) return;
 
       // Try parabolic interpolation
-      double n_im1 = n[i - 1];
-      double n_i = n[i];
-      double n_ip1 = n[i + 1];
-      double q_im1 = q[i - 1];
-      double q_i = q[i];
-      double q_ip1 = q[i + 1];
+      double previousPosition = n[i - 1];
+      double currentPosition = n[i];
+      double nextPosition = n[i + 1];
+      double previousQuantile = q[i - 1];
+      double currentQuantile = q[i];
+      double nextQuantile = q[i + 1];
 
-      double denom = (n_ip1 - n_im1);
-      double qiParabolic = q_i;
+      double denom = (nextPosition - previousPosition);
+      double qiParabolic = currentQuantile;
       boolean parabolicOk = false;
 
-      if (denom != 0.0 && (n[i + s] - n_i) > 0.0 && (n_i - n[i - s]) > 0.0) {
-        qiParabolic = q_i + s * (
-            ((n_i - n_im1 + s) * (q_ip1 - q_i) / (n_ip1 - n_i)) +
-                ((n_ip1 - n_i - s) * (q_i - q_im1) / (n_i - n_im1))
+      if (denom != 0.0 && (n[i + s] - currentPosition) > 0.0 && (currentPosition - n[i - s]) > 0.0) {
+        qiParabolic = currentQuantile + s * (
+            ((currentPosition - previousPosition + s) * (nextQuantile - currentQuantile) / (nextPosition - currentPosition)) +
+                ((nextPosition - currentPosition - s) * (currentQuantile - previousQuantile) / (currentPosition - previousPosition))
         ) / denom;
-        parabolicOk = (qiParabolic > q_im1 && qiParabolic < q_ip1);
+        parabolicOk = (qiParabolic > previousQuantile && qiParabolic < nextQuantile);
       }
 
       // Accept parabolic if within neighbors; else do linear step toward neighbor
       if (parabolicOk) {
         q[i] = qiParabolic;
       } else {
-        q[i] = q_i + s * (q[i + s] - q_i) / (n[i + s] - n_i);
+        q[i] = currentQuantile + s * (q[i + s] - currentQuantile) / (n[i + s] - currentPosition);
       }
 
       n[i] += s;
