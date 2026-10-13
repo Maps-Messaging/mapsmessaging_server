@@ -30,6 +30,7 @@ import java.util.zip.CRC32C;
  * A retirement marker is durably written before changing the active data.
  */
 public final class GenerationCounterStore implements CounterStore {
+  private static final String COUNTER_BASE_NAME = "counters";
   private static final int MAGIC = 0x43474d31; // CGM1
   private static final int RECORD_MAGIC = 0x43525431; // CRT1
   private final Path root;
@@ -97,11 +98,10 @@ public final class GenerationCounterStore implements CounterStore {
   }
 
   private IndexedCounterStore openGeneration(String name) throws IOException {
-    final String counterBaseName = "counters";
     if (!name.matches("gen-[a-zA-Z0-9-]+")) throw new IOException("Invalid generation name");
-    Path base = root.resolve(name).resolve(counterBaseName);
-    if (!Files.isRegularFile(base.resolveSibling(counterBaseName + ".idx"))
-        || !Files.isRegularFile(base.resolveSibling(counterBaseName + ".dat"))) {
+    Path base = root.resolve(name).resolve(COUNTER_BASE_NAME);
+    if (!Files.isRegularFile(base.resolveSibling(COUNTER_BASE_NAME + ".idx"))
+        || !Files.isRegularFile(base.resolveSibling(COUNTER_BASE_NAME + ".dat"))) {
       throw new IOException("Active generation files missing");
     }
     return new IndexedCounterStore(base, durability, flushWrites, flushMillis);
@@ -162,8 +162,8 @@ public final class GenerationCounterStore implements CounterStore {
     String next = "gen-" + UUID.randomUUID();
     try {
       Path target = root.resolve(next);
-      IndexedCounterCompactor.compact(root.resolve(generation).resolve("counters"), target, retired);
-      try (IndexedCounterStore check = new IndexedCounterStore(target.resolve("counters"))) {
+      IndexedCounterCompactor.compact(root.resolve(generation).resolve(COUNTER_BASE_NAME), target, retired);
+      try (IndexedCounterStore check = new IndexedCounterStore(target.resolve(COUNTER_BASE_NAME))) {
         // Startup validation is required before publishing the new manifest.
       }
       writeManifest(next);

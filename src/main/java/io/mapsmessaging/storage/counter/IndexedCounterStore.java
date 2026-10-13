@@ -186,11 +186,11 @@ public final class IndexedCounterStore implements CounterStore {
     writeFully(values, slot(0, 0), offset);
     writeFully(values, slot(0, 0), offset + SLOT_SIZE);
     values.force(true);
-    ByteBuffer record = ByteBuffer.allocate(4 + raw.length + 8 + 4).order(ByteOrder.BIG_ENDIAN);
-    record.putInt(raw.length).put(raw).putLong(offset);
-    record.putInt(checksum(record.array(), 0, record.position()));
-    record.flip();
-    writeFully(index, record, index.size());
+    ByteBuffer indexRecord = ByteBuffer.allocate(4 + raw.length + 8 + 4).order(ByteOrder.BIG_ENDIAN);
+    indexRecord.putInt(raw.length).put(raw).putLong(offset);
+    indexRecord.putInt(checksum(indexRecord.array(), 0, indexRecord.position()));
+    indexRecord.flip();
+    writeFully(index, indexRecord, index.size());
     index.force(true);
     offsets.put(key, offset);
     return offset;
