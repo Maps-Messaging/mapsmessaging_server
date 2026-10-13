@@ -32,7 +32,7 @@ else
     parent_dir="$current_dir"
 fi
 
-if [ -z ${MAPS_HOME+x} ]; then
+if [[ -z ${MAPS_HOME+x} ]]; then
     export MAPS_HOME="$parent_dir"
 fi
 

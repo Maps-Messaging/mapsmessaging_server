@@ -23,7 +23,7 @@ RUN set -eux; \
     ZULU_ARCH=zulu21.44.17-ca-jdk21.0.8-linux_musl_aarch64.tar.gz; \
     ZULU_DIR="${ZULU_ARCH%.tar.gz}"; \
     INSTALL_DIR="$(dirname "$JAVA_HOME")"; \
-    apk add --no-cache ca-certificates wget tar gzip coreutils dos2unix; \
+    apk add --no-cache ca-certificates coreutils dos2unix gzip tar wget; \
     update-ca-certificates; \
     \
     # Install Zulu JDK
