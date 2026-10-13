@@ -89,23 +89,13 @@ public class CreateHandler extends JetStreamFrameHandler {
     applyDefaults(config);
     String name = parts.length == 6 ? parts[5] : consumerName(config);
     config.setName(name);
-    boolean durable = config.getDurableName() != null && !config.getDurableName().isBlank();
-    if (durable && !name.equals(config.getDurableName())) {
-      return buildError(TYPE, 400, "Durable name must match the consumer name", replyTo, sessionState);
+    String validationError = validateConfig(config, name);
+    if (validationError != null) {
+      return buildError(TYPE, 400, validationError, replyTo, sessionState);
     }
-    // The initial archive-copy operation currently supports the all/new policies.
-    // Do not silently replay ALL when the client requested LAST or a start position.
-    if (config.getDeliverPolicy() != DeliverPolicy.ALL && config.getDeliverPolicy() != DeliverPolicy.NEW) {
-      return buildError(TYPE, 400, "JetStream delivery policy is not implemented: "
-          + config.getDeliverPolicy(), replyTo, sessionState);
-    }
-
-    List<StreamInfo> subjects = streamInfoList.getSubjects();
-    if (config.getFilterSubject() != null && !config.getFilterSubject().isBlank()) {
-      subjects = subjects.stream().filter(info -> matchesFilter(info.getSubject(), config.getFilterSubject())).toList();
-      if (subjects.isEmpty()) {
-        return buildError(TYPE, "Invalid filter subject", replyTo, sessionState);
-      }
+    List<StreamInfo> subjects = selectSubjects(streamInfoList, config);
+    if (hasSubjectFilter(config) && subjects.isEmpty()) {
+      return buildError(TYPE, "Invalid filter subject", replyTo, sessionState);
     }
 
     NamedConsumer consumer;
@@ -116,38 +106,82 @@ public class CreateHandler extends JetStreamFrameHandler {
         return buildError(TYPE, "Duplicate consumer name", replyTo, sessionState);
       }
       try {
-        consumerSession = durable
+        consumerSession = isDurable(config)
             ? DurableConsumerSession.open(sessionState, stream, name)
             : DurableConsumerSession.openEphemeral(sessionState);
-        int index = 0;
-        for (StreamInfo streamInfo : subjects) {
-          String subscriptionAlias = "jetstream:" + stream + ":" + name + ":" + index++;
-          String mapsTopic = streamInfo.getDestination().getFullyQualifiedNamespace();
-          String archiveId = JetStreamArchiveManager.getInstance().ensureArchive(sessionState, stream, mapsTopic);
-          boolean resumed = durable && consumerSession.isRestored()
-              && streamInfo.getDestination().getSubscription(consumerSession.getName()) != null;
-          SubscribedEventManager manager =
-              subscribeConsumerSubject(consumerSession, config, streamInfo, stream, subscriptionAlias);
-          if (manager == null) {
-            throw new IOException("Unable to register consumer subscription " + streamInfo.getSubject());
-          }
-          registered.add(new StreamSubscriptionInfo(manager, streamInfo, subscriptionAlias));
-          if (!resumed && config.getDeliverPolicy() == DeliverPolicy.ALL) {
-            JetStreamSubscriptionInitializer.seedFromArchive(
-                streamInfo.getDestination(), archiveId, consumerSession.getName(), config.getFilterSubject());
-          }
-        }
-        consumer = new NamedConsumer(name, stream, config, registered);
-        if (!sessionState.addNamedConsumer(consumer)) {
-          throw new IOException("Duplicate consumer name");
-        }
-        consumer.attachMapsSession(consumerSession);
+        consumer = registerConsumer(sessionState, consumerSession, stream, name, config, subjects, registered);
       } catch (IOException | RuntimeException exception) {
         cleanupFailedConsumer(sessionState, consumerSession, registered);
         return buildError(TYPE, 500, "Failed to register consumer: " + exception.getMessage(), replyTo, sessionState);
       }
     }
+    return populateResponse(response, consumer, config, stream, name);
+  }
 
+  private static boolean isDurable(ConsumerConfig config) {
+    return config.getDurableName() != null && !config.getDurableName().isBlank();
+  }
+
+  private static String validateConfig(ConsumerConfig config, String name) {
+    if (isDurable(config) && !name.equals(config.getDurableName())) {
+      return "Durable name must match the consumer name";
+    }
+    // The initial archive-copy operation currently supports the all/new policies.
+    // Do not silently replay ALL when the client requested LAST or a start position.
+    if (config.getDeliverPolicy() != DeliverPolicy.ALL && config.getDeliverPolicy() != DeliverPolicy.NEW) {
+      return "JetStream delivery policy is not implemented: " + config.getDeliverPolicy();
+    }
+    return null;
+  }
+
+  private static boolean hasSubjectFilter(ConsumerConfig config) {
+    return config.getFilterSubject() != null && !config.getFilterSubject().isBlank();
+  }
+
+  private static List<StreamInfo> selectSubjects(StreamInfoList streamInfoList, ConsumerConfig config) {
+    List<StreamInfo> subjects = streamInfoList.getSubjects();
+    if (hasSubjectFilter(config)) {
+      return subjects.stream().filter(info -> matchesFilter(info.getSubject(), config.getFilterSubject())).toList();
+    }
+    return subjects;
+  }
+
+  private NamedConsumer registerConsumer(SessionState state, Session consumerSession, String stream, String name,
+                                         ConsumerConfig config, List<StreamInfo> subjects,
+                                         List<StreamSubscriptionInfo> registered) throws IOException {
+    int index = 0;
+    for (StreamInfo streamInfo : subjects) {
+      String alias = "jetstream:" + stream + ":" + name + ":" + index++;
+      registerSubject(state, consumerSession, stream, config, streamInfo, alias, registered);
+    }
+    NamedConsumer consumer = new NamedConsumer(name, stream, config, registered);
+    if (!state.addNamedConsumer(consumer)) {
+      throw new IOException("Duplicate consumer name");
+    }
+    consumer.attachMapsSession(consumerSession);
+    return consumer;
+  }
+
+  private void registerSubject(SessionState state, Session consumerSession, String stream, ConsumerConfig config,
+                               StreamInfo streamInfo, String alias,
+                               List<StreamSubscriptionInfo> registered) throws IOException {
+    String mapsTopic = streamInfo.getDestination().getFullyQualifiedNamespace();
+    String archiveId = JetStreamArchiveManager.getInstance().ensureArchive(state, stream, mapsTopic);
+    boolean resumed = isDurable(config) && consumerSession.isRestored()
+        && streamInfo.getDestination().getSubscription(consumerSession.getName()) != null;
+    SubscribedEventManager manager = subscribeConsumerSubject(consumerSession, config, streamInfo, stream, alias);
+    if (manager == null) {
+      throw new IOException("Unable to register consumer subscription " + streamInfo.getSubject());
+    }
+    registered.add(new StreamSubscriptionInfo(manager, streamInfo, alias));
+    if (!resumed && config.getDeliverPolicy() == DeliverPolicy.ALL) {
+      JetStreamSubscriptionInitializer.seedFromArchive(
+          streamInfo.getDestination(), archiveId, consumerSession.getName(), config.getFilterSubject());
+    }
+  }
+
+  private NatsFrame populateResponse(NatsFrame response, NamedConsumer consumer, ConsumerConfig config,
+                                     String stream, String name) {
     ConsumerCreateResponse created = new ConsumerCreateResponse();
     created.setName(name);
     created.setStream_name(stream);

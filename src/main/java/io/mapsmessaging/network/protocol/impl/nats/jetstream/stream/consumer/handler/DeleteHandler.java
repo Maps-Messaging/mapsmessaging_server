@@ -76,29 +76,45 @@ public class DeleteHandler extends JetStreamFrameHandler {
       if (!sessionState.getNamedConsumers().remove(consumerName, namedConsumer)) {
         return buildError(TYPE, "Consumer '" + consumerName + "' no longer exists", replyTo, sessionState);
       }
-      for (StreamSubscriptionInfo subscription : namedConsumer.getStreams()) {
-        if (subscription.getSubscriptionAlias() == null) {
-          continue;
-        }
-        if (namedConsumer.getMapsSession() != null) {
-          NatsJetStreamSubscriptions.remove(
-              namedConsumer.getMapsSession(), subscription.getSubscribedEventManager());
-        } else {
-          sessionState.removeSubscription(subscription.getSubscriptionAlias());
-        }
-      }
+      removeSubscriptions(sessionState, namedConsumer);
       namedConsumer.close();
-      if (namedConsumer.getMapsSession() != null) {
-        try {
-          DurableConsumerSession.close(sessionState, namedConsumer.getMapsSession()).get();
-        } catch (InterruptedException interrupted) {
-          Thread.currentThread().interrupt();
-          throw new IOException("Interrupted deleting durable consumer", interrupted);
-        } catch (java.util.concurrent.ExecutionException failure) {
-          throw new IOException("Could not delete durable consumer", failure);
-        }
+      closeConsumerSession(sessionState, namedConsumer);
+    }
+    return buildSuccess(stream, replyTo, sessionState);
+  }
+
+  private void removeSubscriptions(SessionState state, NamedConsumer consumer) throws IOException {
+    for (StreamSubscriptionInfo subscription : consumer.getStreams()) {
+      if (subscription.getSubscriptionAlias() != null) {
+        removeSubscription(state, consumer, subscription);
       }
     }
+  }
+
+  private void removeSubscription(SessionState state, NamedConsumer consumer,
+                                  StreamSubscriptionInfo subscription) throws IOException {
+    if (consumer.getMapsSession() != null) {
+      NatsJetStreamSubscriptions.remove(consumer.getMapsSession(), subscription.getSubscribedEventManager());
+    } else {
+      state.removeSubscription(subscription.getSubscriptionAlias());
+    }
+  }
+
+  private void closeConsumerSession(SessionState state, NamedConsumer consumer) throws IOException {
+    if (consumer.getMapsSession() == null) {
+      return;
+    }
+    try {
+      DurableConsumerSession.close(state, consumer.getMapsSession()).get();
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted deleting durable consumer", interrupted);
+    } catch (java.util.concurrent.ExecutionException failure) {
+      throw new IOException("Could not delete durable consumer", failure);
+    }
+  }
+
+  private NatsFrame buildSuccess(String stream, String replyTo, SessionState sessionState) {
 
     JsonObject response = new JsonObject();
     response.addProperty("type", TYPE);

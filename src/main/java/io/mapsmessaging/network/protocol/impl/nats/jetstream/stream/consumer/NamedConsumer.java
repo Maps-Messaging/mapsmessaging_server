@@ -126,54 +126,76 @@ public class NamedConsumer {
     if (maximum != null && maximum > 0 && outstanding.size() >= maximum) {
       return null;
     }
-    for (int x = 0; x < streams.size(); x++) {
-      StreamSubscriptionInfo stream = streams.get(index);
-      Future<Response> response = inFlightPolls.get(stream);
-      if (response == null) {
-        response = stream.getSubscribedEventManager().getNext();
-        inFlightPolls.put(stream, response);
+    int visited = 0;
+    while (visited < streams.size()) {
+      PollResult result = pollStream(streams.get(index), noWait);
+      if (!result.retry()) {
+        index = (index + 1) % streams.size();
+        visited++;
       }
-      try {
-        if (noWait && !response.isDone()) {
-          index = (index + 1) % streams.size();
-          continue;
-        }
-        Response val = noWait ? response.get() : response.get(100, TimeUnit.MILLISECONDS);
-        inFlightPolls.remove(stream);
-        if (val instanceof MessageResponse messageResponse) {
-          MessageEvent msg = messageResponse.getResponse();
-          if (msg != null) {
-            String filter = config.getFilterSubject();
-            if (filter != null && !filter.isBlank()) {
-              String published = msg.getMessage().getMeta() == null ? null
-                  : msg.getMessage().getMeta().get("nats.subject");
-              if (published == null) {
-                published = stream.getSubject().replace('/', '.');
-              }
-              if (!NamespaceManager.matchesSubject(filter, published)) {
-                // Consume only this consumer's unmatched state; leave the archive
-                // and every other consumer untouched.
-                stream.getSubscribedEventManager().ackReceived(msg.getMessage().getIdentifier());
-                x--;
-                continue;
-              }
-            }
-            index = (index + 1) % streams.size();
-            return msg;
-          }
-        }
-      } catch (TimeoutException e) {
-        // An unfinished MAPS poll remains in-flight for the next pull request.
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new IOException(e);
-      } catch (Exception e) {
-        inFlightPolls.remove(stream);
-        throw new IOException(e);
+      if (result.message() != null) {
+        return result.message();
       }
-      index = (index + 1) % streams.size();
     }
     return null;
+  }
+
+  private PollResult pollStream(StreamSubscriptionInfo stream, boolean noWait) throws IOException {
+    Future<Response> response = inFlightPolls.get(stream);
+    if (response == null) {
+      response = stream.getSubscribedEventManager().getNext();
+      inFlightPolls.put(stream, response);
+    }
+    try {
+      if (noWait && !response.isDone()) {
+        return new PollResult(null, false);
+      }
+      Response value = noWait ? response.get() : response.get(100, TimeUnit.MILLISECONDS);
+      inFlightPolls.remove(stream);
+      return selectMessage(stream, value);
+    } catch (TimeoutException e) {
+      // An unfinished MAPS poll remains in-flight for the next pull request.
+      return new PollResult(null, false);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException(e);
+    } catch (Exception e) {
+      inFlightPolls.remove(stream);
+      throw new IOException(e);
+    }
+  }
+
+  private PollResult selectMessage(StreamSubscriptionInfo stream, Response response) {
+    if (!(response instanceof MessageResponse messageResponse)) {
+      return new PollResult(null, false);
+    }
+    MessageEvent message = messageResponse.getResponse();
+    if (message == null) {
+      return new PollResult(null, false);
+    }
+    if (!matchesSubject(stream, message)) {
+      // Consume only this consumer's unmatched state; leave the archive
+      // and every other consumer untouched. Retry without advancing this stream.
+      stream.getSubscribedEventManager().ackReceived(message.getMessage().getIdentifier());
+      return new PollResult(null, true);
+    }
+    return new PollResult(message, false);
+  }
+
+  private boolean matchesSubject(StreamSubscriptionInfo stream, MessageEvent message) {
+    String filter = config.getFilterSubject();
+    if (filter == null || filter.isBlank()) {
+      return true;
+    }
+    String published = message.getMessage().getMeta() == null ? null
+        : message.getMessage().getMeta().get("nats.subject");
+    if (published == null) {
+      published = stream.getSubject().replace('/', '.');
+    }
+    return NamespaceManager.matchesSubject(filter, published);
+  }
+
+  private record PollResult(MessageEvent message, boolean retry) {
   }
 
   /**
