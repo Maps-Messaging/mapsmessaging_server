@@ -32,6 +32,7 @@ import lombok.NoArgsConstructor;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @NoArgsConstructor
 public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Config, ConfigManager {
@@ -112,7 +113,7 @@ public class RestApiManagerConfig extends RestApiManagerConfigDTO implements Con
       this.port = newConfig.getPort();
       hasChanged = true;
     }
-    if (this.inactiveTimeout != newConfig.getInactiveTimeout()) {
+    if (!Objects.equals(this.inactiveTimeout, newConfig.getInactiveTimeout())) {
       this.inactiveTimeout = newConfig.getInactiveTimeout();
       hasChanged = true;
     }
