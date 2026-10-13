@@ -42,6 +42,14 @@ public class UnsubAck5 extends MQTTPacket5 {
     if (reasons == null || reasons.length == 0) {
       throw new IllegalArgumentException("UNSUBACK requires at least one reason code");
     }
+    if (packetId < 1 || packetId > 65535) {
+      throw new IllegalArgumentException("UNSUBACK Packet Identifier must be between 1 and 65535");
+    }
+    for (StatusCode reason : reasons) {
+      if (!isAllowedReason(reason)) {
+        throw new IllegalArgumentException("Invalid UNSUBACK reason code: " + reason);
+      }
+    }
     this.packetId = packetId;
     reasonCodes = Collections.unmodifiableList(Arrays.asList(reasons.clone()));
   }
@@ -62,7 +70,12 @@ public class UnsubAck5 extends MQTTPacket5 {
 
     // Variable header
     packetId = readShort(packet);
-    long propsBytes = loadProperties(packet); // includes the properties length varint itself
+    if (packetId == 0) {
+      throw new MalformedException("UNSUBACK Packet Identifier must not be zero [MQTT-2.2.1-3]");
+    }
+    int propertiesStart = packet.position();
+    loadProperties(packet);
+    long propsBytes = packet.position() - propertiesStart;
 
     long payloadLen = remainingLen - 2 - propsBytes; // 2 = packetId
     if (payloadLen < 0) {
