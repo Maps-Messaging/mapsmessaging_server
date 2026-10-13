@@ -143,7 +143,12 @@ final class WebSocketFrameWriter {
   }
 
   private static Packet encode(int opcode, byte[] payload) {
-    int headerLength = payload.length < 126 ? 2 : payload.length <= 0xFFFF ? 4 : 10;
+    int headerLength;
+    if (payload.length < 126) {
+      headerLength = 2;
+    } else {
+      headerLength = payload.length <= 0xFFFF ? 4 : 10;
+    }
     Packet encoded = new Packet(headerLength + payload.length, false);
     encoded.put((byte) (0x80 | opcode));
     if (payload.length < 126) {
