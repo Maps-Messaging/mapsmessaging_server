@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech;
 
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
@@ -124,7 +126,12 @@ public class SemTechProtocol extends Protocol {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     logger.log(ServerLogMessages.SEMTECH_QUEUE_MESSAGE, messageEvent.getMessage());
-    String alias = messageEvent.getSubscription().getContext().getAlias();
+    SubscriptionContext context = messageEvent.getSubscription().getContext();
+    if (context == null) {
+      messageEvent.getCompletionTask().run();
+      return;
+    }
+    String alias = context.getAlias();
     GatewayInfo info = gatewayManager.getInfo(alias);
     if (info == null) {
       logger.log(ServerLogMessages.SEMTECH_DROP_UNKNOWN_GATEWAY, alias);

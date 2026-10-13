@@ -179,7 +179,10 @@ public class MavlinkProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     MavlinkProtocolInformation information = new MavlinkProtocolInformation();
     updateInformation(information);
-    information.setSessionInfo(session.getSessionInformation());
+    Session currentSession = session;
+    if (currentSession != null) {
+      information.setSessionInfo(currentSession.getSessionInformation());
+    }
     return information;
   }
 

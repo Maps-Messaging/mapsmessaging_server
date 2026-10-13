@@ -389,8 +389,14 @@ public class MQTT5Protocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    SubscriptionContext context = messageEvent.getSubscription().getContext();
+    if (context == null) {
+      packetIdManager.releaseSendSlot(messageEvent.getSubscription());
+      messageEvent.getCompletionTask().run();
+      return;
+    }
     boolean retainedReplay = messageEvent.getSubscription().isRetainedReplay(messageEvent.getMessage().getIdentifier());
-    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent, context);
     if(parsedMessage == null) {
       return;
     }
@@ -400,13 +406,12 @@ public class MQTT5Protocol extends Protocol {
       messageEvent.getCompletionTask().run();
       logger.log(ServerLogMessages.MQTT5_MAX_BUFFER_EXCEEDED, maxBufferSize, message.getOpaqueData().length);
     } else {
-      sendPublishFrame(topicName, messageEvent.getSubscription(), message, messageEvent.getCompletionTask(), retainedReplay);
+      sendPublishFrame(topicName, messageEvent.getSubscription(), context, message, messageEvent.getCompletionTask(), retainedReplay);
     }
   }
 
-  private void sendPublishFrame(@NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull Message message,
+  private void sendPublishFrame(@NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull SubscriptionContext subInfo, @NonNull @NotNull Message message,
                                 @NonNull @NotNull Runnable completionTask, boolean retainedReplay) {
-    SubscriptionContext subInfo = subscription.getContext();
     QualityOfService qos = QualityOfService.getInstance(Math.min(subInfo.getQualityOfService().getLevel(), message.getQualityOfService().getLevel()));
     int packetId = getPacketId(qos, subscription, message);
     Runnable r;
@@ -484,7 +489,10 @@ public class MQTT5Protocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     MqttV5ProtocolInformation information = new MqttV5ProtocolInformation();
     updateInformation(information);
-    information.setSessionInfo(session.getSessionInformation());
+    Session currentSession = session;
+    if (currentSession != null) {
+      information.setSessionInfo(currentSession.getSessionInformation());
+    }
     return information;
   }
 

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.rest.api.impl.messaging.impl;
 
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -111,7 +113,12 @@ public class RestMessageListener implements MessageListener {
       messageEvent.getSubscription().ackReceived(messageEvent.getMessage().getIdentifier());
       return;
     }
-    String namespacePath = messageEvent.getSubscription().getContext().getDestinationName();
+    SubscriptionContext context = messageEvent.getSubscription().getContext();
+    if (context == null) {
+      messageEvent.getCompletionTask().run();
+      return;
+    }
+    String namespacePath = context.getDestinationName();
     if (eventSinkMap.containsKey(namespacePath)) {
       handleAsyncDelivery(namespacePath, messageEvent);
     } else {

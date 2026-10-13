@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.semtech;
 
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.dto.rest.config.protocol.impl.SemtechTransmitDefaultsDTO;
@@ -66,7 +67,13 @@ public class GatewayInfo {
   }
 
   public void close(Session session) {
-    session.removeSubscription(outbound.getContext().getAlias());
-    waitingMessages.clear();
+    SubscriptionContext context = outbound.getContext();
+    if (context != null) {
+      session.removeSubscription(context.getAlias());
+    }
+    MessageEvent event;
+    while ((event = waitingMessages.poll()) != null) {
+      event.getCompletionTask().run();
+    }
   }
 }

@@ -233,6 +233,16 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
   protected ParsedMessage parseOutboundMessage(MessageEvent messageEvent){
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
+    return parseOutboundMessage(messageEvent, subInfo);
+  }
+
+  protected ParsedMessage parseOutboundMessage(MessageEvent messageEvent, SubscriptionContext subInfo) {
+    if (subInfo == null) {
+      if (messageEvent.getCompletionTask() != null) {
+        messageEvent.getCompletionTask().run();
+      }
+      return null;
+    }
     String destinationName = messageEvent.getDestinationName();
     ParsedMessage parsedMessage = new ParsedMessage(destinationName, messageEvent.getMessage());
     if(messageEvent.getDestinationName().startsWith("$schema")){
@@ -240,7 +250,9 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     }
 
     parsedMessage = processInterServerTransformations(messageEvent.getDestinationName(), parsedMessage );
-    parsedMessage = processMessageAnalyser(parsedMessage, subInfo);
+    if (parsedMessage != null) {
+      parsedMessage = processMessageAnalyser(parsedMessage, subInfo);
+    }
     if(parsedMessage == null){
       if(messageEvent.getCompletionTask() != null){
         messageEvent.getCompletionTask().run();

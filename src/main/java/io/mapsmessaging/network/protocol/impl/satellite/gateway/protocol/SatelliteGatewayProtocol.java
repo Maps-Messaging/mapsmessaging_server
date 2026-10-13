@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.satellite.gateway.protocol;
 
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -236,14 +238,21 @@ public class SatelliteGatewayProtocol extends Protocol {
     SatelliteProtocolInformation information = new SatelliteProtocolInformation();
     updateInformation(information);
     information.setRemoteDeviceInfo(((SatelliteEndPoint) endPoint).getTerminalInfo());
-    information.setSessionInfo(session.getSessionInformation());
+    Session currentSession = session;
+    if (currentSession != null) {
+      information.setSessionInfo(currentSession.getSessionInformation());
+    }
     return information;
   }
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-    if(messageEvent.getSubscription().getContext().getAlias() != null &&
-        messageEvent.getSubscription().getContext().getAlias().equals("common_requests")){
+    SubscriptionContext context = messageEvent.getSubscription().getContext();
+    if (context == null) {
+      messageEvent.getCompletionTask().run();
+      return;
+    }
+    if ("common_requests".equals(context.getAlias())) {
       MessageData messageData = new MessageData();
       byte[] tmp = messageEvent.getMessage().getOpaqueData();
       int sin = tmp[0] & 0xFF;

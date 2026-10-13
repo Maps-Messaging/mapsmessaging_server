@@ -347,9 +347,14 @@ public class MQTTProtocol extends Protocol {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     Message msg = messageEvent.getMessage();
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
+    if (subInfo == null) {
+      packetIdManager.releaseSendSlot(messageEvent.getSubscription());
+      messageEvent.getCompletionTask().run();
+      return;
+    }
     QualityOfService qos = subInfo.getQualityOfService();
 
-    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+    ParsedMessage parsedMessage = parseOutboundMessage(messageEvent, subInfo);
     if(parsedMessage == null) {
       packetIdManager.releaseSendSlot(messageEvent.getSubscription());
       return;
@@ -387,7 +392,10 @@ public class MQTTProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     MqttProtocolInformation information = new MqttProtocolInformation();
     updateInformation(information);
-    information.setSessionInfo(session.getSessionInformation());
+    Session currentSession = session;
+    if (currentSession != null) {
+      information.setSessionInfo(currentSession.getSessionInformation());
+    }
     return information;
   }
 }
