@@ -20,9 +20,6 @@ final class DataProductConfigLoader {
   static List<DataProductConfig> load(String droneName, UUID droneUuid) {
     ConfigurationProperties root =
         ConfigurationManager.getInstance().getProperties("TwinManager");
-    if (root == null) {
-      return List.of();
-    }
     Object droneInfo = root.get("droneInfo");
     if (droneInfo instanceof List<?> entries) {
       for (Object entry : entries) {
