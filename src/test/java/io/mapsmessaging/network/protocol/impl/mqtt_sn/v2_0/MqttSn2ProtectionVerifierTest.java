@@ -78,6 +78,19 @@ class MqttSn2ProtectionVerifierTest {
         new byte[]{0,0,0,0,0,0,0,7}, new byte[]{1,2,3,4}, new byte[0]));
   }
 
+  @Test
+  void authenticated_malformed_inner_packet_never_commits_durable_replay() throws Exception {
+    AtomicInteger accepted = new AtomicInteger();
+    MqttSn2ProtectionVerifier verifier = new MqttSn2ProtectionVerifier((sender, scheme) -> KEY.clone(),
+        (sender, scheme, counter) -> { accepted.incrementAndGet(); return true; });
+    assertThrows(IOException.class,
+        () -> verifier.verify(ByteBuffer.wrap(protect(new byte[]{5, 12, 0, 9}, 3))));
+    assertEquals(0, accepted.get());
+    assertArrayEquals(new byte[]{4, 12, 0, 9},
+        bytes(verifier.verify(ByteBuffer.wrap(protect(new byte[]{4, 12, 0, 9}, 3)))));
+    assertEquals(1, accepted.get());
+  }
+
   private static byte[] protect(byte[] inner, int counter) throws Exception {
     // Short MQTT-SN frame plus CSD01 Protection Encapsulation fixed fields.
     ByteBuffer prefix = ByteBuffer.allocate(18);

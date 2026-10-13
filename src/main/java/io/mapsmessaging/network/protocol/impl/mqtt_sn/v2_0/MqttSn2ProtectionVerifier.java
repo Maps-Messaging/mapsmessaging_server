@@ -103,6 +103,24 @@ public final class MqttSn2ProtectionVerifier {
     if (key == null || key.length < 16) {
       throw new IOException("Missing or invalid MQTT-SN 2.0 sender key");
     }
+    verifyAuthentication(envelope, scheme, key);
+
+    byte[] inner = envelope.protectedPacket();
+    MqttSn2FrameCodec.Frame packet = MqttSn2FrameCodec.decode(ByteBuffer.wrap(inner));
+    if (packet.packetLength() != inner.length
+        || packet.type() == MqttSn2PacketType.FORWARDER_ENCAPSULATION) {
+      throw new IOException("Invalid protected inner packet");
+    }
+    String sender = Base64.getEncoder().encodeToString(envelope.senderIdentifier())
+        + ":" + scheme;
+    long value = 0;
+    for (byte b : counter) value = (value << 8) | (b & 0xFFL);
+    acceptCounter(envelope, scheme, sender, value);
+    return ByteBuffer.wrap(inner).asReadOnlyBuffer();
+  }
+
+  private void verifyAuthentication(MqttSn2ProtectionCodec.Envelope envelope, int scheme, byte[] key)
+      throws IOException {
     byte[] expected;
     try {
       String algorithm = scheme == 0 ? "HmacSHA256" : "HmacSHA3-256";
@@ -116,17 +134,10 @@ public final class MqttSn2ProtectionVerifier {
     if (!MessageDigest.isEqual(expected, envelope.authenticationTag())) {
       throw new IOException("MQTT-SN 2.0 protection authentication failed");
     }
+  }
 
-    byte[] inner = envelope.protectedPacket();
-    MqttSn2FrameCodec.Frame packet = MqttSn2FrameCodec.decode(ByteBuffer.wrap(inner));
-    if (packet.packetLength() != inner.length
-        || packet.type() == MqttSn2PacketType.FORWARDER_ENCAPSULATION) {
-      throw new IOException("Invalid protected inner packet");
-    }
-    String sender = Base64.getEncoder().encodeToString(envelope.senderIdentifier())
-        + ":" + scheme;
-    long value = 0;
-    for (byte b : counter) value = (value << 8) | (b & 0xFFL);
+  private void acceptCounter(MqttSn2ProtectionCodec.Envelope envelope, int scheme, String sender, long value)
+      throws IOException {
     if (durableReplayStore != null) {
       if (!durableReplayStore.accept(envelope.senderIdentifier(), scheme, value)) {
         throw new IOException("MQTT-SN 2.0 protection replay detected");
@@ -138,7 +149,6 @@ public final class MqttSn2ProtectionVerifier {
       }
       lastCounters.put(sender, value);
     }
-    return ByteBuffer.wrap(inner).asReadOnlyBuffer();
   }
 
   /**
