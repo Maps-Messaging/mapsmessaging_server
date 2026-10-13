@@ -48,24 +48,27 @@ import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
 public class Disconnected extends State implements EndPointConnectedCallback {
 
-  private volatile EndPoint activeEndPoint;
+  private final Object activeEndPointLock = new Object();
+
+  private EndPoint activeEndPoint;
+  private boolean cancelled;
 
   public Disconnected(EndPointConnection connection) {
     super(connection);
   }
 
   public EndPoint getActiveEndPoint() {
-    return activeEndPoint;
+    synchronized (activeEndPointLock) {
+      return activeEndPoint;
+    }
   }
 
   @Override
   public void connected(EndPoint endpoint) {
-    if (!isCurrentAttempt()) {
+    if (!registerActiveEndPoint(endpoint)) {
       closeEndpoint(endpoint);
       return;
     }
-
-    activeEndPoint = endpoint;
     String protocol = endPointConnection.getProperties().getProtocols();
     String url = endPointConnection.getUrl().toString();
     try {
@@ -112,7 +115,9 @@ public class Disconnected extends State implements EndPointConnectedCallback {
 
       protocolImpl.setProtocolMessageTransformation(transformation);
       endPointConnection.setProtocol(protocolImpl);
-      activeEndPoint = null;
+      synchronized (activeEndPointLock) {
+        activeEndPoint = null;
+      }
       endPointConnection.scheduleState(new Connecting(endPointConnection));
     } catch (IOException ioException) {
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
@@ -130,9 +135,7 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       SelectorLoadManager selectorLoadManager = endPointConnection.getSelectorLoadManager();
       List<String> jmxPath = endPointConnection.getJMXPath();
       EndPoint endpoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
-      if (isCurrentAttempt()) {
-        activeEndPoint = endpoint;
-      } else {
+      if (!registerActiveEndPoint(endpoint)) {
         Protocol protocol = endPointConnection.getProtocol();
         if (protocol == null || protocol.getEndPoint() != endpoint) {
           closeEndpoint(endpoint);
@@ -153,8 +156,12 @@ public class Disconnected extends State implements EndPointConnectedCallback {
 
   @Override
   public void cancel() {
-    EndPoint endpoint = activeEndPoint;
-    activeEndPoint = null;
+    EndPoint endpoint;
+    synchronized (activeEndPointLock) {
+      cancelled = true;
+      endpoint = activeEndPoint;
+      activeEndPoint = null;
+    }
     closeEndpoint(endpoint);
   }
 
@@ -168,7 +175,24 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     return LinkState.DISCONNECTED;
   }
 
+  private boolean registerActiveEndPoint(EndPoint endpoint) {
+    boolean currentAttempt = isCurrentAttempt();
+    synchronized (activeEndPointLock) {
+      // Cancellation may finish while the transport returns or eligibility is checked.
+      if (cancelled || !currentAttempt) {
+        return false;
+      }
+      activeEndPoint = endpoint;
+      return true;
+    }
+  }
+
   private boolean isCurrentAttempt() {
+    synchronized (activeEndPointLock) {
+      if (cancelled) {
+        return false;
+      }
+    }
     return endPointConnection.getState() == this
         && endPointConnection.isRunning()
         && !endPointConnection.isPaused();
