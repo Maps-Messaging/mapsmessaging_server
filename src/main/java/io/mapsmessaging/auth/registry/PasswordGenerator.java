@@ -25,6 +25,8 @@ import java.util.stream.IntStream;
 
 public class PasswordGenerator {
 
+  private static final SecureRandom RANDOM = new SecureRandom();
+
   private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
   private static final String SALT_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -37,9 +39,8 @@ public class PasswordGenerator {
   }
 
   private static String generateRandom(int passwordLength, String chars) {
-    SecureRandom random = new SecureRandom();
     return IntStream.range(0, passwordLength)
-        .map(i -> chars.charAt(random.nextInt(chars.length())))
+        .map(i -> chars.charAt(RANDOM.nextInt(chars.length())))
         .mapToObj(c -> String.valueOf((char) c))
         .collect(Collectors.joining());
   }
