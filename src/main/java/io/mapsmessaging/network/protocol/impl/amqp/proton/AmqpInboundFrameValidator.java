@@ -45,18 +45,18 @@ public final class AmqpInboundFrameValidator {
   private int bodyStart;
   private int descriptorRead;
   private int descriptorLength;
-  private boolean sasl;
+  private boolean saslMode;
   private boolean openReceived;
 
   public void validate(ByteBuffer bytes, boolean saslComplete) throws IOException {
     ByteBuffer input = bytes.duplicate();
     while (input.hasRemaining()) {
       if (phase == Phase.FRAME_HEADER && frameHeaderRead == 0
-          && sasl && saslComplete && (input.get(input.position()) & 0xff) == 'A') {
+          && saslMode && saslComplete && (input.get(input.position()) & 0xff) == 'A') {
         // After SASL-OUTCOME the peer begins a fresh, ordinary AMQP header.
         phase = Phase.PROTOCOL_HEADER;
         headerRead = 0;
-        sasl = false;
+        saslMode = false;
       }
       switch (phase) {
         case PROTOCOL_HEADER -> readProtocolHeader(input);
@@ -83,8 +83,8 @@ public final class AmqpInboundFrameValidator {
         || protocolHeader[5] != 1 || protocolHeader[6] != 0 || protocolHeader[7] != 0) {
       throw new UnsupportedVersion(id == SASL ? SASL : AMQP);
     }
-    sasl = id == SASL;
-    if (!sasl) {
+    saslMode = id == SASL;
+    if (!saslMode) {
       openReceived = false;
     }
     frameHeaderRead = 0;
@@ -109,10 +109,10 @@ public final class AmqpInboundFrameValidator {
         || doff < 2 || (long) doff * 4 > size) {
       throw new IOException("Malformed AMQP frame SIZE or DOFF");
     }
-    if (type != (sasl ? 1 : 0)) {
+    if (type != (saslMode ? 1 : 0)) {
       throw new IOException("Unexpected AMQP frame type " + type);
     }
-    if (!sasl && !openReceived) {
+    if (!saslMode && !openReceived) {
       if (size > PRE_OPEN_MAX_FRAME) {
         throw new IOException("AMQP frame exceeds pre-OPEN maximum of 512 bytes");
       }
@@ -134,14 +134,14 @@ public final class AmqpInboundFrameValidator {
   private void readFrameBody(ByteBuffer input) throws IOException {
     while (input.hasRemaining() && frameRemaining > 0) {
       byte value = input.get();
-      if (!sasl && !openReceived && bodyRead >= bodyStart && descriptorRead < openDescriptor.length) {
+      if (!saslMode && !openReceived && bodyRead >= bodyStart && descriptorRead < openDescriptor.length) {
         readOpenDescriptor(value);
       }
       bodyRead++;
       frameRemaining--;
     }
     if (frameRemaining == 0) {
-      if (!sasl && !openReceived) {
+      if (!saslMode && !openReceived) {
         throw new IOException("First AMQP frame did not contain OPEN");
       }
       frameHeaderRead = 0;
@@ -156,7 +156,11 @@ public final class AmqpInboundFrameValidator {
     }
     if (descriptorRead == 2) {
       int kind = value & 0xff;
-      descriptorLength = kind == 0x53 ? 3 : kind == 0x80 ? 10 : -1;
+      descriptorLength = switch (kind) {
+        case 0x53 -> 3;
+        case 0x80 -> 10;
+        default -> -1;
+      };
       if (descriptorLength == -1) {
         throw new IOException("First AMQP frame must contain OPEN descriptor");
       }
