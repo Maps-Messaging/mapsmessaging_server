@@ -19,11 +19,11 @@
 package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -60,8 +60,30 @@ class MqttUnsupportedLevelConformanceRegressionTest {
     assertNotNull(response);
     assertEquals(ConnAck.INVALID_PROTOCOL, response.getResponseCode());
     assertNotNull(response.getCallback());
+    verify(endpoint, never()).close();
+    org.mockito.Mockito.verifyNoInteractions(protocol);
     response.complete();
     verify(endpoint).close();
+  }
+
+  @Test
+  void constructed_connect_retains_supported_mqtt311_defaults() {
+    Connect connect = new Connect();
+    assertEquals(4, connect.getProtocolLevel());
+    assertTrue(connect.hasSupportedProtocolLevel());
+  }
+
+  // MQTT-3.1.2-2: detection must route unsupported versions to the rejection listener.
+  @ParameterizedTest
+  @CsvSource({"MQTT,4,true", "MQTT,6,true", "MQTT,0,true", "MQTT,255,true",
+      "MQTT,5,false", "MQIsdp,3,true"})
+  void factory_routes_supported_and_unsupported_versions_without_stealing_mqtt5(
+      String name, int level, boolean expected) throws Exception {
+    byte[] wire = MqttWireClient.connectPacket(name, level, 0x02, 30, new byte[0], "id");
+    Packet packet = new Packet(ByteBuffer.wrap(wire));
+    assertEquals(expected,
+        new io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocolFactory().detect(packet));
+    assertEquals(0, packet.position());
   }
 
   private static Connect parse(String protocolName, int protocolLevel) throws Exception {

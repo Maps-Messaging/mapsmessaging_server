@@ -52,6 +52,23 @@ import static org.mockito.Mockito.when;
 class FrameHandlerTest {
 
   @Test
+  void rejected_mqtt_connack_closes_only_after_all_wire_bytes_are_written() throws Exception {
+    // MQTT-3.1.2-2, including non-blocking zero and partial writes.
+    var frame = new io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck();
+    frame.setResponseCode(io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck.INVALID_PROTOCOL);
+    WriteFixture fixture = new WriteFixture(16, new AlternatingBlockedWriter(1));
+    AtomicInteger closes = new AtomicInteger();
+    frame.setCallback(() -> {
+      Assertions.assertArrayEquals(new byte[] {0x20, 2, 0, 1}, fixture.output.toByteArray());
+      closes.incrementAndGet();
+    });
+    fixture.writeTask.push(frame);
+    Assertions.assertEquals(0, closes.get());
+    fixture.runUntilIdle();
+    Assertions.assertEquals(1, closes.get());
+  }
+
+  @Test
   void blocked_and_partial_coalesced_write_is_retained_until_complete() throws Exception {
     TestPacket frame = new TestPacket(new byte[]{1, 2, 3, 4, 5, 6, 7});
     WriteFixture fixture = new WriteFixture(16, new AlternatingBlockedWriter(2));
