@@ -140,7 +140,7 @@ public class N2kProtocol extends Protocol {
     Thread t = new Thread(inboundProcessor);
     t.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(() -> unknownCanIdentifiers.clear(), 10, 10, TimeUnit.MINUTES);
+    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(unknownCanIdentifiers::clear, 10, 10, TimeUnit.MINUTES);
     MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().registerProtocol(this);
   }
 

@@ -232,8 +232,8 @@ public class CoapProtocol extends Protocol {
     Map<String, TypedData> map = messageEvent.getMessage().getDataMap();
     ETag eTag = new ETag();
     for (Entry<String, TypedData> entry : map.entrySet()) {
-      if (entry.getKey().toLowerCase().startsWith("etag") && entry.getValue().getData() instanceof byte[]) {
-        eTag.update((byte[]) entry.getValue().getData());
+      if (entry.getKey().toLowerCase().startsWith("etag") && entry.getValue().getData() instanceof byte[] byteArray) {
+        eTag.update(byteArray);
       }
     }
     if (!eTag.getList().isEmpty()) {

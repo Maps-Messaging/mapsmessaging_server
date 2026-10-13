@@ -46,7 +46,7 @@ public class GatewayInfo {
   private long lastAccess;
 
   public GatewayInfo(
-      byte[] raw_identifier,
+      byte[] rawIdentifier,
       String name,
       Destination inbound,
       Destination telemetry,
@@ -54,7 +54,7 @@ public class GatewayInfo {
       SubscribedEventManager outbound,
       SemtechTransmitDefaultsDTO transmitDefaults
   ) {
-    this.rawIdentifier = raw_identifier;
+    this.rawIdentifier = rawIdentifier;
     this.name = name;
     this.inbound = inbound;
     this.status = status;

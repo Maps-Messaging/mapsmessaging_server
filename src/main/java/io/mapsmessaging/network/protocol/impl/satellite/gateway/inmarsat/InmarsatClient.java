@@ -49,8 +49,7 @@ public class InmarsatClient implements SatelliteClient {
     inmarsatSession = new InmarsatSession(satelliteConfigDTO);
     lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.getClientId());
     if(lastMoTimeUTC == null) {
-      lastMoTimeUTC = java.time.ZonedDateTime.now()
-          .withZoneSameInstant(java.time.ZoneOffset.UTC)
+      lastMoTimeUTC = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
           .minusDays(7)
           .toInstant()
           .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)

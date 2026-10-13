@@ -390,10 +390,10 @@ public class CotProtocol extends Protocol implements Selectable {
       byte[] xml = parsedMessage.getMessage().getOpaqueData();
       cotValidator.validate(xml);
       byte[] encoded = hasXmlDeclaration(xml) ? xml : streamEncoder.encode(xml);
-      Packet packet = new Packet(encoded.length, false);
-      packet.put(encoded);
-      packet.flip();
-      outboundPackets.offer(packet);
+      Packet outboundPacket = new Packet(encoded.length, false);
+      outboundPacket.put(encoded);
+      outboundPacket.flip();
+      outboundPackets.offer(outboundPacket);
       endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
     } catch (IOException | RuntimeException e) {
       logger.warn("Failed to send CoT XML event", e);
@@ -405,12 +405,12 @@ public class CotProtocol extends Protocol implements Selectable {
   }
 
   private void flushOutbound() throws IOException {
-    Packet packet = outboundPackets.peek();
-    while (packet != null) {
-      int before = packet.position();
-      endPoint.sendPacket(packet);
-      if (packet.hasRemaining()) {
-        if (packet.position() == before) {
+    Packet outboundPacket = outboundPackets.peek();
+    while (outboundPacket != null) {
+      int before = outboundPacket.position();
+      endPoint.sendPacket(outboundPacket);
+      if (outboundPacket.hasRemaining()) {
+        if (outboundPacket.position() == before) {
           endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
           return;
         }
@@ -419,7 +419,7 @@ public class CotProtocol extends Protocol implements Selectable {
       }
       outboundPackets.poll();
       sentMessage();
-      packet = outboundPackets.peek();
+      outboundPacket = outboundPackets.peek();
     }
     endPoint.register(SelectionKey.OP_READ, this);
   }

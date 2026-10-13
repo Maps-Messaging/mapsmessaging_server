@@ -20,7 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.satellite.modem.device.messages;
 
 import io.mapsmessaging.network.protocol.impl.satellite.modem.device.values.MessageFormat;
-import io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem.XmodemSender;
+import io.mapsmessaging.network.protocol.impl.satellite.modem.xmodem.Xmodem;
 import lombok.Data;
 import lombok.ToString;
 
@@ -107,7 +107,7 @@ public class ModemSatelliteMessage {
     extended[0] = (byte) sin;
     extended[1] = (byte) min;
     System.arraycopy(payload, 0, extended, 2, payload.length);
-    long crc = XmodemSender.crc32Mpeg2(extended, extended.length) & 0xffffffffL;
+    long crc = Xmodem.crc32Mpeg2(extended, extended.length) & 0xffffffffL;
     XmodemData data = new XmodemData();
     data.setCrc(crc);
     data.setData(extended);

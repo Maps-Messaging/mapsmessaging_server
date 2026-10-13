@@ -162,14 +162,14 @@ public final class InmarsatSession {
         Objects.requireNonNull(mailboxId),
         Objects.requireNonNull(mailboxPassword)
     );
-    return new MailboxSession(mailboxId, xMailbox);
+    return new MailboxSession(xMailbox);
   }
 
   // Per-mailbox API
   public final class MailboxSession {
     private final String xMailbox;
 
-    private MailboxSession(String mailboxId, String xMailbox) {
+    private MailboxSession(String xMailbox) {
       this.xMailbox = xMailbox;
     }
 

@@ -45,7 +45,7 @@ public class BlockReceiveMonitor {
     List<String> expiredList = new ArrayList<>();
     blockBasedPackets.entrySet().stream()
         .filter(entry -> entry.getValue().getLastAccess() < expired)
-        .map(entry -> entry.getKey())
+        .map(Map.Entry::getKey)
         .forEachOrdered(expiredList::add);
     for (String key : expiredList) {
       blockBasedPackets.remove(key);
