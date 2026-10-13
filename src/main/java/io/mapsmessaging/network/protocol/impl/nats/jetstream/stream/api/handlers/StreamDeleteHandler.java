@@ -41,6 +41,8 @@ import java.util.concurrent.TimeoutException;
 
 public class StreamDeleteHandler extends JetStreamFrameHandler {
 
+  private static final String TYPE = "io.nats.jetstream.api.v1.stream_delete_response";
+
   @Override
   public String getName() {
     return "STREAM.DELETE";
@@ -67,7 +69,7 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
     String streamName = parts[4];
     StreamInfoList info = NamespaceManager.getInstance().getStream(streamName);
     if (info == null) {
-      result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_delete_response").getBytes());
+      result.setPayload(streamNotFound(TYPE).getBytes());
       return result;
     }
 
@@ -94,10 +96,10 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
       JetStreamArchiveManager.getInstance().releaseStream(streamName);
     } catch (InterruptedException interrupted) {
       Thread.currentThread().interrupt();
-      return buildError("io.nats.jetstream.api.v1.stream_delete_response", 500,
+      return buildError(TYPE, 500,
           "Interrupted removing stream membership", frame.getReplyTo(), sessionState);
     } catch (ExecutionException | TimeoutException | IOException failure) {
-      return buildError("io.nats.jetstream.api.v1.stream_delete_response", 500,
+      return buildError(TYPE, 500,
           "Unable to remove stream membership: " + failure.getMessage(), frame.getReplyTo(), sessionState);
     }
     result.setPayload(success().getBytes());
@@ -107,14 +109,14 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
 
   private String success() {
     return "{\n" +
-        "  \"type\": \"io.nats.jetstream.api.v1.stream_delete_response\",\n" +
+        "  \"type\": \"" + TYPE + "\",\n" +
         "  \"success\": true\n" +
         "}";
   }
 
   private String deletionDisabledMessage() {
     return "{\n" +
-        "  \"type\": \"io.nats.jetstream.api.v1.stream_delete_response\",\n" +
+        "  \"type\": \"" + TYPE + "\",\n" +
         "  \"error\": {\n" +
         "    \"code\": 403,\n" +
         "    \"description\": \"stream deletion not permitted\"\n" +

@@ -82,7 +82,7 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
     streamConfig.setName(streamInfoList.getName());
     List<String> subjects = new ArrayList<>();
     streamInfoList.getSubjects().stream()
-        .map(info -> info.getSubject())
+        .map(StreamInfo::getSubject)
         .forEachOrdered(subjects::add);
     streamConfig.setSubjects(subjects);
     streamConfig.setStorage(streamInfoList.getSubjects().stream().anyMatch(info -> info.getDestination().isPersistent()) ? "file" : "memory");

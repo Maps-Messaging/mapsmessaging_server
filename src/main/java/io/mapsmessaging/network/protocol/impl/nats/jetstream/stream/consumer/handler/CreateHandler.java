@@ -48,6 +48,8 @@ import java.util.UUID;
 
 public class CreateHandler extends JetStreamFrameHandler {
 
+  private static final String CONFIG_KEY = "config";
+
   private static final String TYPE = "io.nats.jetstream.api.v1.consumer_create_response";
 
   @Override
@@ -188,8 +190,8 @@ public class CreateHandler extends JetStreamFrameHandler {
   }
 
   ConsumerConfig parseConfig(JsonObject request) {
-    JsonObject config = request != null && request.has("config") && request.get("config").isJsonObject()
-        ? request.getAsJsonObject("config") : request;
+    JsonObject config = request != null && request.has(CONFIG_KEY) && request.get(CONFIG_KEY).isJsonObject()
+        ? request.getAsJsonObject(CONFIG_KEY) : request;
     if (config == null) {
       return new ConsumerConfig();
     }

@@ -49,6 +49,8 @@ import java.util.stream.Collectors;
 
 public class StreamUpdateHandler extends JetStreamFrameHandler {
 
+  private static final String TYPE = "io.nats.jetstream.api.v1.stream_update_response";
+
   private static final String SUBJECTS_KEY = "subjects";
 
 
@@ -78,7 +80,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
     PayloadFrame result = (PayloadFrame) msg;
     StreamInfoList info = NamespaceManager.getInstance().getStream(streamName);
     if (info == null) {
-      result.setPayload(streamNotFound("io.nats.jetstream.api.v1.stream_update_response").getBytes());
+      result.setPayload(streamNotFound(TYPE).getBytes());
       return result;
     }
     JsonArray subjectsArray = json.getAsJsonArray(SUBJECTS_KEY);
@@ -103,7 +105,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
         .toList();
 
     if (!toRemove.isEmpty() && !sessionState.getProtocol().getNatsConfig().isEnableStreamDelete()) {
-      return buildError("io.nats.jetstream.api.v1.stream_update_response", 403,
+      return buildError(TYPE, 403,
           "Stream subject removal is not permitted", frame.getReplyTo(), sessionState);
     }
     List<CompletableFuture<Destination>> futures = new ArrayList<>();
@@ -122,10 +124,10 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
       }
     } catch (InterruptedException interrupted) {
       Thread.currentThread().interrupt();
-      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+      return buildError(TYPE, 500,
           "Interrupted resolving removed subjects", frame.getReplyTo(), sessionState);
     } catch (ExecutionException | TimeoutException | IOException failure) {
-      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+      return buildError(TYPE, 500,
           "Unable to remove stream subjects: " + failure.getMessage(), frame.getReplyTo(), sessionState);
     }
     try {
@@ -137,17 +139,17 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
       return new ErrFrame("Timed out waiting for destination creation");
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+      return buildError(TYPE, 500,
           "Interrupted while updating stream destinations", frame.getReplyTo(), sessionState);
     } catch (ExecutionException e) {
-      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+      return buildError(TYPE, 500,
           "Failed to update stream destinations", frame.getReplyTo(), sessionState);
     }
 
     for (CompletableFuture<Destination> pending : futures) {
       Destination destination = pending.getNow(null);
       if (destination == null) {
-        return buildError("io.nats.jetstream.api.v1.stream_update_response", 500, "Unable to create stream subject",
+        return buildError(TYPE, 500, "Unable to create stream subject",
             frame.getReplyTo(), sessionState);
       }
       try {
@@ -155,7 +157,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
             destination.getFullyQualifiedNamespace());
         NatsJetStreamDestinations.enable(destination);
       } catch (IOException failure) {
-        return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+        return buildError(TYPE, 500,
             "Unable to initialise JetStream archive: " + failure.getMessage(),
             frame.getReplyTo(), sessionState);
       }
@@ -168,12 +170,12 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
       }
       JetStreamArchiveManager.getInstance().releaseTopics(streamName, removedTopics);
     } catch (IOException failure) {
-      return buildError("io.nats.jetstream.api.v1.stream_update_response", 500,
+      return buildError(TYPE, 500,
           "Unable to release stream subjects: " + failure.getMessage(), frame.getReplyTo(), sessionState);
     }
     PayloadFrame payloadFrame = (PayloadFrame) msg;
     JsonObject responseJson = new JsonObject();
-    responseJson.addProperty("type", "io.nats.jetstream.api.v1.stream_update_response");
+    responseJson.addProperty("type", TYPE);
     responseJson.add("config", json.deepCopy());
     responseJson.addProperty("created", Instant.now().toString());
     payloadFrame.setPayload(gson.toJson(responseJson).getBytes(StandardCharsets.UTF_8));

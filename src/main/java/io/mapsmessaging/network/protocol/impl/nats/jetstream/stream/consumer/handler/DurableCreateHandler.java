@@ -29,6 +29,10 @@ import java.io.IOException;
 
 public class DurableCreateHandler extends JetStreamFrameHandler {
 
+  private static final String DURABLE_NAME_KEY = "durable_name";
+
+  private static final String CONFIG_KEY = "config";
+
   private static final String TYPE = "io.nats.jetstream.api.v1.consumer_create_response";
   private final CreateHandler delegate;
 
@@ -53,12 +57,12 @@ public class DurableCreateHandler extends JetStreamFrameHandler {
       return buildError(TYPE, 400, "Invalid durable consumer subject", frame.getReplyTo(), sessionState);
     }
     JsonObject request = json == null ? new JsonObject() : json.deepCopy();
-    JsonObject config = request.has("config") && request.get("config").isJsonObject()
-        ? request.getAsJsonObject("config") : request;
-    if (config.has("durable_name") && !parts[6].equals(config.get("durable_name").getAsString())) {
+    JsonObject config = request.has(CONFIG_KEY) && request.get(CONFIG_KEY).isJsonObject()
+        ? request.getAsJsonObject(CONFIG_KEY) : request;
+    if (config.has(DURABLE_NAME_KEY) && !parts[6].equals(config.get(DURABLE_NAME_KEY).getAsString())) {
       return buildError(TYPE, 400, "Durable name does not match request subject", frame.getReplyTo(), sessionState);
     }
-    config.addProperty("durable_name", parts[6]);
+    config.addProperty(DURABLE_NAME_KEY, parts[6]);
     config.addProperty("name", parts[6]);
 
     frame.setSubject("$JS.API.CONSUMER.CREATE." + parts[5] + "." + parts[6]);

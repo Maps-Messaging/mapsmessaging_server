@@ -163,7 +163,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   public void sendPing() {
     if (outstandingPing.incrementAndGet() > 2) {
       ErrFrame errFrame = new ErrFrame("Ping timed out");
-      errFrame.setCompletionHandler(() -> protocol.close());
+      errFrame.setCompletionHandler(protocol::close);
       send(errFrame);
     } else {
       PingFrame pingFrame = new PingFrame();
