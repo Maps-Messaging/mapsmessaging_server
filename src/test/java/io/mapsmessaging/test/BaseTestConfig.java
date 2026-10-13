@@ -72,7 +72,8 @@ public class BaseTestConfig extends BaseTest {
   }
 
   @AfterEach
-  void clear(){
+  void cleanupAfterTest() {
+    checkSessionState();
     deleteUnknownDestinations();
   }
 
@@ -176,7 +177,6 @@ public class BaseTestConfig extends BaseTest {
     }
   }
 
-  @AfterEach
   void checkSessionState()  {
     try {
       if (md == null || md.getSubSystemManager() == null) {
