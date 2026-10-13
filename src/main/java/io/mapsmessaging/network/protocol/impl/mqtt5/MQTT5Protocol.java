@@ -122,6 +122,9 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
   @Getter
   private final RemoteSubscriptionTracker remoteSubscriptionTracker;
 
+  @Getter
+  private volatile String connectionSessionId;
+
   private ScheduledFuture<?> connectionTimeOut = null;
 
 
@@ -224,6 +227,7 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
       connect.setWillProperties(willMsg.getProperties());
     }
     connect.setSessionId(sessionId);
+    connectionSessionId = sessionId;
     connectionTimeOut = SimpleTaskScheduler.getInstance().schedule(new ConnectCompletionTimeout(this), 1, TimeUnit.MINUTES);
     writeFrame(connect);
     registerRead();

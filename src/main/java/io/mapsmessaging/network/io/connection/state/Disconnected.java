@@ -28,6 +28,7 @@ import io.mapsmessaging.network.auth.TokenGenerator;
 import io.mapsmessaging.network.auth.TokenGeneratorManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
+import io.mapsmessaging.network.io.connection.ConnectionSessionId;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -95,6 +96,9 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         password = tokenGenerator.generate();
       }
       Map<String, String> topicMap = getTopicMap(properties.getLinkConfigs());
+      if ("MQTT".equalsIgnoreCase(protocolImplFactory.getName())) {
+        sessionId = ConnectionSessionId.derive(sessionId, ConnectionSessionId.namespaces(properties.getLinkConfigs()));
+      }
       Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password, topicMap);
 
       if (!isCurrentAttempt()) {

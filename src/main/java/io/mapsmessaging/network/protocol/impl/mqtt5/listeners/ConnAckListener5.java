@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDT
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.connection.ConnectionSessionId;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
@@ -55,9 +56,13 @@ public class ConnAckListener5 extends PacketListener5 {
       return null; // already connected
     }
 
-    AuthConfigDTO config =  ((EndPointConnectionServerConfigDTO)endPoint.getConfig()).getAuthConfig();
+    EndPointConnectionServerConfigDTO connectionConfig = (EndPointConnectionServerConfigDTO) endPoint.getConfig();
+    AuthConfigDTO config = connectionConfig.getAuthConfig();
 
-    String sess = config.getSessionId();
+    String sess = mqtt5Protocol.getConnectionSessionId();
+    if (sess == null && config.getSessionId() != null) {
+      sess = ConnectionSessionId.derive(config.getSessionId(), ConnectionSessionId.namespaces(connectionConfig.getLinkConfigs()));
+    }
     String user = config.getUsername();
     String pass = config.getPassword();
 

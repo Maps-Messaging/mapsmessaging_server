@@ -85,6 +85,9 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
   @Getter
   private final RemoteSubscriptionTracker remoteSubscriptionTracker;
 
+  @Getter
+  private volatile String connectionSessionId;
+
   private ScheduledFuture<?> connectionTimeOut = null;
   private volatile boolean rejectingConnection;
 
@@ -145,6 +148,7 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
   public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg) throws IOException {
     Connect connect = new Connect();
     connect.setSessionId(sessionId);
+    connectionSessionId = sessionId;
     connect.setCleanSession(false);
     connect.setKeepAlive((int) keepAlive);
     if (username != null) {
