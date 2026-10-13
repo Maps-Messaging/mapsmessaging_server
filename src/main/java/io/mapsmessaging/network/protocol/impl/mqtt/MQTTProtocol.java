@@ -83,6 +83,7 @@ public class MQTTProtocol extends Protocol {
   private Session session;
 
   private ScheduledFuture<?> connectionTimeOut = null;
+  private volatile boolean rejectingConnection;
 
   public MQTTProtocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
@@ -223,12 +224,20 @@ public class MQTTProtocol extends Protocol {
   }
 
   public boolean processPacket(Packet packet) throws IOException {
+    if (rejectingConnection) {
+      packet.position(packet.limit());
+      return true;
+    }
     int pos = packet.position();
     try {
       boolean resume = false;
       while (packet.hasRemaining()) {
         resume = handleMQTTEvent(packet);
         pos = packet.position();
+        if (rejectingConnection) {
+          packet.position(packet.limit());
+          return true;
+        }
       }
       if (resume) {
         registerRead();
@@ -254,6 +263,9 @@ public class MQTTProtocol extends Protocol {
       EndPoint.totalReceived.increment();
       PacketListener packetListener = packetListenerFactory.getListener(mqtt.getControlPacketId());
       MQTTPacket response = packetListener.handlePacket(mqtt, session, endPoint, this);
+      if (mqtt instanceof Connect connect && !connect.hasSupportedProtocolLevel()) {
+        rejectingConnection = true;
+      }
       if (response != null) {
         EndPoint.totalSent.increment();
         if (logger.isInfoEnabled()) {

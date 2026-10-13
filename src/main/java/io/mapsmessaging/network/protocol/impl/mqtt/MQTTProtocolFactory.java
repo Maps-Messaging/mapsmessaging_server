@@ -27,12 +27,17 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MqttVersion;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.EndOfBufferException;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.Publish;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.BufferUnderflowException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 
@@ -46,6 +51,34 @@ public class MQTTProtocolFactory extends ProtocolImplFactory {
 
   public MQTTProtocolFactory() {
     super("MQTT", "MQTT version 3.1.1 as per http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html", new MultiByteArrayDetection(PROTOCOL, 4, 2));
+  }
+
+  @Override
+  public boolean detect(Packet packet) throws EndOfBufferException {
+    Packet probe = new Packet(packet.getRawBuffer().duplicate());
+    try {
+      if ((probe.get() & 0xff) != 0x10) {
+        return false;
+      }
+      MQTTPacket.readVariableInt(probe);
+      int nameLength = MQTTPacket.readShort(probe);
+      if (nameLength != 4 && nameLength != 6) {
+        return false;
+      }
+      if (probe.available() < nameLength + 1) {
+        throw new EndOfBufferException();
+      }
+      byte[] name = new byte[nameLength];
+      probe.get(name);
+      int level = probe.get() & 0xff;
+      // Route unsupported levels to CONNECT rejection, while leaving level 5 to MQTT5.
+      return (Arrays.equals(name, "MQTT".getBytes(StandardCharsets.US_ASCII)) && level != 5)
+          || Arrays.equals(name, "MQIsdp".getBytes(StandardCharsets.US_ASCII));
+    } catch (MalformedException malformed) {
+      return false;
+    } catch (BufferUnderflowException incomplete) {
+      throw new EndOfBufferException();
+    }
   }
 
   @Override

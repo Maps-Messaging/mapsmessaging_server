@@ -82,6 +82,8 @@ public class Connect extends MQTTPacket {
 
   public Connect() {
     super(CONNECT);
+    protocolLevel = 4;
+    supportedProtocolLevel = true;
     keepAlive = 60_000;
   }
 
