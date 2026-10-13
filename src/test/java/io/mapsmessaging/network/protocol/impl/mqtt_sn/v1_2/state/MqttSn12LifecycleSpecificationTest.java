@@ -37,6 +37,7 @@ class MqttSn12LifecycleSpecificationTest {
     MqttSnConfig config = mock(MqttSnConfig.class);
     StateEngine engine = mock(StateEngine.class);
     when(endPoint.getConfig().getProtocolConfig("mqtt-sn")).thenReturn(config);
+    when(protocol.getProtocolConfig()).thenReturn(config);
 
     Connect connect = assertInstanceOf(
         Connect.class,
