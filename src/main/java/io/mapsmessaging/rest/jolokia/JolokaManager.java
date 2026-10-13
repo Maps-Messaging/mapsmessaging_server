@@ -78,10 +78,10 @@ public class JolokaManager implements Agent {
   private class Startup implements Runnable {
 
     private JolokiaServer jolokiaServer;
-    private final JolokiaConfig config;
+    private final JolokiaConfig startupConfig;
 
-    public Startup(JolokiaConfig config){
-      this.config = config;
+    public Startup(JolokiaConfig startupConfig){
+      this.startupConfig = startupConfig;
     }
 
     public void stop() {
@@ -97,7 +97,7 @@ public class JolokaManager implements Agent {
 
     public void run() {
       HashMap<String, String> map = new HashMap<>();
-      Map<String, Object> properties = config.getConfig();
+      Map<String, Object> properties = startupConfig.getConfig();
       for (Entry<String, Object> entry : properties.entrySet()) {
         String val = entry.getValue().toString();
         if(val.endsWith(".0")){
