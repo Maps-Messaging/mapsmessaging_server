@@ -96,14 +96,7 @@ public class MessagePipeline {
   }
 
   public void queue(@NotNull @NonNull MessageEvent incomingEvent) {
-    AtomicBoolean completed = new AtomicBoolean();
-    Runnable completionTask = incomingEvent.getCompletionTask();
-    MessageEvent messageEvent = new MessageEvent(incomingEvent.getDestinationName(),
-        incomingEvent.getSubscription(), incomingEvent.getMessage(), () -> {
-          if (completed.compareAndSet(false, true) && completionTask != null) {
-            completionTask.run();
-          }
-        });
+    MessageEvent messageEvent = withCompletionOnce(incomingEvent);
     SubscriptionContext context = messageEvent.getSubscription().getContext();
     if (context == null) {
       messageEvent.getCompletionTask().run();
@@ -111,30 +104,48 @@ public class MessagePipeline {
     }
     QualityOfService qos = context.getQualityOfService();
     if (paused.get()) {
-      if (dropQoS0 &&
-          messageEvent.getMessage().getQualityOfService().getLevel() == 0 &&
-          messageEvent.getSubscription().getDepth() > 1) {
-        messageEvent.getCompletionTask().run();
-        logger.log(MQTT_SN_PIPELINE_EVENT_DROPPED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(),
-            messageEvent.getMessage().getQualityOfService().getLevel());
-        return;
-      }
-      publishContexts.offer(messageEvent);
-      logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
-
+      queueWhilePaused(messageEvent);
     } else {
-      if (publishContexts.size() + 1 <= maxInFlightEvents) {
-        if (qos.getLevel() > 0) {
-          logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
-          publishContexts.offer(messageEvent);
-        }
-        if (!send(messageEvent, context) && qos.getLevel() == 0) {
-          publishContexts.offer(messageEvent);
-        }
-      } else {
+      queueWhileActive(messageEvent, context, qos);
+    }
+  }
+
+  private MessageEvent withCompletionOnce(MessageEvent incomingEvent) {
+    AtomicBoolean completed = new AtomicBoolean();
+    Runnable completionTask = incomingEvent.getCompletionTask();
+    return new MessageEvent(incomingEvent.getDestinationName(),
+        incomingEvent.getSubscription(), incomingEvent.getMessage(), () -> {
+          if (completed.compareAndSet(false, true) && completionTask != null) {
+            completionTask.run();
+          }
+        });
+  }
+
+  private void queueWhilePaused(MessageEvent messageEvent) {
+    if (dropQoS0 &&
+        messageEvent.getMessage().getQualityOfService().getLevel() == 0 &&
+        messageEvent.getSubscription().getDepth() > 1) {
+      messageEvent.getCompletionTask().run();
+      logger.log(MQTT_SN_PIPELINE_EVENT_DROPPED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(),
+          messageEvent.getMessage().getQualityOfService().getLevel());
+      return;
+    }
+    publishContexts.offer(messageEvent);
+    logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
+  }
+
+  private void queueWhileActive(MessageEvent messageEvent, SubscriptionContext context, QualityOfService qos) {
+    if (publishContexts.size() + 1 <= maxInFlightEvents) {
+      if (qos.getLevel() > 0) {
         logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
         publishContexts.offer(messageEvent);
       }
+      if (!send(messageEvent, context) && qos.getLevel() == 0) {
+        publishContexts.offer(messageEvent);
+      }
+    } else {
+      logger.log(MQTT_SN_PIPELINE_EVENT_QUEUED, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier());
+      publishContexts.offer(messageEvent);
     }
   }
 
@@ -160,22 +171,30 @@ public class MessagePipeline {
       messageEvent = publishContexts.peek();
     }
     if (messageEvent != null) {
-      QualityOfService qos = context.getQualityOfService();
-      if (messageEvent.getMessage().getCreation() + eventTimeout > System.currentTimeMillis()) {
-        if (qos.getLevel() == 0) {
-          if (send(messageEvent, context)) {
-            empty.decrementAndGet();
-            completed();
-          }
-        } else {
-          send(messageEvent, context);
+      sendQueuedEvent(messageEvent, context);
+    }
+    completePausedDrain();
+  }
+
+  private void sendQueuedEvent(MessageEvent messageEvent, SubscriptionContext context) {
+    QualityOfService qos = context.getQualityOfService();
+    if (messageEvent.getMessage().getCreation() + eventTimeout > System.currentTimeMillis()) {
+      if (qos.getLevel() == 0) {
+        if (send(messageEvent, context)) {
+          empty.decrementAndGet();
+          completed();
         }
       } else {
-        logger.log(MQTT_SN_PIPELINE_EVENT_TIMED_OUT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), qos.getLevel());
-        messageEvent.getCompletionTask().run();
-        completed();
+        send(messageEvent, context);
       }
+    } else {
+      logger.log(MQTT_SN_PIPELINE_EVENT_TIMED_OUT, protocol.getName(), messageEvent.getDestinationName(), messageEvent.getMessage().getIdentifier(), qos.getLevel());
+      messageEvent.getCompletionTask().run();
+      completed();
     }
+  }
+
+  private void completePausedDrain() {
     if (publishContexts.isEmpty() && paused.get()) {
       empty.set(0);
       stateEngine.getTopicAliasManager().clear();
