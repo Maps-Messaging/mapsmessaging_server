@@ -115,6 +115,13 @@ class Mqtt5UnsubAckBoundaryRegressionTest {
     assertEquals(0, packet.available());
   }
 
+  @Test
+  void claimed_remaining_length_does_not_allocate_an_unavailable_payload() {
+    Packet packet = new Packet(ByteBuffer.wrap(new byte[] {0, 1, 0, 0}));
+    assertThrows(java.nio.BufferUnderflowException.class,
+        () -> new UnsubAck5((byte) 0xb0, 268435455, packet));
+  }
+
   private static Packet pack(UnsubAck5 ack) {
     Packet packet = new Packet(512, false);
     int written = ack.packFrame(packet);
