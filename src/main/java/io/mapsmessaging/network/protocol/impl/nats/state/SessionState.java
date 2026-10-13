@@ -175,6 +175,21 @@ public class SessionState implements CloseHandler, CompletionHandler {
   public void close() throws IOException {
     isValid = false;
     List<CompletableFuture<Session>> closures = new ArrayList<>();
+    IOException problem = closeConsumers(closures);
+    namedConsumers.clear();
+    jetStreamRequestManager.close();
+    activeSubscriptions.clear();
+    destinationSubscriptionAliases.clear();
+    queueGroupCounters.clear();
+    subscriptions.clear();
+    problem = queueSessionClosure(closures, problem);
+    problem = awaitClosures(closures, problem);
+    if (problem != null) {
+      throw problem;
+    }
+  }
+
+  private IOException closeConsumers(List<CompletableFuture<Session>> closures) {
     IOException problem = null;
     for (NamedConsumer consumer : namedConsumers.values()) {
       try {
@@ -189,12 +204,10 @@ public class SessionState implements CloseHandler, CompletionHandler {
         }
       }
     }
-    namedConsumers.clear();
-    jetStreamRequestManager.close();
-    activeSubscriptions.clear();
-    destinationSubscriptionAliases.clear();
-    queueGroupCounters.clear();
-    subscriptions.clear();
+    return problem;
+  }
+
+  private IOException queueSessionClosure(List<CompletableFuture<Session>> closures, IOException problem) {
     if (session != null) {
       try {
         closures.add(SessionManager.getInstance().closeAsync(session, false));
@@ -204,6 +217,10 @@ public class SessionState implements CloseHandler, CompletionHandler {
         }
       }
     }
+    return problem;
+  }
+
+  private IOException awaitClosures(List<CompletableFuture<Session>> closures, IOException problem) {
     for (CompletableFuture<Session> closing : closures) {
       try {
         closing.get();
@@ -219,9 +236,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
         }
       }
     }
-    if (problem != null) {
-      throw problem;
-    }
+    return problem;
   }
 
   public void shutdown() {

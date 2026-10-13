@@ -114,6 +114,21 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
         .map(subjectName -> constructDestinationFromSubject(streamName, subjectName, sessionState))
         .forEachOrdered(futures::add);
 
+    NatsFrame failure = updateDestinations(frame, sessionState, streamName, removedTopics, futures);
+    if (failure != null) {
+      return failure;
+    }
+    PayloadFrame payloadFrame = (PayloadFrame) msg;
+    JsonObject responseJson = new JsonObject();
+    responseJson.addProperty("type", TYPE);
+    responseJson.add("config", json.deepCopy());
+    responseJson.addProperty("created", Instant.now().toString());
+    payloadFrame.setPayload(gson.toJson(responseJson).getBytes(StandardCharsets.UTF_8));
+    return msg;
+  }
+
+  private NatsFrame updateDestinations(PayloadFrame frame, SessionState sessionState, String streamName,
+                                       List<String> removedTopics, List<CompletableFuture<Destination>> futures) {
     List<Destination> removed = new ArrayList<>();
     try {
       for (String topic : removedTopics) {
@@ -130,6 +145,19 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
       return buildError(TYPE, 500,
           "Unable to remove stream subjects: " + failure.getMessage(), frame.getReplyTo(), sessionState);
     }
+    NatsFrame failure = awaitDestinations(frame, sessionState, futures);
+    if (failure != null) {
+      return failure;
+    }
+    failure = enableDestinations(frame, sessionState, streamName, futures);
+    if (failure != null) {
+      return failure;
+    }
+    return removeDestinations(frame, sessionState, streamName, removedTopics, removed);
+  }
+
+  private NatsFrame awaitDestinations(PayloadFrame frame, SessionState sessionState,
+                                      List<CompletableFuture<Destination>> futures) {
     try {
       List<CompletableFuture<?>> futureList = new ArrayList<>();
       futureList.addAll(futures);
@@ -146,6 +174,11 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
           "Failed to update stream destinations", frame.getReplyTo(), sessionState);
     }
 
+    return null;
+  }
+
+  private NatsFrame enableDestinations(PayloadFrame frame, SessionState sessionState, String streamName,
+                                       List<CompletableFuture<Destination>> futures) {
     for (CompletableFuture<Destination> pending : futures) {
       Destination destination = pending.getNow(null);
       if (destination == null) {
@@ -162,6 +195,11 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
             frame.getReplyTo(), sessionState);
       }
     }
+    return null;
+  }
+
+  private NatsFrame removeDestinations(PayloadFrame frame, SessionState sessionState, String streamName,
+                                       List<String> removedTopics, List<Destination> removed) {
     try {
       for (Destination destination : removed) {
         JetStreamArchiveManager.getInstance().ensureArchive(sessionState, streamName,
@@ -173,13 +211,7 @@ public class StreamUpdateHandler extends JetStreamFrameHandler {
       return buildError(TYPE, 500,
           "Unable to release stream subjects: " + failure.getMessage(), frame.getReplyTo(), sessionState);
     }
-    PayloadFrame payloadFrame = (PayloadFrame) msg;
-    JsonObject responseJson = new JsonObject();
-    responseJson.addProperty("type", TYPE);
-    responseJson.add("config", json.deepCopy());
-    responseJson.addProperty("created", Instant.now().toString());
-    payloadFrame.setPayload(gson.toJson(responseJson).getBytes(StandardCharsets.UTF_8));
-    return msg;
+    return null;
   }
 
   private CompletableFuture<Destination> constructDestinationFromSubject(String streamName, String subject, SessionState sessionState) {

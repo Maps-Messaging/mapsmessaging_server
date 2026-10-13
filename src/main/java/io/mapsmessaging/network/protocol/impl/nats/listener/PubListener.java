@@ -64,73 +64,108 @@ public class PubListener implements FrameListener {
     }
 
     String publisherReply = msgFrame.getReplyTo();
+    if (!validateStreamSequences(engine, publisherReply, lookup, destinations)) {
+      return;
+    }
+    Publication publication = new Publication();
+    for (String namespace : destinations) {
+      if (!publishDestination(engine, msgFrame, lookup, namespace, publisherReply, publication)) {
+        return;
+      }
+    }
+    sendPublicationResult(engine, publisherReply, publication);
+    if (engine.isVerbose()) {
+      engine.send(new OkFrame());
+    }
+  }
+
+  private boolean validateStreamSequences(SessionState engine, String publisherReply, String lookup,
+                                          Set<String> destinations) {
     if (publisherReply != null && !publisherReply.isBlank()) {
       for (String namespace : destinations) {
         if (!namespace.equals(lookup) && !supportsDestinationSequence(namespace)) {
           sendPublishError(engine, publisherReply,
               "JetStream stream-global sequences across multiple MAPS destinations are not implemented", 501);
-          return;
+          return false;
         }
       }
     }
-    String publishedStream = null;
-    long publishedSequence = 0;
-    boolean streamPublication = false;
-    for (String namespace : destinations) {
-      CompletableFuture<Destination> future = engine.getSession().findDestination(namespace, DestinationType.TOPIC);
-      if (future == null) {
-        return;
-      }
-      try {
-        Destination destination = future.get();
-        if (destination == null) {
-          engine.send(new ErrFrame("No such destination"));
-          return;
-        }
-        boolean streamTarget = !namespace.equals(lookup);
-        if (streamTarget) {
-          int separator = namespace.indexOf('/');
-          if (separator <= 0) {
-            throw new IOException("Invalid JetStream destination: " + namespace);
-          }
-          ensureArchiveForStream(engine, namespace.substring(0, separator),
-              destination.getFullyQualifiedNamespace());
-        }
-        long assignedId = handleMessageStoreToDestination(destination, engine, msgFrame, streamTarget);
-        if (streamTarget) {
-          streamPublication = true;
-          if (publishedStream == null) {
-            publishedStream = namespace.substring(0, namespace.indexOf('/'));
-            publishedSequence = assignedId;
-          }
-        }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new IOException("Interrupted while resolving NATS destination", e);
-      } catch (ExecutionException e) {
-        Throwable cause = e.getCause();
-        if (cause instanceof IOException ioException) {
-          throw ioException;
-        }
-        throw new IOException("Failed to resolve NATS destination", cause);
-      } catch (IOException e) {
-        if (publisherReply != null && !publisherReply.isBlank() && !namespace.equals(lookup)) {
-          sendPublishError(engine, publisherReply, e.getMessage());
-        } else {
-          engine.send(new ErrFrame(e.getMessage()));
-        }
-        return;
-      }
+    return true;
+  }
+
+  private boolean publishDestination(SessionState engine, PayloadFrame msgFrame, String lookup, String namespace,
+                                     String publisherReply, Publication publication) throws IOException {
+    CompletableFuture<Destination> future = engine.getSession().findDestination(namespace, DestinationType.TOPIC);
+    if (future == null) {
+      return false;
     }
-    if (publisherReply != null && !publisherReply.isBlank() && streamPublication) {
-      if (publishedSequence > 0) {
-        sendPublishAcknowledgement(engine, publisherReply, publishedStream, publishedSequence);
+    try {
+      Destination destination = future.get();
+      if (destination == null) {
+        engine.send(new ErrFrame("No such destination"));
+        return false;
+      }
+      boolean streamTarget = !namespace.equals(lookup);
+      if (streamTarget) {
+        initialiseStreamArchive(engine, namespace, destination);
+      }
+      long assignedId = handleMessageStoreToDestination(destination, engine, msgFrame, streamTarget);
+      if (streamTarget) {
+        publication.record(namespace, assignedId);
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while resolving NATS destination", e);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof IOException ioException) {
+        throw ioException;
+      }
+      throw new IOException("Failed to resolve NATS destination", cause);
+    } catch (IOException e) {
+      sendDestinationError(engine, publisherReply, namespace.equals(lookup), e);
+      return false;
+    }
+    return true;
+  }
+
+  private void initialiseStreamArchive(SessionState engine, String namespace, Destination destination) throws IOException {
+    int separator = namespace.indexOf('/');
+    if (separator <= 0) {
+      throw new IOException("Invalid JetStream destination: " + namespace);
+    }
+    ensureArchiveForStream(engine, namespace.substring(0, separator), destination.getFullyQualifiedNamespace());
+  }
+
+  private void sendDestinationError(SessionState engine, String publisherReply, boolean coreTarget, IOException failure) {
+    if (publisherReply != null && !publisherReply.isBlank() && !coreTarget) {
+      sendPublishError(engine, publisherReply, failure.getMessage());
+    } else {
+      engine.send(new ErrFrame(failure.getMessage()));
+    }
+  }
+
+  private void sendPublicationResult(SessionState engine, String publisherReply, Publication publication) {
+    if (publisherReply != null && !publisherReply.isBlank() && publication.streamPublication) {
+      if (publication.sequence > 0) {
+        sendPublishAcknowledgement(engine, publisherReply, publication.stream, publication.sequence);
       } else {
         sendPublishError(engine, publisherReply, "JetStream message was not stored");
       }
     }
-    if (engine.isVerbose()) {
-      engine.send(new OkFrame());
+  }
+
+  private static class Publication {
+    private String stream;
+    private long sequence;
+    private boolean streamPublication;
+
+    private void record(String namespace, long assignedId) {
+      streamPublication = true;
+      if (stream == null) {
+        stream = namespace.substring(0, namespace.indexOf('/'));
+        sequence = assignedId;
+      }
     }
   }
 

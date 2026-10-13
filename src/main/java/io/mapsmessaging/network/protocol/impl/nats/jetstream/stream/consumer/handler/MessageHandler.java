@@ -74,38 +74,51 @@ public class MessageHandler  extends JetStreamFrameHandler {
 
   public int deliverNext(NamedConsumer consumer, String replyTo, SessionState sessionState, int batch, boolean noWait) throws IOException {
     int delivered = 0;
-    for (int i = 0; i < batch; i++) {
-      MessageEvent msg = consumer.getNextMessage(noWait);
-      if (msg != null) {
-        String destinationName = msg.getDestinationName();
-        if (consumer.terminateIfMaxDelivered(destinationName, msg.getMessage().getIdentifier())) {
-          continue;
-        }
-        String prefix = consumer.getStreamName() + "/";
-        String publishedSubject = destinationName.startsWith(prefix) ? destinationName.substring(prefix.length()) : destinationName;
-        PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), publishedSubject);
-        TransactionSubject acknowledgement = consumer.recordDelivery(destinationName, msg.getMessage());
-        if (acknowledgement == null) {
-          consumer.rollbackUnregistered(destinationName, msg.getMessage().getIdentifier());
-          throw new IOException("Unable to register pending JetStream delivery");
-        }
-        payloadFrame.setSubject(replyTo);
-        payloadFrame.setReplyTo(acknowledgement.toSubject());
-        payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
-        try {
-          if (!sessionState.send(payloadFrame)) {
-            consumer.rollbackUnsent(acknowledgement);
-            break;
-          }
-        } catch (RuntimeException failure) {
-          consumer.rollbackUnsent(acknowledgement);
-          throw failure;
-        }
+    boolean stopped = false;
+    for (int i = 0; i < batch && !stopped; i++) {
+      DeliveryResult result = deliverOne(consumer, replyTo, sessionState, noWait);
+      stopped = result == DeliveryResult.STOPPED;
+      if (result == DeliveryResult.DELIVERED) {
         delivered++;
-      } else {
-        break;
       }
     }
     return delivered;
+  }
+
+  private DeliveryResult deliverOne(NamedConsumer consumer, String replyTo, SessionState sessionState, boolean noWait)
+      throws IOException {
+    MessageEvent msg = consumer.getNextMessage(noWait);
+    if (msg == null) {
+      return DeliveryResult.STOPPED;
+    }
+    String destinationName = msg.getDestinationName();
+    if (consumer.terminateIfMaxDelivered(destinationName, msg.getMessage().getIdentifier())) {
+      return DeliveryResult.SKIPPED;
+    }
+    String prefix = consumer.getStreamName() + "/";
+    String publishedSubject = destinationName.startsWith(prefix) ? destinationName.substring(prefix.length()) : destinationName;
+    PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), publishedSubject);
+    TransactionSubject acknowledgement = consumer.recordDelivery(destinationName, msg.getMessage());
+    if (acknowledgement == null) {
+      consumer.rollbackUnregistered(destinationName, msg.getMessage().getIdentifier());
+      throw new IOException("Unable to register pending JetStream delivery");
+    }
+    payloadFrame.setSubject(replyTo);
+    payloadFrame.setReplyTo(acknowledgement.toSubject());
+    payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
+    try {
+      if (!sessionState.send(payloadFrame)) {
+        consumer.rollbackUnsent(acknowledgement);
+        return DeliveryResult.STOPPED;
+      }
+    } catch (RuntimeException failure) {
+      consumer.rollbackUnsent(acknowledgement);
+      throw failure;
+    }
+    return DeliveryResult.DELIVERED;
+  }
+
+  private enum DeliveryResult {
+    DELIVERED, SKIPPED, STOPPED
   }
 }

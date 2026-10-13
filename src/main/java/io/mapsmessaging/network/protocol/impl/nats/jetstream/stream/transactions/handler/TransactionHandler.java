@@ -54,39 +54,55 @@ public class TransactionHandler extends JetStreamFrameHandler {
       return null;
     }
 
+    return handleCommand(frame, state, subject, consumer);
+  }
+
+  private NatsFrame handleCommand(PayloadFrame frame, SessionState state, TransactionSubject subject,
+                                 NamedConsumer consumer) throws IOException {
     String command = frame.getPayload() == null ? "" : new String(frame.getPayload(), StandardCharsets.UTF_8).trim();
     String keyword = command.toUpperCase(Locale.ROOT);
     if (keyword.isEmpty() || "+ACK".equals(keyword)) {
-      if (consumer.acknowledge(subject, false) || consumer.isAcknowledged(subject)) {
-        return confirmation(frame, state);
-      }
-      return null;
+      return acknowledge(frame, state, subject, consumer, false);
     }
     if ("+TERM".equals(keyword) || keyword.startsWith("+TERM ")) {
-      if (consumer.acknowledge(subject, true) || consumer.isAcknowledged(subject)) {
-        return confirmation(frame, state);
-      }
-      return null;
+      return acknowledge(frame, state, subject, consumer, true);
     }
     if ("+WPI".equals(keyword)) {
       return consumer.workingProgress(subject) ? confirmation(frame, state) : null;
     }
     if ("-NAK".equals(keyword) || keyword.startsWith("-NAK ")) {
-      Long delay = parseNakDelay(command);
-      return delay != null && consumer.negativeAcknowledgement(subject, delay) ? confirmation(frame, state) : null;
+      return negativeAcknowledgement(command, frame, state, subject, consumer);
     }
     if ("+NXT".equals(keyword) || keyword.startsWith("+NXT ")) {
-      NextDeliveryRequest request = parseNextRequest(command);
-      if (request == null || !consumer.acknowledge(subject, false)) {
-        return null;
-      }
-      String replyTo = frame.getReplyTo();
-      if (replyTo != null && !replyTo.isBlank()) {
-        new MessageHandler().deliverNext(consumer, replyTo, state, request.batch, request.noWait);
-      }
-      return null;
+      deliverNext(command, frame, state, subject, consumer);
     }
     return null;
+  }
+
+  private NatsFrame acknowledge(PayloadFrame frame, SessionState state, TransactionSubject subject,
+                               NamedConsumer consumer, boolean terminal) {
+    if (consumer.acknowledge(subject, terminal) || consumer.isAcknowledged(subject)) {
+      return confirmation(frame, state);
+    }
+    return null;
+  }
+
+  private NatsFrame negativeAcknowledgement(String command, PayloadFrame frame, SessionState state,
+                                           TransactionSubject subject, NamedConsumer consumer) {
+    Long delay = parseNakDelay(command);
+    return delay != null && consumer.negativeAcknowledgement(subject, delay) ? confirmation(frame, state) : null;
+  }
+
+  private void deliverNext(String command, PayloadFrame frame, SessionState state, TransactionSubject subject,
+                           NamedConsumer consumer) throws IOException {
+    NextDeliveryRequest request = parseNextRequest(command);
+    if (request == null || !consumer.acknowledge(subject, false)) {
+      return;
+    }
+    String replyTo = frame.getReplyTo();
+    if (replyTo != null && !replyTo.isBlank()) {
+      new MessageHandler().deliverNext(consumer, replyTo, state, request.batch, request.noWait);
+    }
   }
 
   static Long parseNakDelay(String command) {
