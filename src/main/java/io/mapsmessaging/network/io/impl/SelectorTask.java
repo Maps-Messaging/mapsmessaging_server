@@ -95,7 +95,9 @@ public class SelectorTask implements Selectable {
 
   public synchronized void close() {
     isOpen = false;
-    selectionKey.cancel();
+    if (selectionKey != null) {
+      selectionKey.cancel();
+    }
     logger.log(ServerLogMessages.SELECTOR_CLOSE_TASK);
   }
 
