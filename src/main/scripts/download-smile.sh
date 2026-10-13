@@ -57,7 +57,7 @@ for MODULE in "${MODULES[@]}"; do
   FILE="$MODULE-$VERSION.jar"
   URL="$BASE_URL/$GROUP_ID/$MODULE/$VERSION/$FILE"
   echo "-> $FILE"
-  curl -sSL "$URL" -o "$TARGET_DIR/$FILE"
+  curl --proto '=https' --proto-redir '=https' -fsSL "$URL" -o "$TARGET_DIR/$FILE" || exit 1
 done
 
 echo "All Smile JARs downloaded to $TARGET_DIR"

@@ -40,7 +40,7 @@ download_latest_snapshot_jar_and_rename() {
   echo "    metadata: ${metadata_url}"
 
   local metadata
-  metadata="$(curl -fsSL "${metadata_url}")"
+  metadata="$(curl --proto '=https' --proto-redir '=https' -fsSL "${metadata_url}")"
 
   local jar_value=""
   if [[ -n "${classifier}" ]]; then
@@ -72,7 +72,7 @@ download_latest_snapshot_jar_and_rename() {
   local final_file="${artifact_id}-${version}.jar"  # <-- the name you want
 
   echo "    download: ${jar_url}"
-  curl -fL --retry 3 --retry-delay 1 -o "${timestamped_file}" "${jar_url}"
+  curl --proto '=https' --proto-redir '=https' -fL --retry 3 --retry-delay 1 -o "${timestamped_file}" "${jar_url}"
 
   mv -f "${timestamped_file}" "${final_file}"
   echo "    saved as: ${final_file}"
