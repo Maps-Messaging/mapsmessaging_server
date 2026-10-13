@@ -31,7 +31,7 @@ public final class YamlValueFormatter {
         return "null";
       }
       case Boolean booleanValue -> {
-        return booleanValue ? "true" : "false";
+        return booleanValue.booleanValue() ? "true" : "false";
       }
       case Double doubleValue -> {
         if (doubleValue.isInfinite() && doubleValue == Math.rint(doubleValue)) {
