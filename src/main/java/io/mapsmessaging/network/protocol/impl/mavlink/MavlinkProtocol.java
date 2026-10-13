@@ -87,7 +87,9 @@ public class MavlinkProtocol extends Protocol {
   private final Map<Integer, MavlinkAcceptedSourceDTO> acceptedComponents;
   private final Map<Integer, SequenceTracker> sequenceTrackers;
   private final String outboundTopicName;
-  protected volatile MavlinkEventFactory mavlinkEventFactory;
+  // Parsing and dialect replacement stay on the selector thread or the serial port
+  // single-thread read executor; the factory maintains mutable per-stream context.
+  protected MavlinkEventFactory mavlinkEventFactory;
   protected final MessageFormatter formatter;
   private final QualityOfService qos;
   private final boolean storeOffline;
