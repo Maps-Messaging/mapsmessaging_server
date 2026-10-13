@@ -85,6 +85,9 @@ public class UnsubAck5 extends MQTTPacket5 {
     if (payloadLen == 0 || payloadLen > Integer.MAX_VALUE) {
       throw new MalformedException("UNSUBACK requires at least one reason code");
     }
+    if (payloadLen > packet.available()) {
+      throw new java.nio.BufferUnderflowException();
+    }
     List<StatusCode> reasons = new ArrayList<>((int) payloadLen);
     for (int i = 0; i < payloadLen; i++) {
       byte value = packet.get();
