@@ -108,7 +108,7 @@ public class NetworkConfigFactory {
   private static List<HmacConfigDTO> loadNodeConfig(List<ConfigurationProperties> nodes) {
     List<HmacConfigDTO> list = new ArrayList<>();
     nodes.stream()
-        .map(node -> new HmacConfig(node))
+        .map(HmacConfig::new)
         .forEachOrdered(list::add);
     return list;
   }

@@ -32,8 +32,8 @@ public class ConfigHelper {
     Map<String, Object> map = new LinkedHashMap<>();
     if(props != null){
       for(Map.Entry<String, Object> entry: props.entrySet()){
-        if(entry.getValue() instanceof ConfigurationProperties){
-          map.put(entry.getKey(), buildMap((ConfigurationProperties) entry.getValue()));
+        if(entry.getValue() instanceof ConfigurationProperties configurationProperties){
+          map.put(entry.getKey(), buildMap(configurationProperties));
         }
         else{
           map.put(entry.getKey(), props.getProperty(entry.getKey())); // Translations maybe done here

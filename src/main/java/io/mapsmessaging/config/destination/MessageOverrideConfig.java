@@ -32,7 +32,7 @@ import java.util.Objects;
 
 public class MessageOverrideConfig extends MessageOverrideDTO implements Config {
 
-  private static final String RETAIN = "retain";
+  private static final String RETAIN_KEY = "retain";
   private static final String STORE_OFFLINE = "storeOffline";
 
   public MessageOverrideConfig(ConfigurationProperties properties) {
@@ -48,8 +48,8 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     this.responseTopic = properties.getProperty("responseTopic", null);
     this.contentType = properties.getProperty("contentType", null);
     this.schemaId = properties.getProperty("schemaId", null);
-    if(properties.containsKey(RETAIN)) {
-      this.retain = properties.getBooleanProperty(RETAIN,false);
+    if(properties.containsKey(RETAIN_KEY)) {
+      this.retain = properties.getBooleanProperty(RETAIN_KEY,false);
     }
     else{
       this.retain = null;
@@ -104,7 +104,7 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
       properties.put("schemaId", config.getSchemaId());
     }
     if (config.getRetain() != null) {
-      properties.put(RETAIN, config.getRetain());
+      properties.put(RETAIN_KEY, config.getRetain());
     }
     if (config.getStoreOffline() != null) {
       properties.put(STORE_OFFLINE, config.getStoreOffline());

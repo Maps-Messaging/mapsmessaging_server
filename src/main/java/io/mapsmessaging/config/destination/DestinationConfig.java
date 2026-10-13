@@ -31,8 +31,8 @@ import java.util.Objects;
 
 public class DestinationConfig extends DestinationConfigDTO implements Config {
 
-  private static final String FORMAT = "format";
-  private static final String CACHE = "cache";
+  private static final String FORMAT_KEY = "format";
+  private static final String CACHE_KEY = "cache";
   private static final String MESSAGE_OVERRIDES = "messageOverrides";
 
   private static final String OPTIONAL_PATH = "{folder}";
@@ -53,11 +53,11 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
 
     storageConfig = ConfigHelper.buildConfig(type, properties);
 
-    if (properties.containsKey(FORMAT)) {
-      this.format = new FormatConfig((ConfigurationProperties) properties.get(FORMAT));
+    if (properties.containsKey(FORMAT_KEY)) {
+      this.format = new FormatConfig((ConfigurationProperties) properties.get(FORMAT_KEY));
     }
-    if (properties.containsKey(CACHE) && featureManager.isEnabled("storage.cacheSupport")) {
-      this.cache = new CacheConfig((ConfigurationProperties) properties.get(CACHE));
+    if (properties.containsKey(CACHE_KEY) && featureManager.isEnabled("storage.cacheSupport")) {
+      this.cache = new CacheConfig((ConfigurationProperties) properties.get(CACHE_KEY));
     }
     else{
       this.cache = null;
@@ -100,13 +100,13 @@ public class DestinationConfig extends DestinationConfigDTO implements Config {
     if (config.getFormat() != null) {
       ConfigurationProperties formatProperties = new ConfigurationProperties();
       formatProperties.put("name", config.getFormat().getName());
-      properties.put(FORMAT, formatProperties);
+      properties.put(FORMAT_KEY, formatProperties);
     }
     if (config.getCache() != null) {
       ConfigurationProperties cacheProperties = new ConfigurationProperties();
       cacheProperties.put("type", config.getCache().getType());
       cacheProperties.put("writeThrough", config.getCache().isWriteThrough() ? "enable" : "disable");
-      properties.put(CACHE, cacheProperties);
+      properties.put(CACHE_KEY, cacheProperties);
     }
     if (config.getMessageOverride() != null) {
       properties.put(MESSAGE_OVERRIDES, MessageOverrideConfig.toConfigurationProperties(config.getMessageOverride()));

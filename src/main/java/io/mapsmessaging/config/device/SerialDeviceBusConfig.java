@@ -60,7 +60,7 @@ public class SerialDeviceBusConfig extends SerialBusConfigDTO implements DeviceB
     if (getSelector() != null) props.put("selector", getSelector());
     List<ConfigurationProperties> deviceList = new ArrayList<>();
     this.devices.stream().filter(SerialDeviceConfig.class::isInstance).map(SerialDeviceConfig.class::cast)
-        .map(serialDeviceConfig -> serialDeviceConfig.toConfigurationProperties())
+        .map(SerialDeviceConfig::toConfigurationProperties)
         .forEachOrdered(deviceList::add);
     props.put("config", deviceList);
     return props;
