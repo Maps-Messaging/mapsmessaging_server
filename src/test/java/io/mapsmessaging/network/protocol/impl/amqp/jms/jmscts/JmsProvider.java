@@ -22,20 +22,22 @@ package io.mapsmessaging.network.protocol.impl.amqp.jms.jmscts;
 
 public class JmsProvider {
 
-  private JmsAdministrator _admin = new JmsAdministrator();
+  private JmsAdministrator administrator = new JmsAdministrator();
 
   public JmsProvider() {
     System.err.println("JMS Provider starting");
   }
 
   public void initialise(boolean start) {
+    // BaseTestConfig owns the shared test broker lifecycle.
   }
 
   public JmsAdministrator getAdministrator() {
-    return _admin;
+    return administrator;
   }
 
   public void cleanup(boolean stop) {
+    // BaseTestConfig shuts down the shared test broker.
   }
 
 }

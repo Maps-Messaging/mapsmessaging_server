@@ -43,7 +43,7 @@ public final class IndexedCounterHeapBenchmark {
     long loaded = heapUsed();
     double lookupSum = 0;
     for (int i = 0; i < 1000; i++) {
-      lookupSum += store.highWaterMark("session/" + (i % sessions) + "/scheme/0");
+      lookupSum += (double) store.highWaterMark("session/" + (i % sessions) + "/scheme/0");
     }
     if (lookupSum != 1000) throw new IllegalStateException("Incorrect index state");
     System.out.printf(Locale.ROOT, "sessions=%d before_bytes=%d loaded_bytes=%d retained_delta_bytes=%d gc_and_probe_ms=%.2f%n",

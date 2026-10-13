@@ -50,9 +50,9 @@ public class JmsAdministrator {
         }
       }
       con = new InitialContext(properties);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      error = new NamingException(ex.getMessage());
+    } catch (Exception failure) {
+      failure.printStackTrace();
+      error = new NamingException(failure.getMessage());
     }
     context = con;
     ex = error;
@@ -148,6 +148,7 @@ public class JmsAdministrator {
       getContext().lookup(name);
       exists = true;
     } catch (NameNotFoundException ignore) {
+      // A missing JNDI binding means the destination does not exist.
     } catch (Exception exception) {
       JMSException error = new JMSException(exception.getMessage());
       error.setLinkedException(exception);

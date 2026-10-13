@@ -324,10 +324,14 @@ class ComplianceTests extends MQTTBaseTest{
     public final MqttMessage[] messages = new MqttMessage[10]; // up to 10 messages for inspection
 
     @Override
-    public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {}
+    public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
+      // This callback records received messages; disconnect completion is checked by the test.
+    }
 
     @Override
-    public void mqttErrorOccurred(MqttException e) {}
+    public void mqttErrorOccurred(MqttException e) {
+      // Connection and publish failures are checked through the client operations in the test.
+    }
 
     @Override
     public void messageArrived(String topic, MqttMessage message) {
@@ -336,13 +340,19 @@ class ComplianceTests extends MQTTBaseTest{
     }
 
     @Override
-    public void deliveryComplete(IMqttToken token) {}
+    public void deliveryComplete(IMqttToken token) {
+      // Delivery callbacks are not used to count received subscription messages.
+    }
 
     @Override
-    public void connectComplete(boolean reconnect, String serverURI) {}
+    public void connectComplete(boolean reconnect, String serverURI) {
+      // The test waits for the client connection before inspecting received messages.
+    }
 
     @Override
-    public void authPacketArrived(int reasonCode, MqttProperties mqttProperties) {}
+    public void authPacketArrived(int reasonCode, MqttProperties mqttProperties) {
+      // These message-delivery tests do not inspect enhanced authentication packets.
+    }
   }
 
   private static class DefaultExpiryCallback implements MqttCallback {
@@ -357,10 +367,12 @@ class ComplianceTests extends MQTTBaseTest{
 
     @Override
     public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
+      // This callback records received messages; disconnect completion is checked by the test.
     }
 
     @Override
     public void mqttErrorOccurred(MqttException exception) {
+      // Connection and publish failures are checked through the client operations in the test.
     }
 
     @Override
@@ -371,14 +383,17 @@ class ComplianceTests extends MQTTBaseTest{
 
     @Override
     public void deliveryComplete(IMqttToken token) {
+      // Delivery callbacks are not used to count received subscription messages.
     }
 
     @Override
     public void connectComplete(boolean reconnect, String serverURI) {
+      // The test waits for the client connection before inspecting received messages.
     }
 
     @Override
     public void authPacketArrived(int reasonCode, MqttProperties mqttProperties) {
+      // These message-delivery tests do not inspect enhanced authentication packets.
     }
   }
 

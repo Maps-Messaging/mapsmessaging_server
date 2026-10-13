@@ -105,12 +105,12 @@ final class RawStompConnection implements AutoCloseable {
         throw new IOException("STOMP frame is missing its NUL terminator");
       }
     } else {
-      ByteArrayOutputStream output = new ByteArrayOutputStream();
+      ByteArrayOutputStream bodyOutput = new ByteArrayOutputStream();
       int value;
       while ((value = readRequired()) != 0) {
-        output.write(value);
+        bodyOutput.write(value);
       }
-      body = output.toByteArray();
+      body = bodyOutput.toByteArray();
     }
     return new StompFrame(command, headers, body);
   }

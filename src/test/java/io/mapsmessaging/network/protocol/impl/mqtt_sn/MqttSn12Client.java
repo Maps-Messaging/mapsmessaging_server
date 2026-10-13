@@ -27,7 +27,6 @@ import org.slj.mqtt.sn.client.impl.MqttsnClientUdpOptions;
 import org.slj.mqtt.sn.client.spi.MqttsnClientOptions;
 import org.slj.mqtt.sn.model.MqttsnOptions;
 import org.slj.mqtt.sn.model.MqttsnQueueAcceptException;
-import org.slj.mqtt.sn.model.MqttsnSecurityOptions;
 import org.slj.mqtt.sn.model.session.impl.WillDataImpl;
 import org.slj.mqtt.sn.net.MqttsnUdpOptions;
 import org.slj.mqtt.sn.net.MqttsnUdpTransport;
@@ -76,7 +75,7 @@ public class MqttSn12Client implements AutoCloseable {
     client.connect(keepAlive, cleanSession);
   }
 
-  public void connect(int keepAlive, boolean cleanSession, String willTopic, int QoS, byte[] msg) throws MqttsnClientConnectException, MqttsnException {
+  public void connect(int keepAlive, boolean cleanSession, String willTopic, int qos, byte[] msg) throws MqttsnClientConnectException, MqttsnException {
     client.connect(keepAlive, cleanSession);
   }
 
@@ -96,8 +95,8 @@ public class MqttSn12Client implements AutoCloseable {
     return client.isConnected();
   }
 
-  public void publish(String topicName, int QoS, byte[] msg) throws MqttsnQueueAcceptException, MqttsnException {
-    client.publish(topicName, QoS, false,msg);
+  public void publish(String topicName, int qos, byte[] msg) throws MqttsnQueueAcceptException, MqttsnException {
+    client.publish(topicName, qos, false,msg);
   }
 
   public void sleep(long expiry) throws MqttsnException {
