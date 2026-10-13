@@ -27,23 +27,32 @@ import java.io.IOException;
 public class PacketFactory {
 
   public MQTT_SNPacket parseFrame(Packet packet) throws IOException {
-    int packetLength = packet.get() & 0xff;
-    int dif;
-    if (packetLength == 1) { // Special case so the next 2 bytes indicates the length
-      packetLength = MQTTPacket.readShort(packet);
-      dif = packet.available() - (packetLength - 3);
-    } else {
-      dif = packet.available() - (packetLength - 1);
+    if (packet.available() < 1) {
+      throw new IOException("Missing MQTT-SN Length field");
     }
-    if (dif < 0) {
+    int packetLength = packet.get() & 0xff;
+    int lengthFieldWidth = 1;
+    if (packetLength == 1) {
+      if (packet.available() < 2) {
+        throw new IOException("Truncated MQTT-SN extended Length field");
+      }
+      packetLength = MQTTPacket.readShort(packet);
+      lengthFieldWidth = 3;
+    }
+    if (packetLength < lengthFieldWidth + 1) {
+      throw new IOException("MQTT-SN Length does not include MsgType");
+    }
+    int difference = packet.available() - (packetLength - lengthFieldWidth);
+    if (difference < 0) {
       throw new IOException("Truncated Packet received");
-    } else if (dif > 0) {
+    } else if (difference > 0) {
       throw new IOException("Extended Packet received");
     }
 
-    int type = packet.get();
-
-    MQTT_SNPacket mqtt = create(type, packetLength, packet);
+    int type = packet.get() & 0xff;
+    // Packet constructors express fixed sizes using the one-octet Length layout.
+    int constructorLength = packetLength - lengthFieldWidth + 1;
+    MQTT_SNPacket mqtt = create(type, constructorLength, packet);
     mqtt.setFromAddress(packet.getFromAddress());
     return mqtt;
   }

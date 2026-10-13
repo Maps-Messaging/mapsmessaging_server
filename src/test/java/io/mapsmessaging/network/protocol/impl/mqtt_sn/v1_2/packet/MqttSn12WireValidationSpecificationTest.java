@@ -2,7 +2,6 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet;
 
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -70,7 +69,6 @@ class MqttSn12WireValidationSpecificationTest {
   }
 
   @Test
-  @Disabled("Known MQTT-SN 1.2 extended-length parsing gap: MSG-405")
   @ProtocolRequirement(
       specification = SPEC,
       value = "Section 5.2.1 Length: MQTT-SN 1.2 extended length supports messages greater than 255 octets",
