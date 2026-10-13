@@ -58,8 +58,8 @@ public class VersionUpgradeHelper {
     schemaConfig.setUniqueId(config.getProperty("uuid"));
     schemaConfig.setResourceType(config.getProperty("resource-type"));
     schemaConfig.setMatchExpression(config.getProperty("match-expression", ""));
-    schemaConfig.setModifiedAt(OffsetDateTime.now());
-    schemaConfig.setCreatedAt(OffsetDateTime.now());
+    schemaConfig.setModifiedAt(OffsetDateTime.now(java.time.ZoneId.systemDefault()));
+    schemaConfig.setCreatedAt(OffsetDateTime.now(java.time.ZoneId.systemDefault()));
     if(config.containsKey("creation")){
       schemaConfig.setCreatedAt(LocalDateTime.parse(config.getProperty("creation")).atOffset(ZoneOffset.UTC));
     }

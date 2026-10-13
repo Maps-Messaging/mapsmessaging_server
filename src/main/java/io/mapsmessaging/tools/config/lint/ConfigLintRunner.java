@@ -105,7 +105,7 @@ public class ConfigLintRunner {
     ConfigLintSummary summary = ConfigLintSummary.from(filteredAllIssues);
 
     ConfigLintReport report = new ConfigLintReport(
-        OffsetDateTime.now().toString(),
+        OffsetDateTime.now(java.time.ZoneId.systemDefault()).toString(),
         filteredConfigs,
         summary
     );

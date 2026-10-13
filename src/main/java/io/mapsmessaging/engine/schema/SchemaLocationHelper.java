@@ -74,7 +74,7 @@ public class SchemaLocationHelper {
 
 
   public static SchemaConfig locateSchema(List<SchemaResource> resources, String destinationName) {
-    OffsetDateTime now = OffsetDateTime.now();
+    OffsetDateTime now = OffsetDateTime.now(java.time.ZoneId.systemDefault());
     Map<String, SchemaConfig> bestVersionPerId = new HashMap<>();
 
     for (SchemaResource resource : resources) {

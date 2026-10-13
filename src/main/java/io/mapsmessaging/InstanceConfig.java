@@ -62,7 +62,7 @@ public class InstanceConfig {
 
   @Getter
   @Setter
-  private String creationDate = LocalDateTime.now().toString();
+  private String creationDate = LocalDateTime.now(java.time.ZoneId.systemDefault()).toString();
 
   @Getter
   @Setter
