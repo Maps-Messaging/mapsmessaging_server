@@ -54,6 +54,10 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     super(connection);
   }
 
+  public EndPoint getActiveEndPoint() {
+    return activeEndPoint;
+  }
+
   @Override
   public void connected(EndPoint endpoint) {
     if (!isCurrentAttempt()) {
