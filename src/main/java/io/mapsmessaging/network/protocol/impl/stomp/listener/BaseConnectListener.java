@@ -57,7 +57,7 @@ public abstract class BaseConnectListener implements FrameListener {
       String token = candidate.trim();
       // Unsupported numeric versions can coexist with valid versions,
       // but malformed tokens invalidate the whole offer.
-      if (!token.matches("[0-9]+\\.[0-9]+")) {
+      if (!token.matches("\\d+\\.\\d+")) {
         return Float.NaN;
       }
       float supported = switch (token) {
