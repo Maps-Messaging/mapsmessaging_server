@@ -92,7 +92,7 @@ public class TopicAliasMapping {
     catch (IOException e) { throw new IllegalStateException("MQTT 5 alias registry unavailable", e); }
   }
 
-  public int getMaximum() { return aliasMaximum; }
+  public synchronized int getMaximum() { return aliasMaximum; }
 
   public synchronized void setMaximum(int requested) {
     if (requested >= 0 && requested <= DefaultConstants.SERVER_TOPIC_ALIAS_MAX) {
@@ -108,8 +108,7 @@ public class TopicAliasMapping {
     if (aliasMaximum == 0) return null;
     try {
       Integer existing = registry.alias(destinationName);
-      if (existing != null) return originalProperties.computeIfAbsent(destinationName,
-          ignored -> new TopicAlias(existing));
+      if (existing != null) return originalProperties.computeIfAbsent(destinationName, ignored -> new TopicAlias(existing));
       int allocated = registry.register(destinationName);
       TopicAlias property = new TopicAlias(allocated);
       originalProperties.put(destinationName, property);
