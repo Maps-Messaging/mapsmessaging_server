@@ -127,6 +127,8 @@ public class ModemSatelliteMessage {
     return outboundPayload;
   }
 
+  // Incomplete outbound messages must fail explicitly; production sendMessage sets the format.
+  @SuppressWarnings("javabugs:S6416")
   private MessageFormat requireFormat() {
     MessageFormat outboundFormat = format;
     if (outboundFormat == null) {
