@@ -74,6 +74,21 @@ class AmqpLinkLifecycleRegressionTest {
     org.junit.jupiter.api.Assertions.assertNull(sender.getContext());
     org.mockito.Mockito.verify(mapsSession).hibernateSubscription("durable");
   }
+  // AMQP 1.0 Part 2 section 2.6.5: detach reply is required even without a subscription.
+  @Test
+  void detach_is_acknowledged_without_a_subscription_or_session_context() {
+    Connection connection = Connection.Factory.create();
+    var protonSession = connection.session();
+    Sender sender = protonSession.sender("detached-link");
+    Event event = mock(Event.class);
+    when(event.getLink()).thenReturn(sender);
+    when(event.getSession()).thenReturn(protonSession);
+    var listener = new LinkRemoteDetachEventListener(protocol(), mock(ProtonEngine.class));
+
+    assertTrue(listener.handleEvent(event));
+    assertTrue(sender.detached());
+  }
+
   private static AMQPProtocol protocol() {
     AMQPProtocol protocol = mock(AMQPProtocol.class);
     when(protocol.getLogger()).thenReturn(mock(io.mapsmessaging.logging.Logger.class));
