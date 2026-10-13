@@ -532,37 +532,53 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
       return exact.isEmpty() ? destinationName : exact;
     }
     for (Map.Entry<String, String> mapping : mappings.entrySet()) {
-      String filter = mapping.getKey();
-      if (!DestinationSet.matches(filter, destinationName)) {
-        continue;
+      String mapped = mapInboundEntry(destinationName, mapping);
+      if (mapped != null) {
+        return mapped;
       }
-      String local = mapping.getValue();
-      if (local.isEmpty() || local.equals(filter)) {
-        return destinationName;
-      }
-      String sourcePrefix = getSourcePrefixBeforeWildcard(filter);
-      String suffix;
-      if (destinationName.startsWith(sourcePrefix)) {
-        suffix = destinationName.substring(sourcePrefix.length());
-      } else if (sourcePrefix.endsWith("/")
-          && destinationName.equals(sourcePrefix.substring(0, sourcePrefix.length() - 1))) {
-        suffix = "";
-      } else {
-        continue;
-      }
-      String localPrefix = getSourcePrefixBeforeWildcard(local);
-      if (localPrefix.isEmpty()) {
-        return destinationName;
-      }
-      if (!suffix.isEmpty() && !localPrefix.endsWith("/") && !suffix.startsWith("/")) {
-        localPrefix += "/";
-      }
-      if (suffix.isEmpty() && local.endsWith("#") && !destinationName.endsWith("/")) {
-        localPrefix = trimTrailingSeparators(localPrefix);
-      }
-      return (localPrefix + suffix).replaceAll("/{2,}", "/");
     }
     return destinationName;
+  }
+
+  private String mapInboundEntry(String destinationName, Map.Entry<String, String> mapping) {
+    String filter = mapping.getKey();
+    if (!DestinationSet.matches(filter, destinationName)) {
+      return null;
+    }
+    String local = mapping.getValue();
+    if (local.isEmpty() || local.equals(filter)) {
+      return destinationName;
+    }
+    String suffix = inboundSuffix(destinationName, getSourcePrefixBeforeWildcard(filter));
+    if (suffix == null) {
+      return null;
+    }
+    return joinInboundDestination(destinationName, local, suffix);
+  }
+
+  private String inboundSuffix(String destinationName, String sourcePrefix) {
+    if (destinationName.startsWith(sourcePrefix)) {
+      return destinationName.substring(sourcePrefix.length());
+    }
+    if (sourcePrefix.endsWith("/")
+        && destinationName.equals(sourcePrefix.substring(0, sourcePrefix.length() - 1))) {
+      return "";
+    }
+    return null;
+  }
+
+  private String joinInboundDestination(String destinationName, String local, String suffix) {
+    String localPrefix = getSourcePrefixBeforeWildcard(local);
+    if (localPrefix.isEmpty()) {
+      return destinationName;
+    }
+    if (!suffix.isEmpty() && !localPrefix.endsWith("/") && !suffix.startsWith("/")) {
+      localPrefix += "/";
+    }
+    if (suffix.isEmpty() && local.endsWith("#") && !destinationName.endsWith("/")) {
+      localPrefix = trimTrailingSeparators(localPrefix);
+    }
+    return (localPrefix + suffix).replaceAll("/{2,}", "/");
   }
 
   private static String trimTrailingSeparators(String prefix) {
