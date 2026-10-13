@@ -145,6 +145,9 @@ public class BaseRestApi {
     throw new WebApplicationException("Access denied", Response.Status.FORBIDDEN);
   }
 
+  // Resource permissions are deferred; retain this scaffolding until that feature is implemented.
+  // RestApiServerManager uses local Grizzly sessions, with no persistence or replication of Identity.
+  @SuppressWarnings({"java:S2583", "java:S2441"})
   protected void hasAccess(String resource) {
     if(!AUTH_ENABLED){
       return;

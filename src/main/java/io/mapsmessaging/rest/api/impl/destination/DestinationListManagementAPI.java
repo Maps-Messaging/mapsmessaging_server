@@ -172,6 +172,8 @@ public class DestinationListManagementAPI extends BaseDestinationApi {
     }
   }
 
+  // RestApiServerManager uses local Grizzly sessions; the per-session snapshot is never serialized.
+  @SuppressWarnings("java:S2441")
   private NamespaceTree getOrBuildDestinationTree() throws LoginException, IOException {
     jakarta.servlet.http.HttpSession httpSession = getSession();
     Object storedDestinationTree = httpSession.getAttribute("DestinationTree");
