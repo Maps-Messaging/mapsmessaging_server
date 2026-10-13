@@ -20,6 +20,8 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Objects;
 
 /** Bidirectional endpoint policy shared by HMAC and AEAD protection. */
 public interface MqttSn2ProtectionPolicy {
@@ -35,6 +37,24 @@ public interface MqttSn2ProtectionPolicy {
     @Override
     public byte[] senderIdentifier() {
       return senderIdentifier == null ? null : senderIdentifier.clone();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      return this == other || other instanceof Authenticated authenticated
+          && Objects.equals(plaintext, authenticated.plaintext)
+          && Arrays.equals(senderIdentifier, authenticated.senderIdentifier);
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * Objects.hashCode(plaintext) + Arrays.hashCode(senderIdentifier);
+    }
+
+    @Override
+    public String toString() {
+      return "Authenticated[plaintext=" + plaintext
+          + ", senderIdentifier=" + Arrays.toString(senderIdentifier) + "]";
     }
   }
 
