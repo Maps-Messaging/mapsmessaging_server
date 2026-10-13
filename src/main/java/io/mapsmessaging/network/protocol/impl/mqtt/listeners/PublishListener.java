@@ -113,7 +113,7 @@ public class PublishListener extends PacketListener {
         protocol.getProtocolMessageTransformation(),
         protocol
     );
-    ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
+    ParsedMessage parsed = protocol.parseInboundMessage(publish.getDestinationName(), message);
     if (parsed != null) {
       lookup = parsed.getDestinationName();
       message = parsed.getMessage();

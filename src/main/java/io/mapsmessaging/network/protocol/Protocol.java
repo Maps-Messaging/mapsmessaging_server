@@ -267,15 +267,13 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   public ParsedMessage parseInboundMessage(String destinationName, Message message){
-    ParsedMessage parsedMessage = new ParsedMessage(destinationName, message);
-    parsedMessage = processInterServerTransformations(destinationName, parsedMessage );
+    String mappedDestinationName = mapInboundDestinationName(destinationName);
+    ParsedMessage parsedMessage = new ParsedMessage(mappedDestinationName, message);
+    parsedMessage = processInterServerTransformations(mappedDestinationName, parsedMessage );
     if(parsedMessage == null){
       return null;
     }
     processInTransformation(parsedMessage);
-    if(topicNameMapping != null){
-      processDestinationNameLookup(parsedMessage);
-    }
     return parsedMessage;
   }
 
@@ -519,30 +517,50 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
 
 
   public String parseForLookup(String destinationName) {
-    String lookup = destinationName;
+    return mapInboundDestinationName(destinationName);
+  }
 
-    Map<String, String> map = getTopicNameMapping();
-    if (map != null) {
-      lookup = map.get(destinationName);
-      if (lookup == null) {
-        lookup = destinationName;
-        for(Map.Entry<String, String> remote:map.entrySet()){
-          if(remote.getKey().endsWith("#")){
-            String check = remote.getValue();
-            String tmp = remote.getKey().substring(0, remote.getKey().length()-1);
-            if(lookup.startsWith(tmp)){
-              if (lookup.toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
-                lookup = lookup.substring(DestinationMode.SCHEMA.getNamespace().length());
-              }
-              lookup = new StringBuilder().append(check).append(lookup).toString();
-              lookup = lookup.replace("#", "");
-              lookup = lookup.replace("//", "/");
-            }
-          }
-        }
-      }
+  private String mapInboundDestinationName(String destinationName) {
+    Map<String, String> mappings = getTopicNameMapping();
+    if (mappings == null) {
+      return destinationName;
     }
-    return lookup;
+    String exact = mappings.get(destinationName);
+    if (exact != null) {
+      return exact.isEmpty() ? destinationName : exact;
+    }
+    for (Map.Entry<String, String> mapping : mappings.entrySet()) {
+      String filter = mapping.getKey();
+      if (!DestinationSet.matches(filter, destinationName)) {
+        continue;
+      }
+      String local = mapping.getValue();
+      if (local.isEmpty() || local.equals(filter)) {
+        return destinationName;
+      }
+      String sourcePrefix = getSourcePrefixBeforeWildcard(filter);
+      String suffix;
+      if (destinationName.startsWith(sourcePrefix)) {
+        suffix = destinationName.substring(sourcePrefix.length());
+      } else if (sourcePrefix.endsWith("/")
+          && destinationName.equals(sourcePrefix.substring(0, sourcePrefix.length() - 1))) {
+        suffix = "";
+      } else {
+        continue;
+      }
+      String localPrefix = getSourcePrefixBeforeWildcard(local);
+      if (localPrefix.isEmpty()) {
+        return destinationName;
+      }
+      if (!suffix.isEmpty() && !localPrefix.endsWith("/") && !suffix.startsWith("/")) {
+        localPrefix += "/";
+      }
+      if (suffix.isEmpty() && local.endsWith("#") && !destinationName.endsWith("/")) {
+        localPrefix = localPrefix.replaceAll("/+$", "");
+      }
+      return (localPrefix + suffix).replaceAll("/{2,}", "/");
+    }
+    return destinationName;
   }
 
   protected Session buildSession(String sessionId, int expiry) throws ExecutionException, InterruptedException, TimeoutException {

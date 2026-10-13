@@ -214,7 +214,7 @@ public class PublishListener5 extends PacketListener5 {
                 publish.getQos(),
                 protocol.getProtocolMessageTransformation(),
                 protocol);
-        ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
+        ParsedMessage parsed = protocol.parseInboundMessage(destinationName, message);
         int sent = 0;
         if(parsed != null){
           lookup = parsed.getDestinationName();
