@@ -90,6 +90,46 @@ class Mqtt5SubscribeConformanceRegressionTest {
     assertFalse(parseSubscribe(42, new byte[0], filter, 0).getSubscriptionList().isEmpty());
   }
 
+  // MQTT 5 sections 3.8.2.1.2, 3.8.3.1 and 4.8.2: preserve filter bytes and options.
+  @ParameterizedTest
+  @ValueSource(strings = {"sensor/温度", "$share/Gr温度/sensor//温度/+", "$SHARE/group/+", "$shareholder/+"})
+  void filter_and_subscription_identifier_survive_encoding(String filter) throws Exception {
+    Subscribe5 original = parseSubscribe(65535, new byte[] {0x0b, 0x05}, filter, 0x2a);
+    Packet encoded = new Packet(512, false);
+    original.packFrame(encoded);
+    encoded.flip();
+    byte fixed = encoded.get();
+    long remaining = MQTTPacket.readVariableInt(encoded);
+    assertEquals(encoded.available(), remaining);
+    Subscribe5 restored = new Subscribe5(fixed, remaining, encoded);
+    var before = original.getSubscriptionList().get(0);
+    var after = restored.getSubscriptionList().get(0);
+    assertEquals(before.getTopicName(), after.getTopicName());
+    assertEquals(before.getSharedSubscriptionName(), after.getSharedSubscriptionName());
+    assertEquals(before.getQualityOfService(), after.getQualityOfService());
+    assertEquals(before.getRetainHandling(), after.getRetainHandling());
+    assertEquals(before.isRetainAsPublished(), after.isRetainAsPublished());
+    assertEquals(5, after.getSubscriptionIdentifier().getSubscriptionIdentifier());
+    assertEquals(0, encoded.available());
+  }
+
+  @Test
+  void accepts_every_valid_non_shared_option_combination() throws Exception {
+    for (int qos = 0; qos < 3; qos++) {
+      for (int retain = 0; retain < 3; retain++) {
+        for (int flags = 0; flags < 4; flags++) {
+          int options = qos | (retain << 4) | (flags << 2);
+          var info = parseSubscribe(1, new byte[0], "温度/+", options)
+              .getSubscriptionList().get(0);
+          assertEquals(qos, info.getQualityOfService().getLevel());
+          assertEquals(retain, info.getRetainHandling().getHandler());
+          assertEquals((flags & 1) != 0, info.noLocalMessages());
+          assertEquals((flags & 2) != 0, info.isRetainAsPublished());
+        }
+      }
+    }
+  }
+
   private static Subscribe5 parseSubscribe(int packetId, byte[] properties, String filter,
                                            int options) throws Exception {
     byte[] utf8 = filter.getBytes(StandardCharsets.UTF_8);

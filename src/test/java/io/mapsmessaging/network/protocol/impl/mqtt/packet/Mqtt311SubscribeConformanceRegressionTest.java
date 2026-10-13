@@ -58,6 +58,25 @@ class Mqtt311SubscribeConformanceRegressionTest {
         .get(0).getTopicName());
   }
 
+  // MQTT 3.1.1 sections 2.2.3 and 3.8.3: length is measured in UTF-8 bytes.
+  @ParameterizedTest
+  @ValueSource(strings = {"sensor/温度", "$share/group/sensor//温度/+"})
+  void unicode_and_shared_filters_round_trip_without_normalisation(String filter) throws Exception {
+    Subscribe original = parseSubscribe(65535, filter, 2);
+    Packet encoded = new Packet(512, false);
+    original.packFrame(encoded);
+    encoded.flip();
+    byte fixed = encoded.get();
+    long remaining = MQTTPacket.readVariableInt(encoded);
+    assertEquals(encoded.available(), remaining);
+    Subscribe restored = new Subscribe(fixed, remaining, encoded);
+    assertEquals(original.getSubscriptionList().get(0).getTopicName(),
+        restored.getSubscriptionList().get(0).getTopicName());
+    assertEquals(original.getSubscriptionList().get(0).getSharedSubscriptionName(),
+        restored.getSubscriptionList().get(0).getSharedSubscriptionName());
+    assertEquals(0, encoded.available());
+  }
+
   private static Subscribe parseSubscribe(int packetId, String filter, int options)
       throws MalformedException {
     byte[] utf8 = filter.getBytes(StandardCharsets.UTF_8);
