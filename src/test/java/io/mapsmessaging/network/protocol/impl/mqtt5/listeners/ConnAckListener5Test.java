@@ -63,6 +63,8 @@ class ConnAckListener5Test {
     Session session = mock(Session.class);
     EndPoint endPoint = mock(EndPoint.class);
     when(protocol.getSession()).thenReturn(session);
+    when(protocol.recoverOutgoingDeliveries()).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
+    when(protocol.isDeliverySessionActive(session)).thenReturn(true);
 
     assertNull(new ConnAckListener5().handlePacket(new ConnAck5(), session, endPoint, protocol));
 

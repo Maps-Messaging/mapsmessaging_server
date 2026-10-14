@@ -28,6 +28,8 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.MqttSn2Protocol;
 
 import java.security.Principal;
 
@@ -64,13 +66,32 @@ public class ProtocolClientConnection implements ClientConnection {
 
   @Override
   public boolean tryAcquireSendSlot(SubscribedEventManager subscription, Message message) {
-    if (protocol instanceof MQTT5Protocol && !mqtt5RequiresPacketIdentifier(subscription, message)) {
-      return true;
-    }
-    if (protocol instanceof MQTTProtocol && !subscriptionRequiresPacketIdentifier(subscription)) {
-      return true;
+    PacketIdManager manager = packetIdManager();
+    Integer savedIdentifier = manager == null || subscription == null || message == null ? null : manager.getPacketIdentifier(subscription, message.getIdentifier());
+    boolean savedReliableDelivery = savedIdentifier != null && manager.getPacketQos(savedIdentifier) > 0;
+    if (!savedReliableDelivery && protocol instanceof MQTT5Protocol && !mqtt5RequiresPacketIdentifier(subscription, message)) return true;
+    if (!savedReliableDelivery && protocol instanceof MQTTProtocol && !subscriptionRequiresPacketIdentifier(subscription)) return true;
+    if (manager != null && message != null) {
+      if (protocol instanceof MQTT5Protocol mqtt5 && mqtt5.getSession() != null && mqtt5.getSession().getReceiveMaximum() > 0) {
+        manager.setMaximumOutstanding(mqtt5.getSession().getReceiveMaximum());
+      }
+      return manager.tryAcquireSendSlot(subscription, message.getIdentifier());
     }
     return tryAcquireSendSlot(subscription);
+  }
+
+  @Override
+  public void deliveryRetired(String key, long messageId) {
+    PacketIdManager manager = packetIdManager();
+    if (manager != null) manager.retireDelivery(key, messageId);
+    if (protocol instanceof MqttSn2Protocol mqttSn2) mqttSn2.deliveryRetired(key, messageId);
+  }
+
+  @Override
+  public void deliveriesRetired(String key) {
+    PacketIdManager manager = packetIdManager();
+    if (manager != null) manager.retireDeliveries(key);
+    if (protocol instanceof MqttSn2Protocol mqttSn2) mqttSn2.deliveriesRetired(key);
   }
 
   @Override
@@ -118,6 +139,7 @@ public class ProtocolClientConnection implements ClientConnection {
   }
 
   private PacketIdManager packetIdManager() {
+    if (protocol instanceof MQTT_SNProtocol mqttSn) return mqttSn.getPacketIdManager();
     if (protocol instanceof MQTTProtocol mqttProtocol) {
       return mqttProtocol.getPacketIdManager();
     }

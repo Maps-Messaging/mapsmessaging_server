@@ -103,6 +103,7 @@ public class StateEngine {
     return SessionManager.getInstance().createAsync(scb.build(), protocol)
         .thenApply(session -> {
           try {
+            protocol.getPacketIdManager().bindStore(session.getOrCreatePacketIdStore(65535));
             topicAliasManager.attach(session.getOrCreateTopicAliasRegistry(65535));
             return session;
           } catch (IOException error) {

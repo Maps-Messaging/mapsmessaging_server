@@ -32,6 +32,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.pipeline.MessagePipeline;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Connect;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.Register;
+import io.mapsmessaging.storage.delivery.PacketIdStore;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.WillTopicRequest;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.InitialConnectionState;
@@ -114,17 +116,31 @@ class MqttSnReliabilityTest {
   }
 
   @Test
-  void waiting_for_topic_registration_does_not_allocate_a_publish_identifier() {
+  void waiting_for_topic_registration_does_not_allocate_a_publish_identifier() throws Exception {
     MQTT_SNProtocol protocol = protocol();
     MessagePipeline pipeline = registrationPipeline(protocol);
     SubscribedEventManager manager = mock(SubscribedEventManager.class);
     SubscriptionContext context = new SubscriptionContext("/sensor");
     context.setQualityOfService(QualityOfService.AT_LEAST_ONCE);
     when(manager.getContext()).thenReturn(context);
+    when(manager.getDeliveryKey()).thenReturn(context.getKey());
 
-    pipeline.queue(new MessageEvent("/sensor", manager, new MessageBuilder().build(), () -> {}));
+    try (PacketIdStore deliveries = PacketIdStore.memory(65535)) {
+      protocol.getPacketIdManager().bindStore(deliveries);
+      pipeline.queue(new MessageEvent("/sensor", manager, new MessageBuilder().build(), () -> {}));
 
-    assertEquals(0, protocol.getPacketIdManager().size());
+      var sent = org.mockito.ArgumentCaptor.forClass(MQTT_SNPacket.class);
+      verify(protocol).writeFrame(sent.capture());
+      Register register = assertInstanceOf(Register.class, sent.getValue());
+      assertNotEquals(0, register.getMessageId());
+      assertEquals(1, protocol.getPacketIdManager().size());
+      var control = protocol.getPacketIdManager().receivedPacket(register.getMessageId());
+      assertNotNull(control);
+      assertNull(control.getSubscription());
+      assertEquals(-1, control.getMessageId());
+      assertTrue(deliveries.outstanding().isEmpty(), "REGISTER must not create a durable PUBLISH delivery");
+      verify(protocol, never()).buildPublish(anyShort(), anyInt(), any(), any(), anyShort());
+    }
   }
 
   private MessagePipeline registrationPipeline(MQTT_SNProtocol protocol) {

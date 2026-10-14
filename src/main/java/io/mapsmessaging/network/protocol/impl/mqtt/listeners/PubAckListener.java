@@ -33,10 +33,13 @@ public class PubAckListener extends PacketListener {
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     PubAck pubAck = (PubAck) mqttPacket;
-    PacketIdentifierMap mapping = ((MQTTProtocol) protocol).getPacketIdManager().completePacketId(pubAck.getPacketIdentifier());
-    if (mapping != null) {
+    var manager = ((MQTTProtocol) protocol).getPacketIdManager();
+    int qos = manager.getPacketQos(pubAck.getPacketIdentifier());
+    if ((manager.hasDeliveryStore() || qos != 0) && (qos != 1 || manager.isAwaitingPubComp(pubAck.getPacketIdentifier()))) return null;
+    PacketIdentifierMap mapping = manager.completePacketId(pubAck.getPacketIdentifier());
+    if (mapping != null && mapping.getSubscription() != null) {
       mapping.getSubscription().ackReceived(mapping.getMessageId());
-    } else {
+    } else if (mapping == null) {
       throw new MalformedException("No such Packet Identifier found " + pubAck.getPacketIdentifier());
     }
     return null;

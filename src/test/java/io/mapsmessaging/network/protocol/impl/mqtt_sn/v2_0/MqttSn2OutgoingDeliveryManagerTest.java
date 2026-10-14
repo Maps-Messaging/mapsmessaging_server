@@ -23,14 +23,407 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2FrameCo
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PacketType;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2PublishCodec;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import io.mapsmessaging.storage.delivery.PacketIdStore;
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
+import java.nio.file.Path;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /** CSD01 MQTT-SN 4.3.3-1, 4.3.4-1..8, and 4.4.2-1..7 behavior. */
 class MqttSn2OutgoingDeliveryManagerTest {
+
+  @TempDir(factory = TargetDataTempDirFactory.class) Path directory;
+
+  @Test
+  void closeWhileRecoveredEngineAckPendingDoesNotSendPubrelOrStartNewConnectionState() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    int id = store.allocate("subscription", 41).packetId();
+    store.setStage(id, 1);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager();
+    manager.attach(store);
+    CompletableFuture<Void> engineAck = new CompletableFuture<>();
+    CompletableFuture<ByteBuffer> recovery = manager.recoverAfterBrokerAck(delivery -> engineAck, 1000);
+    manager.disconnect();
+    manager.attach(store);
+    engineAck.complete(null);
+    assertNull(recovery.join());
+    assertFalse(manager.hasInFlightDelivery());
+    assertEquals(1, store.getStage(id));
+    assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(manager.recover(2000)).type());
+  }
+
+  @Test
+  void closeWhileNormalEngineAckPendingRetainsPubrelStageAndEmitsNoFrame() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager();
+    manager.attach(store);
+    int id = publish(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, null, 1000)).packetIdentifier();
+    CompletableFuture<Void> engineAck = new CompletableFuture<>();
+    CompletableFuture<ByteBuffer> response = manager.acknowledgeAfterBrokerAck(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id, null), 1001,
+        delivery -> engineAck);
+    manager.disconnect();
+    engineAck.complete(null);
+    assertNull(response.join());
+    assertFalse(manager.hasInFlightDelivery());
+    assertEquals(1, store.getStage(id));
+  }
+
+  @Test
+  void permanentRetirementDuringEngineAckDoesNotSendOldPubrelOrBlockNextRetry() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+    manager.attach(store);
+    int id = publish(manager.enqueue("retired-subscription", 41, "sensor/one", new byte[]{1}, 2, false, null, 1000)).packetIdentifier();
+    manager.enqueue("other-subscription", 42, "sensor/one", new byte[]{2}, 1, false, null, 1001);
+    CompletableFuture<Void> engineAck = new CompletableFuture<>();
+    CompletableFuture<ByteBuffer> pending = manager.acknowledgeAfterBrokerAck(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id, null), 1002,
+        delivery -> engineAck);
+    store.clear("retired-subscription", 41);
+    MqttSn2PublishCodec.Publish next = publish(manager.retireDelivery("retired-subscription", 41, 1003));
+    assertNotNull(manager.retryExpired(1103));
+    engineAck.complete(null);
+    assertNull(pending.join());
+    assertEquals(next.packetIdentifier(), store.getPacketId("other-subscription", 42));
+  }
+
+  @Test
+  void recoveredEngineAckSuppressesLegacyCallbacksFromLateBrokerReplay() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    int id = store.allocate("subscription", 41).packetId();
+    store.setStage(id, 1);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager();
+    manager.attach(store);
+    ByteBuffer recovery = manager.recoverAfterBrokerAck(delivery -> CompletableFuture.completedFuture(null), 1000).join();
+    assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(recovery).type());
+    manager.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, id, null), 1001);
+    AtomicInteger legacyCallback = new AtomicInteger();
+    assertNull(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, legacyCallback::incrementAndGet, 1002));
+    assertEquals(0, legacyCallback.get());
+    assertEquals(0, store.size());
+  }
+
+  @Test
+  void normalPubrelWaitsForActualEngineAckAndDoesNotRunLegacyCallbackAgain() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+    manager.attach(store);
+    AtomicInteger legacyCallback = new AtomicInteger();
+    int id = publish(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, legacyCallback::incrementAndGet, 1000)).packetIdentifier();
+    CompletableFuture<Void> engineAck = new CompletableFuture<>();
+    CompletableFuture<ByteBuffer> response = manager.acknowledgeAfterBrokerAck(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id, null), 1001,
+        delivery -> {
+          assertEquals(new PacketIdStore.Delivery("subscription", 41), delivery);
+          try { assertEquals(1, store.getStage(id)); } catch (java.io.IOException failure) { throw new AssertionError(failure); }
+          return engineAck;
+        });
+    assertFalse(response.isDone());
+    assertNull(manager.retryExpired(1101), "PUBREL retries must also wait for the engine ACK");
+    assertThrows(java.io.IOException.class, () -> manager.acknowledgeAfterBrokerAck(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, id, null), 1101,
+        delivery -> CompletableFuture.completedFuture(null)));
+    engineAck.complete(null);
+    assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(response.join()).type());
+    manager.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, id, null), 1102);
+    assertEquals(0, legacyCallback.get(), "The exact engine ACK replaces the legacy completion task");
+    assertEquals(0, store.size());
+  }
+
+  @Test
+  void restoredPubrelWaitsForAllEngineAckFuturesAndFailureRetainsJournalStage() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    int first = store.allocate("subscription", 41).packetId();
+    int second = store.allocate("subscription", 42).packetId();
+    store.setStage(first, 1);
+    store.setStage(second, 1);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+    manager.attach(store);
+    CompletableFuture<Void> firstAck = new CompletableFuture<>();
+    CompletableFuture<Void> secondAck = new CompletableFuture<>();
+    CompletableFuture<ByteBuffer> response = manager.recoverAfterBrokerAck(delivery -> delivery.messageId() == 41 ? firstAck : secondAck, 1000);
+    assertFalse(response.isDone());
+    assertFalse(manager.hasInFlightDelivery());
+    firstAck.complete(null);
+    assertFalse(response.isDone());
+    secondAck.completeExceptionally(new java.io.IOException("Engine ACK failed"));
+    assertThrows(java.util.concurrent.CompletionException.class, response::join);
+    assertFalse(manager.hasInFlightDelivery());
+    assertEquals(1, store.getStage(first));
+    assertEquals(1, store.getStage(second));
+    manager.disconnect();
+    manager.attach(store);
+    ByteBuffer recovered = manager.recoverAfterBrokerAck(delivery -> CompletableFuture.completedFuture(null), 2000).join();
+    assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(recovered).type());
+  }
+
+  @Test
+  void delayedRetirementDoesNotDropSameIdentityReallocatedBeforeNotification() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+    manager.attach(store);
+    int oldId = publish(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 1, false, null, 1000)).packetIdentifier();
+    store.clear("subscription", 41);
+    manager.disconnect();
+    manager.attach(store);
+    int currentId = publish(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 1, false, null, 2000)).packetIdentifier();
+    assertNotEquals(oldId, currentId);
+    assertNull(manager.retireDelivery("subscription", 41, 2001));
+    assertTrue(manager.hasInFlightDelivery());
+    assertEquals(currentId, publish(manager.retryExpired(2100)).packetIdentifier());
+    assertEquals(currentId, store.getPacketId("subscription", 41));
+    manager.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBACK, currentId, null), 2101);
+    assertEquals(0, store.size());
+  }
+
+  @Test
+  void broadRetirementSkipsFreshMappedIdentityUnderSameKey() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+    manager.attach(store);
+    int id = publish(manager.enqueue("subscription", 42, "sensor/one", new byte[]{2}, 1, false, null, 1000)).packetIdentifier();
+    assertNull(manager.retireDeliveries("subscription", 1001));
+    assertTrue(manager.hasInFlightDelivery());
+    assertEquals(id, publish(manager.retryExpired(1100)).packetIdentifier());
+    assertEquals(id, store.getPacketId("subscription", 42));
+  }
+
+  @Test
+  void reconnectPreservesOriginalQosOneWhenCurrentSubscriptionWouldSendQosZero() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    MqttSn2OutgoingDeliveryManager original = new MqttSn2OutgoingDeliveryManager();
+    original.attach(store);
+    int id = publish(original.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 1, false, null, 1000)).packetIdentifier();
+    MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager();
+    restored.attach(store);
+    MqttSn2PublishCodec.Publish replay = publish(restored.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 0, false, null, 2000));
+    assertEquals(1, replay.qos());
+    assertEquals(id, replay.packetIdentifier());
+    assertTrue(replay.duplicate());
+    assertNull(restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBACK, id, null), 2001));
+    assertEquals(0, store.size());
+  }
+
+  @Test
+  void restartPreservesOriginalWireQosWhenSubscriptionDowngradesToZero() throws Exception {
+    Path file = directory.resolve("mqtt-sn2-original-qos.journal");
+    int id;
+    try (PacketIdStore store = PacketIdStore.open(file, 65535, PacketIdStore.Durability.BATCHED)) {
+      MqttSn2OutgoingDeliveryManager original = new MqttSn2OutgoingDeliveryManager();
+      original.attach(store);
+      id = publish(original.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, null, 1000)).packetIdentifier();
+      assertEquals(2, store.getQos(id));
+      store.compact();
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 65535, PacketIdStore.Durability.BATCHED)) {
+      MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager();
+      restored.attach(store);
+      assertEquals(2, restored.getOriginalQos("subscription", 41));
+      MqttSn2PublishCodec.Publish replay = publish(restored.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 0, false, null, 2000));
+      assertEquals(2, replay.qos());
+      assertTrue(replay.duplicate());
+      assertEquals(id, replay.packetIdentifier());
+      assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id, null), 2001)).type());
+    }
+  }
+
+  @Test
+  void runtimeRetirementDropsExpiredInFlightAndStartsUnsentDeliveryWithoutClearingReusedId() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(1);
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager();
+    manager.attach(store);
+    AtomicInteger expiredCompletion = new AtomicInteger();
+    int id = publish(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 1, false, expiredCompletion::incrementAndGet, 1000)).packetIdentifier();
+    manager.enqueue("subscription", 42, "sensor/one", new byte[]{2}, 1, false, null, 1001);
+    store.clear("subscription", 41);
+    int reused = store.allocate("other-subscription", 99).packetId();
+    assertEquals(id, reused);
+    assertThrows(java.io.IOException.class, () -> manager.retireDelivery("subscription", 41, 1002));
+    assertEquals(reused, store.getPacketId("other-subscription", 99));
+    assertEquals(0, expiredCompletion.get());
+    store.clear("other-subscription", 99);
+    MqttSn2PublishCodec.Publish next = publish(manager.recover(1003));
+    assertFalse(next.duplicate());
+    assertEquals(id, next.packetIdentifier());
+    assertEquals(id, store.getPacketId("subscription", 42));
+  }
+
+  @Test
+  void bulkRuntimeRetirementDropsQueuedAndRecoveredDeliveriesForOnlyItsSubscription() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    int id = store.allocate("retired-subscription", 41).packetId();
+    store.setStage(id, 1);
+    MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager();
+    restored.attach(store);
+    restored.recover(1000);
+    restored.enqueue("retired-subscription", 42, "sensor/one", new byte[]{2}, 1, false, null, 1001);
+    restored.enqueue("other-subscription", 43, "sensor/one", new byte[]{3}, 1, false, null, 1001);
+    store.clear("retired-subscription", 41);
+    MqttSn2PublishCodec.Publish next = publish(restored.retireDeliveries("retired-subscription", 1002));
+    assertFalse(next.duplicate());
+    assertEquals(next.packetIdentifier(), store.getPacketId("other-subscription", 43));
+    assertNull(store.getPacketId("retired-subscription", 42));
+  }
+
+  @Test
+  void recoveredDeliveryBindsCompletionEvenWhenResubscriptionDowngradesQos() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    int id = store.allocate("subscription", 41).packetId();
+    store.setStage(id, 1);
+    MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager(100, 3);
+    restored.attach(store);
+    restored.recover(1000);
+    AtomicInteger completed = new AtomicInteger();
+    assertTrue(restored.bindRecoveredCompletion("subscription", 41, completed::incrementAndGet));
+    assertFalse(restored.bindRecoveredCompletion("subscription", 42, completed::incrementAndGet));
+    restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, id, null), 1001);
+    assertEquals(1, completed.get());
+  }
+
+  @Test
+  void recoveredPubrelCanFinishBeforeBrokerReplayAndCompletesLateDeliveryExactlyOnce() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    int id = store.allocate("subscription", 41).packetId();
+    store.setStage(id, 1);
+    MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager(100, 3);
+    restored.attach(store);
+    ByteBuffer recovery = restored.recover(1000);
+    assertEquals(id, MqttSn2AckCodec.decode(MqttSn2FrameCodec.decode(recovery)).packetIdentifier());
+    assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(recovery).type());
+    assertNull(restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, id, null), 1001));
+    AtomicInteger completed = new AtomicInteger();
+    assertNull(restored.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, completed::incrementAndGet, 1002));
+    assertEquals(1, completed.get());
+    assertFalse(restored.hasInFlightDelivery());
+    assertEquals(0, store.size());
+  }
+
+  @Test
+  void recoveredPubrelsSerializeBeforeNewPublishesAndBindLiveEngineCallbacks() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    int firstId = store.allocate("subscription", 41).packetId();
+    int secondId = store.allocate("subscription", 42).packetId();
+    store.setStage(firstId, 1);
+    store.setStage(secondId, 1);
+    MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager(100, 3);
+    restored.attach(store);
+    ByteBuffer recovery = restored.recover(1000);
+    int activeId = MqttSn2AckCodec.decode(MqttSn2FrameCodec.decode(recovery)).packetIdentifier();
+    long activeMessage = store.getDelivery(activeId).messageId();
+    AtomicInteger completed = new AtomicInteger();
+    assertNull(restored.recover(1001), "Only one outstanding request may be sent");
+    assertNull(restored.enqueue("subscription", activeMessage, "sensor/one", new byte[]{1}, 2, false, completed::incrementAndGet, 1001));
+    assertNull(restored.enqueue("subscription", 43, "sensor/one", new byte[]{3}, 1, false, null, 1001));
+    ByteBuffer second = restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, activeId, null), 1002);
+    assertEquals(1, completed.get());
+    assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(second).type());
+    int otherId = MqttSn2AckCodec.decode(MqttSn2FrameCodec.decode(second)).packetIdentifier();
+    assertNotEquals(activeId, otherId);
+    MqttSn2PublishCodec.Publish next = publish(restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, otherId, null), 1003));
+    assertFalse(next.duplicate());
+    assertEquals(1, next.qos());
+  }
+
+  @Test
+  void orphanedPubrelRetriesExhaustWithoutDeletingDurableStage() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    int id = store.allocate("expired-subscription", 41).packetId();
+    store.setStage(id, 1);
+    MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager(100, 1);
+    restored.attach(store);
+    restored.recover(1000);
+    assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(restored.retryExpired(1100)).type());
+    assertNull(restored.retryExpired(1200));
+    assertTrue(restored.isRetryExhausted());
+    restored.disconnect();
+    assertEquals(id, store.getPacketId("expired-subscription", 41));
+    assertEquals(1, store.getStage(id));
+  }
+
+  @Test
+  void reconnectReusesStableDeliveryIdentifierAndDuplicatesOnlyPreviouslyStartedDelivery() throws Exception {
+    PacketIdStore store = PacketIdStore.memory(65535);
+    MqttSn2OutgoingDeliveryManager original = new MqttSn2OutgoingDeliveryManager(100, 3);
+    original.attach(store);
+    MqttSn2PublishCodec.Publish first = publish(original.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 1, true, null, 1000));
+    assertFalse(first.duplicate());
+    assertNull(original.enqueue("subscription", 42, "sensor/one", new byte[]{2}, 1, false, null, 1000));
+    assertNull(store.getPacketId("subscription", 42), "Queued deliveries must not acquire identifiers before their first send");
+
+    MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager(100, 3);
+    restored.attach(store);
+    MqttSn2PublishCodec.Publish replay = publish(restored.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 1, true, null, 2000));
+    assertEquals(first.packetIdentifier(), replay.packetIdentifier());
+    assertTrue(replay.duplicate());
+    restored.enqueue("subscription", 42, "sensor/one", new byte[]{2}, 1, false, null, 2000);
+    MqttSn2PublishCodec.Publish next = publish(restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBACK, replay.packetIdentifier(), null), 2001));
+    assertFalse(next.duplicate());
+    assertNull(store.getPacketId("subscription", 41));
+    assertEquals(next.packetIdentifier(), store.getPacketId("subscription", 42));
+  }
+
+  @Test
+  void serverRestartWhileAwaitingPubcompReplaysPubrelAndCleansMappingOnAck() throws Exception {
+    Path file = directory.resolve("mqtt-sn2-packets.journal");
+    int id;
+    try (PacketIdStore store = PacketIdStore.open(file, 65535, PacketIdStore.Durability.BATCHED)) {
+      MqttSn2OutgoingDeliveryManager original = new MqttSn2OutgoingDeliveryManager(100, 3);
+      original.attach(store);
+      id = publish(original.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, null, 1000)).packetIdentifier();
+      original.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id, null), 1001);
+      assertEquals(1, store.getStage(id));
+      store.compact();
+    }
+    AtomicInteger completed = new AtomicInteger();
+    try (PacketIdStore store = PacketIdStore.open(file, 65535, PacketIdStore.Durability.BATCHED)) {
+      MqttSn2OutgoingDeliveryManager restored = new MqttSn2OutgoingDeliveryManager(100, 3);
+      restored.attach(store);
+      ByteBuffer frame = restored.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, completed::incrementAndGet, 2000);
+      assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(frame).type());
+      assertEquals(id, MqttSn2AckCodec.decode(MqttSn2FrameCodec.decode(frame)).packetIdentifier());
+      assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(restored.retryExpired(2100)).type());
+      ByteBuffer repeatedPubrec = restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, id, null), 2100);
+      assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(repeatedPubrec).type());
+      assertEquals(id, MqttSn2AckCodec.decode(MqttSn2FrameCodec.decode(repeatedPubrec)).packetIdentifier());
+      restored.acknowledge(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, id, null), 2101);
+      assertEquals(1, completed.get());
+      assertEquals(0, store.size());
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 65535, PacketIdStore.Durability.BATCHED)) {
+      assertEquals(0, store.size());
+    }
+  }
+
+  @Test
+  void cleanSessionDoesNotReplayPriorDelivery() throws Exception {
+    MqttSn2OutgoingDeliveryManager original = new MqttSn2OutgoingDeliveryManager();
+    original.attach(PacketIdStore.memory(65535));
+    original.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 1, false, null, 1000);
+    MqttSn2OutgoingDeliveryManager clean = new MqttSn2OutgoingDeliveryManager();
+    clean.attach(PacketIdStore.memory(65535));
+    assertFalse(publish(clean.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 1, false, null, 2000)).duplicate());
+  }
+
+  @Test
+  void qosOneRetriesPreserveAllPublishProperties() throws Exception {
+    MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+    PacketIdStore store = PacketIdStore.memory(65535);
+    manager.attach(store);
+    MqttSn2PublishCodec.Publish initial = publish(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1, 2}, 1, true, null, 1000));
+    MqttSn2PublishCodec.Publish retry = publish(manager.retryExpired(1100));
+    assertTrue(retry.duplicate());
+    assertEquals(initial.packetIdentifier(), retry.packetIdentifier());
+    assertEquals(initial.qos(), retry.qos());
+    assertEquals(initial.retained(), retry.retained());
+    assertEquals(initial.topicName(), retry.topicName());
+    assertArrayEquals(initial.payload(), retry.payload());
+  }
+
+  private static MqttSn2PublishCodec.Publish publish(ByteBuffer frame) throws Exception {
+    return MqttSn2PublishCodec.decode(MqttSn2FrameCodec.decode(frame));
+  }
 
   @Test
   void qos_two_delivery_uses_pubrec_pubrel_pubcomp_before_releasing_next_publish() throws Exception {

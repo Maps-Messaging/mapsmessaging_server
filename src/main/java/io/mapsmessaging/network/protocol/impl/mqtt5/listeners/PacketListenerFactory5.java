@@ -49,6 +49,7 @@ public class PacketListenerFactory5 {
     listeners[MQTTPacket.UNSUBSCRIBE] = new UnsubscribeListener5();
     listeners[MQTTPacket5.AUTH] = new AuthListener5();
     listeners[MQTTPacket.SUBACK] = new SubAckListener5();
+    listeners[MQTTPacket.UNSUBACK] = new UnsubAckListener5();
   }
 
   public PacketListener5 getListener(int mqttPacketId) {

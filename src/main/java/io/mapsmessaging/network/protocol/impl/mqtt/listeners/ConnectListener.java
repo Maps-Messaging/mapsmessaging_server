@@ -98,13 +98,14 @@ public class ConnectListener extends BaseConnectionListener {
         handleSessionException(connAck, protocol);
       } else {
         try {
-          setupConnAck(session, connAck);
+          protocol.setSession(session);
+          setupConnAck(session, connAck, protocol);
           protocol.registerRead();
           protocol.sendFrame(connAck);
           if(connAck.getCallback() != null) {
             connAck.getCallback().run();
           }
-        } catch (IOException e) {
+        } catch (IOException | java.io.UncheckedIOException e) {
           handleSessionException(connAck, protocol);
         }
       }
@@ -112,10 +113,14 @@ public class ConnectListener extends BaseConnectionListener {
   }
 
 
-  private void setupConnAck(Session session, ConnAck connAck) {
+  private void setupConnAck(Session session, ConnAck connAck, MQTTProtocol protocol) {
     connAck.setResponseCode(ConnAck.SUCCESS);
     connAck.setRestoredFlag(session.isRestored());
-    connAck.setCallback(session::resumeState);
+    connAck.setCallback(() -> {
+      protocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (protocol.isDeliverySessionActive(session)) session.resumeState();
+      });
+    });
   }
 
   private CompletableFuture<Session> constructSession(EndPoint endPoint, Protocol protocol, String sessionId, Connect connect) {

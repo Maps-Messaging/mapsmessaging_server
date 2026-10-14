@@ -67,7 +67,7 @@ public class InitialConnectionState implements State {
         sessionFuture.thenApply(session -> {
           protocol.setSession(session);
           ConnAck response = new ConnAck(ReasonCodes.SUCCESS);
-          response.setCallback(session::resumeState);
+          response.setCallback(() -> protocol.resumeSession(session));
           ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
               endPoint.getProtocol(),
               endPoint.getName(),

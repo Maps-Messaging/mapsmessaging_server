@@ -43,6 +43,7 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
@@ -345,12 +346,29 @@ public final class MqttSn2Protocol extends Protocol {
         }
         // Restore persistent session mappings before the CONNACK permits packets.
         aliases.attach(created.getOrCreateTopicAliasRegistry(65535));
+        outgoing.attach(created.getOrCreatePacketIdStore(65535));
         created.login();
         ByteBuffer response = MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(
             created.isRestored(), request.packetIdentifier(), 0, request.sessionExpirySeconds(), null,
             request.authentication() ? request.authenticationMethod() : null, saslFinalResponse,
             request.clientIdentifier().isEmpty() ? clientIdentifier : ""));
-        send(response, created::resumeState);
+        send(response, () -> {
+          if (!isCurrentSession(created)) return;
+          try {
+            outgoing.recoverAfterBrokerAck(created::ackRecoveredDelivery, System.currentTimeMillis()).whenComplete((recovered, failureDuringRecovery) -> {
+              if (!isCurrentSession(created)) return;
+              if (failureDuringRecovery != null) {
+                deliveryFailure(failureDuringRecovery);
+                return;
+              }
+              if (recovered != null) {
+                send(recovered, null);
+                scheduleRetry();
+              }
+              created.resumeState();
+            });
+          } catch (IOException failureDuringRecovery) { deliveryFailure(failureDuringRecovery); }
+        });
         lifecycle.connected();
         setConnected(true);
         if (sasl != null) {
@@ -585,17 +603,27 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void acknowledge(MqttSn2AckCodec.Ack ack) throws IOException {
-    ByteBuffer next = outgoing.acknowledge(ack, System.currentTimeMillis());
+    Session current = session.get();
     if (retryTask != null) retryTask.cancel(false);
-    if (next != null) {
-      send(next, null);
-    }
-    if (outgoing.hasInFlightDelivery()) {
-      scheduleRetry();
-    }
-    if (lifecycle.state() == MqttSn2Lifecycle.State.AWAKE && !outgoing.hasInFlightDelivery()) {
-      drainSleepingQueue();
-    }
+    outgoing.acknowledgeAfterBrokerAck(ack, System.currentTimeMillis(), current::ackRecoveredDelivery).whenComplete((next, failure) -> {
+      if (!isCurrentSession(current)) return;
+      if (failure != null) {
+        deliveryFailure(failure);
+        return;
+      }
+      if (next != null) send(next, null);
+      if (outgoing.hasInFlightDelivery()) scheduleRetry();
+      if (lifecycle.state() == MqttSn2Lifecycle.State.AWAKE && !outgoing.hasInFlightDelivery()) drainSleepingQueue();
+    });
+  }
+
+  private boolean isCurrentSession(Session expected) {
+    return !closed && expected != null && session.get() == expected && !expected.isClosed();
+  }
+
+  private void deliveryFailure(Throwable failure) {
+    AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
+    try { close(); } catch (IOException ignored) { }
   }
 
   private void scheduleRetry() {
@@ -743,23 +771,67 @@ public final class MqttSn2Protocol extends Protocol {
   private void deliver(MessageEvent event) {
     ParsedMessage parsed = parseOutboundMessage(event);
     if (parsed == null) return;
-    // Delivery QoS is bounded by the subscription's granted maximum, not
+    // Initial delivery QoS is bounded by the subscription's granted maximum, not
     // merely the publishing client's QoS. Otherwise a QoS 0 subscriber can
     // receive QoS 1 and consume send credit waiting for an ACK it cannot owe.
     int qosLevel = Math.min(parsed.getMessage().getQualityOfService().getLevel(),
         event.getSubscription().getContext().getQualityOfService().getLevel());
-    if (qosLevel == 0) {
-      MqttSn2PublishCodec.Publish publish = new MqttSn2PublishCodec.Publish(
-          false, 0, false, parsed.getMessage().isRetain(), 3, 0,
-          parsed.getDestinationName(), 0, parsed.getMessage().getOpaqueData());
-      send(MqttSn2PublishCodec.encode(publish), event.getCompletionTask());
-      return;
+    try {
+      String deliveryKey = PacketIdManager.deliveryKey(event.getSubscription());
+      int originalQos = outgoing.getOriginalQos(deliveryKey, event.getMessage().getIdentifier());
+      if (originalQos != 0) qosLevel = originalQos;
+      if (qosLevel == 0 && outgoing.bindRecoveredCompletion(deliveryKey,
+          event.getMessage().getIdentifier(), event.getCompletionTask())) return;
+      if (qosLevel == 0) {
+        MqttSn2PublishCodec.Publish publish = new MqttSn2PublishCodec.Publish(
+            false, 0, false, parsed.getMessage().isRetain(), 3, 0,
+            parsed.getDestinationName(), 0, parsed.getMessage().getOpaqueData());
+        send(MqttSn2PublishCodec.encode(publish), event.getCompletionTask());
+        return;
+      }
+      ByteBuffer frame = outgoing.enqueue(deliveryKey, event.getMessage().getIdentifier(),
+          parsed.getDestinationName(), parsed.getMessage().getOpaqueData(), qosLevel, parsed.getMessage().isRetain(), event.getCompletionTask(),
+          System.currentTimeMillis());
+      if (frame != null) {
+        send(frame, null);
+        scheduleRetry();
+      }
+    } catch (IOException failure) {
+      AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
+      try { close(); } catch (IOException ignored) { }
     }
-    ByteBuffer frame = outgoing.enqueue(parsed.getDestinationName(), parsed.getMessage().getOpaqueData(),
-        qosLevel, parsed.getMessage().isRetain(), event.getCompletionTask(), System.currentTimeMillis());
-    if (frame != null) {
-      send(frame, null);
-      scheduleRetry();
+  }
+
+  public void deliveryRetired(String subscriptionKey, long messageId) {
+    retireDelivery(subscriptionKey, messageId);
+  }
+
+  public void deliveriesRetired(String subscriptionKey) {
+    retireDelivery(subscriptionKey, null);
+  }
+
+  private void retireDelivery(String subscriptionKey, Long messageId) {
+    if (closed) return;
+    try {
+      if (messageId != null && outgoing.hasDeliveryMapping(subscriptionKey, messageId)) return;
+      synchronized (sleepingQueue) {
+        var iterator = sleepingQueue.iterator();
+        while (iterator.hasNext()) {
+          MessageEvent event = iterator.next();
+          long identifier = event.getMessage().getIdentifier();
+          if (PacketIdManager.deliveryKey(event.getSubscription()).equals(subscriptionKey)
+              && (messageId == null || identifier == messageId) && !outgoing.hasDeliveryMapping(subscriptionKey, identifier)) iterator.remove();
+        }
+      }
+      ByteBuffer next = messageId == null ? outgoing.retireDeliveries(subscriptionKey, System.currentTimeMillis())
+          : outgoing.retireDelivery(subscriptionKey, messageId, System.currentTimeMillis());
+      if (retryTask != null) retryTask.cancel(false);
+      if (next != null) send(next, null);
+      if (outgoing.hasInFlightDelivery()) scheduleRetry();
+      else if (lifecycle.state() == MqttSn2Lifecycle.State.AWAKE) drainSleepingQueue();
+    } catch (IOException failure) {
+      AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
+      try { close(); } catch (IOException ignored) { }
     }
   }
 
@@ -768,6 +840,7 @@ public final class MqttSn2Protocol extends Protocol {
     if (closed) return;
     closed = true;
     lifecycle.close();
+    outgoing.disconnect();
     // Disconnect must not destroy aliases belonging to a persistent session.
     if (retryTask != null) retryTask.cancel(false);
     if (sleepTask != null) sleepTask.cancel(false);

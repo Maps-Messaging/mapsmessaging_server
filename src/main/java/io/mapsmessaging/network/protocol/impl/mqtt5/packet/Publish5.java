@@ -52,10 +52,14 @@ public class Publish5 extends MQTTPacket5 implements ServerPublishPacket {
   private final byte[] payload;
 
   public Publish5(byte[] payload, QualityOfService qos, int packetId, String destination, boolean retain) {
+    this(payload, qos, packetId, destination, retain, false);
+  }
+
+  public Publish5(byte[] payload, QualityOfService qos, int packetId, String destination, boolean retain, boolean duplicate) {
     super(PUBLISH);
     this.payload = payload != null ? payload : new byte[0];
     this.retain = retain;
-    isDup = false;
+    isDup = duplicate && qos.isSendPacketId();
     this.qos = qos;
     this.packetId = packetId;
     destinationName = destination;

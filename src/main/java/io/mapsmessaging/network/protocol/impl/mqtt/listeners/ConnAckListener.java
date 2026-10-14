@@ -42,8 +42,13 @@ public class ConnAckListener extends BaseConnectionListener {
 
     MQTTProtocol  mqttProtocol = (MQTTProtocol)protocol;
     if(mqttProtocol.getSession() != null){
-      mqttProtocol.getSession().resumeState();
-      protocol.setConnected(true);
+      Session activeSession = mqttProtocol.getSession();
+      mqttProtocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (mqttProtocol.isDeliverySessionActive(activeSession)) {
+          activeSession.resumeState();
+          protocol.setConnected(true);
+        }
+      });
       return null; // already connected
     }
     EndPointConnectionServerConfigDTO connectionConfig = (EndPointConnectionServerConfigDTO) endPoint.getConfig();
@@ -70,8 +75,13 @@ public class ConnAckListener extends BaseConnectionListener {
     scb.setResetState(false);
     CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sess);
     sessionFuture.thenApply(session1 -> {
-      session1.resumeState();
-      protocol.setConnected(true);
+      mqttProtocol.setSession(session1);
+      mqttProtocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (mqttProtocol.isDeliverySessionActive(session1)) {
+          session1.resumeState();
+          protocol.setConnected(true);
+        }
+      });
       return session1;
     });
 

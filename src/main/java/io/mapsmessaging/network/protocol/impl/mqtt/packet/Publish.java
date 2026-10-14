@@ -48,10 +48,14 @@ public class Publish extends MQTTPacket implements ServerPublishPacket {
   private final byte[] payload;
 
   public Publish(boolean retain, byte[] payload, QualityOfService qos, int packetId, String destination) {
+    this(retain, payload, qos, packetId, destination, false);
+  }
+
+  public Publish(boolean retain, byte[] payload, QualityOfService qos, int packetId, String destination, boolean duplicate) {
     super(PUBLISH);
     this.payload = payload != null ? payload : new byte[0];
     this.retain = retain;
-    isDup = false;
+    isDup = duplicate && qos.isSendPacketId();
     this.qos = qos;
     this.packetId = packetId;
     destinationName = destination;

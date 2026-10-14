@@ -69,6 +69,10 @@ public class Publish extends MQTT_SNPacket implements BasePublish {
     return len;
   }
 
+  public void setDup(boolean duplicate) {
+    flags = (byte) (duplicate ? flags | 0x80 : flags & ~0x80);
+  }
+
   public boolean dup() {
     return (flags & 0b10000000) != 0;
   }

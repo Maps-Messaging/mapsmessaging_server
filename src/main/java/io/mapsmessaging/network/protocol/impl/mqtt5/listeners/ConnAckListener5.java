@@ -51,8 +51,13 @@ public class ConnAckListener5 extends PacketListener5 {
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     MQTT5Protocol mqtt5Protocol = (MQTT5Protocol)protocol;
     if(mqtt5Protocol.getSession() != null){
-      mqtt5Protocol.getSession().resumeState();
-      protocol.setConnected(true);
+      Session activeSession = mqtt5Protocol.getSession();
+      mqtt5Protocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (mqtt5Protocol.isDeliverySessionActive(activeSession)) {
+          activeSession.resumeState();
+          protocol.setConnected(true);
+        }
+      });
       return null; // already connected
     }
 
@@ -100,9 +105,13 @@ public class ConnAckListener5 extends PacketListener5 {
       );
       protocol.setProtocolMessageTransformation(transformation);
       session.login();
-      session.resumeState();
-      protocol.setConnected(true);
-    } catch (LoginException | IOException e) {
+      ((MQTT5Protocol) protocol).recoverOutgoingDeliveries().thenRun(() -> {
+        if (((MQTT5Protocol) protocol).isDeliverySessionActive(session)) {
+          session.resumeState();
+          protocol.setConnected(true);
+        }
+      });
+    } catch (LoginException | IOException | java.io.UncheckedIOException e) {
       logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, sessionId);
       closeEndPoint(endPoint);
       throw new MalformedException("Unable to construct the MQTT 5 client session", e);

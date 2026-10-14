@@ -18,7 +18,6 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -80,9 +79,10 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
   }
 
   @Test
-  @Disabled("Known conformance gap: MSG-392")
   @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 4.4 Message delivery retry", source = ProtocolRequirement.MQTT_311_SOURCE)
   void unacknowledgedQosOnePublishIsRedeliveredWithDupAfterReconnect() throws Exception {
+    int originalPacketId;
+    byte[] originalBody;
     String clientId = "mqtt311-redelivery-" + UUID.randomUUID();
     String topic = "conformance/mqtt311/redelivery/" + UUID.randomUUID();
 
@@ -104,6 +104,8 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
       WirePacket first = subscriber.readPacket();
       assertEquals(3, first.type(), first::toString);
       assertEquals(0, first.fixedHeader() & 0x08, "First delivery must not set DUP");
+      originalPacketId = MqttWireClient.publishPacketIdentifier(first);
+      originalBody = first.body();
       // Intentionally close without PUBACK.
     }
 
@@ -116,10 +118,62 @@ class Mqtt311FullConformanceTest extends BaseTestConfig {
       WirePacket redelivery = reconnected.readPacket();
       assertEquals(3, redelivery.type(), redelivery::toString);
       assertNotEquals(0, redelivery.fixedHeader() & 0x08, "Redelivery must set DUP");
+      assertEquals(originalPacketId, MqttWireClient.publishPacketIdentifier(redelivery), "Replay must preserve the wire identifier");
+      assertArrayEquals(originalBody, redelivery.body(), "Replay must preserve topic, payload and packet identifier");
       reconnected.send(MqttWireClient.pubAck(MqttWireClient.publishPacketIdentifier(redelivery)));
     }
 
     // Clear the persistent session created by this conformance case.
+    try (MqttWireClient cleanup = new MqttWireClient("localhost", 1883)) {
+      cleanup.send(MqttWireClient.connect311(clientId, true));
+      assertEquals(0, cleanup.readPacket().body()[1] & 0xff);
+      cleanup.send(MqttWireClient.disconnect());
+    }
+  }
+
+  @Test
+  @ProtocolRequirement(specification = "MQTT-3.1.1", value = "Section 4.4 Resume QoS 2 PUBREL after reconnect", source = ProtocolRequirement.MQTT_311_SOURCE)
+  void qos_two_reconnect_resumes_pubrel_with_original_id_without_new_publish() throws Exception {
+    String clientId = "mqtt3-qos2-recovery-" + UUID.randomUUID();
+    String topic = "conformance/mqtt3/qos2-recovery/" + UUID.randomUUID();
+    int originalPacketId;
+
+    try (MqttWireClient subscriber = new MqttWireClient("localhost", 1883);
+         CloseableMqtt311Client publisher = new CloseableMqtt311Client(URL, "mqtt311-qos2-recovery-pub-" + UUID.randomUUID())) {
+      subscriber.send(MqttWireClient.connect311(clientId, false));
+      assertEquals(0, subscriber.readPacket().body()[1] & 0xff);
+      subscriber.send(MqttWireClient.subscribe311(601, topic, 2));
+      assertEquals(9, subscriber.readPacket().type());
+      MqttConnectOptions options = new MqttConnectOptions();
+      options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+      options.setCleanSession(true);
+      publisher.connect(options);
+      publisher.publish(topic, "recover-qos2".getBytes(StandardCharsets.UTF_8), 2, false);
+      WirePacket publish = subscriber.readPacket();
+      assertEquals(3, publish.type());
+      assertEquals(2, (publish.fixedHeader() >>> 1) & 0x03);
+      originalPacketId = MqttWireClient.publishPacketIdentifier(publish);
+      subscriber.send(MqttWireClient.pubRec(originalPacketId));
+      WirePacket pubRel = subscriber.readPacket();
+      assertEquals(6, pubRel.type());
+      assertEquals(originalPacketId, MqttWireClient.unsignedShort(pubRel.body(), 0));
+      // Disconnect after PUBREL without PUBCOMP.
+    }
+    try (MqttWireClient resumed = new MqttWireClient("localhost", 1883)) {
+      resumed.send(MqttWireClient.connect311(clientId, false));
+      WirePacket connAck = resumed.readPacket();
+      assertEquals(0, connAck.body()[1] & 0xff);
+      assertEquals(1, connAck.body()[0] & 0x01);
+      WirePacket pubRel = resumed.readPacket();
+      assertEquals(6, pubRel.type(), "Accepted QoS 2 delivery must resume as PUBREL");
+      assertEquals(2, pubRel.flags());
+      assertEquals(originalPacketId, MqttWireClient.unsignedShort(pubRel.body(), 0));
+      resumed.send(MqttWireClient.pubComp(originalPacketId));
+      resumed.send(new byte[]{(byte) 0xc0, 0});
+      assertEquals(13, resumed.readPacket().type());
+      resumed.setReadTimeoutMillis(300);
+      assertThrows(java.net.SocketTimeoutException.class, resumed::readPacket, "Completed delivery must not become another PUBLISH");
+    }
     try (MqttWireClient cleanup = new MqttWireClient("localhost", 1883)) {
       cleanup.send(MqttWireClient.connect311(clientId, true));
       assertEquals(0, cleanup.readPacket().body()[1] & 0xff);

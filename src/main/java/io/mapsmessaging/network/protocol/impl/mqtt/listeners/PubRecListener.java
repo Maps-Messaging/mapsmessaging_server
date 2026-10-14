@@ -34,9 +34,18 @@ public class PubRecListener extends PacketListener {
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     PubRec pubRec = (PubRec) mqttPacket;
-    PacketIdentifierMap mapping = ((MQTTProtocol) protocol).getPacketIdManager().receivedPacket(pubRec.getPacketIdentifier());
+    var manager = ((MQTTProtocol) protocol).getPacketIdManager();
+    int qos = manager.getPacketQos(pubRec.getPacketIdentifier());
+    if ((manager.hasDeliveryStore() || qos != 0) && qos != 2) return null;
+    PacketIdentifierMap mapping = manager.receivedPacket(pubRec.getPacketIdentifier());
     if (mapping != null) {
-      mapping.getSubscription().ackReceived(mapping.getMessageId());
+      boolean accepted = manager.isAwaitingPubComp(pubRec.getPacketIdentifier());
+      manager.markAwaitingPubComp(pubRec.getPacketIdentifier());
+      if (manager.hasDeliveryStore()) {
+        ((MQTTProtocol) protocol).sendPubRelAfterBrokerAck(pubRec.getPacketIdentifier());
+        return null;
+      }
+      if (!accepted && mapping.getSubscription() != null) mapping.getSubscription().ackReceived(mapping.getMessageId());
       return new PubRel(mapping.getPacketIdentifier());
     }
     throw new MalformedException("No known packet identifier found :" + pubRec.getPacketIdentifier());

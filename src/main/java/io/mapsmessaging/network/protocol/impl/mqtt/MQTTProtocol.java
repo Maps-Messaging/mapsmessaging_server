@@ -73,6 +73,9 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
   private final MqttKeepAliveManager keepAliveManager;
   @Getter
   private final PacketIdManager packetIdManager;
+  private record PubRelGate(io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery,
+                            java.util.concurrent.CompletableFuture<Void> future, java.util.concurrent.atomic.AtomicBoolean ready) {}
+  private final java.util.Map<Integer, PubRelGate> pubRelAcknowledgements = new java.util.concurrent.ConcurrentHashMap<>();
   private final long maxBufferSize;
 
   @Getter
@@ -122,7 +125,10 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
       return;
     }
     closed = true;
+    pubRelAcknowledgements.values().forEach(pending -> pending.future().completeExceptionally(new IOException("Delivery session is closed")));
+    pubRelAcknowledgements.clear();
     remoteSubscriptionTracker.close();
+    packetIdManager.close();
     if(selectorTask.isOpen()){
       selectorTask.close();
     }
@@ -192,7 +198,7 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
   @Override
   public void unsubscribeRemote(@NonNull @NotNull String resource){
     Unsubscribe unsubscribe = new Unsubscribe(List.of(resource));
-    unsubscribe.setMessageId(packetIdManager.nextPacketIdentifier());
+    unsubscribe.setMessageId(packetIdManager.nextControlPacketIdentifier());
     writeFrame(unsubscribe);
   }
 
@@ -228,8 +234,93 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
 
   @Override
   public void setSession(Session session) {
+    if (this.session != session) pubRelAcknowledgements.clear();
     this.session = session;
+    try {
+      packetIdManager.bindStore(session.getOrCreatePacketIdStore(65535));
+    } catch (IOException | java.io.UncheckedIOException error) {
+      try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+      if (error instanceof java.io.UncheckedIOException unchecked) throw unchecked;
+      throw new java.io.UncheckedIOException((IOException) error);
+    }
     completedConnection();
+  }
+
+  /** Called after CONNACK and before waking engine deliveries already accepted at PUBREC. */
+  public boolean isDeliverySessionActive(Session candidate) {
+    return !closed && session == candidate && candidate != null && !candidate.isClosed();
+  }
+
+  public boolean isPubRelReady(int packetId) {
+    var gate = pubRelAcknowledgements.get(packetId);
+    return gate != null && gate.ready().get();
+  }
+
+  public void completePubRel(int packetId) {
+    pubRelAcknowledgements.remove(packetId);
+  }
+
+  /** PUBREL is safe only once its exact broker interest has been durably acknowledged. */
+  public java.util.concurrent.CompletableFuture<Void> sendPubRelAfterBrokerAck(int packetId) {
+    Session activeSession = session;
+    if (!isDeliverySessionActive(activeSession)) return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery = packetIdManager.getDelivery(packetId);
+    if (delivery == null) return java.util.concurrent.CompletableFuture.completedFuture(null);
+    PubRelGate gate;
+    for (;;) {
+      PubRelGate existing = pubRelAcknowledgements.get(packetId);
+      if (existing != null && existing.delivery().equals(delivery)) {
+        if (existing.ready().get() && isDeliverySessionActive(activeSession)) writeFrame(new io.mapsmessaging.network.protocol.impl.mqtt.packet.PubRel(packetId));
+        return existing.future();
+      }
+      gate = new PubRelGate(delivery, new java.util.concurrent.CompletableFuture<>(), new java.util.concurrent.atomic.AtomicBoolean());
+      if (existing == null) {
+        if (pubRelAcknowledgements.putIfAbsent(packetId, gate) == null) break;
+      } else if (pubRelAcknowledgements.replace(packetId, existing, gate)) {
+        existing.future().complete(null);
+        break;
+      }
+    }
+    PubRelGate ownedGate = gate;
+    try {
+      activeSession.ackRecoveredDelivery(delivery).whenComplete((ignored, error) -> {
+        try {
+          if (pubRelAcknowledgements.get(packetId) != ownedGate || !delivery.equals(packetIdManager.getDelivery(packetId)) || !packetIdManager.isAwaitingPubComp(packetId)) {
+            pubRelAcknowledgements.remove(packetId, ownedGate);
+            ownedGate.future().complete(null);
+            return;
+          }
+          if (error == null && !isDeliverySessionActive(activeSession)) error = new IOException("Delivery session is closed");
+          if (error == null) {
+            ownedGate.ready().set(true);
+            writeFrame(new io.mapsmessaging.network.protocol.impl.mqtt.packet.PubRel(packetId));
+            ownedGate.future().complete(null);
+            return;
+          }
+        } catch (RuntimeException callbackError) {
+          error = callbackError;
+        }
+        ownedGate.ready().set(false);
+        ownedGate.future().completeExceptionally(error);
+        if (!closed && session == activeSession) {
+          try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+        }
+      });
+    } catch (RuntimeException error) {
+      ownedGate.future().completeExceptionally(error);
+      if (!closed && session == activeSession) {
+        try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+      }
+    }
+    return ownedGate.future();
+  }
+
+  public java.util.concurrent.CompletableFuture<Void> recoverOutgoingDeliveries() {
+    Session activeSession = session;
+    if (!isDeliverySessionActive(activeSession)) return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    java.util.List<java.util.concurrent.CompletableFuture<Void>> recovered = new java.util.ArrayList<>();
+    for (int packetId : packetIdManager.getAwaitingPubCompPacketIds()) recovered.add(sendPubRelAfterBrokerAck(packetId));
+    return java.util.concurrent.CompletableFuture.allOf(recovered.toArray(java.util.concurrent.CompletableFuture[]::new));
   }
 
   public boolean processPacket(Packet packet) throws IOException {
@@ -255,7 +346,7 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
       packet.position(pos);
       registerRead();
       return false;
-    } catch (MalformedException | IOException e) {
+    } catch (MalformedException | IOException | java.io.UncheckedIOException e) {
       logger.log(ServerLogMessages.MALFORMED, e, e.getMessage());
       endPoint.close();
     }
@@ -354,6 +445,14 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    try {
+      sendDelivery(messageEvent);
+    } catch (java.io.UncheckedIOException error) {
+      try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+    }
+  }
+
+  private void sendDelivery(MessageEvent messageEvent) {
     Message msg = messageEvent.getMessage();
     SubscriptionContext subInfo = messageEvent.getSubscription().getContext();
     if (subInfo == null) {
@@ -361,22 +460,41 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
       messageEvent.getCompletionTask().run();
       return;
     }
+    if (reconcileRecoveredDelivery(messageEvent.getSubscription(), msg.getIdentifier(), messageEvent.getCompletionTask())) return;
     QualityOfService qos = subInfo.getQualityOfService();
+    Integer existingId = packetIdManager.getPacketIdentifier(messageEvent.getSubscription(), msg.getIdentifier());
+    if (existingId != null && packetIdManager.getPacketQos(existingId) > 0) qos = QualityOfService.getInstance(packetIdManager.getPacketQos(existingId));
 
     ParsedMessage parsedMessage = parseOutboundMessage(messageEvent, subInfo);
     if(parsedMessage == null) {
+      packetIdManager.discard(messageEvent.getSubscription(), msg.getIdentifier());
       packetIdManager.releaseSendSlot(messageEvent.getSubscription());
       return;
     }
 
     int packetId = 0;
     if (qos.isSendPacketId()) {
-      packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(), msg.getIdentifier());
+      packetId = packetIdManager.nextPacketIdentifier(messageEvent.getSubscription(), msg.getIdentifier(), qos.getLevel());
     }
     String topicName = parsedMessage.getDestinationName();
-    Publish publish = new Publish(msg.isRetain(), parsedMessage.getMessage().getOpaqueData(), qos, packetId, topicName);
+    Publish publish = new Publish(msg.isRetain(), parsedMessage.getMessage().getOpaqueData(), qos, packetId, topicName,
+        qos.isSendPacketId() && packetIdManager.isExistingPacketId(packetId));
     publish.setCallback(messageEvent.getCompletionTask());
     writeFrame(publish);
+  }
+
+  private boolean reconcileRecoveredDelivery(io.mapsmessaging.api.SubscribedEventManager subscription, long messageId, Runnable completion) {
+    if (packetIdManager.consumeCompletedRecovery(subscription, messageId)) {
+      subscription.ackReceived(messageId);
+      packetIdManager.releaseSendSlot(subscription);
+      completion.run();
+      return true;
+    }
+    Integer existingId = packetIdManager.getPacketIdentifier(subscription, messageId);
+    if (existingId == null || !packetIdManager.isAwaitingPubComp(existingId)) return false;
+    packetIdManager.nextPacketIdentifier(subscription, messageId);
+    sendPubRelAfterBrokerAck(existingId).thenRun(completion);
+    return true;
   }
 
   public void writeFrame(ServerPacket frame) {
