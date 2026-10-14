@@ -14,7 +14,7 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PacketIdStoreTest {
-  @TempDir Path directory;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path directory;
 
   @Test void allocation_is_bidirectional_and_existing_mapping_signals_replay() throws Exception {
     try (PacketIdStore store = PacketIdStore.memory(65535)) {
@@ -229,7 +229,11 @@ class PacketIdStoreTest {
     Path file = directory.resolve("packets");
     Path alias = directory.resolve("alias");
     try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) {
-      Files.createSymbolicLink(alias, file);
+      try { Files.createSymbolicLink(alias, file); }
+      catch (java.nio.file.FileSystemException unavailable) {
+        if (!System.getProperty("os.name", "").startsWith("Windows")) throw unavailable;
+        org.junit.jupiter.api.Assumptions.abort("Windows user lacks symbolic-link capability: " + unavailable.getReason());
+      }
       assertThrows(IOException.class, () -> PacketIdStore.open(alias, 3, PacketIdStore.Durability.SYNC));
       store.allocate("a", 1);
     }
@@ -237,9 +241,8 @@ class PacketIdStoreTest {
 
   @Test void forced_allocation_survives_process_exit_without_close() throws Exception {
     Path file = directory.resolve("packets");
-    String classpath = PacketIdStore.class.getProtectionDomain().getCodeSource().getLocation().getPath()
-        + java.io.File.pathSeparator + PacketIdStoreTest.class.getProtectionDomain().getCodeSource().getLocation().getPath()
-        + java.io.File.pathSeparator + System.getProperty("java.class.path");
+    String classpath = Path.of(PacketIdStore.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString()
+        + java.io.File.pathSeparator + Path.of(PacketIdStoreTest.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
     Process process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
         "-cp", classpath, CrashWriter.class.getName(), file.toString()).redirectErrorStream(true).start();
     try {
@@ -262,15 +265,18 @@ class PacketIdStoreTest {
 
   @Test void failed_compaction_poison_retains_original_records_and_releases_lock() throws Exception {
     Path file = directory.resolve("packets");
-    Path original = directory.resolve("original");
+    Path blocked = directory.resolve("blocked");
     try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) {
       store.allocate("a", 1);
-      Files.move(file, original);
-      Files.createDirectory(file); Files.writeString(file.resolve("blocker"), "block");
+      Files.createDirectory(blocked); Files.writeString(blocked.resolve("blocker"), "block");
+      var journalField = PacketIdStore.class.getDeclaredField("journal"); journalField.setAccessible(true);
+      Object journal = journalField.get(store);
+      var fileField = PacketIdJournal.class.getDeclaredField("file"); fileField.setAccessible(true);
+      fileField.set(journal, blocked);
       assertThrows(IOException.class, store::compact);
       assertThrows(IOException.class, () -> store.allocate("b", 2));
     }
-    Files.delete(file.resolve("blocker")); Files.delete(file); Files.move(original, file);
+
     try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) { assertTrue(store.allocate("a", 1).existing()); }
   }
 

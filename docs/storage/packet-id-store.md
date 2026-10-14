@@ -47,8 +47,10 @@ inconsistent records. Compaction writes and forces a new journal, atomically
 replaces the old one, then forces its directory. Ownership remains held by a
 separate lock throughout replacement. Journal paths must not be symbolic
 links; use one canonical path and do not create hard-link aliases, especially
-across compaction generations. Atomic replacement and directory forcing must
-be supported by the deployment filesystem.
+across compaction generations. Atomic replacement must be supported by the deployment filesystem.
+Directory forcing is used where supported by the platform. Windows Java NIO
+cannot open directory channels, so Windows forces journal file contents but
+cannot promise the same power-loss durability for directory entries/renames.
 
 History and startup work grow until the owner schedules compaction. No
 per-ACK map rewrite or full identifier-space preallocation is performed.

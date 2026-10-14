@@ -197,6 +197,9 @@ final class PacketIdJournal implements AutoCloseable {
   }
 
   private void forceDirectory() throws IOException {
+    // Windows NIO cannot open a directory channel. File contents are still
+    // forced, but directory-entry power-loss durability is platform-dependent.
+    if (System.getProperty("os.name", "").startsWith("Windows")) return;
     try (FileChannel directory = FileChannel.open(file.getParent(), StandardOpenOption.READ)) { directory.force(true); }
   }
 
