@@ -49,6 +49,7 @@ public final class PacketIdStore implements AutoCloseable {
    * Opens persistent state exclusively. BATCHED mutations require flush() before
    * protocol actions that rely on crash durability; close also flushes.
    */
+  @SuppressWarnings("java:S2095") // Successful return transfers journal ownership to PacketIdStore; recovery failures close it.
   public static PacketIdStore open(Path file, int maximum, Durability durability) throws IOException {
     if (maximum < 1 || maximum > 0xffff) throw new IllegalArgumentException("Packet identifier capacity must be 1..65535");
     PacketIdJournal journal = new PacketIdJournal(file, maximum, Objects.requireNonNull(durability));
