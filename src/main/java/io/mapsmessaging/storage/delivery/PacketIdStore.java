@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Map;
 import java.util.Objects;
 
@@ -25,6 +27,9 @@ public final class PacketIdStore implements AutoCloseable {
 
   private final Map<Delivery, Integer> byDelivery = new HashMap<>();
   private final Map<Integer, Delivery> byPacket = new HashMap<>();
+  private final Map<Integer, Integer> stages = new HashMap<>();
+  private final Map<Integer, Integer> qosLevels = new HashMap<>();
+  private final Set<Integer> reserved = new HashSet<>();
   private final int maximum;
   private final PacketIdJournal journal;
   private int cursor;
@@ -49,7 +54,7 @@ public final class PacketIdStore implements AutoCloseable {
     PacketIdJournal journal = new PacketIdJournal(file, maximum, Objects.requireNonNull(durability));
     PacketIdStore persistent = new PacketIdStore(maximum, journal);
     try {
-      journal.recover(persistent.byPacket, persistent.byDelivery);
+      journal.recover(persistent.byPacket, persistent.byDelivery, persistent.stages, persistent.qosLevels);
       return persistent;
     } catch (IOException | RuntimeException failure) {
       try { journal.close(); } catch (IOException closeFailure) { failure.addSuppressed(closeFailure); }
@@ -63,14 +68,68 @@ public final class PacketIdStore implements AutoCloseable {
     Integer existing = byDelivery.get(delivery);
     if (existing != null) return new Allocation(existing, true);
     validateTopic(topic);
-    if (byPacket.size() == maximum) throw new IOException("All packet identifiers are outstanding");
-    int candidate = cursor;
-    do { candidate = candidate == maximum ? 1 : candidate + 1; } while (byPacket.containsKey(candidate));
+    int candidate = nextAvailableId();
     if (journal != null) journal.allocate(candidate, delivery);
     byPacket.put(candidate, delivery);
     byDelivery.put(delivery, candidate);
     cursor = candidate;
     return new Allocation(candidate, false);
+  }
+
+  /** Reserves an identifier for connection-scoped control traffic without persistence. */
+  public synchronized int reservePacketId() throws IOException {
+    ensureOpen();
+    int packetId = nextAvailableId();
+    reserved.add(packetId);
+    cursor = packetId;
+    return packetId;
+  }
+
+  /** Releases only a control reservation, never an outstanding delivery. */
+  public synchronized boolean releaseReservedPacketId(int packetId) {
+    if (closed) throw new IllegalStateException("Packet identifier store is closed");
+    validateId(packetId);
+    return reserved.remove(packetId);
+  }
+
+  /** Stage 0 publishes; stage 1 awaits PUBCOMP. Unknown identifiers default to 0. */
+  public synchronized int getStage(int packetId) throws IOException {
+    ensureOpen();
+    validateId(packetId);
+    return stages.getOrDefault(packetId, 0);
+  }
+
+  /** Advances an outstanding delivery; repeated updates are idempotent. */
+  public synchronized void setStage(int packetId, int stage) throws IOException {
+    ensureOpen();
+    validateId(packetId);
+    if (!byPacket.containsKey(packetId)) throw new IllegalArgumentException("No outstanding delivery for packet identifier");
+    int current = stages.getOrDefault(packetId, 0);
+    if (stage < current || stage > 1 || stage < 0) throw new IllegalArgumentException("Invalid delivery stage transition");
+    if (stage == 1 && qosLevels.getOrDefault(packetId, 0) == 1) throw new IllegalArgumentException("QoS 1 delivery cannot await PUBCOMP");
+    if (stage == current) return;
+    if (journal != null) journal.setStage(packetId, stage);
+    stages.put(packetId, stage);
+  }
+
+  /** Original wire QoS, or 0 when unspecified; legacy PUBREL stages imply QoS 2. */
+  public synchronized int getQos(int packetId) throws IOException {
+    ensureOpen();
+    validateId(packetId);
+    return qosLevels.getOrDefault(packetId, stages.getOrDefault(packetId, 0) == 1 ? 2 : 0);
+  }
+
+  /** Records the immutable original QoS before a delivery reaches the wire. */
+  public synchronized void setQos(int packetId, int qos) throws IOException {
+    ensureOpen();
+    validateId(packetId);
+    if (!byPacket.containsKey(packetId)) throw new IllegalArgumentException("No outstanding delivery for packet identifier");
+    if (qos != 1 && qos != 2) throw new IllegalArgumentException("Delivery QoS must be 1 or 2");
+    int current = getQos(packetId);
+    if (current != 0 && current != qos) throw new IllegalArgumentException("Delivery QoS cannot change");
+    if (qosLevels.containsKey(packetId)) return;
+    if (journal != null) journal.setQos(packetId, qos);
+    qosLevels.put(packetId, qos);
   }
 
   /** Null indicates no outstanding delivery. No disk read is required. */
@@ -92,6 +151,8 @@ public final class PacketIdStore implements AutoCloseable {
     if (delivery == null) return false;
     if (journal != null) journal.clear(packetId);
     byPacket.remove(packetId);
+    stages.remove(packetId);
+    qosLevels.remove(packetId);
     byDelivery.remove(delivery);
     return true;
   }
@@ -100,6 +161,25 @@ public final class PacketIdStore implements AutoCloseable {
     ensureOpen();
     Integer packetId = byDelivery.get(key(topic, messageId));
     return packetId != null && clear(packetId);
+  }
+
+  /** Atomically clears only a matching delivery still at the PUBLISH stage. */
+  public synchronized boolean clearPendingDelivery(String topic, long messageId) throws IOException {
+    ensureOpen();
+    Integer packetId = byDelivery.get(key(topic, messageId));
+    return packetId != null && stages.getOrDefault(packetId, 0) == 0 && clear(packetId);
+  }
+
+  /** Removes every delivery for an exact subscription key while preventing ID reuse. */
+  public synchronized int clearDeliveries(String topic) throws IOException {
+    ensureOpen();
+    key(topic, 0);
+    var packetIds = new java.util.ArrayList<Integer>();
+    for (var entry : byPacket.entrySet()) {
+      if (entry.getValue().topic().equals(topic)) packetIds.add(entry.getKey());
+    }
+    for (int packetId : packetIds) clear(packetId);
+    return packetIds.size();
   }
 
   /** Stable snapshot for reconnect recovery; callers cannot mutate the indexes. */
@@ -113,15 +193,19 @@ public final class PacketIdStore implements AutoCloseable {
     return byPacket.size();
   }
 
+  /** Durability barrier; large journals with substantial dead history are compacted. */
   public synchronized void flush() throws IOException {
     ensureOpen();
-    if (journal != null) journal.flush();
+    if (journal != null) {
+      if (journal.needsCompaction(byPacket.size())) journal.compact(byPacket, stages, qosLevels);
+      else journal.flush();
+    }
   }
 
   /** Explicit maintenance operation; ordinary ACKs do not rewrite the store. */
   public synchronized void compact() throws IOException {
     ensureOpen();
-    if (journal != null) journal.compact(byPacket);
+    if (journal != null) journal.compact(byPacket, stages, qosLevels);
   }
 
   @Override public synchronized void close() throws IOException {
@@ -130,6 +214,17 @@ public final class PacketIdStore implements AutoCloseable {
     if (journal != null) journal.close();
     byPacket.clear();
     byDelivery.clear();
+    stages.clear();
+    qosLevels.clear();
+    reserved.clear();
+  }
+
+  private int nextAvailableId() throws IOException {
+    if (byPacket.size() + reserved.size() == maximum) throw new IOException("All packet identifiers are outstanding or reserved");
+    int candidate = cursor;
+    do { candidate = candidate == maximum ? 1 : candidate + 1; }
+    while (byPacket.containsKey(candidate) || reserved.contains(candidate));
+    return candidate;
   }
 
   private Delivery key(String topic, long messageId) {

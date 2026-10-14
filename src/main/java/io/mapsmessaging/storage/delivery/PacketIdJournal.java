@@ -27,6 +27,10 @@ final class PacketIdJournal implements AutoCloseable {
   private static final int HEADER_SIZE = 16;
   private static final int ALLOCATE = 1;
   private static final int CLEAR = 2;
+  private static final int STAGE = 3;
+  private static final int QOS = 4;
+  private static final long COMPACTION_MIN_BYTES = 1024 * 1024;
+  private long recordCount;
   private final Path file;
   private final int maximum;
   private final PacketIdStore.Durability durability;
@@ -68,7 +72,7 @@ final class PacketIdJournal implements AutoCloseable {
     if (failure != null) throw new IOException("Packet identifier persistence failed", failure);
   }
 
-  void recover(Map<Integer, PacketIdStore.Delivery> byPacket, Map<PacketIdStore.Delivery, Integer> byDelivery) throws IOException {
+  void recover(Map<Integer, PacketIdStore.Delivery> byPacket, Map<PacketIdStore.Delivery, Integer> byDelivery, Map<Integer, Integer> stages, Map<Integer, Integer> qosLevels) throws IOException {
     channel.position(0);
     if (channel.size() < HEADER_SIZE) throw new IOException("Truncated packet identifier header");
     ByteBuffer header = read(HEADER_SIZE);
@@ -84,13 +88,14 @@ final class PacketIdJournal implements AutoCloseable {
       if (channel.size() - channel.position() < length) { truncateTail(start); break; }
       ByteBuffer record = read(length);
       if (record.getInt(length - 4) != checksum(record.array(), length - 4)) throw new IOException("Delivery record checksum mismatch");
-      apply(record, byPacket, byDelivery);
+      apply(record, byPacket, byDelivery, stages, qosLevels);
+      recordCount++;
     }
     channel.position(channel.size());
   }
 
   private void apply(ByteBuffer record, Map<Integer, PacketIdStore.Delivery> byPacket,
-      Map<PacketIdStore.Delivery, Integer> byDelivery) throws IOException {
+      Map<PacketIdStore.Delivery, Integer> byDelivery, Map<Integer, Integer> stages, Map<Integer, Integer> qosLevels) throws IOException {
     int type = record.get() & 0xff;
     int packetId = record.getInt();
     if (packetId < 1 || packetId > maximum) throw new IOException("Invalid persisted packet identifier");
@@ -98,6 +103,21 @@ final class PacketIdJournal implements AutoCloseable {
       PacketIdStore.Delivery removed = byPacket.remove(packetId);
       if (removed == null) throw new IOException("Completion without allocation");
       byDelivery.remove(removed);
+      stages.remove(packetId);
+      qosLevels.remove(packetId);
+    } else if (type == STAGE && record.limit() == 10) {
+      int stage = record.get() & 0xff;
+      if (!byPacket.containsKey(packetId) || stage != 1 || stages.containsKey(packetId) || qosLevels.getOrDefault(packetId, 0) == 1) {
+        throw new IOException("Invalid persisted delivery stage transition");
+      }
+      stages.put(packetId, stage);
+    } else if (type == QOS && record.limit() == 10) {
+      int qos = record.get() & 0xff;
+      if (!byPacket.containsKey(packetId) || (qos != 1 && qos != 2) || qosLevels.containsKey(packetId)
+          || (qos == 1 && stages.getOrDefault(packetId, 0) == 1)) {
+        throw new IOException("Invalid persisted delivery QoS");
+      }
+      qosLevels.put(packetId, qos);
     } else if (type == ALLOCATE && record.limit() >= 22) {
       long messageId = record.getLong();
       int topicLength = record.getInt();
@@ -123,6 +143,28 @@ final class PacketIdJournal implements AutoCloseable {
     finish(record); append(record);
   }
 
+  void setStage(int packetId, int stage) throws IOException {
+    append(stageUpdate(packetId, stage));
+  }
+
+  private ByteBuffer stageUpdate(int packetId, int stage) {
+    ByteBuffer record = ByteBuffer.allocate(10);
+    record.put((byte) STAGE).putInt(packetId).put((byte) stage);
+    finish(record);
+    return record;
+  }
+
+  void setQos(int packetId, int qos) throws IOException {
+    append(qosUpdate(packetId, qos));
+  }
+
+  private ByteBuffer qosUpdate(int packetId, int qos) {
+    ByteBuffer record = ByteBuffer.allocate(10);
+    record.put((byte) QOS).putInt(packetId).put((byte) qos);
+    finish(record);
+    return record;
+  }
+
   private ByteBuffer allocation(int packetId, PacketIdStore.Delivery delivery) {
     byte[] topic = delivery.topic().getBytes(StandardCharsets.UTF_8);
     ByteBuffer record = ByteBuffer.allocate(21 + topic.length);
@@ -138,6 +180,7 @@ final class PacketIdJournal implements AutoCloseable {
     ensureUsable();
     try {
       writeRecord(channel, record);
+      recordCount++;
       if (durability == PacketIdStore.Durability.SYNC) channel.force(false);
     } catch (IOException error) { failure = error; throw error; }
   }
@@ -147,18 +190,31 @@ final class PacketIdJournal implements AutoCloseable {
     framed.putInt(record.remaining()).putInt(~record.remaining()).put(record).flip(); writeFully(target, framed);
   }
 
+  /** Constant-time gate; conservative live-record estimate avoids frequent rewrites. */
+  boolean needsCompaction(int liveDeliveries) throws IOException {
+    ensureUsable();
+    return recordCount >= 4L * (liveDeliveries * 3L + 1)
+        && channel.size() >= COMPACTION_MIN_BYTES;
+  }
+
   void flush() throws IOException {
     ensureUsable();
     try { channel.force(false); } catch (IOException error) { failure = error; throw error; }
   }
 
-  void compact(Map<Integer, PacketIdStore.Delivery> outstanding) throws IOException {
+  void compact(Map<Integer, PacketIdStore.Delivery> outstanding, Map<Integer, Integer> stages, Map<Integer, Integer> qosLevels) throws IOException {
     ensureUsable();
     Path temporary = file.resolveSibling(file.getFileName() + "." + UUID.randomUUID() + ".tmp");
     try {
       try (FileChannel replacement = FileChannel.open(temporary, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
         writeFully(replacement, header());
-        for (var entry : outstanding.entrySet()) writeRecord(replacement, allocation(entry.getKey(), entry.getValue()));
+        for (var entry : outstanding.entrySet()) {
+          writeRecord(replacement, allocation(entry.getKey(), entry.getValue()));
+          Integer qos = qosLevels.get(entry.getKey());
+          if (qos != null) writeRecord(replacement, qosUpdate(entry.getKey(), qos));
+          Integer stage = stages.get(entry.getKey());
+          if (stage != null) writeRecord(replacement, stageUpdate(entry.getKey(), stage));
+        }
         replacement.force(true);
       }
       // Once replacement begins, any failure poisons this view until reopen.
@@ -169,6 +225,7 @@ final class PacketIdJournal implements AutoCloseable {
       dataLock = channel.tryLock();
       if (dataLock == null) throw new IOException("Replacement delivery journal already owned");
       channel.position(channel.size());
+      recordCount = (long) outstanding.size() + stages.size() + qosLevels.size();
     } catch (IOException error) { failure = error; throw error;
     } finally { Files.deleteIfExists(temporary); }
   }

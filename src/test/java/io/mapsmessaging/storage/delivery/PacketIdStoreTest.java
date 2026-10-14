@@ -146,9 +146,16 @@ class PacketIdStoreTest {
     assertThrows(IllegalArgumentException.class, () -> store.allocate("", 1));
     assertThrows(NullPointerException.class, () -> store.allocate(null, 1));
     assertThrows(IllegalArgumentException.class, () -> store.clear(0));
+    assertThrows(IllegalArgumentException.class, () -> store.getStage(0));
+    assertThrows(IllegalArgumentException.class, () -> store.setStage(4, 1));
+    assertThrows(IllegalArgumentException.class, () -> store.releaseReservedPacketId(0));
     store.close(); store.close();
     assertThrows(IOException.class, () -> store.allocate("a", 1));
     assertThrows(IOException.class, () -> store.getDelivery(1));
+    assertThrows(IOException.class, store::reservePacketId);
+    assertThrows(IOException.class, () -> store.getStage(1));
+    assertThrows(IOException.class, () -> store.setStage(1, 1));
+    assertThrows(IllegalStateException.class, () -> store.releaseReservedPacketId(1));
   }
   @Test void lookups_and_existing_allocations_do_not_append_and_ack_is_small() throws Exception {
     Path file = directory.resolve("packets");
@@ -252,6 +259,307 @@ class PacketIdStoreTest {
     try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) {
       assertEquals(1, store.getPacketId("a", 7));
       assertTrue(store.allocate("a", 7).existing());
+    }
+  }
+
+  @Test void stage_update_is_monotonic_and_retained_after_compaction_and_restart() throws Exception {
+    Path file = directory.resolve("stages");
+    int awaiting;
+    int publishing;
+    try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.BATCHED)) {
+      awaiting = store.allocate("qos2", 1).packetId();
+      publishing = store.allocate("qos1", 2).packetId();
+      assertEquals(0, store.getStage(awaiting));
+      long initialLength = Files.size(file);
+      store.setStage(awaiting, 1);
+      assertEquals(initialLength + 18, Files.size(file));
+      store.setStage(awaiting, 1);
+      assertEquals(initialLength + 18, Files.size(file));
+      assertThrows(IllegalArgumentException.class, () -> store.setStage(awaiting, 0));
+      assertThrows(IllegalArgumentException.class, () -> store.setStage(awaiting, 2));
+      assertThrows(IllegalArgumentException.class, () -> store.setStage(3, 1));
+      store.flush();
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.BATCHED)) {
+      assertEquals(1, store.getStage(awaiting));
+      assertEquals(2, store.getQos(awaiting));
+      assertEquals(0, store.getQos(publishing));
+      assertEquals(0, store.getStage(publishing));
+      store.compact();
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.BATCHED)) {
+      assertEquals(1, store.getStage(awaiting));
+      assertEquals(2, store.getQos(awaiting));
+      assertEquals(0, store.getQos(publishing));
+      assertEquals(0, store.getStage(publishing));
+      store.allocate("third", 3);
+      store.clear(awaiting);
+      assertEquals(awaiting, store.allocate("reused", 4).packetId());
+      assertEquals(0, store.getStage(awaiting));
+    }
+  }
+
+  @Test void corrupt_stage_update_fails_closed() throws Exception {
+    Path file = directory.resolve("stages");
+    try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) {
+      store.setStage(store.allocate("qos2", 1).packetId(), 1);
+    }
+    byte[] bytes = Files.readAllBytes(file);
+    bytes[bytes.length - 5] ^= 1;
+    Files.write(file, bytes);
+    assertThrows(IOException.class, () -> PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC));
+  }
+
+  @Test void partial_stage_update_recovers_publish_stage_and_can_advance_again() throws Exception {
+    Path file = directory.resolve("partial-stage");
+    long allocationLength;
+    try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) {
+      int packetId = store.allocate("qos2", 1).packetId();
+      allocationLength = Files.size(file);
+      store.setStage(packetId, 1);
+    }
+    byte[] bytes = Files.readAllBytes(file);
+    Files.write(file, java.util.Arrays.copyOf(bytes, bytes.length - 1));
+    try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) {
+      assertEquals(allocationLength, Files.size(file));
+      assertEquals(0, store.getStage(1));
+      store.setStage(1, 1);
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) {
+      assertEquals(1, store.getStage(1));
+    }
+  }
+
+  @Test void checksummed_invalid_stage_update_is_rejected() throws Exception {
+    Path file = directory.resolve("invalid-stage");
+    try (PacketIdStore store = PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC)) {
+      store.setStage(store.allocate("qos2", 1).packetId(), 1);
+    }
+    byte[] valid = Files.readAllBytes(file);
+    int bodyOffset = valid.length - 10;
+    for (int invalidStage : new int[]{0, 2, 255}) {
+      byte[] bytes = valid.clone();
+      bytes[bodyOffset + 5] = (byte) invalidStage;
+      java.util.zip.CRC32C crc = new java.util.zip.CRC32C();
+      crc.update(bytes, bodyOffset, 6);
+      java.nio.ByteBuffer.wrap(bytes).putInt(bytes.length - 4, (int) crc.getValue());
+      Files.write(file, bytes);
+      assertThrows(IOException.class, () -> PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC));
+    }
+    byte[] missingDelivery = valid.clone();
+    java.nio.ByteBuffer.wrap(missingDelivery).putInt(bodyOffset + 1, 2);
+    java.util.zip.CRC32C crc = new java.util.zip.CRC32C();
+    crc.update(missingDelivery, bodyOffset, 6);
+    java.nio.ByteBuffer.wrap(missingDelivery).putInt(missingDelivery.length - 4, (int) crc.getValue());
+    Files.write(file, missingDelivery);
+    assertThrows(IOException.class, () -> PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC));
+    Files.write(file, valid);
+    Files.write(file, java.util.Arrays.copyOfRange(valid, bodyOffset - 8, valid.length),
+        java.nio.file.StandardOpenOption.APPEND);
+    assertThrows(IOException.class, () -> PacketIdStore.open(file, 3, PacketIdStore.Durability.SYNC));
+  }
+
+  @Test void control_reservations_share_capacity_and_release_without_delivery_mutation() throws Exception {
+    try (PacketIdStore store = PacketIdStore.memory(3)) {
+      int delivery = store.allocate("a", 1).packetId();
+      int control = store.reservePacketId();
+      int secondDelivery = store.allocate("b", 2).packetId();
+      assertNotEquals(delivery, control);
+      assertNotEquals(secondDelivery, control);
+      assertEquals(2, store.size());
+      assertNull(store.getDelivery(control));
+      assertFalse(store.clear(control));
+      assertThrows(IOException.class, store::reservePacketId);
+      assertThrows(IOException.class, () -> store.allocate("c", 3));
+      assertTrue(store.allocate("a", 1).existing());
+      assertFalse(store.releaseReservedPacketId(delivery));
+      assertTrue(store.releaseReservedPacketId(control));
+      assertFalse(store.releaseReservedPacketId(control));
+      assertEquals(control, store.reservePacketId());
+    }
+  }
+
+  @Test void control_reservations_are_never_written_or_restored() throws Exception {
+    Path file = directory.resolve("control");
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.BATCHED)) {
+      store.allocate("a", 1);
+      long length = Files.size(file);
+      assertEquals(2, store.reservePacketId());
+      assertEquals(length, Files.size(file));
+      store.compact();
+      assertThrows(IOException.class, store::reservePacketId);
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.BATCHED)) {
+      assertEquals(1, store.size());
+      assertEquals(2, store.reservePacketId());
+    }
+  }
+
+  @Test void qos_is_immutable_and_survives_restart_compaction_and_id_reuse() throws Exception {
+    Path file = directory.resolve("qos");
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.BATCHED)) {
+      int qos2 = store.allocate("qos2", 1).packetId();
+      int qos1 = store.allocate("qos1", 2).packetId();
+      assertEquals(0, store.getQos(qos2));
+      long before = Files.size(file);
+      store.setQos(qos2, 2);
+      store.setQos(qos1, 1);
+      assertEquals(before + 36, Files.size(file));
+      store.setQos(qos2, 2);
+      assertEquals(before + 36, Files.size(file));
+      assertThrows(IllegalArgumentException.class, () -> store.setQos(qos2, 1));
+      assertThrows(IllegalArgumentException.class, () -> store.setStage(qos1, 1));
+      assertThrows(IllegalArgumentException.class, () -> store.setQos(qos1, 0));
+      store.flush();
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.BATCHED)) {
+      assertEquals(2, store.getQos(1));
+      assertEquals(1, store.getQos(2));
+      assertThrows(IllegalArgumentException.class, () -> store.setQos(1, 1));
+      store.compact();
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.BATCHED)) {
+      assertEquals(2, store.getQos(1));
+      assertEquals(1, store.getQos(2));
+      store.clear(1);
+      assertEquals(1, store.allocate("new", 3).packetId());
+      assertEquals(0, store.getQos(1));
+      store.setQos(1, 1);
+    }
+  }
+
+  @Test void qos_update_corruption_and_invalid_checksummed_value_fail_closed() throws Exception {
+    Path file = directory.resolve("qos-corrupt");
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.SYNC)) {
+      store.setQos(store.allocate("qos2", 1).packetId(), 2);
+    }
+    byte[] valid = Files.readAllBytes(file);
+    byte[] corrupt = valid.clone();
+    corrupt[corrupt.length - 1] ^= 1;
+    Files.write(file, corrupt);
+    assertThrows(IOException.class, () -> PacketIdStore.open(file, 2, PacketIdStore.Durability.SYNC));
+    for (int invalidQos : new int[]{0, 3, 255}) {
+      byte[] bytes = valid.clone();
+      int bodyOffset = bytes.length - 10;
+      bytes[bodyOffset + 5] = (byte) invalidQos;
+      java.util.zip.CRC32C crc = new java.util.zip.CRC32C();
+      crc.update(bytes, bodyOffset, 6);
+      java.nio.ByteBuffer.wrap(bytes).putInt(bytes.length - 4, (int) crc.getValue());
+      Files.write(file, bytes);
+      assertThrows(IOException.class, () -> PacketIdStore.open(file, 2, PacketIdStore.Durability.SYNC));
+    }
+    Files.write(file, java.util.Arrays.copyOf(valid, valid.length - 1));
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.SYNC)) {
+      assertEquals(0, store.getQos(1));
+      store.setQos(1, 2);
+      assertEquals(2, store.getQos(1));
+    }
+  }
+
+  @Test void legacy_stage_implies_qos2_and_pending_clear_preserves_pubrel() throws Exception {
+    try (PacketIdStore store = PacketIdStore.memory(3)) {
+      int pubrel = store.allocate("key", 1).packetId();
+      store.setStage(pubrel, 1);
+      assertEquals(2, store.getQos(pubrel));
+      assertThrows(IllegalArgumentException.class, () -> store.setQos(pubrel, 1));
+      assertFalse(store.clearPendingDelivery("key", 1));
+      assertFalse(store.clearPendingDelivery("other", 1));
+      int publishing = store.allocate("key", 2).packetId();
+      assertTrue(store.clearPendingDelivery("key", 2));
+      assertNull(store.getDelivery(publishing));
+      assertFalse(store.clearPendingDelivery("key", 2));
+      assertEquals(1, store.size());
+    }
+  }
+
+  @Test void bulk_clear_matches_exact_key_and_all_stages_without_touching_reservations() throws Exception {
+    Path file = directory.resolve("bulk");
+    try (PacketIdStore store = PacketIdStore.open(file, 4, PacketIdStore.Durability.BATCHED)) {
+      store.setStage(store.allocate("key", 1).packetId(), 1);
+      store.allocate("key", 2);
+      int retained = store.allocate("key/other", 3).packetId();
+      store.setQos(retained, 1);
+      int control = store.reservePacketId();
+      assertEquals(2, store.clearDeliveries("key"));
+      assertEquals(0, store.clearDeliveries("key"));
+      assertEquals(1, store.size());
+      assertEquals(retained, store.getPacketId("key/other", 3));
+      assertTrue(store.releaseReservedPacketId(control));
+      assertThrows(IllegalArgumentException.class, () -> store.setQos(1, 2));
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 4, PacketIdStore.Durability.BATCHED)) {
+      assertEquals(1, store.size());
+      assertEquals(1, store.getQos(store.getPacketId("key/other", 3)));
+    }
+  }
+
+  @Test void flush_automatically_compacts_large_dead_history_preserving_delivery_state() throws Exception {
+    Path file = directory.resolve("automatic-compaction");
+    int retained;
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.BATCHED)) {
+      retained = store.allocate("held", 1).packetId();
+      store.setQos(retained, 2);
+      store.setStage(retained, 1);
+      for (int message = 0; message < 24000; message++) {
+        int packetId = store.allocate("churn", message).packetId();
+        store.clear(packetId);
+      }
+      assertTrue(Files.size(file) >= 1024 * 1024);
+      store.flush();
+      assertTrue(Files.size(file) < 1024);
+      assertEquals(retained, store.getPacketId("held", 1));
+      assertEquals(2, store.getQos(retained));
+      assertEquals(1, store.getStage(retained));
+      long compactedLength = Files.size(file);
+      store.flush();
+      assertEquals(compactedLength, Files.size(file));
+    }
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.BATCHED)) {
+      assertEquals(1, store.size());
+      assertEquals(retained, store.getPacketId("held", 1));
+      assertEquals(2, store.getQos(retained));
+      assertEquals(1, store.getStage(retained));
+    }
+  }
+
+  @Test void flush_keeps_small_dead_history_append_only() throws Exception {
+    Path file = directory.resolve("below-compaction-threshold");
+    try (PacketIdStore store = PacketIdStore.open(file, 2, PacketIdStore.Durability.BATCHED)) {
+      for (int message = 0; message < 100; message++) {
+        store.clear(store.allocate("churn", message).packetId());
+      }
+      long before = Files.size(file);
+      store.flush();
+      assertEquals(before, Files.size(file));
+    }
+  }
+
+  @Test void flush_keeps_large_journal_when_live_records_dominate() throws Exception {
+    Path file = directory.resolve("mostly-live");
+    try (PacketIdStore store = PacketIdStore.open(file, 12000, PacketIdStore.Durability.BATCHED)) {
+      String topic = "long-live-key/" + "a".repeat(100);
+      for (int message = 0; message < 11000; message++) store.allocate(topic, message);
+      for (int message = 0; message < 100; message++) store.clear(topic, message);
+      long before = Files.size(file);
+      assertTrue(before >= 1024 * 1024);
+      store.flush();
+      assertEquals(before, Files.size(file));
+      assertEquals(10900, store.size());
+    }
+  }
+
+  @Test void automatic_compaction_counts_recovered_records() throws Exception {
+    Path file = directory.resolve("recovered-history");
+    try (PacketIdStore store = PacketIdStore.open(file, 1, PacketIdStore.Durability.BATCHED)) {
+      for (int message = 0; message < 24000; message++) {
+        store.clear(store.allocate("churn", message).packetId());
+      }
+    }
+    assertTrue(Files.size(file) >= 1024 * 1024);
+    try (PacketIdStore store = PacketIdStore.open(file, 1, PacketIdStore.Durability.BATCHED)) {
+      store.flush();
+      assertEquals(16, Files.size(file));
+      assertEquals(0, store.size());
     }
   }
 
