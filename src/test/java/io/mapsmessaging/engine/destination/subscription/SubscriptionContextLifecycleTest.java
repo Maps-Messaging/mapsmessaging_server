@@ -85,6 +85,8 @@ class SubscriptionContextLifecycleTest {
 
   private DestinationSubscription subscription(SubscriptionContext context) {
     MessageStateManagerImpl state = new MessageStateManagerImpl("test", 1, new BitSetFactoryImpl(1024));
-    return new DestinationSubscription(mock(DestinationImpl.class), context, null, "id", null, state, false);
+    DestinationImpl destination = mock(DestinationImpl.class);
+    when(destination.getFullyQualifiedNamespace()).thenReturn("/sensor");
+    return new DestinationSubscription(destination, context, null, "id", null, state, false);
   }
 }
