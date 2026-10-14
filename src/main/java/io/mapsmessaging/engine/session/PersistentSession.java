@@ -93,6 +93,7 @@ public class PersistentSession extends SessionImpl{
   private io.mapsmessaging.storage.alias.TopicAliasRegistry aliasRegistry;
 
   @Override
+  @SuppressWarnings("java:S2095") // Ownership transfers to SessionImpl; failures close the candidate below.
   protected io.mapsmessaging.storage.delivery.PacketIdStore createPacketIdStore(int maximum) throws IOException {
     io.mapsmessaging.storage.delivery.PacketIdStore candidate = io.mapsmessaging.storage.delivery.PacketIdStore.open(
         Paths.get(storeName.replaceFirst("\\.bin$", ".packet-ids")), maximum,
