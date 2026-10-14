@@ -29,7 +29,7 @@ final class PacketIdJournal implements AutoCloseable {
   private static final int CLEAR = 2;
   private static final int STAGE = 3;
   private static final int QOS = 4;
-  private static final long COMPACTION_MIN_BYTES = 1024 * 1024;
+  private static final long COMPACTION_MIN_BYTES = 1024L * 1024;
   private long recordCount;
   private final Path file;
   private final int maximum;
