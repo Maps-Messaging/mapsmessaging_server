@@ -40,6 +40,49 @@ class MqttSn2OutgoingDeliveryManagerTest {
   @TempDir(factory = TargetDataTempDirFactory.class) Path directory;
 
   @Test
+  void pubrec_blocks_retry_and_pubcomp_while_engine_ack_is_being_submitted() throws Exception {
+    try (PacketIdStore store = PacketIdStore.memory(65535)) {
+      MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+      manager.attach(store);
+      int identifier = publish(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, null, 1000)).packetIdentifier();
+      CompletableFuture<Void> engineAck = new CompletableFuture<>();
+      CompletableFuture<ByteBuffer> response = manager.acknowledgeAfterBrokerAck(
+          new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, identifier, null), 1001, delivery -> {
+            assertNull(manager.retryExpired(1101), "PUBREL cannot leave while its engine ACK is being submitted");
+            assertThrows(java.io.IOException.class, () -> manager.acknowledgeAfterBrokerAck(
+                new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, identifier, null), 1101, ignored -> engineAck));
+            return engineAck;
+          });
+      assertFalse(response.isDone());
+      engineAck.complete(null);
+      assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(response.join()).type());
+      assertNotNull(manager.retryExpired(1201));
+      manager.acknowledgeAfterBrokerAck(new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBCOMP, identifier, null), 1202,
+          ignored -> CompletableFuture.completedFuture(null)).join();
+      assertEquals(0, store.size());
+    }
+  }
+
+  @Test
+  void failed_engine_ack_submission_keeps_pubrel_blocked_and_durable() throws Exception {
+    try (PacketIdStore store = PacketIdStore.memory(65535)) {
+      MqttSn2OutgoingDeliveryManager manager = new MqttSn2OutgoingDeliveryManager(100, 3);
+      manager.attach(store);
+      int identifier = publish(manager.enqueue("subscription", 41, "sensor/one", new byte[]{1}, 2, false, null, 1000)).packetIdentifier();
+      CompletableFuture<ByteBuffer> response = manager.acknowledgeAfterBrokerAck(
+          new MqttSn2AckCodec.Ack(MqttSn2PacketType.PUBREC, identifier, null), 1001,
+          delivery -> { throw new IllegalStateException("Engine ACK submission rejected"); });
+      assertThrows(java.util.concurrent.CompletionException.class, response::join);
+      assertNull(manager.retryExpired(1101));
+      assertEquals(1, store.getStage(identifier));
+      manager.disconnect();
+      manager.attach(store);
+      ByteBuffer recovered = manager.recoverAfterBrokerAck(delivery -> CompletableFuture.completedFuture(null), 1200).join();
+      assertEquals(MqttSn2PacketType.PUBREL, MqttSn2FrameCodec.decode(recovered).type());
+    }
+  }
+
+  @Test
   void closeWhileRecoveredEngineAckPendingDoesNotSendPubrelOrStartNewConnectionState() throws Exception {
     PacketIdStore store = PacketIdStore.memory(65535);
     int id = store.allocate("subscription", 41).packetId();

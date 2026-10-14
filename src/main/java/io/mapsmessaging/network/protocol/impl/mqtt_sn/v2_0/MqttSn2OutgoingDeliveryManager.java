@@ -147,29 +147,53 @@ public final class MqttSn2OutgoingDeliveryManager {
   /** Normal QoS2 delivery uses the same engine ACK barrier after persisting its PUBREL stage. */
   public CompletableFuture<ByteBuffer> acknowledgeAfterBrokerAck(MqttSn2AckCodec.Ack ack, long now,
       Function<PacketIdStore.Delivery, CompletableFuture<Void>> acknowledge) throws IOException {
+    PacketIdStore.Delivery identity;
+    long generation;
+    CompletableFuture<ByteBuffer> barrier;
     synchronized (this) {
-      if (brokerAckBarrier != null && !brokerAckBarrier.isDone()) {
+      if (brokerAckBarrier != null && (!brokerAckBarrier.isDone() || brokerAckBarrier.isCompletedExceptionally())) {
         if (ack.type() == MqttSn2PacketType.PUBREC && inFlight != null && ack.packetIdentifier() == inFlight.packetIdentifier) return brokerAckBarrier;
         throw new IOException("MQTT-SN broker acknowledgement is still pending");
       }
-    }
-    ByteBuffer response = acknowledge(ack, now);
-    PacketIdStore.Delivery identity;
-    long generation;
-    synchronized (this) {
-      if (ack.type() != MqttSn2PacketType.PUBREC || inFlight == null || inFlight.stage != Stage.WAIT_PUBCOMP) return CompletableFuture.completedFuture(response);
-      identity = identity(inFlight.delivery);
-      generation = connectionGeneration;
-    }
-    CompletableFuture<ByteBuffer> barrier = acknowledge.apply(identity).thenApply(ignored -> {
-      synchronized (this) {
-        if (generation != connectionGeneration || inFlight == null || inFlight.packetIdentifier != ack.packetIdentifier() || !identity(inFlight.delivery).equals(identity)) return null;
-        brokerAcknowledged.add(identity);
-        inFlight.delivery = withCompletion(inFlight.delivery, null);
-        return response;
+      boolean requiresBrokerAck = ack.type() == MqttSn2PacketType.PUBREC && inFlight != null
+          && ack.packetIdentifier() == inFlight.packetIdentifier
+          && (inFlight.stage == Stage.WAIT_PUBCOMP || inFlight.stage == Stage.WAIT_PUBREC && (ack.reasonCode() == null || ack.reasonCode() < 0x80));
+      if (requiresBrokerAck) {
+        identity = identity(inFlight.delivery);
+        generation = connectionGeneration;
+        // Publish the gate before the stage changes or engine submission can block.
+        barrier = new CompletableFuture<>();
+        brokerAckBarrier = barrier;
+      } else {
+        identity = null;
+        generation = 0;
+        barrier = null;
       }
-    });
-    synchronized (this) { brokerAckBarrier = barrier; }
+    }
+    if (barrier == null) return CompletableFuture.completedFuture(acknowledge(ack, now));
+    try {
+      ByteBuffer response = acknowledge(ack, now);
+      acknowledge.apply(identity).whenComplete((ignored, failure) -> {
+        ByteBuffer ready = null;
+        synchronized (this) {
+          if (generation != connectionGeneration || brokerAckBarrier != barrier || inFlight == null
+              || inFlight.packetIdentifier != ack.packetIdentifier() || !identity(inFlight.delivery).equals(identity)) {
+            failure = null;
+          } else if (failure == null) {
+            brokerAcknowledged.add(identity);
+            inFlight.delivery = withCompletion(inFlight.delivery, null);
+            ready = response;
+          }
+        }
+        if (failure == null) barrier.complete(ready);
+        else barrier.completeExceptionally(failure);
+      });
+    } catch (IOException failure) {
+      barrier.completeExceptionally(failure);
+      throw failure;
+    } catch (RuntimeException failure) {
+      barrier.completeExceptionally(failure);
+    }
     return barrier;
   }
 
@@ -323,7 +347,7 @@ public final class MqttSn2OutgoingDeliveryManager {
 
   /** Returns the exact outstanding request for retransmission, or null when not due. */
   public synchronized ByteBuffer retryExpired(long now) {
-    if (brokerAckBarrier != null && !brokerAckBarrier.isDone()) return null;
+    if (brokerAckBarrier != null && (!brokerAckBarrier.isDone() || brokerAckBarrier.isCompletedExceptionally())) return null;
     if (inFlight == null || now - inFlight.lastSentAt < retryIntervalMillis) {
       return null;
     }
