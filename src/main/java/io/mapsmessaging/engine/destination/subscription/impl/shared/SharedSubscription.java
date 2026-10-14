@@ -110,6 +110,16 @@ public class SharedSubscription extends DestinationSubscription {
   }
 
   @Override
+  protected void clearDeliveryMapping(long messageId) {
+    // A shared delivery belongs to whichever session actually sent it.
+    if (subscriptions != null) {
+      for (SessionSharedSubscription subscription : subscriptions.flatMap) {
+        subscription.clearDeliveryMapping(messageId);
+      }
+    }
+  }
+
+  @Override
   public void sendMessage(Message message) {
     SessionSharedSubscription subscription = reservedSubscription;
     reservedSubscription = null;

@@ -54,6 +54,42 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     }
   }
 
+  /** Existing session journal used by restored offline subscriptions before first reconnect. */
+  public void setDeliveryStateCoordinator(io.mapsmessaging.engine.session.DeliveryStateCoordinator coordinator) {
+    // Subscription implementations without protocol delivery state require no attachment.
+  }
+
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    // Subscription implementations without protocol delivery state require no attachment.
+  }
+
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(long messageId) {
+    return java.util.concurrent.CompletableFuture.failedFuture(
+        new UnsupportedOperationException("Subscription cannot acknowledge recovered delivery"));
+  }
+
+  protected java.util.concurrent.CompletableFuture<Void> submitRecoveredAcknowledgement(
+      io.mapsmessaging.engine.destination.DestinationImpl destination, Runnable acknowledgement) {
+    var completion = new java.util.concurrent.CompletableFuture<Void>();
+    try {
+      destination.submit(new io.mapsmessaging.engine.tasks.EngineTask() {
+        @Override public Response taskCall() {
+          try {
+            acknowledgement.run();
+            completion.complete(null);
+            return new io.mapsmessaging.engine.tasks.VoidResponse();
+          } catch (RuntimeException error) {
+            completion.completeExceptionally(error);
+            throw error;
+          }
+        }
+      });
+    } catch (RuntimeException error) {
+      completion.completeExceptionally(error);
+    }
+    return completion;
+  }
+
   public abstract void delete() throws IOException;
 
   public void addContext(SubscriptionContext context) {

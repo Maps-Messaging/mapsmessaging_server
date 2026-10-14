@@ -69,6 +69,19 @@ public class Session {
     return sessionImpl.getOrCreateTopicAliasRegistry(maximum);
   }
 
+  /** Returns the session-owned delivery store. Protocols must flush persistent changes before sending. */
+  public io.mapsmessaging.storage.delivery.PacketIdStore getOrCreatePacketIdStore(int maximum) throws IOException {
+    return sessionImpl.getOrCreatePacketIdStore(maximum);
+  }
+
+  public io.mapsmessaging.storage.delivery.PacketIdStore getPacketIdStore() {
+    return sessionImpl.getPacketIdStore();
+  }
+
+  public CompletableFuture<Void> ackRecoveredDelivery(io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
+    return sessionImpl.ackRecoveredDelivery(delivery);
+  }
+
   public void login() throws IOException {
     sessionImpl.login();
   }

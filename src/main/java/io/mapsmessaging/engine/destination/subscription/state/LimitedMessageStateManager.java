@@ -55,7 +55,8 @@ public class LimitedMessageStateManager extends MessageStateManagerImpl {
   private void trimAtRest(){
     while(messagesAtRest.size() > limit){
       long firstEntry = messagesAtRest.last();
-      retainedReplays.remove(firstEntry);
+      // Capacity eviction is a delivery retirement, just like expiry.
+      super.expired(firstEntry);
       eventReaperQueue.add(firstEntry);
     }
   }

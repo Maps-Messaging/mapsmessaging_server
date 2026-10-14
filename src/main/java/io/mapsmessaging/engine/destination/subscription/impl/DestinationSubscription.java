@@ -21,6 +21,11 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 
 import io.mapsmessaging.admin.SubscriptionJMX;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.engine.destination.subscription.state.MessageStateManagerImpl;
+import io.mapsmessaging.engine.destination.subscription.state.MessageStateManagerListener;
+import java.io.UncheckedIOException;
+import java.util.Collection;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscribable;
@@ -60,6 +65,9 @@ public class DestinationSubscription extends Subscription {
   protected final Logger logger;
   private final SubscriptionJMX mbean;
   private final String sessionId;
+  // Retain the owner while offline; cleanup must not create stores for other protocols.
+  private SessionImpl deliveryStateOwner;
+  private volatile io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator;
 
   @Getter
   protected final DestinationImpl destinationImpl;
@@ -112,6 +120,15 @@ public class DestinationSubscription extends Subscription {
     this.messageStateManager = messageStateManager;
     this.acknowledgementController = acknowledgementController;
     this.sessionId = sessionId;
+    deliveryStateOwner = sessionImpl;
+    if (messageStateManager instanceof MessageStateManagerImpl state) {
+      state.add(new MessageStateManagerListener() {
+        @Override public void add(long id, int priority) { }
+        @Override public void addAll(Collection<Long> ids) { }
+        @Override public void remove(long id) { }
+        @Override public void expired(long id) { clearDeliveryMapping(id); }
+      });
+    }
     activeSubscription = this;
     messagesSent = 0;
     messagesRegistered = 0;
@@ -144,6 +161,7 @@ public class DestinationSubscription extends Subscription {
   }
 
   public void delete() {
+    clearDeliveryMappings();
     releaseProtocolSendSlot();
     if (mbean != null) {
       mbean.close();
@@ -172,6 +190,7 @@ public class DestinationSubscription extends Subscription {
   public void wakeUp(SessionImpl sessionImpl) {
     if (this.sessionImpl == null && hibernating && sessionImpl != null) {
       super.wakeUp(sessionImpl);
+      deliveryStateOwner = sessionImpl;
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_WAKEUP, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName());
       schedule();
     }
@@ -179,6 +198,7 @@ public class DestinationSubscription extends Subscription {
 
   @Override
   public void cancel() throws IOException {
+    clearDeliveryMappings();
     Subscribable sub = destinationImpl.removeSubscription(sessionId);
     if (sub != null) {
       sub.close();
@@ -274,6 +294,15 @@ public class DestinationSubscription extends Subscription {
   }
 
   @Override
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(long messageId) {
+    return submitRecoveredAcknowledgement(destinationImpl, () -> {
+      handleTransaction(true, messageId);
+      // Restart and hibernation restore this delivery at rest, outside the in-flight set.
+      messageStateManager.expired(messageId);
+    });
+  }
+
+  @Override
   public void updateCredit(int credit) {
     if (acknowledgementController.setMaxOutstanding(credit)) {
       destinationImpl.scanForDelivery(this);
@@ -363,7 +392,7 @@ public class DestinationSubscription extends Subscription {
       if (message != null) {
         return message;
       }
-      messageStateManager.expired(nextMessageId);
+      expired(nextMessageId);
       messagesExpired++;
     }
   }
@@ -422,6 +451,7 @@ public class DestinationSubscription extends Subscription {
   @Override
   public boolean expired(long messageIdentifier) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
+    clearDeliveryMapping(messageIdentifier);
     messageStateManager.expired(messageIdentifier);
     return true;
   }
@@ -467,6 +497,7 @@ public class DestinationSubscription extends Subscription {
 
     if (isAck) {
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_ACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
+      clearDeliveryMapping(messageId);
       acknowledgementController.ack(messageId);
       messageStateManager.commit(messageId);
       messagesAcked++;
@@ -494,9 +525,65 @@ public class DestinationSubscription extends Subscription {
   }
 
   public void completeMessage(long messageId) {
+    clearDeliveryMapping(messageId);
     messageStateManager.commit(messageId);
     messagesAcked++;
     destinationImpl.complete(messageId);
+  }
+
+  @Override
+  public String getDeliveryKey() {
+    return SubscribedEventManager.deliveryKey(getContext(), destinationImpl.getFullyQualifiedNamespace());
+  }
+
+  @Override
+  public void removeContext(SubscriptionContext context) {
+    clearDeliveryMappings(SubscribedEventManager.deliveryKey(context, destinationImpl.getFullyQualifiedNamespace()));
+    super.removeContext(context);
+  }
+
+  protected void clearDeliveryMapping(long messageId) {
+    SessionImpl owner = sessionImpl != null ? sessionImpl : deliveryStateOwner;
+    try {
+      if (owner != null) {
+        owner.clearPacketIdMapping(getDeliveryKey(), messageId);
+      } else {
+        if (deliveryStateCoordinator != null) deliveryStateCoordinator.retirePending(getDeliveryKey(), messageId);
+      }
+    } catch (IOException error) {
+      throw new UncheckedIOException("Unable to retire delivery packet identifier", error);
+    }
+  }
+
+  private void clearDeliveryMappings() {
+    for (SubscriptionContext context : getContexts()) {
+      clearDeliveryMappings(SubscribedEventManager.deliveryKey(context, destinationImpl.getFullyQualifiedNamespace()));
+    }
+  }
+
+  private void clearDeliveryMappings(String key) {
+    SessionImpl owner = sessionImpl != null ? sessionImpl : deliveryStateOwner;
+    try {
+      if (owner != null) {
+        owner.clearPacketIdMappings(key);
+      } else {
+        if (deliveryStateCoordinator != null) deliveryStateCoordinator.retireAll(key);
+      }
+    } catch (IOException error) {
+      throw new UncheckedIOException("Unable to retire subscription packet identifiers", error);
+    }
+  }
+
+  @Override
+  public void setDeliveryStateCoordinator(io.mapsmessaging.engine.session.DeliveryStateCoordinator coordinator) {
+    deliveryStateCoordinator = coordinator;
+  }
+
+  @Override
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    var coordinator = new io.mapsmessaging.engine.session.DeliveryStateCoordinator();
+    coordinator.setPath(path);
+    setDeliveryStateCoordinator(coordinator);
   }
 
   @Override

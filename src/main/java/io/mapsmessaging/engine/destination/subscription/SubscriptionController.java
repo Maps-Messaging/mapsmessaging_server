@@ -94,6 +94,9 @@ public class SubscriptionController implements DestinationManagerListener {
   // Session represents the remote client
   //
   private SessionImpl sessionImpl;
+  @Getter
+  private final io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator =
+      new io.mapsmessaging.engine.session.DeliveryStateCoordinator();
 
   private Identity identity;
 
@@ -135,6 +138,23 @@ public class SubscriptionController implements DestinationManagerListener {
       }
     }
     subscriptionControllerJMX = new SubscriptionControllerJMX(this);
+  }
+
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    deliveryStateCoordinator.setPath(path);
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      manager.setDeliveryStateCoordinator(deliveryStateCoordinator);
+    }
+  }
+
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(
+      io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      var completion = manager.acknowledgeRecoveredDelivery(delivery);
+      if (completion != null) return completion;
+    }
+    // Permanently removed subscriptions no longer hold interest in the delivery.
+    return java.util.concurrent.CompletableFuture.completedFuture(null);
   }
 
   private Map<DestinationMode, SubscriptionModeManager> constructModeManagers(){
@@ -317,6 +337,7 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
   protected void updateSubscriptionManager(@NonNull @NotNull SubscriptionContext context, DestinationImpl destinationImpl,  Subscription subscription){
+    subscription.setDeliveryStateCoordinator(deliveryStateCoordinator);
     subscriptionModeManager.get(context.getDestinationMode()).add(subscription, destinationImpl);
   }
 

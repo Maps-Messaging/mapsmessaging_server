@@ -207,6 +207,11 @@ public class SessionManagerPipeLine {
 
   void addDisconnectedSession(String sessionId, SessionDetails sessionDetails, Map<String, SubscriptionContext> subscriptions) {
     SubscriptionController controller = subscriptionControllerFactory.create(sessionId, sessionDetails, destinationManager, subscriptions);
+    String storeDirectory = storeLookup.getDataPath();
+    String uniqueSessionId = sessionDetails.getUniqueId();
+    if (storeDirectory != null && !storeDirectory.isBlank() && uniqueSessionId != null && !uniqueSessionId.isBlank()) {
+      controller.setDeliveryJournalPath(java.nio.file.Path.of(storeDirectory, uniqueSessionId + ".packet-ids"));
+    }
     persistentControllers.put(sessionId, controller);
 
     long remainingMillis = sessionDetails.getExpiryTime() - System.currentTimeMillis();
@@ -289,6 +294,7 @@ public class SessionManagerPipeLine {
     }
     deleteStateFile(storeLookup.getDataPath() + "/" + details.getUniqueId() + ".bin");
     deleteStateFile(storeLookup.getDataPath() + "/" + details.getUniqueId() + ".aliases");
+    deleteStateFile(storeLookup.getDataPath() + "/" + details.getUniqueId() + ".packet-ids");
   }
 
   private void finaliseWill(String sessionId, WillFinalisation finalisation) {
