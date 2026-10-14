@@ -36,7 +36,7 @@ public class PubRecListener5 extends PacketListener5 {
     PubRec5 pubRec = (PubRec5) mqttPacket;
     var manager = ((MQTT5Protocol) protocol).getPacketIdManager();
     int qos = manager.getPacketQos(pubRec.getPacketIdentifier());
-    if ((manager.hasDeliveryStore() || qos != 0) && qos != 2) return null;
+    if (qos != 0 && qos != 2) return null;
     if (Byte.toUnsignedInt(pubRec.getStatusCode().getValue()) >= 0x80) {
       boolean accepted = manager.isAwaitingPubComp(pubRec.getPacketIdentifier());
       PacketIdentifierMap rejected = manager.completePacketId(pubRec.getPacketIdentifier());
