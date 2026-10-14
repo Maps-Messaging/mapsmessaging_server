@@ -936,9 +936,15 @@ public class DestinationImpl implements BaseDestination {
             subscriptionTaskQueue.submit(new BulkRemoveMessageTask(DestinationImpl.this, completed));
           }
         }
-      } finally {
-        finishReaper();
+      } catch (RuntimeException processingFailure) {
+        try {
+          finishReaper();
+        } catch (RuntimeException schedulingFailure) {
+          processingFailure.addSuppressed(schedulingFailure);
+        }
+        throw processingFailure;
       }
+      finishReaper();
       return new io.mapsmessaging.engine.tasks.VoidResponse();
     }
   }
