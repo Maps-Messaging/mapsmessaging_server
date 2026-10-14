@@ -103,6 +103,10 @@ public class DestinationImpl implements BaseDestination {
 
   protected final DestinationJMX destinationJMXBean;
   private final ScheduledFuture<?> reaperFuture;
+  private final Object reaperLock = new Object();
+  private boolean reaperQueued;
+  private boolean reaperRunning;
+  private boolean reaperPending;
 
   private final PriorityTaskScheduler resourceTaskQueue;
   private final TaskScheduler subscriptionTaskQueue;
@@ -278,8 +282,11 @@ public class DestinationImpl implements BaseDestination {
 
   //<editor-fold desc="Shutdown functions">
   public void close() throws IOException {
-    closed = true;
-    reaperFuture.cancel(true);
+    synchronized (reaperLock) {
+      closed = true;
+      reaperPending = false;
+    }
+    reaperFuture.cancel(false);
     resource.close();
     retainManager.close();
     if (delayedMessageManager != null) {
@@ -305,7 +312,7 @@ public class DestinationImpl implements BaseDestination {
   }
 
   private ScheduledFuture<?> queueReaper() {
-    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new EventReaper(), 5, 5, TimeUnit.SECONDS);
+    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::requestReaper, 5, 5, TimeUnit.SECONDS);
   }
 
   private void loadSchema() throws IOException {
@@ -643,6 +650,7 @@ public class DestinationImpl implements BaseDestination {
   public void complete(long messageId) {
     if (retainManager.current() != messageId) {
       completionQueue.add(messageId);
+      requestReaper();
     }
     stats.deliveredMessage();
   }
@@ -892,31 +900,59 @@ public class DestinationImpl implements BaseDestination {
 
   //</editor-fold>
 
-  private final class EventReaper implements Runnable {
+  private void requestReaper() {
+    synchronized (reaperLock) {
+      if (closed) return;
+      if (reaperRunning) {
+        reaperPending = true;
+        return;
+      }
+      if (reaperQueued || completionQueue.isEmpty()) return;
+      reaperQueued = true;
+      try {
+        subscriptionTaskQueue.submit(new EventReaper());
+      } catch (RuntimeException failure) {
+        reaperQueued = false;
+        throw failure;
+      }
+    }
+  }
 
-    private int countDown = 0;
-    private int idleCount =0;
+  private final class EventReaper extends EngineTask {
 
     @Override
-    public void run() {
-      if(countDown <= 0) {
-        Queue<Long> completedQueue = completionQueue.getAndClear();
-        if (!completedQueue.isEmpty()) {
-          idleCount = 0;
-          countDown =0;
-          Queue<Long> interested = subscriptionManager.getAll();
-          completedQueue.removeAll(interested);
-          if (!completedQueue.isEmpty()) {
-            BulkRemoveMessageTask bulkRemoveMessageTask = new BulkRemoveMessageTask(DestinationImpl.this, completedQueue);
-            subscriptionTaskQueue.submit(bulkRemoveMessageTask);
+    public Response taskCall() {
+      synchronized (reaperLock) {
+        reaperQueued = false;
+        if (closed) return new io.mapsmessaging.engine.tasks.VoidResponse();
+        reaperRunning = true;
+      }
+      try {
+        Queue<Long> completed = completionQueue.getAndClear();
+        if (!completed.isEmpty()) {
+          completed.removeAll(subscriptionManager.getAll());
+          if (!completed.isEmpty()) {
+            // Same serial task scheduler, so removal cannot overtake reaper processing.
+            subscriptionTaskQueue.submit(new BulkRemoveMessageTask(DestinationImpl.this, completed));
           }
         }
-        else{
-          idleCount = (idleCount+1) % 20;
-          countDown = 5 * idleCount;
+      } finally {
+        synchronized (reaperLock) {
+          reaperRunning = false;
+          boolean rerun = reaperPending || !completionQueue.isEmpty();
+          reaperPending = false;
+          if (rerun && !closed && !reaperQueued) {
+            reaperQueued = true;
+            try {
+              subscriptionTaskQueue.submit(new EventReaper());
+            } catch (RuntimeException failure) {
+              reaperQueued = false;
+              throw failure;
+            }
+          }
         }
       }
-      countDown--;
+      return new io.mapsmessaging.engine.tasks.VoidResponse();
     }
   }
 
