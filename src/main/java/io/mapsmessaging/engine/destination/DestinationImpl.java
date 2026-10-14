@@ -964,7 +964,6 @@ public class DestinationImpl implements BaseDestination {
         }
       }
     }
-    }
   }
 
 }
