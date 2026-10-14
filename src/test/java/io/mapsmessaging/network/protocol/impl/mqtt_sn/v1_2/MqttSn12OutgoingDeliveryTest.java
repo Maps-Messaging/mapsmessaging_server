@@ -466,6 +466,116 @@ class MqttSn12OutgoingDeliveryTest {
     }
   }
 
+  @Test
+  void retired_delivery_does_not_send_pubrel_after_pending_engine_ack() throws Exception {
+    for (boolean restored : new boolean[]{false, true}) {
+      try (PacketIdStore store = PacketIdStore.memory(1)) {
+        Fixture events = fixture(store, QualityOfService.EXACTLY_ONCE);
+        TestProtocol protocol = new TestProtocol();
+        Session session = mock(Session.class);
+        when(session.getPacketIdStore()).thenReturn(store);
+        java.util.concurrent.CompletableFuture<Void> engineAck = new java.util.concurrent.CompletableFuture<>();
+        when(session.ackRecoveredDelivery(any())).thenReturn(engineAck);
+        protocol.setSession(session);
+        protocol.getPacketIdManager().bindStore(store);
+        try {
+          int identifier = protocol.getPacketIdManager().nextPacketIdentifier(events.subscription, 41L, 2);
+          if (restored) {
+            protocol.getPacketIdManager().markAwaitingPubComp(identifier);
+            protocol.resumeSession(session);
+          } else {
+            new PubRecListener().handlePacket(new PubRec(identifier), session, null, protocol, protocol.stateEngine);
+          }
+          store.clearDeliveries("mqtt-sn-topic");
+          protocol.getPacketIdManager().retireDelivery("mqtt-sn-topic", 41L);
+          int replacement = store.allocate("replacement", 42L).packetId();
+          store.setQos(replacement, 1);
+          assertEquals(identifier, replacement);
+          engineAck.complete(null);
+          assertTrue(protocol.frames.isEmpty(), "A retired ACK must not send PUBREL for the reused identifier");
+          assertFalse(protocol.isEngineAckPending(identifier));
+          assertFalse(protocol.consumeReconciledDelivery(identifier));
+          assertEquals(new PacketIdStore.Delivery("replacement", 42L), store.getDelivery(replacement));
+          if (restored) verify(session).resumeState();
+        } finally {
+          when(session.isClosed()).thenReturn(true);
+          protocol.close();
+        }
+      }
+    }
+  }
+
+  @Test
+  void retired_recovery_advances_to_remaining_delivery_after_engine_ack() throws Exception {
+    try (PacketIdStore store = PacketIdStore.memory(65535)) {
+      int first = store.allocate("first", 41L).packetId();
+      int second = store.allocate("second", 42L).packetId();
+      store.setStage(first, 1);
+      store.setStage(second, 1);
+      TestProtocol protocol = new TestProtocol();
+      Session session = mock(Session.class);
+      when(session.getPacketIdStore()).thenReturn(store);
+      java.util.concurrent.CompletableFuture<Void> engineAck = new java.util.concurrent.CompletableFuture<>();
+      when(session.ackRecoveredDelivery(any())).thenReturn(engineAck);
+      protocol.setSession(session);
+      protocol.getPacketIdManager().bindStore(store);
+      try {
+        protocol.resumeSession(session);
+        var captured = org.mockito.ArgumentCaptor.forClass(PacketIdStore.Delivery.class);
+        verify(session).ackRecoveredDelivery(captured.capture());
+        PacketIdStore.Delivery retired = captured.getValue();
+        int retiredId = store.getPacketId(retired.topic(), retired.messageId());
+        store.clearDeliveries(retired.topic());
+        protocol.getPacketIdManager().retireDelivery(retired.topic(), retired.messageId());
+        engineAck.complete(null);
+        int remaining = retiredId == first ? second : first;
+        assertEquals(1, protocol.frames.size());
+        assertEquals(remaining, assertInstanceOf(PubRel.class, protocol.frames.getFirst()).getMessageId());
+        new PubCompListener().handlePacket(new PubComp(remaining), session, null, protocol, protocol.stateEngine);
+        verify(session).resumeState();
+        assertEquals(0, store.size());
+      } finally {
+        when(session.isClosed()).thenReturn(true);
+        protocol.close();
+      }
+    }
+  }
+
+  @Test
+  void retired_engine_ack_cannot_block_or_complete_reused_qos_two_identifier() throws Exception {
+    try (PacketIdStore store = PacketIdStore.memory(1)) {
+      Fixture events = fixture(store, QualityOfService.EXACTLY_ONCE);
+      TestProtocol protocol = new TestProtocol();
+      Session session = mock(Session.class);
+      when(session.getPacketIdStore()).thenReturn(store);
+      java.util.concurrent.CompletableFuture<Void> retiredAck = new java.util.concurrent.CompletableFuture<>();
+      java.util.concurrent.CompletableFuture<Void> replacementAck = new java.util.concurrent.CompletableFuture<>();
+      when(session.ackRecoveredDelivery(any())).thenReturn(retiredAck).thenReturn(replacementAck);
+      protocol.setSession(session);
+      protocol.getPacketIdManager().bindStore(store);
+      try {
+        int identifier = protocol.getPacketIdManager().nextPacketIdentifier(events.subscription, 41L, 2);
+        new PubRecListener().handlePacket(new PubRec(identifier), session, null, protocol, protocol.stateEngine);
+        store.clearDeliveries("mqtt-sn-topic");
+        protocol.getPacketIdManager().retireDelivery("mqtt-sn-topic", 41L);
+        assertEquals(identifier, protocol.getPacketIdManager().nextPacketIdentifier(events.subscription, 42L, 2));
+        new PubRecListener().handlePacket(new PubRec(identifier), session, null, protocol, protocol.stateEngine);
+        verify(session).ackRecoveredDelivery(new PacketIdStore.Delivery("mqtt-sn-topic", 42L));
+        retiredAck.complete(null);
+        assertTrue(protocol.frames.isEmpty());
+        assertTrue(protocol.isEngineAckPending(identifier));
+        replacementAck.complete(null);
+        assertEquals(1, protocol.frames.size());
+        assertEquals(identifier, assertInstanceOf(PubRel.class, protocol.frames.getFirst()).getMessageId());
+        new PubCompListener().handlePacket(new PubComp(identifier), session, null, protocol, protocol.stateEngine);
+        assertEquals(0, store.size());
+      } finally {
+        when(session.isClosed()).thenReturn(true);
+        protocol.close();
+      }
+    }
+  }
+
   private static class TestProtocol extends MQTT_SNProtocol {
     private final List<MQTT_SNPacket> frames = new ArrayList<>();
 

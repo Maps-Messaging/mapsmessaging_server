@@ -53,8 +53,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import io.mapsmessaging.storage.delivery.PacketIdStore;
 import java.net.SocketAddress;
 import java.util.concurrent.ScheduledFuture;
@@ -77,8 +77,8 @@ public class MQTT_SNProtocol extends Protocol {
   private Integer recoveringPacketId;
   private Session recoverySession;
   private boolean recoveredPubRelSent;
-  private final Set<Integer> pendingEngineAcknowledgements = new HashSet<>();
-  private final Set<Integer> reconciledDeliveries = new HashSet<>();
+  private final Map<Integer, PacketIdStore.Delivery> pendingEngineAcknowledgements = new HashMap<>();
+  private final Map<Integer, PacketIdStore.Delivery> reconciledDeliveries = new HashMap<>();
 
   @Getter
   @Setter
@@ -302,6 +302,11 @@ public class MQTT_SNProtocol extends Protocol {
           if (closed || endPoint.isClosed() || session != expectedSession || recoveringPacketId == null || recoveringPacketId != identifier) {
             return;
           }
+          if (!delivery.equals(packetIdManager.getDelivery(identifier)) || !packetIdManager.isAwaitingPubComp(identifier)) {
+            recoveredPubRels.poll();
+            sendNextRecoveredPubRel();
+            return;
+          }
           if (failure != null) {
             closeRecoveryFailure(failure);
           } else if (isActiveSession(expectedSession)) {
@@ -316,31 +321,40 @@ public class MQTT_SNProtocol extends Protocol {
   }
 
   public synchronized void sendPubRelAfterEngineAck(int identifier, Session currentSession) {
-    if (pendingEngineAcknowledgements.contains(identifier)) {
-      return;
-    }
-    if (reconciledDeliveries.contains(identifier) || recoveringPacketId != null && recoveringPacketId == identifier) {
-      if (isActiveSession(currentSession) && (reconciledDeliveries.contains(identifier) || recoveredPubRelSent)) {
-        writeFrame(new PubRel(identifier));
-      }
-      return;
-    }
-    pendingEngineAcknowledgements.add(identifier);
     try {
       PacketIdStore.Delivery delivery = currentSession.getPacketIdStore().getDelivery(identifier);
       if (delivery == null) {
         throw new IOException("No durable delivery for PUBREC " + identifier);
       }
+      if (delivery.equals(pendingEngineAcknowledgements.get(identifier))) {
+        return;
+      }
+      boolean reconciled = delivery.equals(reconciledDeliveries.get(identifier));
+      if (reconciled || recoveringPacketId != null && recoveringPacketId == identifier) {
+        if (isActiveSession(currentSession) && (reconciled || recoveredPubRelSent)) {
+          writeFrame(new PubRel(identifier));
+        }
+        return;
+      }
+      reconciledDeliveries.remove(identifier);
+      pendingEngineAcknowledgements.put(identifier, delivery);
       currentSession.ackRecoveredDelivery(delivery).whenComplete((ignored, failure) -> {
         synchronized (MQTT_SNProtocol.this) {
           if (closed || endPoint.isClosed() || session != currentSession) {
+            return;
+          }
+          if (pendingEngineAcknowledgements.get(identifier) != delivery) {
+            return;
+          }
+          if (!delivery.equals(packetIdManager.getDelivery(identifier)) || !packetIdManager.isAwaitingPubComp(identifier)) {
+            pendingEngineAcknowledgements.remove(identifier);
             return;
           }
           if (failure != null) {
             closeAfterStorageFailure(new UncheckedIOException(new IOException("Failed to acknowledge QoS 2 engine interest", failure)), currentSession);
           } else if (isActiveSession(currentSession)) {
             pendingEngineAcknowledgements.remove(identifier);
-            reconciledDeliveries.add(identifier);
+            reconciledDeliveries.put(identifier, delivery);
             writeFrame(new PubRel(identifier));
           }
         }
@@ -355,11 +369,11 @@ public class MQTT_SNProtocol extends Protocol {
   }
 
   public synchronized boolean isEngineAckPending(int identifier) {
-    return pendingEngineAcknowledgements.contains(identifier);
+    return pendingEngineAcknowledgements.containsKey(identifier);
   }
 
   public synchronized boolean consumeReconciledDelivery(int identifier) {
-    return reconciledDeliveries.remove(identifier);
+    return reconciledDeliveries.remove(identifier) != null;
   }
 
   private void closeRecoveryFailure(Throwable failure) {
