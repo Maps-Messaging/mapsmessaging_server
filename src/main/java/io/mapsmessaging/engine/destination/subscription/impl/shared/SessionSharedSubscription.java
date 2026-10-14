@@ -47,6 +47,7 @@ public class SessionSharedSubscription extends Subscription {
   private final AcknowledgementController acknowledgementController;
   private final MessageDeliveryCompletionTask completionTask;
   private final String sessionId;
+  private final String deliveryKey;
   private volatile boolean flowControlBlocked;
   private volatile io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator;
 
@@ -58,6 +59,7 @@ public class SessionSharedSubscription extends Subscription {
       AcknowledgementController acknowledgementController) {
     super(sessionImpl, context);
     this.sessionId = sessionId;
+    this.deliveryKey = SubscribedEventManager.deliveryKey(context, sharedSubscription.getDestinationImpl().getFullyQualifiedNamespace());
     this.sharedSubscription = sharedSubscription;
     this.acknowledgementController = acknowledgementController;
     this.flowControlBlocked = false;
@@ -229,7 +231,7 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public String getDeliveryKey() {
-    return SubscribedEventManager.deliveryKey(getContext(), sharedSubscription.getDestinationImpl().getFullyQualifiedNamespace());
+    return deliveryKey;
   }
 
   public void clearDeliveryMapping(long messageId) {
