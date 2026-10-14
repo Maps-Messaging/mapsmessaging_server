@@ -937,22 +937,27 @@ public class DestinationImpl implements BaseDestination {
           }
         }
       } finally {
-        synchronized (reaperLock) {
-          reaperRunning = false;
-          boolean rerun = reaperPending || !completionQueue.isEmpty();
-          reaperPending = false;
-          if (rerun && !closed && !reaperQueued) {
-            reaperQueued = true;
-            try {
-              subscriptionTaskQueue.submit(new EventReaper());
-            } catch (RuntimeException failure) {
-              reaperQueued = false;
-              throw failure;
-            }
-          }
-        }
+        finishReaper();
       }
       return new io.mapsmessaging.engine.tasks.VoidResponse();
+    }
+  }
+
+  private void finishReaper() {
+    synchronized (reaperLock) {
+      reaperRunning = false;
+      boolean rerun = reaperPending || !completionQueue.isEmpty();
+      reaperPending = false;
+      if (rerun && !closed && !reaperQueued) {
+        reaperQueued = true;
+        try {
+          subscriptionTaskQueue.submit(new EventReaper());
+        } catch (RuntimeException failure) {
+          reaperQueued = false;
+          throw failure;
+        }
+      }
+    }
     }
   }
 
