@@ -23,11 +23,11 @@ RUN set -eux; \
     ZULU_ARCH=zulu21.44.17-ca-jdk21.0.8-linux_musl_aarch64.tar.gz; \
     ZULU_DIR="${ZULU_ARCH%.tar.gz}"; \
     INSTALL_DIR="$(dirname "$JAVA_HOME")"; \
-    apk add --no-cache ca-certificates coreutils dos2unix gzip tar wget; \
+    apk add --no-cache ca-certificates coreutils curl dos2unix gzip tar; \
     update-ca-certificates; \
     \
     # Install Zulu JDK
-    wget -q "https://cdn.azul.com/zulu/bin/${ZULU_ARCH}"; \
+    curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-redirs 5 --output "${ZULU_ARCH}" "https://cdn.azul.com/zulu/bin/${ZULU_ARCH}"; \
     mkdir -p "${INSTALL_DIR}"; \
     tar -xf "${ZULU_ARCH}" -C "${INSTALL_DIR}"; \
     rm -f "${ZULU_ARCH}"; \
@@ -37,7 +37,7 @@ RUN set -eux; \
     \
     # Install Maps Messaging
     cd /; \
-    wget -q "https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/maps-%%MAPS_VERSION%%-install.tar.gz"; \
+    curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-redirs 5 --output "maps-%%MAPS_VERSION%%-install.tar.gz" "https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/maps-%%MAPS_VERSION%%-install.tar.gz"; \
     tar -xf "maps-%%MAPS_VERSION%%-install.tar.gz"; \
     rm "maps-%%MAPS_VERSION%%-install.tar.gz"; \
     \
