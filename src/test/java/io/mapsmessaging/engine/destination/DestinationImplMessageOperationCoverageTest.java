@@ -257,6 +257,7 @@ class DestinationImplMessageOperationCoverageTest {
       set("subscriptionManager", subscriptionManager);
       set("schemaSubscriptionManager", schemaSubscriptionManager);
       set("completionQueue", completionQueue);
+      set("reaperLock", new Object());
       set("resourceTaskQueue", resourceTaskQueue);
       set("subscriptionTaskQueue", subscriptionTaskQueue);
     }
