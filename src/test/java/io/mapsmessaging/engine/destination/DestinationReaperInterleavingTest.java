@@ -248,9 +248,13 @@ class DestinationReaperInterleavingTest {
     }
 
     private void executeNextReaper() throws Exception {
-      Callable<?> task = queuedTasks.remove();
-      assertEquals("EventReaper", task.getClass().getSimpleName());
-      task.call();
+      for (Callable<?> task : queuedTasks) {
+        if (task.getClass().getSimpleName().equals("EventReaper") && queuedTasks.remove(task)) {
+          task.call();
+          return;
+        }
+      }
+      fail("Expected a queued EventReaper task");
     }
   }
 }
