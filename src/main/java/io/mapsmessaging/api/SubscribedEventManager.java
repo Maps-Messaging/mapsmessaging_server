@@ -80,7 +80,9 @@ public interface SubscribedEventManager {
     String shared = java.util.Objects.requireNonNullElse(context.getSharedName(), "");
     String destination = java.util.Objects.requireNonNull(physicalDestination, "physicalDestination");
     String key = filter.length() + ":" + filter + shared.length() + ":" + shared + destination.length() + ":" + destination;
-    if (key.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 65535) return key;
+    if (key.getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 65535) {
+      return key;
+    }
     try {
       return "sha256:" + java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(key.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
