@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl;
 
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
 import io.mapsmessaging.engine.session.DeliveryStateCoordinator;
 import io.mapsmessaging.admin.SubscriptionJMX;
 import io.mapsmessaging.api.message.Message;
@@ -49,6 +50,7 @@ import lombok.Setter;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Future;
@@ -157,6 +159,7 @@ public class DestinationSubscription extends Subscription {
 
   @Override
   public void close() {
+    traceCleanupState("SUBSCRIPTION-CLOSE");
     releaseProtocolSendSlot();
     if (mbean != null) {
       mbean.close();
@@ -409,7 +412,9 @@ public class DestinationSubscription extends Subscription {
   }
 
   protected void allocateMessage(Message message) {
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "ALLOCATE-BEGIN", message.getIdentifier(), sessionId);
     messageStateManager.allocate(message);
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "ALLOCATE-END", message.getIdentifier(), sessionId);
     messagesSent++;
   }
 
@@ -506,6 +511,7 @@ public class DestinationSubscription extends Subscription {
   public void handleTransaction(boolean isAck, long messageId) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
 
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "TRANSACTION-BEGIN", messageId, "ack", isAck, sessionId);
     if (isAck) {
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_ACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
       clearDeliveryMapping(messageId);
@@ -519,6 +525,7 @@ public class DestinationSubscription extends Subscription {
       messageStateManager.rollback(messageId);
       messagesRolledBack++;
     }
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "TRANSACTION-END", messageId, "ack", isAck, sessionId);
     schedule();
   }
 
@@ -536,6 +543,7 @@ public class DestinationSubscription extends Subscription {
   }
 
   public void completeMessage(long messageId) {
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "AUTO-COMMIT", messageId, sessionId);
     clearDeliveryMapping(messageId);
     messageStateManager.commit(messageId);
     messagesAcked++;
@@ -621,6 +629,20 @@ public class DestinationSubscription extends Subscription {
       // We get these because the End Point could be closed
     } catch (RuntimeException th) {
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName(), th);
+    }
+  }
+
+  /** Best-effort diagnostic view; does not alter subscription scheduling or message ownership. */
+  public void traceCleanupState(String stage) {
+    if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+      try {
+        QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), stage, -1, "subscription", sessionId,
+            "atRest", new ArrayList<>(messageStateManager.getAllAtRest()), "all", new ArrayList<>(messageStateManager.getAll()),
+            "hibernating", hibernating, "paused", isPaused,
+            "sent", messagesSent, "acked", messagesAcked, "rolledBack", messagesRolledBack);
+      } catch (RuntimeException diagnosticFailure) {
+        QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "SNAPSHOT-FAILED", -1, stage, diagnosticFailure.toString());
+      }
     }
   }
 

@@ -20,6 +20,7 @@
 package io.mapsmessaging.api.subscriptions;
 
 import io.mapsmessaging.api.*;
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
@@ -28,6 +29,7 @@ import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import javax.security.auth.login.LoginException;
 import lombok.NonNull;
@@ -58,7 +60,30 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
   @Test
   void queueDisconnectEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
-    eventCleanUpTest(testInfo.getTestMethod().get().getName(), "queue/queue1", true, false, false);
+    String name = testInfo.getTestMethod().get().getName();
+    try (QueueCleanupTrace trace = QueueCleanupTrace.start("queue/queue1")) {
+      try {
+        eventCleanUpTest(name, "queue/queue1", true, false, false);
+      } finally {
+        // Preserve the original assertion/exception even if a concurrent snapshot or file write fails.
+        try {
+          trace.captureFinalState();
+          md.getDestinationManager().find("queue/queue1").get(2, TimeUnit.SECONDS).traceCleanupState("TEST-FINAL-DESTINATION");
+        } catch (Exception diagnosticFailure) {
+          if (diagnosticFailure instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
+          }
+          QueueCleanupTrace.record("queue/queue1", "SNAPSHOT-FAILED", -1, diagnosticFailure.toString());
+        }
+        Path tracePath = Path.of("target", "queue-cleanup-debug", name + "-" + System.currentTimeMillis() + ".log");
+        try {
+          trace.writeTo(tracePath);
+          System.err.println("Queue cleanup trace: " + tracePath.toAbsolutePath());
+        } catch (IOException diagnosticFailure) {
+          diagnosticFailure.printStackTrace(System.err);
+        }
+      }
+    }
   }
 
 
@@ -137,18 +162,22 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
         Assertions.assertEquals(EVENT_COUNT / 2 - 1, destination.getStoredMessages());
       }
     }
+    QueueCleanupTrace.record(destinationName, "TEST-DISCONNECT-BEGIN", -1);
     close(delayedSession1);
     close(delayedSession2);
+    QueueCleanupTrace.record(destinationName, "TEST-DISCONNECT-END", -1);
     if(isQueue) {
       // Since we auto store events on queues, the only way to remove them is to deliver and ack them
       Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
       context = createContext(destinationName, ClientAcknowledgement.AUTO, QualityOfService.AT_LEAST_ONCE, 10);
       subscription = publisher.addSubscription(context);
       Assertions.assertNotNull(subscription);
+      QueueCleanupTrace.record(destinationName, "TEST-DRAIN-SUBSCRIBED", -1);
       WaitForState.waitFor(2, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     }
 
     WaitForState.waitFor(7, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
+    QueueCleanupTrace.record(destinationName, "TEST-DRAIN-END", -1, "stored", destination.getStoredMessages());
     Assertions.assertEquals(0, destination.getStoredMessages());
     close(publisher);
   }
@@ -164,6 +193,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    QueueCleanupTrace.record(messageEvent.getDestinationName(), "TEST-CALLBACK", messageEvent.getMessage().getIdentifier());
     messageEvent.getCompletionTask().run();
   }
 }

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
 import io.mapsmessaging.engine.session.DeliveryStateCoordinator;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.SubscribedEventManager;
@@ -70,13 +71,16 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void cancel() throws IOException {
+    traceCleanupState("CANCEL-BEGIN");
     clearDeliveryMappings();
     releaseProtocolSendSlot();
     List<OutstandingEventDetails> outstandingEvents = new ArrayList<>(acknowledgementController.getOutstanding());
     for (OutstandingEventDetails outstandingEvent : outstandingEvents) {
+      QueueCleanupTrace.record(getName(), "CANCEL-ROLLBACK", outstandingEvent.getId(), sessionId);
       sharedSubscription.handleTransaction(false, outstandingEvent.getId());
     }
     sharedSubscription.removeSession(sessionImpl);
+    traceCleanupState("CANCEL-END");
   }
 
   @Override
@@ -91,10 +95,13 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void hibernate() {
+    traceCleanupState("HIBERNATE-BEGIN");
     releaseProtocolSendSlot();
     for (OutstandingEventDetails outstanding : acknowledgementController.getOutstanding()) {
+      QueueCleanupTrace.record(getName(), "HIBERNATE-ROLLBACK", outstanding.getId(), sessionId);
       sharedSubscription.getAcknowledgementController().rollback(outstanding.getId());
     }
+    traceCleanupState("HIBERNATE-END");
   }
 
   @Override
@@ -301,6 +308,11 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void sendMessage(Message message) {
+    if (QueueCleanupTrace.isEnabled(getName())) {
+      QueueCleanupTrace.record(getName(), "SEND", message.getIdentifier(), "session", sessionId,
+          "closed", sessionImpl.isClosed(), "hibernating", hibernating, "controller", System.identityHashCode(acknowledgementController),
+          "ackType", acknowledgementController.getType());
+    }
     String name = "";
     String endpoint = "";
     String version = "";
@@ -321,6 +333,22 @@ public class SessionSharedSubscription extends Subscription {
     message.setBound(true);
     sessionImpl.getMessageCallback().sendMessage(sharedSubscription.getDestinationImpl(), this, message, completionTask);
     ThreadContext.clearMap();
+  }
+
+  /** Keep removed consumers inspectable by the diagnostic test after their expiry callback. */
+  public void traceCleanupState(String stage) {
+    if (QueueCleanupTrace.isEnabled(getName())) {
+      try {
+        SessionImpl session = sessionImpl;
+        QueueCleanupTrace.record(getName(), stage, -1, "session", sessionId, "attached", session != null,
+            "closed", session != null && session.isClosed(), "hibernating", hibernating, "blocked", flowControlBlocked,
+            "controller", System.identityHashCode(acknowledgementController), "ackType", acknowledgementController.getType(),
+            "credit", acknowledgementController.getMaxOutstanding(), "outstanding", acknowledgementController.getOutstanding());
+        sharedSubscription.traceCleanupState(stage + "-SHARED");
+      } catch (RuntimeException diagnosticFailure) {
+        QueueCleanupTrace.record(getName(), "SNAPSHOT-FAILED", -1, stage, diagnosticFailure.toString());
+      }
+    }
   }
 
   @Override
