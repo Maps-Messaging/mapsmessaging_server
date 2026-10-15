@@ -56,7 +56,9 @@ public final class BouncyCastleCcmProtectionProvider implements MqttSn2CryptoPro
     cipher.updateAAD(authenticatedPrefix);
     byte[] message = payload.protectedBytes();
     byte[] tag = payload.tag();
-    if (tag.length != tagLength(scheme)) throw new GeneralSecurityException("Invalid CCM tag length");
+    if (tag.length != tagLength(scheme)) {
+      throw new GeneralSecurityException("Invalid CCM tag length");
+    }
     byte[] combined = Arrays.copyOf(message, message.length + tag.length);
     System.arraycopy(tag, 0, combined, message.length, tag.length);
     return cipher.doFinal(combined);
