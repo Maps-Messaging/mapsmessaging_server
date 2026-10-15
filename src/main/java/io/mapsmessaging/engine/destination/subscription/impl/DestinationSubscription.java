@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl;
 
+import io.mapsmessaging.engine.session.DeliveryStateCoordinator;
 import io.mapsmessaging.admin.SubscriptionJMX;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.SubscribedEventManager;
@@ -549,7 +550,7 @@ public class DestinationSubscription extends Subscription {
       if (owner != null) {
         owner.clearPacketIdMapping(getDeliveryKey(), messageId);
       } else {
-        var coordinator = deliveryStateCoordinator;
+        DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
         if (coordinator != null) {
           coordinator.retirePending(getDeliveryKey(), messageId);
         }
@@ -571,7 +572,7 @@ public class DestinationSubscription extends Subscription {
       if (owner != null) {
         owner.clearPacketIdMappings(key);
       } else {
-        var coordinator = deliveryStateCoordinator;
+        DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
         if (coordinator != null) {
           coordinator.retireAll(key);
         }
@@ -588,7 +589,7 @@ public class DestinationSubscription extends Subscription {
 
   @Override
   public void setDeliveryJournalPath(java.nio.file.Path path) {
-    var coordinator = new io.mapsmessaging.engine.session.DeliveryStateCoordinator();
+    DeliveryStateCoordinator coordinator = new DeliveryStateCoordinator();
     coordinator.setPath(path);
     setDeliveryStateCoordinator(coordinator);
   }
