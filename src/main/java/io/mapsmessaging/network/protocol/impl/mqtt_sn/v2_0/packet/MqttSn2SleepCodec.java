@@ -46,12 +46,18 @@ public final class MqttSn2SleepCodec {
 
   public static SleepRequest decodeRequest(MqttSn2FrameCodec.Frame frame) throws IOException {
     ByteBuffer b = body(frame, MqttSn2PacketType.SLEEPREQ);
-    if (b.remaining() != 7) throw new IOException("SLEEPREQ must have seven payload octets");
+    if (b.remaining() != 7) {
+      throw new IOException("SLEEPREQ must have seven payload octets");
+    }
     int flags = Byte.toUnsignedInt(b.get());
-    if ((flags & 0xFE) != 0) throw new IOException("Reserved SLEEPREQ flags");
+    if ((flags & 0xFE) != 0) {
+      throw new IOException("Reserved SLEEPREQ flags");
+    }
     int id = identifier(b);
     long duration = Integer.toUnsignedLong(b.getInt());
-    if (duration == 0) throw new IOException("SLEEPREQ duration must be non-zero");
+    if (duration == 0) {
+      throw new IOException("SLEEPREQ duration must be non-zero");
+    }
     return new SleepRequest((flags & 1) != 0, id, duration);
   }
 
@@ -77,23 +83,35 @@ public final class MqttSn2SleepCodec {
 
   public static SleepResponse decodeResponse(MqttSn2FrameCodec.Frame frame) throws IOException {
     ByteBuffer b = body(frame, MqttSn2PacketType.SLEEPRESP);
-    if (b.remaining() < 3) throw new IOException("Truncated SLEEPRESP");
+    if (b.remaining() < 3) {
+      throw new IOException("Truncated SLEEPRESP");
+    }
     int flags = Byte.toUnsignedInt(b.get());
-    if ((flags & 0xFE) != 0) throw new IOException("Reserved SLEEPRESP flags");
+    if ((flags & 0xFE) != 0) {
+      throw new IOException("Reserved SLEEPRESP flags");
+    }
     int id = identifier(b);
     Long duration = null;
     if ((flags & 1) != 0) {
-      if (b.remaining() < 4) throw new IOException("Missing SLEEPRESP duration");
+      if (b.remaining() < 4) {
+        throw new IOException("Missing SLEEPRESP duration");
+      }
       duration = Integer.toUnsignedLong(b.getInt());
-      if (duration == 0) throw new IOException("Zero SLEEPRESP duration");
+      if (duration == 0) {
+        throw new IOException("Zero SLEEPRESP duration");
+      }
     }
-    if (b.remaining() > 1) throw new IOException("Unexpected SLEEPRESP trailing bytes");
+    if (b.remaining() > 1) {
+      throw new IOException("Unexpected SLEEPRESP trailing bytes");
+    }
     return new SleepResponse(id, duration, b.hasRemaining() ? Byte.toUnsignedInt(b.get()) : null);
   }
 
   public static Wakeup decodeWakeup(MqttSn2FrameCodec.Frame frame) throws IOException {
     ByteBuffer body = body(frame, MqttSn2PacketType.WAKEUP);
-    if (body.hasRemaining()) throw new IOException("WAKEUP must have an empty body");
+    if (body.hasRemaining()) {
+      throw new IOException("WAKEUP must have an empty body");
+    }
     return new Wakeup();
   }
 
@@ -103,17 +121,23 @@ public final class MqttSn2SleepCodec {
 
   private static ByteBuffer body(MqttSn2FrameCodec.Frame frame, MqttSn2PacketType expected)
       throws IOException {
-    if (frame.type() != expected) throw new IOException("Expected " + expected);
+    if (frame.type() != expected) {
+      throw new IOException("Expected " + expected);
+    }
     return frame.payload().asReadOnlyBuffer();
   }
 
   private static int identifier(ByteBuffer b) throws IOException {
     int id = Short.toUnsignedInt(b.getShort());
-    if (id == 0) throw new IOException("Zero Packet Identifier");
+    if (id == 0) {
+      throw new IOException("Zero Packet Identifier");
+    }
     return id;
   }
 
   private static void checkIdentifier(int id) {
-    if (id < 1 || id > 65535) throw new IllegalArgumentException("Invalid Packet Identifier");
+    if (id < 1 || id > 65535) {
+      throw new IllegalArgumentException("Invalid Packet Identifier");
+    }
   }
 }
