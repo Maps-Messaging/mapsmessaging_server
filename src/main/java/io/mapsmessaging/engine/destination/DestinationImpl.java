@@ -379,7 +379,9 @@ public class DestinationImpl implements BaseDestination {
   // not in the list should be removed from the underlying store
   //
   public void scanForOrphanedMessages() throws IOException{
-    if(fullyQualifiedNamespace.startsWith("$SYS"))return;
+    if (fullyQualifiedNamespace.startsWith("$SYS")) {
+      return;
+    }
     List<Long> list = new NaturalOrderedLongList(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     long retain = retainManager.current();
     if(retain > -1) {
@@ -902,12 +904,16 @@ public class DestinationImpl implements BaseDestination {
 
   private void requestReaper() {
     synchronized (reaperLock) {
-      if (closed) return;
+      if (closed) {
+        return;
+      }
       if (reaperRunning) {
         reaperPending = true;
         return;
       }
-      if (reaperQueued || completionQueue.isEmpty()) return;
+      if (reaperQueued || completionQueue.isEmpty()) {
+        return;
+      }
       reaperQueued = true;
       try {
         subscriptionTaskQueue.submit(new EventReaper());
@@ -924,7 +930,9 @@ public class DestinationImpl implements BaseDestination {
     public Response taskCall() {
       synchronized (reaperLock) {
         reaperQueued = false;
-        if (closed) return new io.mapsmessaging.engine.tasks.VoidResponse();
+        if (closed) {
+          return new io.mapsmessaging.engine.tasks.VoidResponse();
+        }
         reaperRunning = true;
       }
       try {
