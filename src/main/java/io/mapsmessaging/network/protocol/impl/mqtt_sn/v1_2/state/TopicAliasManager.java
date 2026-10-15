@@ -43,10 +43,16 @@ public class TopicAliasManager {
   public synchronized short getTopicAlias(String name) {
     try {
       Integer alias = aliases.alias(name);
-      if (alias != null) return (short) (int) alias;
-      if (aliases.size() >= maxSize || nextAlias > 65535) return -1;
+      if (alias != null) {
+        return (short) (int) alias;
+      }
+      if (aliases.size() >= maxSize || nextAlias > 65535) {
+        return -1;
+      }
       while (nextAlias <= 65535 && aliases.topic(nextAlias) != null) nextAlias++;
-      if (nextAlias > 65535) return -1;
+      if (nextAlias > 65535) {
+        return -1;
+      }
       int id = nextAlias++;
       aliases.register(id, name);
       return (short) id;
