@@ -111,7 +111,9 @@ public final class MqttSn2ProtectionCodec {
       throw new IOException("Expected MQTT-SN 2.0 Protection Encapsulation");
     }
     ByteBuffer body = frame.payload().asReadOnlyBuffer();
-    if (body.remaining() < 14) throw new IOException("Truncated protection header");
+    if (body.remaining() < 14) {
+      throw new IOException("Truncated protection header");
+    }
     int flags = Byte.toUnsignedInt(body.get());
     int counterCode = flags & 3;
     int materialCode = (flags >>> 2) & 3;
