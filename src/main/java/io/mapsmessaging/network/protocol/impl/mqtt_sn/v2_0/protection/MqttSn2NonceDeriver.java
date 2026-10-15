@@ -27,7 +27,9 @@ public final class MqttSn2NonceDeriver {
   private MqttSn2NonceDeriver() {}
 
   public static byte[] derive(byte[] authenticatedPrefix, int size) {
-    if (size != 12 && size != 13) throw new IllegalArgumentException("Invalid AEAD nonce size");
+    if (size != 12 && size != 13) {
+      throw new IllegalArgumentException("Invalid AEAD nonce size");
+    }
     try {
       return Arrays.copyOf(MessageDigest.getInstance("SHA-256").digest(authenticatedPrefix), size);
     } catch (NoSuchAlgorithmException e) {
