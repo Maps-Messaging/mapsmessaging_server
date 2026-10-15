@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.features.DestinationType;
@@ -19,6 +20,7 @@ import org.mockito.MockedStatic;
 import org.mockito.ArgumentCaptor;
 
 import javax.security.auth.Subject;
+import java.lang.reflect.Constructor;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -202,11 +204,18 @@ class CotProtocolTest {
         return event.length - split;
       });
       CotProtocol protocol = new CotProtocol(endpoint, detection, new CotProtocolConfigDTO());
-      try {
+      try (MockedStatic<MessageDaemon> daemon = mockStatic(MessageDaemon.class)) {
+        daemon.when(MessageDaemon::getInstance).thenReturn(null);
         verify(destination, never()).storeMessage(any());
         clearInvocations(endpoint);
-        protocol.selected(protocol, null, SelectionKey.OP_READ);
-        verify(endpoint, timeout(5000)).register(eq(SelectionKey.OP_READ), eq(protocol));
+        // Run the actual reader on this thread so the singleton boundary remains isolated,
+        // independent of whether another protocol test has started the daemon.
+        Class<?> readerType = Class.forName(CotProtocol.class.getName() + "$ReadTask");
+        Constructor<?> constructor = readerType.getDeclaredConstructor(CotProtocol.class);
+        constructor.setAccessible(true);
+        Runnable reader = (Runnable) constructor.newInstance(protocol);
+        reader.run();
+        verify(endpoint).register(eq(SelectionKey.OP_READ), eq(protocol));
         ArgumentCaptor<Message> stored = ArgumentCaptor.forClass(Message.class);
         verify(destination, times(1)).storeMessage(stored.capture());
         assertArrayEquals(event, stored.getValue().getOpaqueData());
