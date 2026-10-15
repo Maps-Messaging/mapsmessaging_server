@@ -154,9 +154,13 @@ public final class MqttSn2ConnectCodec {
       throw new IOException("Expected MQTT-SN 2.0 CONNECT");
     }
     ByteBuffer body = frame.payload().asReadOnlyBuffer();
-    if (body.remaining() < 8) throw new IOException("Truncated MQTT-SN 2.0 CONNECT");
+    if (body.remaining() < 8) {
+      throw new IOException("Truncated MQTT-SN 2.0 CONNECT");
+    }
     int flags = Byte.toUnsignedInt(body.get());
-    if ((flags & 0x80) != 0) throw new IOException("Reserved MQTT-SN 2.0 CONNECT flags");
+    if ((flags & 0x80) != 0) {
+      throw new IOException("Reserved MQTT-SN 2.0 CONNECT flags");
+    }
     boolean will = (flags & 0x02) != 0;
     int willFlags = will ? readUnsignedByte(body, "Will Flags") : 0;
     int willTopicType = willFlags & 3;
@@ -167,9 +171,13 @@ public final class MqttSn2ConnectCodec {
     }
 
     int packetIdentifier = Short.toUnsignedInt(body.getShort());
-    if (packetIdentifier == 0) throw new IOException("CONNECT Packet Identifier must be non-zero");
+    if (packetIdentifier == 0) {
+      throw new IOException("CONNECT Packet Identifier must be non-zero");
+    }
     int protocolId = Byte.toUnsignedInt(body.get());
-    if (protocolId != 2) throw new IOException("Unsupported MQTT-SN protocol identifier " + protocolId);
+    if (protocolId != 2) {
+      throw new IOException("Unsupported MQTT-SN protocol identifier " + protocolId);
+    }
     int keepAlive = Short.toUnsignedInt(body.getShort());
     int maxPacket = Short.toUnsignedInt(body.getShort());
     if (keepAlive == 0 || (maxPacket != 0 && maxPacket < 10)) {
@@ -178,7 +186,9 @@ public final class MqttSn2ConnectCodec {
 
     Long expiry = null;
     if ((flags & 8) != 0) {
-      if (body.remaining() < 4) throw new IOException("Truncated CONNECT Session Expiry Interval");
+      if (body.remaining() < 4) {
+        throw new IOException("Truncated CONNECT Session Expiry Interval");
+      }
       expiry = Integer.toUnsignedLong(body.getInt());
     }
     Integer awakeMessages = null;
@@ -188,11 +198,17 @@ public final class MqttSn2ConnectCodec {
     String willTopicName = null;
     byte[] willPayload = new byte[0];
     if (will) {
-      if (body.remaining() < 2) throw new IOException("Truncated CONNECT Will Topic field");
+      if (body.remaining() < 2) {
+        throw new IOException("Truncated CONNECT Will Topic field");
+      }
       int topicLengthOrAlias = Short.toUnsignedInt(body.getShort());
-      if (topicLengthOrAlias == 0) throw new IOException("Empty CONNECT Will Topic field");
+      if (topicLengthOrAlias == 0) {
+        throw new IOException("Empty CONNECT Will Topic field");
+      }
       if (willTopicType == 3) {
-        if (body.remaining() < topicLengthOrAlias) throw new IOException("Truncated CONNECT Will Topic Name");
+        if (body.remaining() < topicLengthOrAlias) {
+          throw new IOException("Truncated CONNECT Will Topic Name");
+        }
         byte[] topicBytes = new byte[topicLengthOrAlias];
         body.get(topicBytes);
         willTopicName = utf8(topicBytes);
@@ -203,9 +219,13 @@ public final class MqttSn2ConnectCodec {
       } else {
         willAlias = topicLengthOrAlias;
       }
-      if (body.remaining() < 2) throw new IOException("Missing CONNECT Will Payload Length");
+      if (body.remaining() < 2) {
+        throw new IOException("Missing CONNECT Will Payload Length");
+      }
       int payloadLength = Short.toUnsignedInt(body.getShort());
-      if (body.remaining() < payloadLength) throw new IOException("Truncated CONNECT Will Payload");
+      if (body.remaining() < payloadLength) {
+        throw new IOException("Truncated CONNECT Will Payload");
+      }
       willPayload = new byte[payloadLength];
       body.get(willPayload);
     }
@@ -214,7 +234,9 @@ public final class MqttSn2ConnectCodec {
     String method = null;
     byte[] authData = new byte[0];
     if (authentication) {
-      if (body.remaining() < 3) throw new IOException("Truncated CONNECT authentication");
+      if (body.remaining() < 3) {
+        throw new IOException("Truncated CONNECT authentication");
+      }
       int methodLength = readUnsignedByte(body, "Authentication Method Length");
       if (methodLength == 0 || body.remaining() < methodLength + 2) {
         throw new IOException("Invalid CONNECT authentication method");
@@ -223,7 +245,9 @@ public final class MqttSn2ConnectCodec {
       body.get(methodBytes);
       method = utf8(methodBytes);
       int dataLength = Short.toUnsignedInt(body.getShort());
-      if (body.remaining() < dataLength) throw new IOException("Truncated CONNECT authentication data");
+      if (body.remaining() < dataLength) {
+        throw new IOException("Truncated CONNECT authentication data");
+      }
       authData = new byte[dataLength];
       body.get(authData);
     }
@@ -236,7 +260,9 @@ public final class MqttSn2ConnectCodec {
   }
 
   private static int readUnsignedByte(ByteBuffer body, String field) throws IOException {
-    if (!body.hasRemaining()) throw new IOException("Missing CONNECT " + field);
+    if (!body.hasRemaining()) {
+      throw new IOException("Missing CONNECT " + field);
+    }
     return Byte.toUnsignedInt(body.get());
   }
 
