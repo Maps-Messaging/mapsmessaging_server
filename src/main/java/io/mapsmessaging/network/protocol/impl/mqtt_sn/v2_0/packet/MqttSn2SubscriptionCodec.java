@@ -41,7 +41,9 @@ public final class MqttSn2SubscriptionCodec {
   // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
   @SuppressWarnings("java:S3776")
   public static ByteBuffer encode(Request request) {
-    if (request == null) throw new IllegalArgumentException("Missing subscription request");
+    if (request == null) {
+      throw new IllegalArgumentException("Missing subscription request");
+    }
     if (request.packetIdentifier() < 1 || request.packetIdentifier() > 65535) {
       throw new IllegalArgumentException("Invalid subscription Packet Identifier");
     }
