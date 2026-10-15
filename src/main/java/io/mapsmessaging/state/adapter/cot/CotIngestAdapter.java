@@ -203,6 +203,9 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
       if (payload != null && payload.length > 0) {
         enqueue(messageEvent.getDestinationName(), payload);
       }
+    } catch (RuntimeException exception) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.COT_INGEST, "unparseable");
+      logger.warn("CoT ingest adapter failed to queue an incoming message, dropped", exception);
     } finally {
       if (messageEvent.getCompletionTask() != null) {
         messageEvent.getCompletionTask().run();
