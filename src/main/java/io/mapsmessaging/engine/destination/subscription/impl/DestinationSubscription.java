@@ -550,7 +550,9 @@ public class DestinationSubscription extends Subscription {
         owner.clearPacketIdMapping(getDeliveryKey(), messageId);
       } else {
         var coordinator = deliveryStateCoordinator;
-        if (coordinator != null) coordinator.retirePending(getDeliveryKey(), messageId);
+        if (coordinator != null) {
+          coordinator.retirePending(getDeliveryKey(), messageId);
+        }
       }
     } catch (IOException error) {
       throw new UncheckedIOException("Unable to retire delivery packet identifier", error);
@@ -570,7 +572,9 @@ public class DestinationSubscription extends Subscription {
         owner.clearPacketIdMappings(key);
       } else {
         var coordinator = deliveryStateCoordinator;
-        if (coordinator != null) coordinator.retireAll(key);
+        if (coordinator != null) {
+          coordinator.retireAll(key);
+        }
       }
     } catch (IOException error) {
       throw new UncheckedIOException("Unable to retire subscription packet identifiers", error);
