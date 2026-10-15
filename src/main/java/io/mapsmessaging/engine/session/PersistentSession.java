@@ -66,7 +66,9 @@ public class PersistentSession extends SessionImpl{
   @Override
   public synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(
       int maximum) throws IOException {
-    if (aliasRegistry != null) return aliasRegistry;
+    if (aliasRegistry != null) {
+      return aliasRegistry;
+    }
     io.mapsmessaging.storage.alias.FileAliasSnapshotPersistence persistence =
         new io.mapsmessaging.storage.alias.FileAliasSnapshotPersistence(
             java.nio.file.Path.of(storeName.replaceFirst("\\.bin$", ".aliases")));
