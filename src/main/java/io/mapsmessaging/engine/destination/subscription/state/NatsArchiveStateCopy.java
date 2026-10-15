@@ -20,8 +20,8 @@
 package io.mapsmessaging.engine.destination.subscription.state;
 
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.LongPredicate;
 
 /**
