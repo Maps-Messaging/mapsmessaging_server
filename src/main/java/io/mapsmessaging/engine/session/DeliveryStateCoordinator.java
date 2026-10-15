@@ -34,7 +34,7 @@ public final class DeliveryStateCoordinator {
   private Path path;
   private PacketIdStore liveStore;
   private int maximum = 65535;
-  private volatile ClientConnection clientConnection;
+  private ClientConnection clientConnection;
 
   public synchronized void setPath(Path path) {
     this.path = path;
