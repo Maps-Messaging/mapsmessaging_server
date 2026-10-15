@@ -177,12 +177,24 @@ public class EndPointConfigFactory {
   }
   private static EndPointConfigDTO createEndPointConfig(String url, ConfigurationProperties properties) {
     String u = url.toLowerCase();
-    if (u.startsWith("tcp") || u.startsWith("ws")) return new TcpConfig(properties);
-    if (u.startsWith("ssl") || u.startsWith("wss")) return new TlsConfig(properties);
-    if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) return new UdpConfig(properties);
-    if (u.startsWith("dtls")) return new DtlsConfig(properties);
-    if (u.startsWith("serial")) return new SerialConfig(properties);
-    if(u.startsWith("canbus")) return new CanbusConfig(properties);
+    if (u.startsWith("tcp") || u.startsWith("ws")) {
+      return new TcpConfig(properties);
+    }
+    if (u.startsWith("ssl") || u.startsWith("wss")) {
+      return new TlsConfig(properties);
+    }
+    if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) {
+      return new UdpConfig(properties);
+    }
+    if (u.startsWith("dtls")) {
+      return new DtlsConfig(properties);
+    }
+    if (u.startsWith("serial")) {
+      return new SerialConfig(properties);
+    }
+    if (u.startsWith("canbus")) {
+      return new CanbusConfig(properties);
+    }
     if (u.startsWith(SATELLITE_KEY)) return new EndPointConfigDTO(SATELLITE_KEY); // placeholder
     return null;
   }
