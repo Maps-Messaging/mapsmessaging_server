@@ -34,6 +34,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -91,6 +92,131 @@ class SSLEndPointReadOverflowTest {
       assertDoesNotThrow(() -> endPoint.readBuffer(applicationIn));
 
       assertEquals(100, applicationIn.position());
+    } finally {
+      endPoint.close();
+    }
+  }
+
+  @Test
+  void overflowing_second_record_is_preserved_until_the_caller_drains_the_first() throws Exception {
+    Fixture fixture = new Fixture();
+    AtomicBoolean delivered = new AtomicBoolean();
+    when(fixture.channel.read(any(ByteBuffer.class))).thenAnswer(invocation -> {
+      if (delivered.getAndSet(true)) {
+        return 0;
+      }
+      ByteBuffer encrypted = invocation.getArgument(0);
+      encrypted.put(new byte[2 * RECORD_ENCRYPTED_BYTES]);
+      return 2 * RECORD_ENCRYPTED_BYTES;
+    });
+    SSLEndPoint endPoint = fixture.createEndPoint();
+    try {
+      ByteBuffer application = ByteBuffer.allocate(6000);
+      endPoint.readBuffer(application);
+      assertEquals(RECORD_PLAINTEXT_BYTES, application.position());
+      assertTrue(endPoint.hasBufferedReadData());
+
+      application.clear();
+      endPoint.readBuffer(application);
+      assertEquals(RECORD_PLAINTEXT_BYTES, application.position());
+      assertFalse(endPoint.hasBufferedReadData());
+    } finally {
+      endPoint.close();
+    }
+  }
+
+  @Test
+  void fragmented_record_is_retained_until_the_remaining_encrypted_bytes_arrive() throws Exception {
+    Fixture fixture = new Fixture();
+    AtomicInteger reads = new AtomicInteger();
+    when(fixture.channel.read(any(ByteBuffer.class))).thenAnswer(invocation -> {
+      int count = switch (reads.getAndIncrement()) {
+        case 0 -> 2000;
+        case 1 -> RECORD_ENCRYPTED_BYTES - 2000;
+        default -> 0;
+      };
+      ByteBuffer encrypted = invocation.getArgument(0);
+      encrypted.put(new byte[count]);
+      return count;
+    });
+    SSLEndPoint endPoint = fixture.createEndPoint();
+    try {
+      ByteBuffer application = ByteBuffer.allocate(32768);
+      endPoint.readBuffer(application);
+      assertEquals(0, application.position());
+      assertTrue(endPoint.hasBufferedReadData());
+
+      endPoint.readBuffer(application);
+      assertEquals(RECORD_PLAINTEXT_BYTES, application.position());
+      assertFalse(endPoint.hasBufferedReadData());
+    } finally {
+      endPoint.close();
+    }
+  }
+
+  @Test
+  void full_encrypted_buffer_underflow_fails_instead_of_spinning() throws Exception {
+    Fixture fixture = new Fixture();
+    when(fixture.channel.read(any(ByteBuffer.class))).thenAnswer(invocation -> {
+      ByteBuffer encrypted = invocation.getArgument(0);
+      int count = encrypted.remaining();
+      encrypted.put(new byte[count]);
+      return count;
+    });
+    when(fixture.sslEngine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class))).thenReturn(
+        new SSLEngineResult(SSLEngineResult.Status.BUFFER_UNDERFLOW,
+            SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, 0, 0));
+    SSLEndPoint endPoint = fixture.createEndPoint();
+    try {
+      IOException failure = assertThrows(IOException.class, () -> endPoint.readBuffer(ByteBuffer.allocate(32768)));
+      assertTrue(failure.getMessage().contains("inbound buffer full"));
+      verify(fixture.sslEngine, times(1)).unwrap(any(ByteBuffer.class), any(ByteBuffer.class));
+    } finally {
+      endPoint.close();
+    }
+  }
+
+  @Test
+  void delegated_task_runs_before_retrying_the_buffered_record() throws Exception {
+    Fixture fixture = new Fixture();
+    AtomicBoolean taskRan = new AtomicBoolean();
+    Runnable task = () -> taskRan.set(true);
+    when(fixture.sslEngine.getDelegatedTask()).thenReturn(task, (Runnable) null);
+    when(fixture.sslEngine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class))).thenAnswer(invocation -> {
+      if (!taskRan.get()) {
+        return new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.NEED_TASK, 0, 0);
+      }
+      ByteBuffer encrypted = invocation.getArgument(0);
+      ByteBuffer application = invocation.getArgument(1);
+      encrypted.position(encrypted.position() + RECORD_ENCRYPTED_BYTES);
+      application.put(new byte[RECORD_PLAINTEXT_BYTES]);
+      return new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+          RECORD_ENCRYPTED_BYTES, RECORD_PLAINTEXT_BYTES);
+    });
+    SSLEndPoint endPoint = fixture.createEndPoint();
+    try {
+      ByteBuffer application = ByteBuffer.allocate(32768);
+      endPoint.readBuffer(application);
+      assertTrue(taskRan.get());
+      assertEquals(RECORD_PLAINTEXT_BYTES, application.position());
+      assertFalse(endPoint.hasBufferedReadData());
+    } finally {
+      endPoint.close();
+    }
+  }
+
+  @Test
+  void need_task_without_a_delegated_task_returns_without_repeated_unwraps() throws Exception {
+    Fixture fixture = new Fixture();
+    when(fixture.sslEngine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class))).thenReturn(
+        new SSLEngineResult(SSLEngineResult.Status.OK, SSLEngineResult.HandshakeStatus.NEED_TASK, 0, 0));
+    SSLEndPoint endPoint = fixture.createEndPoint();
+    try {
+      ByteBuffer application = ByteBuffer.allocate(32768);
+      endPoint.readBuffer(application);
+      assertEquals(0, application.position());
+      assertTrue(endPoint.hasBufferedReadData());
+      verify(fixture.sslEngine, times(1)).unwrap(any(ByteBuffer.class), any(ByteBuffer.class));
     } finally {
       endPoint.close();
     }

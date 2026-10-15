@@ -1,6 +1,9 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
@@ -13,9 +16,14 @@ import io.mapsmessaging.utilities.admin.JMXManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.mockito.MockedStatic;
+import org.mockito.ArgumentCaptor;
 
 import javax.security.auth.Subject;
 import java.nio.channels.SelectionKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -111,7 +119,7 @@ class CotProtocolTest {
   @Test
   @Timeout(10)
   void readTask_readsIntoBufferThatHoldsATlsRecord_notTheDetectionPacket() throws Exception {
-    withSession(endpoint -> {
+    withSession((endpoint, session) -> {
       List<Packet> readTargets = new CopyOnWriteArrayList<>();
       when(endpoint.readPacket(any())).thenAnswer(invocation -> {
         readTargets.add(invocation.getArgument(0));
@@ -148,7 +156,7 @@ class CotProtocolTest {
   @Test
   @Timeout(10)
   void readTask_doesNotGrowThePooledThreadNameAcrossRuns() throws Exception {
-    withSession(endpoint -> {
+    withSession((endpoint, session) -> {
       List<String> readerNames = new CopyOnWriteArrayList<>();
       when(endpoint.readPacket(any())).thenAnswer(invocation -> {
         readerNames.add(Thread.currentThread().getName());
@@ -168,6 +176,44 @@ class CotProtocolTest {
         assertFalse(name.startsWith("CoT Protocol Reader::CoT Protocol Reader::"), name);
       }
       protocol.close();
+    });
+  }
+
+  @Test
+  @Timeout(10)
+  void detection_prefix_and_large_following_read_publish_one_complete_event() throws Exception {
+    withSession((endpoint, session) -> {
+      Destination destination = mock(Destination.class);
+      when(session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
+          .thenReturn(CompletableFuture.completedFuture(destination));
+      byte[] event = ("<event uid='handoff' type='a-f-G'><detail><remarks>" + "payload".repeat(800)
+          + "</remarks></detail></event>").getBytes(StandardCharsets.UTF_8);
+      int split = 128;
+      Packet detection = new Packet(1024, false);
+      detection.put(Arrays.copyOfRange(event, 0, split));
+      detection.flip();
+      AtomicBoolean delivered = new AtomicBoolean();
+      when(endpoint.readPacket(any())).thenAnswer(invocation -> {
+        if (delivered.getAndSet(true)) {
+          return 0;
+        }
+        Packet target = invocation.getArgument(0);
+        target.put(Arrays.copyOfRange(event, split, event.length));
+        return event.length - split;
+      });
+      CotProtocol protocol = new CotProtocol(endpoint, detection, new CotProtocolConfigDTO());
+      try {
+        verify(destination, never()).storeMessage(any());
+        clearInvocations(endpoint);
+        protocol.selected(protocol, null, SelectionKey.OP_READ);
+        verify(endpoint, timeout(5000)).register(eq(SelectionKey.OP_READ), eq(protocol));
+        ArgumentCaptor<Message> stored = ArgumentCaptor.forClass(Message.class);
+        verify(destination, times(1)).storeMessage(stored.capture());
+        assertArrayEquals(event, stored.getValue().getOpaqueData());
+        verify(endpoint, never()).close();
+      } finally {
+        protocol.close();
+      }
     });
   }
 
@@ -193,7 +239,7 @@ class CotProtocolTest {
 
   @FunctionalInterface
   private interface SessionBody {
-    void run(EndPoint endpoint) throws Exception;
+    void run(EndPoint endpoint, Session session) throws Exception;
   }
 
   private static void withSession(SessionBody body) throws Exception {
@@ -207,7 +253,7 @@ class CotProtocolTest {
     when(manager.create(any(), any())).thenReturn(session);
     try (MockedStatic<SessionManager> mocked = mockStatic(SessionManager.class)) {
       mocked.when(SessionManager::getInstance).thenReturn(manager);
-      body.run(endpoint());
+      body.run(endpoint(), session);
     } finally {
       JMXManager.setEnableJMX(original);
     }
