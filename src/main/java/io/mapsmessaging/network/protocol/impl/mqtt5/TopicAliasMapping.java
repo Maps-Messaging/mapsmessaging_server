@@ -105,10 +105,14 @@ public class TopicAliasMapping {
   }
 
   public synchronized TopicAlias create(String destinationName) {
-    if (aliasMaximum == 0) return null;
+    if (aliasMaximum == 0) {
+      return null;
+    }
     try {
       Integer existing = registry.alias(destinationName);
-      if (existing != null) return originalProperties.computeIfAbsent(destinationName, ignored -> new TopicAlias(existing));
+      if (existing != null) {
+        return originalProperties.computeIfAbsent(destinationName, ignored -> new TopicAlias(existing));
+      }
       int allocated = registry.register(destinationName);
       TopicAlias property = new TopicAlias(allocated);
       originalProperties.put(destinationName, property);
