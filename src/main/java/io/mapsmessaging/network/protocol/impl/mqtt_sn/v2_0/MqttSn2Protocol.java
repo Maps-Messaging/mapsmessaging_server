@@ -34,6 +34,7 @@ import io.mapsmessaging.engine.destination.MessageOverrides;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.dto.rest.config.auth.SaslConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.dto.rest.protocol.impl.MqttSnProtocolInformation;
 import io.mapsmessaging.logging.Logger;
@@ -231,7 +232,7 @@ public final class MqttSn2Protocol extends Protocol {
     if (lifecycle.state() != MqttSn2Lifecycle.State.NEW || session.get() != null) {
       throw new IOException("Duplicate MQTT-SN 2.0 CONNECT");
     }
-    var saslConfig = endPoint.getConfig().getSaslConfig();
+    SaslConfigDTO saslConfig = endPoint.getConfig().getSaslConfig();
     if (saslConfig != null && !request.authentication()) {
       sendConnectFailure(request, 0x87);
       return;
