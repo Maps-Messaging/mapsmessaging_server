@@ -19,6 +19,7 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import io.mapsmessaging.storage.counter.CounterDurability;
+import io.mapsmessaging.storage.counter.CounterStore;
 import io.mapsmessaging.storage.counter.GenerationCounterStore;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -66,7 +67,7 @@ public final class MqttSn2IndexedCounterStore implements
         throw new IOException("Outbound MQTT-SN protection counter exhausted");
       }
       int count = (int) Math.min(RESERVATION_SIZE, MAX_WIRE_COUNTER - persisted);
-      var range = store.reserve(TX, count);
+      CounterStore.Range range = store.reserve(TX, count);
       nextOutbound = range.first();
       reservedThrough = range.last();
     }
