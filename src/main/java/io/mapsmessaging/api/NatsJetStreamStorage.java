@@ -25,6 +25,7 @@ import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.engine.destination.NatsJetStreamStoreTask;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 
 import java.io.IOException;
@@ -52,7 +53,7 @@ public final class NatsJetStreamStorage {
         } catch (Throwable failure) {
           // Mirror the ordinary publish path: failing to look up a schema does not bypass auth.
           // The destination schema remains the authoritative source of its identifier.
-          io.mapsmessaging.logging.LoggerFactory.getLogger(NatsJetStreamStorage.class)
+          LoggerFactory.getLogger(NatsJetStreamStorage.class)
               .log(ServerLogMessages.DESTINATION_ERROR_SETTING_SCHEMA,
                   destination.destinationImpl.getFullyQualifiedNamespace(), failure);
         }
