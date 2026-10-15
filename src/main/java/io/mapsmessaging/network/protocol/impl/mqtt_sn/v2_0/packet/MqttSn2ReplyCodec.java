@@ -48,7 +48,9 @@ public final class MqttSn2ReplyCodec {
 
   public static SubAck decodeSubAck(MqttSn2FrameCodec.Frame frame) throws IOException {
     ByteBuffer body = body(frame, MqttSn2PacketType.SUBACK);
-    if (body.remaining() < 3) throw new IOException("Truncated SUBACK");
+    if (body.remaining() < 3) {
+      throw new IOException("Truncated SUBACK");
+    }
     int flags = Byte.toUnsignedInt(body.get());
     int topicType = flags & 3;
     if ((flags & 0xF8) != 0 || (topicType != 0 && topicType != 1)) {
@@ -57,27 +59,37 @@ public final class MqttSn2ReplyCodec {
     int id = readId(body);
     Integer alias = null;
     if ((flags & 4) != 0) {
-      if (body.remaining() < 2) throw new IOException("Truncated SUBACK alias");
+      if (body.remaining() < 2) {
+        throw new IOException("Truncated SUBACK alias");
+      }
       alias = readId(body);
     }
-    if (body.remaining() > 1) throw new IOException("Unexpected SUBACK trailing bytes");
+    if (body.remaining() > 1) {
+      throw new IOException("Unexpected SUBACK trailing bytes");
+    }
     return new SubAck(topicType, alias, id, body.hasRemaining() ? Byte.toUnsignedInt(body.get()) : null);
   }
 
   private static ByteBuffer body(MqttSn2FrameCodec.Frame frame, MqttSn2PacketType type)
       throws IOException {
-    if (frame.type() != type) throw new IOException("Expected " + type);
+    if (frame.type() != type) {
+      throw new IOException("Expected " + type);
+    }
     return frame.payload().asReadOnlyBuffer();
   }
 
   private static int readId(ByteBuffer body) throws IOException {
     int id = Short.toUnsignedInt(body.getShort());
-    if (id == 0) throw new IOException("Zero packet identifier or alias");
+    if (id == 0) {
+      throw new IOException("Zero packet identifier or alias");
+    }
     return id;
   }
 
   private static void checkId(int id) {
-    if (id < 1 || id > 65535) throw new IllegalArgumentException("Invalid packet identifier or alias");
+    if (id < 1 || id > 65535) {
+      throw new IllegalArgumentException("Invalid packet identifier or alias");
+    }
   }
 
   private static void checkReason(Integer reason) {
