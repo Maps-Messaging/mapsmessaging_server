@@ -95,7 +95,7 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
     byte[] clear;
     try {
       SecretKey key = keys.resolveSecretKey(envelope.senderIdentifier(), scheme);
-      var protectedContent = new MqttSn2CryptoProvider.ProtectedPayload(
+      MqttSn2CryptoProvider.ProtectedPayload protectedContent = new MqttSn2CryptoProvider.ProtectedPayload(
           envelope.protectedPacket(), envelope.authenticationTag());
       if (scheme <= 0x04 && envelope.tagLengthCode() >= 4) {
         // CSD01 permits leftmost-bit truncation for authentication-only
@@ -156,7 +156,7 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
     // the short/extended packet header. Ciphertext has the same length as plaintext.
     byte[] placeholderTag = new byte[tagSize];
     byte[] placeholderPacket = new byte[plaintext.length];
-    var template = new MqttSn2ProtectionCodec.Envelope(outboundScheme, tagCode,
+    MqttSn2ProtectionCodec.Envelope template = new MqttSn2ProtectionCodec.Envelope(outboundScheme, tagCode,
         sender, salt, new byte[0], counter, new byte[0], placeholderPacket, placeholderTag);
     ByteBuffer templateWire = MqttSn2ProtectionCodec.encode(template, this::tagLength);
     byte[] prefix = MqttSn2ProtectionCodec.decode(templateWire, this::tagLength)
@@ -172,7 +172,7 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
     if (protectedPayload.protectedBytes().length != plaintext.length) {
       throw new IOException("Protection provider changed ciphertext size");
     }
-    var envelope = new MqttSn2ProtectionCodec.Envelope(outboundScheme, tagCode,
+    MqttSn2ProtectionCodec.Envelope envelope = new MqttSn2ProtectionCodec.Envelope(outboundScheme, tagCode,
         sender, salt, new byte[0], counter, prefix,
         protectedPayload.protectedBytes(), protectedPayload.tag());
     return MqttSn2ProtectionCodec.encode(envelope, this::tagLength).asReadOnlyBuffer();
