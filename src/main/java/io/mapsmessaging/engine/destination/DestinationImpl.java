@@ -44,6 +44,9 @@ import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
@@ -78,6 +81,8 @@ import java.util.concurrent.*;
  */
 public class DestinationImpl implements BaseDestination {
 
+  private static final Logger logger = LoggerFactory.getLogger(DestinationImpl.class);
+
   private static final String SUBSCRIPTIONS_KEY = "subscriptions";
 
   @Getter
@@ -104,6 +109,7 @@ public class DestinationImpl implements BaseDestination {
   protected final DestinationJMX destinationJMXBean;
   private final ScheduledFuture<?> reaperFuture;
   private final Object reaperLock = new Object();
+  private final ReaperRetryQueue reaperRetries = new ReaperRetryQueue();
   private boolean reaperQueued;
   private boolean reaperRunning;
   private boolean reaperPending;
@@ -285,6 +291,7 @@ public class DestinationImpl implements BaseDestination {
     synchronized (reaperLock) {
       closed = true;
       reaperPending = false;
+      reaperRetries.clear();
     }
     reaperFuture.cancel(false);
     resource.close();
@@ -312,7 +319,7 @@ public class DestinationImpl implements BaseDestination {
   }
 
   private ScheduledFuture<?> queueReaper() {
-    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::requestReaper, 5, 5, TimeUnit.SECONDS);
+    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::requestReaperSafely, 5, 5, TimeUnit.SECONDS);
   }
 
   private void loadSchema() throws IOException {
@@ -910,16 +917,58 @@ public class DestinationImpl implements BaseDestination {
 
   //</editor-fold>
 
+  /** Guard already queued removals against failures discovered after their interest snapshot. */
+  public boolean prepareCompletedRemoval(Queue<Long> messageIds) {
+    synchronized (reaperLock) {
+      if (closed || reaperRetries.blocksFreshWork()) {
+        return false;
+      }
+      reaperRetries.excludePending(messageIds);
+      return true;
+    }
+  }
+
+  /** Hold an isolated failure until its owning bulk-removal pass releases it for delayed retry. */
+  public void holdCompletedMessage(long messageId) {
+    synchronized (reaperLock) {
+      if (!closed) {
+        reaperRetries.hold(messageId);
+      }
+    }
+  }
+
+  /** Preserve failed/unprocessed IDs; the periodic tick retries them after a bounded delay. */
+  public void deferCompletedMessages(Queue<Long> messageIds, boolean batchFailure) {
+    synchronized (reaperLock) {
+      if (closed) {
+        return;
+      }
+      reaperRetries.defer(messageIds, batchFailure);
+    }
+  }
+
+  private void requestReaperSafely() {
+    try {
+      requestReaper();
+    } catch (RuntimeException failure) {
+      deferCompletedMessages(new ArrayDeque<>(), true);
+      logger.log(ServerLogMessages.DESTINATION_REAPER_FAILED, failure, fullyQualifiedNamespace, "periodic submission");
+    }
+  }
+
   private void requestReaper() {
     synchronized (reaperLock) {
       if (closed) {
+        return;
+      }
+      if (reaperRetries.blocksFreshWork()) {
         return;
       }
       if (reaperRunning) {
         reaperPending = true;
         return;
       }
-      if (reaperQueued || completionQueue.isEmpty()) {
+      if (reaperQueued || (completionQueue.isEmpty() && !reaperRetries.hasReadyIds())) {
         return;
       }
       reaperQueued = true;
@@ -927,6 +976,8 @@ public class DestinationImpl implements BaseDestination {
         subscriptionTaskQueue.submit(new EventReaper());
       } catch (RuntimeException failure) {
         reaperQueued = false;
+        reaperRetries.defer(new ArrayDeque<>(), true);
+        logger.log(ServerLogMessages.DESTINATION_REAPER_FAILED, failure, fullyQualifiedNamespace, "reaper submission");
         throw failure;
       }
     }
@@ -938,13 +989,17 @@ public class DestinationImpl implements BaseDestination {
     public Response taskCall() {
       synchronized (reaperLock) {
         reaperQueued = false;
-        if (closed) {
+        if (closed || reaperRetries.blocksFreshWork()) {
           return new io.mapsmessaging.engine.tasks.VoidResponse();
         }
         reaperRunning = true;
       }
+      Queue<Long> completed = new ArrayDeque<>();
       try {
-        Queue<Long> completed = completionQueue.getAndClear();
+        synchronized (reaperLock) {
+          completed = completionQueue.getAndClear();
+          reaperRetries.drainReadyInto(completed);
+        }
         if (!completed.isEmpty()) {
           completed.removeAll(subscriptionManager.getAll());
           if (!completed.isEmpty()) {
@@ -953,6 +1008,8 @@ public class DestinationImpl implements BaseDestination {
           }
         }
       } catch (RuntimeException processingFailure) {
+        deferCompletedMessages(completed, true);
+        logger.log(ServerLogMessages.DESTINATION_REAPER_FAILED, processingFailure, fullyQualifiedNamespace, "interest lookup/removal submission");
         try {
           finishReaper();
         } catch (RuntimeException schedulingFailure) {
@@ -968,14 +1025,15 @@ public class DestinationImpl implements BaseDestination {
   private void finishReaper() {
     synchronized (reaperLock) {
       reaperRunning = false;
-      boolean rerun = reaperPending || !completionQueue.isEmpty();
+      boolean rerun = reaperPending || !completionQueue.isEmpty() || reaperRetries.hasReadyIds();
       reaperPending = false;
-      if (rerun && !closed && !reaperQueued) {
+      if (rerun && !closed && !reaperQueued && !reaperRetries.blocksFreshWork()) {
         reaperQueued = true;
         try {
           subscriptionTaskQueue.submit(new EventReaper());
         } catch (RuntimeException failure) {
           reaperQueued = false;
+          reaperRetries.defer(new ArrayDeque<>(), true);
           throw failure;
         }
       }

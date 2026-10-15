@@ -605,6 +605,8 @@ public enum ServerLogMessages implements LogMessage {
   DESTINATION_MANAGER_STOPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Shut down started"),
   DESTINATION_MANAGER_CLEARING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Clear session id {} requested"),
   DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "\"Reloaded temp destination {}, now deleting"),
+  DESTINATION_REAPER_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Destination {} reaper failed during {}; retry delayed by at least 5 seconds"),
+  DESTINATION_REAPER_REMOVE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Destination {} failed removing completed message {}; holding for delayed retry"),
   DESTINATION_ERROR_SETTING_SCHEMA(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Error setting schema for destination {}"),
   //</editor-fold>
 
