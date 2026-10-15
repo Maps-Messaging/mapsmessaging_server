@@ -160,7 +160,9 @@ public final class MqttSn2OutgoingDeliveryManager {
     CompletableFuture<ByteBuffer> barrier;
     synchronized (this) {
       if (brokerAckBarrier != null && (!brokerAckBarrier.isDone() || brokerAckBarrier.isCompletedExceptionally())) {
-        if (ack.type() == MqttSn2PacketType.PUBREC && inFlight != null && ack.packetIdentifier() == inFlight.packetIdentifier) return brokerAckBarrier;
+        if (ack.type() == MqttSn2PacketType.PUBREC && inFlight != null && ack.packetIdentifier() == inFlight.packetIdentifier) {
+          return brokerAckBarrier;
+        }
         throw new IOException("MQTT-SN broker acknowledgement is still pending");
       }
       boolean requiresBrokerAck = ack.type() == MqttSn2PacketType.PUBREC && inFlight != null
@@ -178,7 +180,9 @@ public final class MqttSn2OutgoingDeliveryManager {
         barrier = null;
       }
     }
-    if (barrier == null) return CompletableFuture.completedFuture(acknowledge(ack, now));
+    if (barrier == null) {
+      return CompletableFuture.completedFuture(acknowledge(ack, now));
+    }
     try {
       ByteBuffer response = acknowledge(ack, now);
       acknowledge.apply(identity).whenComplete((ignored, failure) -> {
@@ -260,7 +264,9 @@ public final class MqttSn2OutgoingDeliveryManager {
   }
 
   private ByteBuffer retire(String subscriptionKey, Long messageId, long now) throws IOException {
-    if (messageId != null && packetIds.getPacketId(subscriptionKey, messageId) != null) return null;
+    if (messageId != null && packetIds.getPacketId(subscriptionKey, messageId) != null) {
+      return null;
+    }
     Set<PacketIdStore.Delivery> live = new HashSet<>(packetIds.outstanding().values());
     java.util.function.Predicate<PacketIdStore.Delivery> matches = delivery -> delivery.topic().equals(subscriptionKey)
         && (messageId == null || delivery.messageId() == messageId) && !live.contains(delivery);
@@ -357,7 +363,9 @@ public final class MqttSn2OutgoingDeliveryManager {
 
   /** Returns the exact outstanding request for retransmission, or null when not due. */
   public synchronized ByteBuffer retryExpired(long now) {
-    if (brokerAckBarrier != null && (!brokerAckBarrier.isDone() || brokerAckBarrier.isCompletedExceptionally())) return null;
+    if (brokerAckBarrier != null && (!brokerAckBarrier.isDone() || brokerAckBarrier.isCompletedExceptionally())) {
+      return null;
+    }
     if (inFlight == null || now - inFlight.lastSentAt < retryIntervalMillis) {
       return null;
     }
