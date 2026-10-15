@@ -83,7 +83,9 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
     MqttSn2ProtectionCodec.Envelope envelope = MqttSn2ProtectionCodec.decode(
         wire, this::tagLength);
     int scheme = envelope.scheme();
-    if (!accepted.contains(scheme)) throw new IOException("Disallowed protection scheme");
+    if (!accepted.contains(scheme)) {
+      throw new IOException("Disallowed protection scheme");
+    }
     if (envelope.monotonicCounter().length != 4) {
       throw new IOException("Protection requires four-byte monotonic counter");
     }
@@ -177,13 +179,19 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
   }
 
   private int tagLength(int scheme, int code) throws IOException {
-    if (!accepted.contains(scheme)) throw new IOException("Disallowed protection scheme");
+    if (!accepted.contains(scheme)) {
+      throw new IOException("Disallowed protection scheme");
+    }
     int expected = providers.require(scheme).tagLength(scheme);
     if (scheme >= 0x40 && scheme <= 0x49) {
-      if (code == 1) return expected;
+      if (code == 1) {
+        return expected;
+      }
       throw new IOException("AEAD requires nominal authentication-tag code 0x1");
     }
-    if (code == 0 || code == 1) return expected;
+    if (code == 0 || code == 1) {
+      return expected;
+    }
     if (scheme <= 0x04 && code >= 4 && code <= 15 && code * 2 <= expected) {
       return code * 2;
     }
@@ -191,8 +199,12 @@ public final class MqttSn2ProtectionSession implements MqttSn2ProtectionPolicy {
   }
 
   private static byte[] nonce(int scheme, byte[] prefix) {
-    if (scheme >= 0x40 && scheme <= 0x45) return MqttSn2NonceDeriver.derive(prefix, 13);
-    if (scheme >= 0x46 && scheme <= 0x49) return MqttSn2NonceDeriver.derive(prefix, 12);
+    if (scheme >= 0x40 && scheme <= 0x45) {
+      return MqttSn2NonceDeriver.derive(prefix, 13);
+    }
+    if (scheme >= 0x46 && scheme <= 0x49) {
+      return MqttSn2NonceDeriver.derive(prefix, 12);
+    }
     return new byte[0];
   }
 }
