@@ -94,7 +94,9 @@ public class SessionImpl {
 
   /** A transport borrows this store; only the owning session releases its handles. */
   public synchronized io.mapsmessaging.storage.delivery.PacketIdStore getOrCreatePacketIdStore(int maximum) throws IOException {
-    if (isClosed) throw new IOException("Session is closed");
+    if (isClosed) {
+      throw new IOException("Session is closed");
+    }
     if (packetIdStore == null) {
       packetIdStore = deliveryStateCoordinator.attach(maximum, () -> createPacketIdStore(maximum), context.getClientConnection());
     }
