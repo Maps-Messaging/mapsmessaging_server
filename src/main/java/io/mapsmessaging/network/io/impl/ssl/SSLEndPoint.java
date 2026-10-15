@@ -245,13 +245,41 @@ public class SSLEndPoint extends TCPEndPoint implements BufferedReadEndPoint {
 
         if (result.getStatus() == Status.BUFFER_UNDERFLOW) {
           encryptedIn.compact();
+          if (!encryptedIn.hasRemaining()) {
+            // The inbound buffer is full yet the engine still needs more bytes to
+            // decode a record: we can neither read more (no space) nor make
+            // progress. Left alone this spins the reader at 100% CPU and the
+            // socket never drains. Tear the endpoint down instead - a reconnect
+            // re-handshakes with a fresh buffer.
+            throw new IOException("SSL inbound buffer full on BUFFER_UNDERFLOW; record exceeds "
+                + encryptedIn.capacity() + " byte buffer, closing endpoint");
+          }
           return response;
         }
 
+        if (result.getStatus() == Status.BUFFER_OVERFLOW) {
+          if (applicationIn.position() > 0) {
+            break; // hand back what has been decoded; the caller drains it and reads again
+          }
+          // Not even one record fits in an empty buffer, so it can never be decoded: nothing
+          // leaves encryptedIn, the socket stops draining and the peer stalls. Fail loudly.
+          throw new IOException("SSL read buffer of " + applicationIn.capacity()
+              + " bytes cannot hold a TLS record of up to "
+              + sslEngine.getSession().getApplicationBufferSize() + " bytes, closing endpoint");
+        }
+
         SSLEngineResult.HandshakeStatus hs = result.getHandshakeStatus();
-        if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK
-            || hs == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-          break; // let handshake manager drive next step
+        if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+          // After the handshake the manager is SSLHandshakeManagerFinished, which drives
+          // nothing, so a task requested later (e.g. by a TLS 1.3 key update) would never
+          // run. Run it here and retry the unwrap.
+          if (!runDelegatedTasks()) {
+            break; // nothing to run, do not spin on an unchanged status
+          }
+          continue;
+        }
+        if (hs == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+          break; // needs an outbound record, driven by the write path
         }
 
         boolean noProgress = encryptedIn.position() == beforeIn && applicationIn.position() == beforeOut;
@@ -267,6 +295,21 @@ public class SSLEndPoint extends TCPEndPoint implements BufferedReadEndPoint {
       }
     }
     return response;
+  }
+
+  /**
+   * Runs any tasks the engine has delegated, as the handshake manager does during negotiation.
+   *
+   * @return true if at least one task was run, false if the engine had none pending
+   */
+  private boolean runDelegatedTasks() {
+    Runnable runnable;
+    boolean ranTask = false;
+    while ((runnable = sslEngine.getDelegatedTask()) != null) {
+      runnable.run();
+      ranTask = true;
+    }
+    return ranTask;
   }
 
   private SSLEngineResult handleSSLEngineResult(SSLEngineResult result) throws IOException {
