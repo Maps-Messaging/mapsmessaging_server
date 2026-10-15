@@ -115,7 +115,9 @@ public class PacketIdManager {
           deliveryIdentities.put(entry.getKey(), entry.getValue());
         }
       }
-    } catch (IOException failure) { throw new UncheckedIOException(failure); }
+    } catch (IOException failure) {
+      throw new UncheckedIOException(failure);
+    }
   }
 
   public static String deliveryKey(SubscribedEventManager subscription) {
@@ -257,7 +259,9 @@ public class PacketIdManager {
           return;
         }
         deliveryStore.flush();
-      } catch (IOException failure) { throw new UncheckedIOException(failure); }
+      } catch (IOException failure) {
+        throw new UncheckedIOException(failure);
+      }
     }
     retireDelivery(key, messageId);
   }
@@ -345,7 +349,9 @@ public class PacketIdManager {
           outstandingPacketId.put(identifier, new PacketIdentifierMap(identifier, subscription, messageId));
           deliveryIdentities.put(identifier, new PacketIdStore.Delivery(key, messageId));
           return identifier;
-        } catch (IOException failure) { throw new UncheckedIOException(failure); }
+        } catch (IOException failure) {
+          throw new UncheckedIOException(failure);
+        }
       }
       boolean reserved = consumeReservation(subscription);
       while (!reserved && !hasPublishCapacity()) {
@@ -432,7 +438,9 @@ public class PacketIdManager {
               }
             }
           }
-        } catch (IOException failure) { throw new UncheckedIOException(failure); }
+        } catch (IOException failure) {
+          throw new UncheckedIOException(failure);
+        }
       }
       runtimeQos.remove(id);
       runtimePubComp.remove(id);
