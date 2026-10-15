@@ -404,7 +404,10 @@ public final class MqttSn2Protocol extends Protocol {
   private void sendConnectFailure(MqttSn2ConnectCodec.Connect request, int reason) {
     send(MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(false,
         request.packetIdentifier(), reason, null, null, null, null, request.clientIdentifier())), () -> {
-      try { close(); } catch (IOException ignored) { }
+      try {
+        close();
+      } catch (IOException ignored) {
+      }
     });
   }
 
@@ -638,7 +641,10 @@ public final class MqttSn2Protocol extends Protocol {
 
   private void deliveryFailure(Throwable failure) {
     AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
-    try { close(); } catch (IOException ignored) { }
+    try {
+      close();
+    } catch (IOException ignored) {
+    }
   }
 
   private void scheduleRetry() {
@@ -652,7 +658,10 @@ public final class MqttSn2Protocol extends Protocol {
         send(retry, null);
         scheduleRetry();
       } else if (outgoing.isRetryExhausted()) {
-        try { close(); } catch (IOException ignored) { }
+        try {
+          close();
+        } catch (IOException ignored) {
+        }
       } else if (outgoing.hasInFlightDelivery()) {
         scheduleRetry();
       }
@@ -671,7 +680,10 @@ public final class MqttSn2Protocol extends Protocol {
         request.packetIdentifier(), null, 0)), null);
     if (sleepTask != null) sleepTask.cancel(false);
     sleepTask = SimpleTaskScheduler.getInstance().schedule(() -> {
-      try { close(); } catch (IOException ignored) { }
+      try {
+        close();
+      } catch (IOException ignored) {
+      }
     }, Math.max(1L, request.durationSeconds() * 1_500L), TimeUnit.MILLISECONDS);
   }
 
@@ -819,7 +831,10 @@ public final class MqttSn2Protocol extends Protocol {
       }
     } catch (IOException failure) {
       AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
-      try { close(); } catch (IOException ignored) { }
+      try {
+        close();
+      } catch (IOException ignored) {
+      }
     }
   }
 
@@ -856,7 +871,10 @@ public final class MqttSn2Protocol extends Protocol {
       else if (lifecycle.state() == MqttSn2Lifecycle.State.AWAKE) drainSleepingQueue();
     } catch (IOException failure) {
       AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
-      try { close(); } catch (IOException ignored) { }
+      try {
+        close();
+      } catch (IOException ignored) {
+      }
     }
   }
 
