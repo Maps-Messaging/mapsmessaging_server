@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -32,7 +33,7 @@ public class PubAckListener5 extends PacketListener5 {
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     PubAck5 pubAck = (PubAck5) mqttPacket;
-    var manager = ((MQTT5Protocol) protocol).getPacketIdManager();
+    PacketIdManager manager = ((MQTT5Protocol) protocol).getPacketIdManager();
     int qos = manager.getPacketQos(pubAck.getPacketIdentifier());
     if ((manager.hasDeliveryStore() || qos != 0) && (qos != 1 || manager.isAwaitingPubComp(pubAck.getPacketIdentifier()))) {
       return null;
