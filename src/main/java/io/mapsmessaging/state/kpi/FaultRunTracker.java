@@ -42,6 +42,8 @@ import java.util.*;
  */
 final class FaultRunTracker {
 
+  private static final String NO_EFFECT = "NO_EFFECT";
+
   static final String ALL = "ALL";
 
   enum Stage {
@@ -148,41 +150,62 @@ final class FaultRunTracker {
     Iterator<FaultRun> iterator = open.values().iterator();
     while (iterator.hasNext()) {
       FaultRun run = iterator.next();
-      if (now.toEpochMilli() < run.injectedAt) {
-        continue;
-      }
-      if (run.detectedAt == null) {
-        detectFromKpis(run, rawBands, now);
-      }
-      if (overall != Band.NO_DATA && overall.getCode() > run.baselineOverall) {
-        if (run.degradedAt == null) {
-          run.degradedAt = Math.max(run.injectedAt, (overallSince == null ? now : overallSince).toEpochMilli());
-        }
-        if (overall == Band.RED) {
-          run.wentRed = true;
-        }
-      }
-      if (run.degradedAt != null) {
-        if (usableSince == null) {
-          run.usableRestoredAt = null;
-        } else if (run.wentRed && run.usableRestoredAt == null) {
-          run.usableRestoredAt = Math.max(run.degradedAt, usableSince.toEpochMilli());
-        }
-        if (fullySince != null) {
-          run.fullyRestoredAt = Math.max(run.degradedAt, fullySince.toEpochMilli());
-          close(run, "RESTORED", now);
+      if (now.toEpochMilli() >= run.injectedAt) {
+        updateDetectionAndDegradation(run, rawBands, overall, overallSince, now);
+        if (closeCompletedRun(run, usableSince, fullySince, now)) {
           iterator.remove();
           closed.add(run);
-          continue;
         }
-      }
-      if (now.toEpochMilli() - run.injectedAt > runTimeout.toMillis()) {
-        close(run, run.degradedAt == null && run.detectedAt == null ? "NO_EFFECT" : "NOT_RESTORED", now);
-        iterator.remove();
-        closed.add(run);
       }
     }
     return closed;
+  }
+
+  private void updateDetectionAndDegradation(
+      FaultRun run, Map<KpiId, Band> rawBands, Band overall, Instant overallSince, Instant now) {
+    if (run.detectedAt == null) {
+      detectFromKpis(run, rawBands, now);
+    }
+    updateDegradation(run, overall, overallSince, now);
+  }
+
+  private boolean closeCompletedRun(FaultRun run, Instant usableSince, Instant fullySince, Instant now) {
+    if (updateRestoration(run, usableSince, fullySince, now)) {
+      return true;
+    }
+    if (now.toEpochMilli() - run.injectedAt > runTimeout.toMillis()) {
+      close(run, run.degradedAt == null && run.detectedAt == null ? NO_EFFECT : "NOT_RESTORED", now);
+      return true;
+    }
+    return false;
+  }
+
+  private void updateDegradation(FaultRun run, Band overall, Instant overallSince, Instant now) {
+    if (overall != Band.NO_DATA && overall.getCode() > run.baselineOverall) {
+      if (run.degradedAt == null) {
+        run.degradedAt = Math.max(run.injectedAt, (overallSince == null ? now : overallSince).toEpochMilli());
+      }
+      if (overall == Band.RED) {
+        run.wentRed = true;
+      }
+    }
+  }
+
+  private boolean updateRestoration(FaultRun run, Instant usableSince, Instant fullySince, Instant now) {
+    if (run.degradedAt == null) {
+      return false;
+    }
+    if (usableSince == null) {
+      run.usableRestoredAt = null;
+    } else if (run.wentRed && run.usableRestoredAt == null) {
+      run.usableRestoredAt = Math.max(run.degradedAt, usableSince.toEpochMilli());
+    }
+    if (fullySince == null) {
+      return false;
+    }
+    run.fullyRestoredAt = Math.max(run.degradedAt, fullySince.toEpochMilli());
+    close(run, "RESTORED", now);
+    return true;
   }
 
   private void detectFromKpis(FaultRun run, Map<KpiId, Band> rawBands, Instant now) {
@@ -217,7 +240,7 @@ final class FaultRunTracker {
       return null;
     }
     open.remove(run.runId);
-    close(run, run.degradedAt == null && run.detectedAt == null ? "NO_EFFECT" : "ENDED", now);
+    close(run, run.degradedAt == null && run.detectedAt == null ? NO_EFFECT : "ENDED", now);
     return run;
   }
 
@@ -238,11 +261,11 @@ final class FaultRunTracker {
         if ("NOT_RESTORED".equals(outcome)) {
           typeStats.notRestored++;
         }
-        if ("NO_EFFECT".equals(outcome)) {
+        if (NO_EFFECT.equals(outcome)) {
           typeStats.noEffect++;
         }
       }
-      if ("NO_EFFECT".equals(outcome)) {
+      if (NO_EFFECT.equals(outcome)) {
         continue;
       }
       record(typeStats, Stage.DETECTION, run, run.detectedAt, true);

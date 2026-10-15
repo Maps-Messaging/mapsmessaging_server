@@ -187,7 +187,7 @@ public class SchemaManager implements Agent, SchemaResolver {
     List<SchemaConfig> schemas = new ArrayList<>();
     resources.stream()
         .filter(resource -> resource.getDefaultVersion() != null)
-        .map(resource -> resource.getDefaultVersion())
+        .map(SchemaResource::getDefaultVersion)
         .forEachOrdered(schemas::add);
     return schemas;
   }
@@ -197,7 +197,7 @@ public class SchemaManager implements Agent, SchemaResolver {
     List<SchemaConfig> schemas = new ArrayList<>();
     resources.stream()
         .filter(resource -> resource.getDefaultVersion() != null)
-        .map(resource -> resource.getDefaultVersion())
+        .map(SchemaResource::getDefaultVersion)
         .forEachOrdered(schemas::add);
     return schemas;
   }

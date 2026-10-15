@@ -35,7 +35,6 @@ import java.util.Objects;
 
 public class ServerCallbackHandler implements CallbackHandler {
 
-  private String username;
   private PasswordBuffer hashedPassword;
   private final String serverName;
 
@@ -56,7 +55,7 @@ public class ServerCallbackHandler implements CallbackHandler {
           ac.setAuthorizedID(ac.getAuthorizationID());
         }
       } else if (cb instanceof NameCallback nc) {
-        username = nc.getDefaultName();
+        String username = nc.getDefaultName();
         try {
           hashedPassword = identityLookup.getPasswordHash(username);
         } catch (GeneralSecurityException e) {

@@ -83,14 +83,15 @@ public class EndPointConnection extends EndPointServerStatus {
   private Future<?> futureTask;
 
   @Getter
+  @SuppressWarnings("java:S3077") // stateLock guards transitions; volatile publishes the selected state, whose lifecycle has its own synchronization.
   private volatile State state;
 
   @Getter
-  @Setter
+  @SuppressWarnings("java:S3077") // stateLock guards endpoint ownership; volatile publishes the current transport reference to callbacks.
   private volatile EndPoint endPoint;
 
   @Getter
-  @Setter
+  @SuppressWarnings("java:S3077") // stateLock guards protocol ownership; volatile publishes the reference, not mutable protocol internals.
   private volatile Protocol protocol;
 
   @Getter
@@ -176,27 +177,46 @@ public class EndPointConnection extends EndPointServerStatus {
 
   @Override
   public void handleNewEndPoint(EndPoint newEndPoint) throws IOException {
-    State currentState = state;
-    State stateChange;
-
-    if (running.get() && currentState instanceof Connecting) {
-      endPoint = newEndPoint;
-      stateChange = new Connected(this);
-    } else {
-      newEndPoint.close();
-      stateChange = new Disconnected(this);
+    synchronized (stateLock) {
+      if (running.get() && !paused.get() && state instanceof Connecting
+          && (protocol == null || protocol.getEndPoint() == newEndPoint)) {
+        endPoint = newEndPoint;
+        scheduleState(new Connected(this));
+        return;
+      }
     }
-
-    scheduleState(stateChange);
+    // A rejected completion must not replace the current generation's state.
+    newEndPoint.close();
   }
 
   @Override
   public void handleCloseEndPoint(EndPoint closedEndPoint) {
-    if (endPoint == closedEndPoint) {
+    synchronized (stateLock) {
+      EndPoint currentEndPoint = endPoint;
+      if (currentEndPoint == null && state instanceof Connecting && protocol != null) {
+        currentEndPoint = protocol.getEndPoint();
+      } else if (currentEndPoint == null && state instanceof Disconnected disconnected) {
+        currentEndPoint = disconnected.getActiveEndPoint();
+      }
+      if (currentEndPoint != closedEndPoint) {
+        return;
+      }
       endPoint = null;
+      if (running.get() && !paused.get()) {
+        scheduleState(new Delayed(this));
+      }
     }
-    if (running.get() && !paused.get()) {
-      scheduleState(new Delayed(this));
+  }
+
+  public void setEndPoint(EndPoint newEndPoint) {
+    synchronized (stateLock) {
+      endPoint = newEndPoint;
+    }
+  }
+
+  public void setProtocol(Protocol newProtocol) {
+    synchronized (stateLock) {
+      protocol = newProtocol;
     }
   }
 

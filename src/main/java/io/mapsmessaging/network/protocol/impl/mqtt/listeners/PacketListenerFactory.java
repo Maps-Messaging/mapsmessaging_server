@@ -53,6 +53,7 @@ public class PacketListenerFactory {
     //
     listeners[MQTTPacket.CONNACK] = new ConnAckListener();
     listeners[MQTTPacket.SUBACK] = new SubAckListener();
+    listeners[MQTTPacket.UNSUBACK] = new UnsubAckListener();
     listeners[MQTTPacket.PINGRESP] = new PingResponseListener();
   }
 

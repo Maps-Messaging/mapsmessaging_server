@@ -72,6 +72,26 @@ class ConnectingTest {
   }
 
   @Test
+  void upgradeAcceptsCrLfSplitAtAnyLineBoundary() throws Exception {
+    byte[] request = REQUEST.getBytes(StandardCharsets.US_ASCII);
+    for (int split = 1; split < request.length; split++) {
+      if (request[split - 1] != '\r') {
+        continue;
+      }
+      Connecting connecting = new Connecting();
+      TestEndPoint endpoint = new TestEndPoint();
+      Packet initial = packet(request, 0, split);
+      assertNull(connecting.handle(initial, endpoint));
+
+      byte[] unfinished = remaining(initial);
+      byte[] combined = new byte[unfinished.length + request.length - split];
+      System.arraycopy(unfinished, 0, combined, 0, unfinished.length);
+      System.arraycopy(request, split, combined, unfinished.length, request.length - split);
+      assertNotNull(connecting.handle(new Packet(ByteBuffer.wrap(combined)), endpoint));
+    }
+  }
+
+  @Test
   void rejectsUnsupportedVersion() {
     Connecting connecting = new Connecting();
     String request = REQUEST.replace("Sec-WebSocket-Version: 13", "Sec-WebSocket-Version: 12");

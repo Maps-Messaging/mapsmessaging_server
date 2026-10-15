@@ -45,6 +45,9 @@ public class Connect extends MQTT_SNPacket {
       throw new IOException("Malformed flags");
     }
     protocolId = packet.get();
+    if (protocolId != 1) {
+      throw new IOException("Unsupported MQTT-SN 1.2 protocol identifier");
+    }
     duration = MQTTPacket.readShort(packet);
     byte[] tmp = new byte[length - 6];
     packet.get(tmp, 0, tmp.length);

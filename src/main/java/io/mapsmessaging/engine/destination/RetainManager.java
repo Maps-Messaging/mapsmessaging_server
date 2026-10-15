@@ -68,6 +68,8 @@ public class RetainManager {
     if (newRetainId != -1) {
       retainId.set(newRetainId);
       retainIndex.offer(newRetainId);
+    } else {
+      retainId.set(-1);
     }
     return old != null ? old : -1;
   }

@@ -69,7 +69,7 @@ public class SchemaConfigDtoMapper {
 
     List<SchemaConfigDTO> results = new ArrayList<>();
     schemaConfigs.stream()
-        .map(schemaConfig -> toDto(schemaConfig))
+        .map(SchemaConfigDtoMapper::toDto)
         .forEachOrdered(results::add);
     return results.toArray(new SchemaConfigDTO[0]);
   }
@@ -81,7 +81,7 @@ public class SchemaConfigDtoMapper {
 
     List<SchemaConfigDTO> results = new ArrayList<>();
     schemaConfigs.stream()
-        .map(schemaConfig -> toDto(schemaConfig))
+        .map(SchemaConfigDtoMapper::toDto)
         .forEachOrdered(results::add);
     return results;
   }

@@ -44,7 +44,7 @@ final class DeterministicJsonWriter {
     }
 
     if (v instanceof Boolean matchedBoolean) {
-      sb.append((matchedBoolean) ? "true" : "false");
+      sb.append(matchedBoolean.booleanValue() ? "true" : "false");
       return;
     }
 

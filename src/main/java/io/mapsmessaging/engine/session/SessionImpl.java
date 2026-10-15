@@ -79,6 +79,60 @@ import java.util.concurrent.*;
  */
 public class SessionImpl {
 
+  private io.mapsmessaging.storage.alias.TopicAliasRegistry topicAliasRegistry;
+  private io.mapsmessaging.storage.delivery.PacketIdStore packetIdStore;
+  protected final DeliveryStateCoordinator deliveryStateCoordinator;
+
+  /** Returns existing delivery state without initializing storage for another protocol. */
+  public synchronized io.mapsmessaging.storage.delivery.PacketIdStore getPacketIdStore() {
+    return packetIdStore;
+  }
+
+  public java.util.concurrent.CompletableFuture<Void> ackRecoveredDelivery(io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
+    return subscriptionManager.acknowledgeRecoveredDelivery(delivery);
+  }
+
+  /** A transport borrows this store; only the owning session releases its handles. */
+  public synchronized io.mapsmessaging.storage.delivery.PacketIdStore getOrCreatePacketIdStore(int maximum) throws IOException {
+    if (isClosed) {
+      throw new IOException("Session is closed");
+    }
+    if (packetIdStore == null) {
+      packetIdStore = deliveryStateCoordinator.attach(maximum, () -> createPacketIdStore(maximum), context.getClientConnection());
+    }
+    return packetIdStore;
+  }
+
+  protected io.mapsmessaging.storage.delivery.PacketIdStore createPacketIdStore(int maximum) throws IOException {
+    return io.mapsmessaging.storage.delivery.PacketIdStore.memory(maximum);
+  }
+
+  /** Removes discarded engine work from active or existing offline delivery state. */
+  public void clearPacketIdMapping(String key, long messageId) throws IOException {
+    deliveryStateCoordinator.retirePending(key, messageId);
+  }
+
+  /** Removes all outstanding allocations for a permanently removed subscription. */
+  public void clearPacketIdMappings(String key) throws IOException {
+    deliveryStateCoordinator.retireAll(key);
+  }
+
+  /** One registry per session. Repeated attachment reuses the existing instance. */
+  public synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(int maximum) throws IOException {
+    if (topicAliasRegistry == null) {
+      topicAliasRegistry = new io.mapsmessaging.storage.alias.TopicAliasRegistry(maximum);
+    }
+    return topicAliasRegistry;
+  }
+
+  /** A persistent session can attach a restored registry exactly once. */
+  protected synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry attachTopicAliasRegistry(
+      io.mapsmessaging.storage.alias.TopicAliasRegistry registry) {
+    if (topicAliasRegistry == null) topicAliasRegistry = java.util.Objects.requireNonNull(registry);
+    return topicAliasRegistry;
+  }
+
+
   protected final Logger logger;
   private final Future<?> scheduledFuture;
   private final SubscriptionController subscriptionManager;
@@ -129,6 +183,8 @@ public class SessionImpl {
     this.securityContext = securityContext;
     this.context = context;
     this.subscriptionManager = subscriptionManager;
+    DeliveryStateCoordinator coordinator = subscriptionManager.getDeliveryStateCoordinator();
+    deliveryStateCoordinator = coordinator != null ? coordinator : new DeliveryStateCoordinator();
     this.destinationManager = destinationManager;
     closureTaskManager = new ClosureTaskManager();
     namespaceMapping = new NamespaceMap(destinationManager);
@@ -164,9 +220,19 @@ public class SessionImpl {
    * 5. Closes the closure task manager.
    * 6. Clears the namespace mapping.
    */
-  void close() {
+  synchronized void close() {
     logger.log(ServerLogMessages.SESSION_MANAGER_CLOSING_SESSION, context.getId());
     isClosed = true;
+    if (topicAliasRegistry != null) topicAliasRegistry.suspend();
+    if (packetIdStore != null) {
+      try {
+        deliveryStateCoordinator.close(packetIdStore);
+      } catch (IOException error) {
+        logger.log(ServerLogMessages.SESSION_SAVE_STATE_ERROR, context.getId(), "packet identifier store", error);
+      } finally {
+        packetIdStore = null;
+      }
+    }
     securityContext.logout();
     if (scheduledFuture != null) {
       scheduledFuture.cancel(false);

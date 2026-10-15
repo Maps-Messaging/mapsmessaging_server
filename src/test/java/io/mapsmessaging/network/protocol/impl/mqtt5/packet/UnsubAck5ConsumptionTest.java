@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class UnsubAck5ConsumptionTest {
 
   @ParameterizedTest
-  @ValueSource(ints = {0, 1, 3})
+  @ValueSource(ints = {1, 3})
   void consumes_all_reason_codes_and_leaves_next_frame_untouched(int reasonCount) throws Exception {
     byte[] bytes = new byte[4 + reasonCount];
     bytes[1] = 7;
@@ -40,9 +40,16 @@ class UnsubAck5ConsumptionTest {
     bytes[bytes.length - 1] = (byte) 0x55;
     Packet packet = new Packet(ByteBuffer.wrap(bytes));
     UnsubAck5 acknowledgement = new UnsubAck5((byte) 0xB0, 3 + reasonCount, packet);
-    assertEquals("MQTTv5 UnsubAck[Packet Id:7]", acknowledgement.toString());
+    assertEquals(reasonCount, acknowledgement.getReasonCodes().size());
     assertEquals(3 + reasonCount, packet.position());
     assertEquals((byte) 0x55, packet.get());
+  }
+
+  @org.junit.jupiter.api.Test
+  void missing_reason_payload_is_malformed() {
+    Packet packet = new Packet(ByteBuffer.wrap(new byte[]{0, 7, 0}));
+    assertThrows(io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException.class,
+        () -> new UnsubAck5((byte) 0xB0, 3, packet));
   }
 
   @org.junit.jupiter.api.Test

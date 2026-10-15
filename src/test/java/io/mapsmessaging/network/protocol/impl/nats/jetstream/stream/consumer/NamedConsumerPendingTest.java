@@ -1,0 +1,182 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer;
+
+import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.data.ConsumerConfig;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
+class NamedConsumerPendingTest {
+  @Test
+  void aggregatesPendingDeliveryCountsAcrossStreamSubscriptions() {
+    SubscribedEventManager firstManager = mock(SubscribedEventManager.class);
+    SubscribedEventManager secondManager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo first = mock(StreamSubscriptionInfo.class);
+    StreamSubscriptionInfo second = mock(StreamSubscriptionInfo.class);
+    when(first.getSubscribedEventManager()).thenReturn(firstManager);
+    when(second.getSubscribedEventManager()).thenReturn(secondManager);
+    when(firstManager.getPending()).thenReturn(2);
+    when(secondManager.getPending()).thenReturn(3);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(first, second));
+
+    assertEquals(5, consumer.getAckPendingCount());
+  }
+
+  @Test
+  void emptyConsumerHasNoPendingAcknowledgements() {
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of());
+
+    assertEquals(0, consumer.getAckPendingCount());
+  }
+
+  @Test
+  void timedOutEmptyPullReturnsNoMessage() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(info.getSubscribedEventManager()).thenReturn(manager);
+    java.util.concurrent.CompletableFuture<io.mapsmessaging.engine.tasks.Response> pending = new java.util.concurrent.CompletableFuture<>();
+    when(manager.getNext()).thenReturn(pending);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage());
+  }
+
+
+  @Test
+  void noWaitPullReturnsImmediatelyWhenFutureIsUnresolved() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(info.getSubscribedEventManager()).thenReturn(manager);
+    java.util.concurrent.CompletableFuture<io.mapsmessaging.engine.tasks.Response> pending = new java.util.concurrent.CompletableFuture<>();
+    when(manager.getNext()).thenReturn(pending);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+  }
+
+  @Test
+  void emptyConsumerPollReturnsNull() throws Exception {
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of());
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage());
+  }
+
+
+  @Test
+  void repeatedNoWaitPullReusesPendingFuture() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(info.getSubscribedEventManager()).thenReturn(manager);
+    java.util.concurrent.CompletableFuture<io.mapsmessaging.engine.tasks.Response> pending = new java.util.concurrent.CompletableFuture<>();
+    when(manager.getNext()).thenReturn(pending);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    verify(manager, times(1)).getNext();
+  }
+
+
+  @Test
+  void successfulPullRotatesAcrossSubscribedStreams() throws Exception {
+    SubscribedEventManager firstManager = mock(SubscribedEventManager.class);
+    SubscribedEventManager secondManager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo first = mock(StreamSubscriptionInfo.class);
+    StreamSubscriptionInfo second = mock(StreamSubscriptionInfo.class);
+    when(first.getSubscribedEventManager()).thenReturn(firstManager);
+    when(second.getSubscribedEventManager()).thenReturn(secondManager);
+    io.mapsmessaging.api.MessageEvent firstEvent = mock(io.mapsmessaging.api.MessageEvent.class);
+    io.mapsmessaging.api.MessageEvent secondEvent = mock(io.mapsmessaging.api.MessageEvent.class);
+    io.mapsmessaging.engine.tasks.MessageResponse firstResponse = mock(io.mapsmessaging.engine.tasks.MessageResponse.class);
+    io.mapsmessaging.engine.tasks.MessageResponse secondResponse = mock(io.mapsmessaging.engine.tasks.MessageResponse.class);
+    when(firstResponse.getResponse()).thenReturn(firstEvent);
+    when(secondResponse.getResponse()).thenReturn(secondEvent);
+    when(firstManager.getNext()).thenReturn(java.util.concurrent.CompletableFuture.<io.mapsmessaging.engine.tasks.Response>completedFuture(firstResponse));
+    when(secondManager.getNext()).thenReturn(java.util.concurrent.CompletableFuture.<io.mapsmessaging.engine.tasks.Response>completedFuture(secondResponse));
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(first, second));
+
+    org.junit.jupiter.api.Assertions.assertSame(firstEvent, consumer.getNextMessage(true));
+    org.junit.jupiter.api.Assertions.assertSame(secondEvent, consumer.getNextMessage(true));
+    verify(firstManager, times(1)).getNext();
+    verify(secondManager, times(1)).getNext();
+  }
+  @Test
+  void closeCancelsOutstandingPollAndReleasesIt() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(info.getSubscribedEventManager()).thenReturn(manager);
+    java.util.concurrent.CompletableFuture<io.mapsmessaging.engine.tasks.Response> pending = new java.util.concurrent.CompletableFuture<>();
+    when(manager.getNext()).thenReturn(pending);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    consumer.close();
+
+    org.junit.jupiter.api.Assertions.assertTrue(pending.isCancelled());
+    org.junit.jupiter.api.Assertions.assertTrue(consumer.getEvents().isEmpty());
+  }
+  @Test
+  void closedConsumerNeverIssuesAnotherPoll() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo info = mock(StreamSubscriptionInfo.class);
+    when(info.getSubscribedEventManager()).thenReturn(manager);
+    NamedConsumer consumer = new NamedConsumer("consumer", "stream", new ConsumerConfig(), List.of(info));
+
+    consumer.close();
+
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage(true));
+    org.junit.jupiter.api.Assertions.assertNull(consumer.getNextMessage());
+    verify(manager, never()).getNext();
+  }
+
+  @Test
+  void pull_filters_actual_subject_metadata_inside_a_wildcard_destination() throws Exception {
+    SubscribedEventManager manager = mock(SubscribedEventManager.class);
+    StreamSubscriptionInfo stream = mock(StreamSubscriptionInfo.class);
+    when(stream.getSubscribedEventManager()).thenReturn(manager);
+    when(stream.getSubject()).thenReturn("orders/>");
+    var excluded = new io.mapsmessaging.api.MessageBuilder().setId(1)
+        .setMeta(new java.util.HashMap<>(java.util.Map.of("nats.subject", "orders.deleted"))).setOpaqueData(new byte[]{1}).build();
+    var included = new io.mapsmessaging.api.MessageBuilder().setId(2)
+        .setMeta(new java.util.HashMap<>(java.util.Map.of("nats.subject", "orders.created"))).setOpaqueData(new byte[]{2}).build();
+    var excludedEvent = new io.mapsmessaging.api.MessageEvent("EVENTS/orders/>", manager, excluded, () -> {});
+    var includedEvent = new io.mapsmessaging.api.MessageEvent("EVENTS/orders/>", manager, included, () -> {});
+    when(manager.getNext()).thenReturn(
+        java.util.concurrent.CompletableFuture.completedFuture(new io.mapsmessaging.engine.tasks.MessageResponse(excludedEvent)),
+        java.util.concurrent.CompletableFuture.completedFuture(new io.mapsmessaging.engine.tasks.MessageResponse(includedEvent)));
+    ConsumerConfig config = new ConsumerConfig();
+    config.setFilterSubject("orders.created");
+    NamedConsumer consumer = new NamedConsumer("consumer", "EVENTS", config, List.of(stream));
+    try {
+      org.junit.jupiter.api.Assertions.assertSame(includedEvent, consumer.getNextMessage(true));
+      verify(manager).ackReceived(1);
+      verify(manager, never()).ackReceived(2);
+    } finally {
+      consumer.close();
+    }
+  }
+
+}

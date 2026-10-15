@@ -19,7 +19,11 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
+import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
+import io.mapsmessaging.test.WaitForState;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -150,6 +154,10 @@ class MQTTPersistentSessionReplayTest extends MQTTBaseTest {
             "Missing replayed payload offline-replay-message-" + messageIndex);
       }
 
+      // Paho's message callback precedes the QoS 2 PUBREC/PUBREL/PUBCOMP exchange.
+      // Keep the transport open until the broker observes the replay acknowledgements.
+      awaitReplayAcknowledgements(findReplayProtocol(subscriberClientId).getPacketIdManager());
+      Assertions.assertTrue(restoredSubscriber.isConnected());
       restoredSubscriber.disconnect();
       restoredSubscriber.close();
       restoredSubscriber = null;
@@ -159,6 +167,26 @@ class MQTTPersistentSessionReplayTest extends MQTTBaseTest {
       closeQuietly(subscriber);
       deleteDirectory(persistenceDirectory);
     }
+  }
+
+  private MQTT5Protocol findReplayProtocol(String clientId) {
+    for (EndPointManager manager : md.getSubSystemManager().getNetworkManager().getAll()) {
+      if (manager.getEndPointServer() != null) {
+        for (EndPoint endpoint : manager.getEndPointServer().getActiveEndPoints()) {
+          if (endpoint.getBoundProtocol() instanceof MQTT5Protocol mqtt
+              && clientId.equals(mqtt.getSessionId())) {
+            return mqtt;
+          }
+        }
+      }
+    }
+    throw new AssertionError("No active MQTT 5 protocol for replay subscriber " + clientId);
+  }
+
+  static void awaitReplayAcknowledgements(PacketIdManager packetIds) throws IOException {
+    WaitForState.waitFor(REPLAY_TIMEOUT_SECONDS, TimeUnit.SECONDS, () -> packetIds.size() == 0);
+    Assertions.assertEquals(0, packetIds.size(),
+        "Replay acknowledgements must complete before disconnecting the subscriber");
   }
 
   static Stream<Arguments> mqttReplayTestParameters() {

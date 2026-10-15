@@ -113,7 +113,7 @@
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     <sonar.java.test.binaries>target/test-classes</sonar.java.test.binaries>
 
-    <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
+    <sonar.issue.ignore.multicriteria>IgnoreVar,AmqpDateBoundary,ResourceDateContract,ResourceDateFactory</sonar.issue.ignore.multicriteria>
     <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
     <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
       **/*.java
@@ -122,6 +122,15 @@
     <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.language>java</sonar.language>
+
+    <!-- Qpid AMQP Properties uses Date; preserve its timestamp API boundary. -->
+    <sonar.issue.ignore.multicriteria.AmqpDateBoundary.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.AmqpDateBoundary.ruleKey>
+    <sonar.issue.ignore.multicriteria.AmqpDateBoundary.resourceKey>src/main/java/io/mapsmessaging/network/protocol/impl/amqp/proton/transformers/impl/encoders/PropertiesEncoder.java</sonar.issue.ignore.multicriteria.AmqpDateBoundary.resourceKey>
+    <!-- ResourceProperties is a public, persisted YAML contract consumed by ResourceFactory. -->
+    <sonar.issue.ignore.multicriteria.ResourceDateContract.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.ResourceDateContract.ruleKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateContract.resourceKey>src/main/java/io/mapsmessaging/engine/resources/ResourceProperties.java</sonar.issue.ignore.multicriteria.ResourceDateContract.resourceKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateFactory.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.ResourceDateFactory.ruleKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateFactory.resourceKey>src/main/java/io/mapsmessaging/engine/resources/ResourceFactory.java</sonar.issue.ignore.multicriteria.ResourceDateFactory.resourceKey>
 
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>maps-messaging</sonar.organization>
@@ -155,6 +164,7 @@
 
     <license.fetch.skip>false</license.fetch.skip>
     <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
+    <mqttSn2ClientVersion>0.1.0-SNAPSHOT</mqttSn2ClientVersion>
 
   </properties>
 
@@ -440,7 +450,7 @@
         <version>3.6.0</version>
         <configuration>
           <argLine>
-            @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Dpaho.interop.directory=${basedir}/paho.mqtt.testing/interoperability -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
+            @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
           </argLine>
           <includes>
             <include>**/*Test.java</include>
@@ -649,6 +659,12 @@
 
   <repositories>
     <repository>
+      <id>maps_releases</id>
+      <name>maps_release_repository</name>
+      <url>https://repository.mapsmessaging.io/repository/maps_releases/</url>
+    </repository>
+
+    <repository>
       <id>maps_test_libs</id>
       <name>artifactory-releases</name>
       <url>https://repository.mapsmessaging.io/repository/maps_test_libs/</url>
@@ -781,6 +797,13 @@
       <groupId>io.mapsmessaging</groupId>
       <artifactId>authentication_library</artifactId>
       <version>${maps.auth.version}</version>
+    </dependency>
+
+    <!-- MQTT-SN 2.0 AES-CCM provider (explicit dependency, not transitive Auth leakage) -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>1.84</version>
     </dependency>
 
     <!-- Consul client API -->
@@ -1198,6 +1221,21 @@
       <groupId>net.ser1</groupId>
       <artifactId>gozirra-client</artifactId>
       <version>0.4.2</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Released CSD01 client used as an independent MQTT-SN 2.0 test peer. -->
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>mqtt-sn-2-client</artifactId>
+      <version>${mqttSn2ClientVersion}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>mqtt-sn-2-client-protection-bc</artifactId>
+      <version>${mqttSn2ClientVersion}</version>
       <scope>test</scope>
     </dependency>
 

@@ -44,6 +44,11 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
   }
 
   @Override
+  public String getDeliveryKey() {
+    return SubscribedEventManager.deliveryKey(getContext(), destination.getFullyQualifiedNamespace());
+  }
+
+  @Override
   public void rollbackReceived(long messageId) {
     destination.submit(new SubscriptionTransactionTask(subscription, messageId, false));
   }

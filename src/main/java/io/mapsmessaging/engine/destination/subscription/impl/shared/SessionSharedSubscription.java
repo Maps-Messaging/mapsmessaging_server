@@ -19,7 +19,10 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
+import io.mapsmessaging.engine.session.DeliveryStateCoordinator;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.SubscribedEventManager;
+import java.io.UncheckedIOException;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.subscription.OutstandingEventDetails;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
@@ -45,7 +48,10 @@ public class SessionSharedSubscription extends Subscription {
   private final AcknowledgementController acknowledgementController;
   private final MessageDeliveryCompletionTask completionTask;
   private final String sessionId;
+  private final String deliveryKey;
   private volatile boolean flowControlBlocked;
+  @SuppressWarnings("java:S3077") // Volatile safely publishes the reference; coordinator operations synchronize internally.
+  private volatile io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator;
 
   public SessionSharedSubscription(
       SharedSubscription sharedSubscription,
@@ -55,6 +61,7 @@ public class SessionSharedSubscription extends Subscription {
       AcknowledgementController acknowledgementController) {
     super(sessionImpl, context);
     this.sessionId = sessionId;
+    this.deliveryKey = SubscribedEventManager.deliveryKey(context, sharedSubscription.getDestinationImpl().getFullyQualifiedNamespace());
     this.sharedSubscription = sharedSubscription;
     this.acknowledgementController = acknowledgementController;
     this.flowControlBlocked = false;
@@ -63,6 +70,7 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void cancel() throws IOException {
+    clearDeliveryMappings();
     releaseProtocolSendSlot();
     List<OutstandingEventDetails> outstandingEvents = new ArrayList<>(acknowledgementController.getOutstanding());
     for (OutstandingEventDetails outstandingEvent : outstandingEvents) {
@@ -91,7 +99,7 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public boolean expired(long messageIdentifier) {
-    // Should be done via the main subscription
+    clearDeliveryMapping(messageIdentifier);
     return false;
   }
 
@@ -220,7 +228,59 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void ackReceived(long messageId) {
-    sharedSubscription.getDestinationImpl().submit(new SharedSubscriptionTask(sharedSubscription, acknowledgementController, messageId, true));
+    sharedSubscription.getDestinationImpl().submit(new SharedSubscriptionTask(sharedSubscription, acknowledgementController, messageId, true, () -> clearDeliveryMapping(messageId)));
+  }
+
+  @Override
+  public String getDeliveryKey() {
+    return deliveryKey;
+  }
+
+  public void clearDeliveryMapping(long messageId) {
+    try {
+      if (sessionImpl != null) {
+        sessionImpl.clearPacketIdMapping(getDeliveryKey(), messageId);
+      } else {
+        DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
+        if (coordinator != null) {
+          coordinator.retirePending(getDeliveryKey(), messageId);
+        }
+      }
+    } catch (IOException error) {
+      throw new UncheckedIOException("Unable to retire shared delivery packet identifier", error);
+    }
+  }
+
+  private void clearDeliveryMappings() throws IOException {
+    if (sessionImpl != null) {
+      sessionImpl.clearPacketIdMappings(getDeliveryKey());
+    } else {
+      DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
+      if (coordinator != null) {
+        coordinator.retireAll(getDeliveryKey());
+      }
+    }
+  }
+
+  @Override
+  public void setDeliveryStateCoordinator(io.mapsmessaging.engine.session.DeliveryStateCoordinator coordinator) {
+    deliveryStateCoordinator = coordinator;
+  }
+
+  @Override
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    DeliveryStateCoordinator coordinator = new DeliveryStateCoordinator();
+    coordinator.setPath(path);
+    setDeliveryStateCoordinator(coordinator);
+  }
+
+  @Override
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(long messageId) {
+    return submitRecoveredAcknowledgement(sharedSubscription.getDestinationImpl(), () -> {
+      new SharedSubscriptionTask(sharedSubscription, acknowledgementController, messageId, true,
+          () -> clearDeliveryMapping(messageId)).taskCall();
+      sharedSubscription.expired(messageId);
+    });
   }
 
   @Override

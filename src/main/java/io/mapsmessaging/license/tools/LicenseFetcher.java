@@ -20,7 +20,7 @@ public class LicenseFetcher {
   }
 
   @SuppressWarnings("java:S106") // CLI usage and directory failures must reach stderr before the logger is created.
-  static int runMain(String[] args) throws Exception {
+  static int runMain(String[] args) {
     if (args == null || args.length != 1) {
       System.err.println("Usage: LicenseFetcher <license-dir>");
       return 1;

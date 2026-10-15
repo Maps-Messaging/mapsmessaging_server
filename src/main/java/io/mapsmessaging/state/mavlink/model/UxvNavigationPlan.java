@@ -33,7 +33,7 @@ public record UxvNavigationPlan(
     missionPhase = copyRequiredPhase(missionPhase, "missionPhase");
     postMissionUploadPhase = copyRequiredPhase(postMissionUploadPhase, "postMissionUploadPhase");
     duration = duration == null ? Duration.ZERO : duration;
-    terminalAction = Objects.requireNonNull(terminalAction, "terminalAction must not be null");
+    Objects.requireNonNull(terminalAction, "terminalAction must not be null");
 
     if (duration.isNegative()) {
       throw new IllegalArgumentException("duration must not be negative");

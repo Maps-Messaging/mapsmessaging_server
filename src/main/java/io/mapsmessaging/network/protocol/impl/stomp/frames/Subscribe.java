@@ -46,11 +46,11 @@ public class Subscribe extends Frame {
   }
 
   public String getDestination() {
-    return destination.trim();
+    return destination;
   }
 
   public String getId() {
-    return id.trim();
+    return id;
   }
 
   public String getSelector() {
@@ -81,7 +81,8 @@ public class Subscribe extends Frame {
     isValid = (destination != null && id != null);
     ack = getHeader("ack");
     if (ack != null) {
-      ack = ack.toLowerCase().trim();
+      // ACK modes are protocol-defined, case-sensitive values.
+
       if (!(ack.equals("auto") || ack.equals("client") || ack.equals("client-individual"))) {
         isValid = false;
       }

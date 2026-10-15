@@ -324,7 +324,7 @@ public class MavlinkConfig extends MavlinkConfigDTO implements Config {
       return result;
     }
     source.stream()
-        .map(entry -> copyKnownSource(entry))
+        .map(this::copyKnownSource)
         .forEachOrdered(result::add);
     return result;
   }

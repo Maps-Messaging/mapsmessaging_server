@@ -19,9 +19,9 @@
 
 package io.mapsmessaging.network.protocol.impl.nats.frames;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.utilities.GsonFactory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -34,11 +34,16 @@ import java.util.concurrent.atomic.AtomicLong;
 @ToString
 public class InfoFrame extends NatsFrame {
 
+  private static final Gson WIRE_GSON = new GsonBuilder().create();
   private static final AtomicLong counter = new AtomicLong();
 
   private InfoData infoData;
 
   public InfoFrame(int maxPayloadLength) {
+    this(maxPayloadLength, null, null);
+  }
+
+  public InfoFrame(int maxPayloadLength, String serverId, String serverName) {
     super();
     this.infoData = new InfoData();
     this.infoData.setClientId(counter.incrementAndGet());
@@ -49,8 +54,8 @@ public class InfoFrame extends NatsFrame {
     infoData.setPort(4222);
     infoData.setHeaders(true);
     infoData.setClientIp("127.0.0.1");
-    infoData.setServerId(MessageDaemon.getInstance().getUuid().toString());
-    infoData.setServerName(MessageDaemon.getInstance().getId());
+    infoData.setServerId(serverId);
+    infoData.setServerName(serverName);
     infoData.setJava(System.getProperty("java.version"));
   }
 
@@ -61,7 +66,7 @@ public class InfoFrame extends NatsFrame {
 
   @Override
   protected void parseLine(String json) {
-    this.infoData = GsonFactory.getInstance().getSimpleGson().fromJson(json, InfoData.class);
+    this.infoData = WIRE_GSON.fromJson(json, InfoData.class);
   }
 
   @Override
@@ -69,7 +74,7 @@ public class InfoFrame extends NatsFrame {
     int start = packet.position();
     packet.put(getCommand());
     packet.put((byte) ' ');
-    String json = GsonFactory.getInstance().getSimpleGson().toJson(infoData);
+    String json = WIRE_GSON.toJson(infoData);
     packet.put(json.getBytes(StandardCharsets.US_ASCII));
     packet.put("\r\n".getBytes(StandardCharsets.US_ASCII));
     return packet.position() - start;

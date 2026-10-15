@@ -36,6 +36,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.FrameFactory;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
@@ -63,6 +64,7 @@ public class NatsProtocol extends Protocol {
   @Getter
   private final int maxReceiveSize;
   private final SessionState sessionState;
+  private final NatsOutboundCompletionTracker outboundCompletions = new NatsOutboundCompletionTracker();
   @Getter
   private final NatsConfigDTO natsConfig;
   private NatsFrame activeFrame;
@@ -93,6 +95,7 @@ public class NatsProtocol extends Protocol {
   @Override
   public void close() {
     logger.log(ServerLogMessages.NATS_CLOSING, endPoint.toString());
+    outboundCompletions.failOutstandingWrites();
     try {
       super.close();
       sessionState.close();
@@ -173,9 +176,15 @@ public class NatsProtocol extends Protocol {
   }
 
   public void writeFrame(NatsFrame frame) {
-    sentMessage();
-    selectorTask.push(frame);
-    logger.log(ServerLogMessages.STOMP_PUSHED_WRITE, frame);
+    outboundCompletions.track(frame);
+    try {
+      sentMessage();
+      selectorTask.push(frame);
+      logger.log(ServerLogMessages.STOMP_PUSHED_WRITE, frame);
+    } catch (RuntimeException failure) {
+      frame.complete();
+      throw failure;
+    }
   }
 
   public boolean processPacket(Packet packet) throws IOException {
@@ -187,12 +196,39 @@ public class NatsProtocol extends Protocol {
     } catch (EndOfBufferException eobe) {
       registerRead();
       throw eobe; // Do not close on an End Of Buffer Exception
+    } catch (NatsProtocolException protocolError) {
+      return handleProtocolError(protocolError);
     } catch (IOException e) {
       logger.log(ServerLogMessages.STOMP_PROCESSING_FRAME_EXCEPTION);
       endPoint.close();
       throw e;
     }
     return result;
+  }
+
+  private boolean handleProtocolError(NatsProtocolException protocolError) throws IOException {
+    activeFrame = null;
+    String message = protocolError.getMessage() == null ? "" : protocolError.getMessage();
+    boolean recoverable = message.toLowerCase().contains("invalid subject");
+
+    String wireError;
+    if (recoverable) {
+      wireError = "Invalid Subject";
+    } else if (message.toLowerCase().contains("payload")) {
+      wireError = "Maximum Payload Violation";
+    } else {
+      wireError = "Unknown Protocol Operation";
+    }
+
+    ErrFrame errorFrame = new ErrFrame(wireError);
+    if (!recoverable) {
+      errorFrame.setCompletionHandler(this::close);
+    }
+    writeFrame(errorFrame);
+    if (recoverable) {
+      registerRead();
+    }
+    return recoverable;
   }
 
   private boolean processEvent(Packet packet) throws IOException {

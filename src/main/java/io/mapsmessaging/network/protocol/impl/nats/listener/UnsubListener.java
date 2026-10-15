@@ -31,6 +31,7 @@ public class UnsubListener implements FrameListener {
   @Override
   public void frameEvent(NatsFrame frame, SessionState engine, boolean endOfBuffer) throws IOException {
     UnsubFrame unsubscribe = (UnsubFrame) frame;
+    engine.getJetStreamRequestManager().unregisterSid(unsubscribe.getSubscriptionId());
     engine.removeSubscription(unsubscribe.getSubscriptionId());
     if (engine.isVerbose()) {
       engine.send(new OkFrame());

@@ -148,15 +148,21 @@ final class CotEventPolicy {
       ClassificationRegistry.record(twin.getTwinId(), classificationOutcome(twin, baseType), baseType);
     }
     event.setType(applyMtiAffiliation(baseType, mti));
-    event.setHow(contact ? CONTACT_HOW : valueOrDefault(config == null ? null : config.getHow(), DEFAULT_HOW));
+    if (contact) {
+      event.setHow(CONTACT_HOW);
+    } else {
+      event.setHow(valueOrDefault(config == null ? null : config.getHow(), DEFAULT_HOW));
+    }
 
     if (removal) {
       ensureRemovalPoint(event, twin, config);
     } else {
-      long staleTimeoutMillis =
-          contact
-              ? CONTACT_STALE_TIMEOUT_MILLIS
-              : config == null ? DEFAULT_STALE_TIMEOUT_MILLIS : config.getStaleTimeoutMillis();
+      long staleTimeoutMillis;
+      if (contact) {
+        staleTimeoutMillis = CONTACT_STALE_TIMEOUT_MILLIS;
+      } else {
+        staleTimeoutMillis = config == null ? DEFAULT_STALE_TIMEOUT_MILLIS : config.getStaleTimeoutMillis();
+      }
       if (staleTimeoutMillis < 1) {
         staleTimeoutMillis = DEFAULT_STALE_TIMEOUT_MILLIS;
       }

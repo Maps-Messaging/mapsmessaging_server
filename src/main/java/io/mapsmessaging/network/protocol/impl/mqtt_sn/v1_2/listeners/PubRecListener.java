@@ -27,7 +27,6 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubRec;
-import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubRel;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 
 public class PubRecListener extends PacketListener {
@@ -37,12 +36,14 @@ public class PubRecListener extends PacketListener {
       throws MalformedException {
 
     PubRec pubRec = (PubRec) mqttPacket;
-    PacketIdentifierMap mapping = ((MQTT_SNProtocol) protocol).getPacketIdManager().completePacketId(pubRec.getMessageId());
-    if (mapping != null) {
-      mapping.getSubscription().ackReceived(mapping.getMessageId());
-    } else {
+    MQTT_SNProtocol mqttSn = (MQTT_SNProtocol) protocol;
+    PacketIdentifierMap outstanding = mqttSn.getPacketIdManager().receivedPacket(pubRec.getMessageId());
+    if (outstanding == null || outstanding.getMessageId() == -1
+        || mqttSn.getPacketIdManager().getPacketQos(pubRec.getMessageId()) != 2) {
       throw new MalformedException("No such Packet Identifier found " + pubRec.getMessageId());
     }
-    return new PubRel(pubRec.getMessageId());
+    mqttSn.getPacketIdManager().markAwaitingPubComp(pubRec.getMessageId());
+    mqttSn.sendPubRelAfterEngineAck(pubRec.getMessageId(), session);
+    return null;
   }
 }

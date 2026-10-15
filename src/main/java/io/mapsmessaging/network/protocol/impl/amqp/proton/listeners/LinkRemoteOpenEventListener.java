@@ -70,10 +70,6 @@ public class LinkRemoteOpenEventListener extends BaseEventListener {
     }
     sender.setTarget(sender.getRemoteTarget());
     sender.open();
-    if (sender.getLocalState() != EndpointState.UNINITIALIZED) {
-      sender.free();
-      sender.advance();
-    }
   }
 
   @Override

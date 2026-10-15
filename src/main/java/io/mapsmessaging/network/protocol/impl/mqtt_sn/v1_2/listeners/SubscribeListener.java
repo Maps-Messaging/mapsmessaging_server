@@ -36,6 +36,7 @@ import java.io.IOException;
 
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_NAME;
 import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_PRE_DEFINED_ID;
+import static io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket.TOPIC_SHORT_NAME;
 
 public class SubscribeListener extends PacketListener {
 
@@ -45,10 +46,11 @@ public class SubscribeListener extends PacketListener {
     Subscribe subscribe = (Subscribe) mqttPacket;
     short topicId = 0;
     String topicName;
-    if (subscribe.getTopicId() == TOPIC_NAME) {
+    if (subscribe.getTopicIdType() == TOPIC_NAME || subscribe.getTopicIdType() == TOPIC_SHORT_NAME) {
       topicName = subscribe.getTopicName();
     } else {
-      topicName = stateEngine.getTopicAliasManager().getTopic(mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
+      topicName = stateEngine.getTopicAliasManager().getTopic(
+          mqttPacket.getFromAddress(), subscribe.getTopicId(), subscribe.getTopicIdType());
       if (subscribe.getTopicIdType() == TOPIC_PRE_DEFINED_ID) {
         topicId = subscribe.getTopicId();
       }

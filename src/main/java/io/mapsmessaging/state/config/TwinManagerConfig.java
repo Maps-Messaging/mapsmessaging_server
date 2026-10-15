@@ -41,18 +41,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, ConfigManager {
 
+  private static final String TRUST_STORE = "trustStore";
+  private static final String KEY_STORE = "keyStore";
+  private static final String TLS_CONTEXT = "tlsContext";
+  private static final String TLS_ENABLED = "tlsEnabled";
+  private static final String HOSTNAME = "hostname";
   private static final String SPECIALIZATION = "specialization";
   private static final String ALTITUDE_METERS = "altitudeMeters";
   private static final String DESCRIPTION = "description";
-  private static final String GEOSPATIAL = "geospatial";
+  private static final String GEOSPATIAL_KEY = "geospatial";
   private static final String TOPIC = "topic";
   private static final String ENABLED = "enabled";
   private static final String DRONE_INFO = "droneInfo";
   private static final String VEHICLE_CLASS = "vehicleClass";
-  private static final String PUBLISH = "publish";
-  private static final String MAVLINK = "mavlink";
+  private static final String PUBLISH_KEY = "publish";
+  private static final String MAVLINK_KEY = "mavlink";
   private static final String KNOWN_SOURCES = "knownSources";
-
   private static final String STATE_ADAPTERS_CONFIG_KEY = "stateAdapters";
 
   private TwinManagerConfig(ConfigurationProperties properties) {
@@ -65,17 +69,17 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if (properties.containsKey("tak")) {
       ConfigurationProperties takProps = (ConfigurationProperties) properties.get("tak");
       TakProtocolDTO takProtocolDTO = new TakProtocolDTO();
-      takProtocolDTO.setHostname(takProps.getProperty("hostname", null));
+      takProtocolDTO.setHostname(takProps.getProperty(HOSTNAME, null));
       takProtocolDTO.setPort(takProps.getIntProperty("port", takProtocolDTO.getPort()));
       takProtocolDTO.setSharedConnection(takProps.getBooleanProperty("sharedConnection", takProtocolDTO.isSharedConnection()));
       takProtocolDTO.setTopic(takProps.getProperty(TOPIC, null));
-      takProtocolDTO.setTlsEnabled(takProps.getBooleanProperty("tlsEnabled", takProtocolDTO.isTlsEnabled()));
-      takProtocolDTO.setTlsContext(takProps.getProperty("tlsContext", takProtocolDTO.getTlsContext()));
-      ConfigurationProperties keyStoreProps = (ConfigurationProperties) takProps.get("keyStore");
+      takProtocolDTO.setTlsEnabled(takProps.getBooleanProperty(TLS_ENABLED, takProtocolDTO.isTlsEnabled()));
+      takProtocolDTO.setTlsContext(takProps.getProperty(TLS_CONTEXT, takProtocolDTO.getTlsContext()));
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) takProps.get(KEY_STORE);
       if (keyStoreProps != null) {
         takProtocolDTO.setKeyStore(new KeyStoreConfig(keyStoreProps));
       }
-      ConfigurationProperties trustStoreProps = (ConfigurationProperties) takProps.get("trustStore");
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) takProps.get(TRUST_STORE);
       if (trustStoreProps != null) {
         takProtocolDTO.setTrustStore(new KeyStoreConfig(trustStoreProps));
       }
@@ -83,12 +87,12 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       this.tak = takProtocolDTO;
     }
 
-    if (properties.containsKey(GEOSPATIAL)) {
-      this.geospatial = GeoSpatialConfigSupport.parse(properties.get(GEOSPATIAL));
+    if (properties.containsKey(GEOSPATIAL_KEY)) {
+      this.geospatial = GeoSpatialConfigSupport.parse(properties.get(GEOSPATIAL_KEY));
     }
 
-    if (properties.containsKey(PUBLISH)) {
-      ConfigurationProperties publishProps = (ConfigurationProperties) properties.get(PUBLISH);
+    if (properties.containsKey(PUBLISH_KEY)) {
+      ConfigurationProperties publishProps = (ConfigurationProperties) properties.get(PUBLISH_KEY);
       TwinPublishConfigDTO publishConfig = new TwinPublishConfigDTO();
       publishConfig.setEnabled(publishProps.getBooleanProperty(ENABLED, publishConfig.isEnabled()));
       publishConfig.setTopicTemplate(publishProps.getProperty("topicTemplate", publishConfig.getTopicTemplate()));
@@ -100,8 +104,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       this.droneInfo = parseDroneInfos(properties.get(DRONE_INFO));
     }
 
-    if (properties.containsKey(MAVLINK)) {
-      this.mavlink = parseMavlinkConfigs(properties.get(MAVLINK));
+    if (properties.containsKey(MAVLINK_KEY)) {
+      this.mavlink = parseMavlinkConfigs(properties.get(MAVLINK_KEY));
     }
 
     if (properties.containsKey(STATE_ADAPTERS_CONFIG_KEY)) {
@@ -161,7 +165,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     if (this.tak != null) {
       ConfigurationProperties takProps = new ConfigurationProperties();
-      takProps.put("hostname", this.tak.getHostname());
+      takProps.put(HOSTNAME, this.tak.getHostname());
       takProps.put("port", this.tak.getPort());
       takProps.put("sharedConnection", this.tak.isSharedConnection());
       takProps.put(TOPIC, this.tak.getTopic());
@@ -172,7 +176,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     if (this.geospatial != null && this.geospatial.getAreas() != null && !this.geospatial.getAreas().isEmpty()) {
-      props.put(GEOSPATIAL, GeoSpatialConfigSupport.toConfigurationProperties(this.geospatial));
+      props.put(GEOSPATIAL_KEY, GeoSpatialConfigSupport.toConfigurationProperties(this.geospatial));
     }
 
     if (this.publish != null) {
@@ -180,7 +184,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       publishProps.put(ENABLED, this.publish.isEnabled());
       publishProps.put("topicTemplate", this.publish.getTopicTemplate());
       publishProps.put("publishRateMs", this.publish.getPublishRateMs());
-      props.put(PUBLISH, publishProps);
+      props.put(PUBLISH_KEY, publishProps);
     }
 
     if (this.droneInfo != null && !this.droneInfo.isEmpty()) {
@@ -188,7 +192,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     if (this.mavlink != null && !this.mavlink.isEmpty()) {
-      props.put(MAVLINK, toMavlinkConfigurationProperties(this.mavlink));
+      props.put(MAVLINK_KEY, toMavlinkConfigurationProperties(this.mavlink));
     }
 
     if (this.adapterConfig != null && !this.adapterConfig.isEmpty()) {
@@ -327,15 +331,15 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         continue;
       }
       TakServerDTO server = new TakServerDTO();
-      server.setHostname(serverProps.getProperty("hostname", null));
+      server.setHostname(serverProps.getProperty(HOSTNAME, null));
       server.setPort(serverProps.getIntProperty("port", server.getPort()));
-      server.setTlsEnabled(serverProps.getBooleanProperty("tlsEnabled", server.isTlsEnabled()));
-      server.setTlsContext(serverProps.getProperty("tlsContext", server.getTlsContext()));
-      ConfigurationProperties keyStoreProps = (ConfigurationProperties) serverProps.get("keyStore");
+      server.setTlsEnabled(serverProps.getBooleanProperty(TLS_ENABLED, server.isTlsEnabled()));
+      server.setTlsContext(serverProps.getProperty(TLS_CONTEXT, server.getTlsContext()));
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) serverProps.get(KEY_STORE);
       if (keyStoreProps != null) {
         server.setKeyStore(new KeyStoreConfig(keyStoreProps));
       }
-      ConfigurationProperties trustStoreProps = (ConfigurationProperties) serverProps.get("trustStore");
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) serverProps.get(TRUST_STORE);
       if (trustStoreProps != null) {
         server.setTrustStore(new KeyStoreConfig(trustStoreProps));
       }
@@ -350,15 +354,15 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     List<ConfigurationProperties> values = new ArrayList<>();
     for (TakServerDTO server : servers) {
       ConfigurationProperties serverProps = new ConfigurationProperties();
-      serverProps.put("hostname", server.getHostname());
+      serverProps.put(HOSTNAME, server.getHostname());
       serverProps.put("port", server.getPort());
-      serverProps.put("tlsEnabled", server.isTlsEnabled());
-      serverProps.put("tlsContext", server.getTlsContext());
+      serverProps.put(TLS_ENABLED, server.isTlsEnabled());
+      serverProps.put(TLS_CONTEXT, server.getTlsContext());
       if (server.getKeyStore() instanceof Config keyStore) {
-        serverProps.put("keyStore", keyStore.toConfigurationProperties());
+        serverProps.put(KEY_STORE, keyStore.toConfigurationProperties());
       }
       if (server.getTrustStore() instanceof Config trustStore) {
-        serverProps.put("trustStore", trustStore.toConfigurationProperties());
+        serverProps.put(TRUST_STORE, trustStore.toConfigurationProperties());
       }
       values.add(serverProps);
     }
@@ -405,7 +409,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     entries.stream().filter(ConfigurationProperties.class::isInstance).map(ConfigurationProperties.class::cast)
-        .map(sourceProps -> parseKnownSource(sourceProps))
+        .map(this::parseKnownSource)
         .forEachOrdered(knownSources::add);
 
     return knownSources;
@@ -433,7 +437,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     entries.stream().filter(ConfigurationProperties.class::isInstance).map(ConfigurationProperties.class::cast)
-        .map(sourceProps -> parseDroneInfo(sourceProps))
+        .map(this::parseDroneInfo)
         .forEachOrdered(droneInfos::add);
 
     return droneInfos;
@@ -670,7 +674,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if (value instanceof List<?> list) {
       List<Object> values = new ArrayList<>(list.size());
       list.stream()
-          .map(entry -> normaliseConfigurationValue(entry))
+          .map(this::normaliseConfigurationValue)
           .forEachOrdered(values::add);
       return values;
     }
@@ -692,7 +696,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if (value instanceof List<?> list) {
       List<Object> values = new ArrayList<>(list.size());
       list.stream()
-          .map(entry -> toConfigurationValue(entry))
+          .map(this::toConfigurationValue)
           .forEachOrdered(values::add);
       return values;
     }

@@ -360,6 +360,7 @@ class MavlinkProtocolFlowCoverageTest {
     Frame frame = frame(0, 1, false, new byte[0]);
     ProcessedFrame processed = mock(ProcessedFrame.class);
     when(processed.getFrame()).thenReturn(frame);
+    when(processed.isValid()).thenReturn(true);
     when(processed.getMessageName()).thenReturn("HEARTBEAT");
     when(processed.getFields()).thenReturn(
         includeAutopilot ? Map.of("autopilot", autopilot) : Map.of());
@@ -385,6 +386,7 @@ class MavlinkProtocolFlowCoverageTest {
     Frame frame = frame(33, 1, false, new byte[0]);
     ProcessedFrame processed = mock(ProcessedFrame.class);
     when(processed.getFrame()).thenReturn(frame);
+    when(processed.isValid()).thenReturn(true);
     when(processed.getMessageName()).thenReturn("GLOBAL_POSITION_INT");
     when(processed.getFields()).thenReturn(Map.of());
     when(fixture.eventFactory.unpack(eq("mavlink-test"), any(ByteBuffer.class)))
@@ -393,6 +395,40 @@ class MavlinkProtocolFlowCoverageTest {
     fixture.protocol.processRawFrame(new byte[]{1, 2}, "127.0.0.1:14550");
 
     assertFalse((Boolean) field(fixture.protocol, MavlinkProtocol.class, "detectedDialect"));
+  }
+
+  @Test
+  void invalidDecodedFrameDoesNotEnterNormalTelemetryPipeline() throws Exception {
+    Fixture fixture = fixture();
+    Frame frame = frame(33, 1, false, new byte[0]);
+    ProcessedFrame processed = mock(ProcessedFrame.class);
+    when(processed.getFrame()).thenReturn(frame);
+    when(processed.isValid()).thenReturn(false);
+    when(fixture.eventFactory.unpack(eq("mavlink-test"), any(ByteBuffer.class)))
+        .thenReturn(Optional.of(processed));
+
+    fixture.protocol.processRawFrame(new byte[]{1, 2, 3}, "127.0.0.1:14550");
+
+    verify(fixture.session, never()).findDestination(anyString(), any());
+    assertTrue(((Map<?, ?>) field(fixture.protocol, MavlinkProtocol.class, "sequenceTrackers")).isEmpty());
+  }
+
+  @ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+  void zeroSenderIdentityDoesNotEnterNormalTelemetryPipeline(boolean zeroSystemId) throws Exception {
+    Fixture fixture = fixture();
+    Frame frame = frame(33, 1, false, new byte[0]);
+    frame.setSystemId(zeroSystemId ? 0 : 3);
+    frame.setComponentId(zeroSystemId ? 7 : 0);
+    ProcessedFrame processed = mock(ProcessedFrame.class);
+    when(processed.getFrame()).thenReturn(frame);
+    when(processed.isValid()).thenReturn(true);
+    when(fixture.eventFactory.unpack(eq("mavlink-test"), any(ByteBuffer.class)))
+        .thenReturn(Optional.of(processed));
+
+    fixture.protocol.processRawFrame(new byte[]{1, 2, 3}, "127.0.0.1:14550");
+
+    verify(fixture.session, never()).findDestination(anyString(), any());
   }
 
   @ParameterizedTest

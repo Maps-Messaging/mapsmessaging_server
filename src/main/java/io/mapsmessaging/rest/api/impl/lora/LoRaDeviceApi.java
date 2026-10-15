@@ -93,7 +93,7 @@ public class LoRaDeviceApi extends LoraBaseRestApi {
       LoRaDeviceManager deviceManager = LoRaDeviceManager.getInstance();
       List<LoRaDeviceInfoDTO> deviceInfos = new ArrayList<>();
       deviceManager.getDevices().stream()
-          .map(device -> createInfo(device))
+          .map(this::createInfo)
           .forEachOrdered(deviceInfos::add);
       LoRaDeviceInfoDTO[] result = deviceInfos.toArray(new LoRaDeviceInfoDTO[0]);
       return Response.ok(result, MediaType.APPLICATION_JSON).build();

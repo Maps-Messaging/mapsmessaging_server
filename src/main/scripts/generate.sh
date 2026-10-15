@@ -24,8 +24,8 @@ echo "Please note: These are self signed certicates and"
 echo "not intended for production use but only local tests"
 echo "${CERT_SECTION_SEPARATOR}"
 
-rm *.jks 2> /dev/null
-rm *.pem 2> /dev/null
+rm -- ./*.jks 2> /dev/null
+rm -- ./*.pem 2> /dev/null
 
 echo "${CERT_SECTION_SEPARATOR}"
 echo "Creating fake third-party chain root -> ca"

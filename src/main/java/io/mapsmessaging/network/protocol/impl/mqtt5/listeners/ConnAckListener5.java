@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDT
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.connection.ConnectionSessionId;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.AuthenticationContext;
@@ -50,14 +51,23 @@ public class ConnAckListener5 extends PacketListener5 {
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     MQTT5Protocol mqtt5Protocol = (MQTT5Protocol)protocol;
     if(mqtt5Protocol.getSession() != null){
-      mqtt5Protocol.getSession().resumeState();
-      protocol.setConnected(true);
+      Session activeSession = mqtt5Protocol.getSession();
+      mqtt5Protocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (mqtt5Protocol.isDeliverySessionActive(activeSession)) {
+          activeSession.resumeState();
+          protocol.setConnected(true);
+        }
+      });
       return null; // already connected
     }
 
-    AuthConfigDTO config =  ((EndPointConnectionServerConfigDTO)endPoint.getConfig()).getAuthConfig();
+    EndPointConnectionServerConfigDTO connectionConfig = (EndPointConnectionServerConfigDTO) endPoint.getConfig();
+    AuthConfigDTO config = connectionConfig.getAuthConfig();
 
-    String sess = config.getSessionId();
+    String sess = mqtt5Protocol.getConnectionSessionId();
+    if (sess == null && config.getSessionId() != null) {
+      sess = ConnectionSessionId.derive(config.getSessionId(), ConnectionSessionId.namespaces(connectionConfig.getLinkConfigs()));
+    }
     String user = config.getUsername();
     String pass = config.getPassword();
 
@@ -66,6 +76,11 @@ public class ConnAckListener5 extends PacketListener5 {
       logger.log(ServerLogMessages.MQTT5_CONNECTION_FAILED, connAck.getStatusCode());
       closeEndPoint(endPoint);
       return null;
+    }
+
+    if (sess == null) {
+      closeEndPoint(endPoint);
+      throw new MalformedException("MQTT 5 connection session identifier is required");
     }
 
     SessionContextBuilder scb = new SessionContextBuilder(sess, new ProtocolClientConnection(protocol));
@@ -90,9 +105,13 @@ public class ConnAckListener5 extends PacketListener5 {
       );
       protocol.setProtocolMessageTransformation(transformation);
       session.login();
-      session.resumeState();
-      protocol.setConnected(true);
-    } catch (LoginException | IOException e) {
+      ((MQTT5Protocol) protocol).recoverOutgoingDeliveries().thenRun(() -> {
+        if (((MQTT5Protocol) protocol).isDeliverySessionActive(session)) {
+          session.resumeState();
+          protocol.setConnected(true);
+        }
+      });
+    } catch (LoginException | IOException | java.io.UncheckedIOException e) {
       logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, sessionId);
       closeEndPoint(endPoint);
       throw new MalformedException("Unable to construct the MQTT 5 client session", e);

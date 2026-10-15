@@ -34,7 +34,7 @@ public record OrbitRequest(
         Duration duration) {
 
     public OrbitRequest {
-        center = Objects.requireNonNull(center, "center must not be null");
+        Objects.requireNonNull(center, "center must not be null");
         direction = direction == null ? OrbitDirection.UNSPECIFIED : direction;
     }
 }

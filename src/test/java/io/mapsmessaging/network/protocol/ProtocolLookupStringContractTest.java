@@ -40,16 +40,16 @@ class ProtocolLookupStringContractTest {
   }
 
   @Test
-  void wildcard_mapping_preserves_single_pass_slash_and_hash_removal() {
+  void wildcard_mapping_replaces_source_prefix_and_normalizes_slashes() {
     Protocol protocol = protocol(Map.of("sensor/#", "local/"));
-    assertEquals("local/sensor//value", protocol.parseForLookup("sensor///value#"));
+    assertEquals("local/value", protocol.parseForLookup("sensor///value"));
   }
 
   @Test
-  void later_wildcard_uses_previously_transformed_value() {
+  void later_wildcard_does_not_remap_the_transformed_value() {
     Map<String, String> mappings = new LinkedHashMap<>();
     mappings.put("sensor/#", "local/");
     mappings.put("local/#", "second/");
-    assertEquals("second/local/sensor/value", protocol(mappings).parseForLookup("sensor/value"));
+    assertEquals("local/value", protocol(mappings).parseForLookup("sensor/value"));
   }
 }

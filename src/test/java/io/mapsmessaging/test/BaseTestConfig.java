@@ -62,11 +62,6 @@ public class BaseTestConfig extends BaseTest {
   private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray(), "".toCharArray()};
   private static final String[] GROUPS = {"everyone"};
 
-  @BeforeAll
-  static void setUp() {
-  }
-
-
   protected static MessageDaemon md = null;
   private static Thread th;
 
@@ -77,7 +72,8 @@ public class BaseTestConfig extends BaseTest {
   }
 
   @AfterEach
-  void clear(){
+  void cleanupAfterTest() {
+    checkSessionState();
     deleteUnknownDestinations();
   }
 
@@ -181,7 +177,6 @@ public class BaseTestConfig extends BaseTest {
     }
   }
 
-  @AfterEach
   void checkSessionState()  {
     try {
       if (md == null || md.getSubSystemManager() == null) {

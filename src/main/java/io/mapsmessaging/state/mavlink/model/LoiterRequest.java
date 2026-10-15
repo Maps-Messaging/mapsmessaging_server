@@ -32,7 +32,7 @@ public record LoiterRequest(
     Double depthMeters) {
 
     public LoiterRequest {
-        position = Objects.requireNonNull(position, "position must not be null");
+        Objects.requireNonNull(position, "position must not be null");
         duration = duration == null ? Duration.ZERO : duration;
 
         if (duration.isNegative()) {

@@ -94,6 +94,9 @@ public class SubscriptionController implements DestinationManagerListener {
   // Session represents the remote client
   //
   private SessionImpl sessionImpl;
+  @Getter
+  private final io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator =
+      new io.mapsmessaging.engine.session.DeliveryStateCoordinator();
 
   private Identity identity;
 
@@ -135,6 +138,25 @@ public class SubscriptionController implements DestinationManagerListener {
       }
     }
     subscriptionControllerJMX = new SubscriptionControllerJMX(this);
+  }
+
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    deliveryStateCoordinator.setPath(path);
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      manager.setDeliveryStateCoordinator(deliveryStateCoordinator);
+    }
+  }
+
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(
+      io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      CompletableFuture<Void> completion = manager.acknowledgeRecoveredDelivery(delivery);
+      if (completion != null) {
+        return completion;
+      }
+    }
+    // Permanently removed subscriptions no longer hold interest in the delivery.
+    return java.util.concurrent.CompletableFuture.completedFuture(null);
   }
 
   private Map<DestinationMode, SubscriptionModeManager> constructModeManagers(){
@@ -192,11 +214,34 @@ public class SubscriptionController implements DestinationManagerListener {
    * @return true if there was such a subscription to start with else false if unable to locate the subscription
    */
   public boolean delSubscription(String id) {
+    // The destination namespace remains the primary subscription identity.
+    if (removeSubscriptionByNamespace(id)) {
+      return true;
+    }
+
+    // Preserve historical alias removal without changing how subscriptions are indexed.
+    // Resolve an alias to the already-registered namespace, then use the usual removal.
+    String namespace = null;
+    for (SubscriptionContext context : contextMap.values()) {
+      if (id.equals(context.getAlias())) {
+        String candidate = context.getKey();
+        if (namespace != null && !namespace.equals(candidate)) {
+          return false; // Ambiguous alias: never remove an arbitrary destination.
+        }
+        namespace = candidate;
+      }
+    }
+    return namespace != null && removeSubscriptionByNamespace(namespace);
+  }
+
+  private boolean removeSubscriptionByNamespace(String namespace) {
     boolean found = false;
-    for(SubscriptionModeManager managers: subscriptionModeManager.values()){
-      if(managers.delSubscription(id, subscriptions, this)){
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      if (manager.delSubscription(namespace, subscriptions, this)) {
         found = true;
-        contextMap.remove(managers.getMode().getNamespace()+id);
+        String prefix = manager.getMode().getNamespace();
+        String key = namespace.startsWith(prefix) ? namespace : prefix + namespace;
+        contextMap.remove(key);
       }
     }
     return found;
@@ -294,6 +339,7 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
   protected void updateSubscriptionManager(@NonNull @NotNull SubscriptionContext context, DestinationImpl destinationImpl,  Subscription subscription){
+    subscription.setDeliveryStateCoordinator(deliveryStateCoordinator);
     subscriptionModeManager.get(context.getDestinationMode()).add(subscription, destinationImpl);
   }
 

@@ -76,8 +76,8 @@ public class EndPointConfigFactory {
     config.put("selectorTaskWait", server.getSelectorTaskWait());
     config.put("auth", server.getAuthenticationRealm());
     config.put(PROTOCOLS_KEY, packProtocolConfig(server)); // ToDo - Convert to Configuration props
-    if (server.getEndPointConfig() instanceof Config) {
-      config.put("endPoint", ((Config) server.getEndPointConfig()).toConfigurationProperties());
+    if (server.getEndPointConfig() instanceof Config endpointConfig) {
+      config.put("endPoint", endpointConfig.toConfigurationProperties());
     }
     if(server.getSaslConfig() != null) {
       config.put("saslConfig", ((Config)server.getSaslConfig()).toConfigurationProperties());
@@ -171,18 +171,30 @@ public class EndPointConfigFactory {
   private static List<ConfigurationProperties> packProtocolConfig(EndPointServerConfigDTO server) {
     List<ConfigurationProperties> protocolConfigs = new ArrayList<>();
     server.getProtocolConfigs().stream().filter(Config.class::isInstance).map(Config.class::cast)
-        .map(protocolConfig -> protocolConfig.toConfigurationProperties())
+        .map(Config::toConfigurationProperties)
         .forEachOrdered(protocolConfigs::add);
     return protocolConfigs;
   }
   private static EndPointConfigDTO createEndPointConfig(String url, ConfigurationProperties properties) {
     String u = url.toLowerCase();
-    if (u.startsWith("tcp") || u.startsWith("ws")) return new TcpConfig(properties);
-    if (u.startsWith("ssl") || u.startsWith("wss")) return new TlsConfig(properties);
-    if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) return new UdpConfig(properties);
-    if (u.startsWith("dtls")) return new DtlsConfig(properties);
-    if (u.startsWith("serial")) return new SerialConfig(properties);
-    if(u.startsWith("canbus")) return new CanbusConfig(properties);
+    if (u.startsWith("tcp") || u.startsWith("ws")) {
+      return new TcpConfig(properties);
+    }
+    if (u.startsWith("ssl") || u.startsWith("wss")) {
+      return new TlsConfig(properties);
+    }
+    if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) {
+      return new UdpConfig(properties);
+    }
+    if (u.startsWith("dtls")) {
+      return new DtlsConfig(properties);
+    }
+    if (u.startsWith("serial")) {
+      return new SerialConfig(properties);
+    }
+    if (u.startsWith("canbus")) {
+      return new CanbusConfig(properties);
+    }
     if (u.startsWith(SATELLITE_KEY)) return new EndPointConfigDTO(SATELLITE_KEY); // placeholder
     return null;
   }

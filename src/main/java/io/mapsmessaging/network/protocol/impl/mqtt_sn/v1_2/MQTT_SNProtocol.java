@@ -36,6 +36,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.RegisteredTopicConfiguration;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.*;
@@ -49,6 +50,12 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.HashMap;
+import java.util.Map;
+import io.mapsmessaging.storage.delivery.PacketIdStore;
 import java.net.SocketAddress;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -65,6 +72,13 @@ public class MQTT_SNProtocol extends Protocol {
   @Getter
   protected final PacketIdManager packetIdManager;
   private final ScheduledFuture<?> monitor;
+  private final Queue<Integer> recoveredPubRels = new ArrayDeque<>();
+  private Runnable resumeAfterRecovery;
+  private Integer recoveringPacketId;
+  private Session recoverySession;
+  private boolean recoveredPubRelSent;
+  private final Map<Integer, PacketIdStore.Delivery> pendingEngineAcknowledgements = new HashMap<>();
+  private final Map<Integer, PacketIdStore.Delivery> reconciledDeliveries = new HashMap<>();
 
   @Getter
   @Setter
@@ -127,15 +141,24 @@ public class MQTT_SNProtocol extends Protocol {
   }
 
   protected void finish() throws IOException {
-    if (!session.isClosed()) {
-      SessionManager.getInstance().close(session, false);
-    }
-    factory.close(addressKey);
-    packetIdManager.close();
-    endPoint.close();
-    monitor.cancel(false);
-    if (mbean != null) {
-      mbean.close();
+    try {
+      packetIdManager.close();
+      if (session != null && !session.isClosed()) {
+        SessionManager.getInstance().close(session, false);
+      }
+    } finally {
+      try {
+        factory.close(addressKey);
+      } finally {
+        try {
+          endPoint.close();
+        } finally {
+          monitor.cancel(false);
+          if (mbean != null) {
+            mbean.close();
+          }
+        }
+      }
     }
   }
 
@@ -202,6 +225,26 @@ public class MQTT_SNProtocol extends Protocol {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    try {
+      if (completeRecoveredEvent(messageEvent)) {
+        return;
+      }
+      sendOutboundMessage(messageEvent);
+    } catch (UncheckedIOException failure) {
+      closeAfterStorageFailure(failure, messageEvent);
+    }
+  }
+
+  private void closeAfterStorageFailure(UncheckedIOException failure, Object context) {
+    logger.log(ServerLogMessages.MQTT_SN_PACKET_EXCEPTION, failure, context);
+    try {
+      close();
+    } catch (IOException | RuntimeException closeFailure) {
+      failure.addSuppressed(closeFailure);
+    }
+  }
+
+  private void sendOutboundMessage(MessageEvent messageEvent) {
     ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
     if(parsedMessage == null) {
       return;
@@ -210,11 +253,155 @@ public class MQTT_SNProtocol extends Protocol {
 
     if (stateEngine.getMaxBufferSize() > 0 &&
         stateEngine.getMaxBufferSize() < message.getOpaqueData().length + 9) {
+      packetIdManager.discard(messageEvent.getSubscription(), messageEvent.getMessage().getIdentifier());
       messageEvent.getCompletionTask().run();
     } else {
       MessageEvent evt = new MessageEvent(parsedMessage.getDestinationName(), messageEvent.getSubscription(), message, messageEvent.getCompletionTask());
       stateEngine.queueMessage(evt);
     }
+  }
+
+  /** Recover receiver-owned QoS 2 handshakes before resuming broker message interest. */
+  public synchronized void resumeSession(Session currentSession) {
+    try {
+      recoveredPubRels.addAll(packetIdManager.getAwaitingPubCompPacketIds());
+      recoverySession = currentSession;
+      resumeAfterRecovery = currentSession::resumeState;
+      sendNextRecoveredPubRel();
+    } catch (UncheckedIOException failure) {
+      closeAfterStorageFailure(failure, currentSession);
+    }
+  }
+
+  private synchronized void sendNextRecoveredPubRel() {
+    recoveredPubRelSent = false;
+    if (recoveredPubRels.isEmpty()) {
+      recoveringPacketId = null;
+      Session expectedSession = recoverySession;
+      recoverySession = null;
+      Runnable resume = resumeAfterRecovery;
+      resumeAfterRecovery = null;
+      if (resume != null && isActiveSession(expectedSession)) {
+        resume.run();
+      }
+      return;
+    }
+    int identifier = recoveredPubRels.peek();
+    recoveringPacketId = identifier;
+    try {
+      PacketIdStore.Delivery delivery = recoverySession.getPacketIdStore().getDelivery(identifier);
+      if (delivery == null) {
+        recoveredPubRels.poll();
+        sendNextRecoveredPubRel();
+        return;
+      }
+      // Keep stage 1 durable until engine interest is acknowledged, then resume the receiver-owned exchange.
+      Session expectedSession = recoverySession;
+      expectedSession.ackRecoveredDelivery(delivery).whenComplete((ignored, failure) -> {
+        synchronized (MQTT_SNProtocol.this) {
+          if (closed || endPoint.isClosed() || session != expectedSession || recoveringPacketId == null || recoveringPacketId != identifier) {
+            return;
+          }
+          if (!delivery.equals(packetIdManager.getDelivery(identifier)) || !packetIdManager.isAwaitingPubComp(identifier)) {
+            recoveredPubRels.poll();
+            sendNextRecoveredPubRel();
+            return;
+          }
+          if (failure != null) {
+            closeRecoveryFailure(failure);
+          } else if (isActiveSession(expectedSession)) {
+            recoveredPubRelSent = true;
+            writeFrame(new PubRel(identifier));
+          }
+        }
+      });
+    } catch (IOException | RuntimeException failure) {
+      closeRecoveryFailure(failure);
+    }
+  }
+
+  public synchronized void sendPubRelAfterEngineAck(int identifier, Session currentSession) {
+    try {
+      PacketIdStore.Delivery delivery = currentSession.getPacketIdStore().getDelivery(identifier);
+      if (delivery == null) {
+        throw new IOException("No durable delivery for PUBREC " + identifier);
+      }
+      if (delivery.equals(pendingEngineAcknowledgements.get(identifier))) {
+        return;
+      }
+      boolean reconciled = delivery.equals(reconciledDeliveries.get(identifier));
+      if (reconciled || recoveringPacketId != null && recoveringPacketId == identifier) {
+        if (isActiveSession(currentSession) && (reconciled || recoveredPubRelSent)) {
+          writeFrame(new PubRel(identifier));
+        }
+        return;
+      }
+      reconciledDeliveries.remove(identifier);
+      pendingEngineAcknowledgements.put(identifier, delivery);
+      currentSession.ackRecoveredDelivery(delivery).whenComplete((ignored, failure) -> {
+        synchronized (MQTT_SNProtocol.this) {
+          if (closed || endPoint.isClosed() || session != currentSession) {
+            return;
+          }
+          if (pendingEngineAcknowledgements.get(identifier) != delivery) {
+            return;
+          }
+          if (!delivery.equals(packetIdManager.getDelivery(identifier)) || !packetIdManager.isAwaitingPubComp(identifier)) {
+            pendingEngineAcknowledgements.remove(identifier);
+            return;
+          }
+          if (failure != null) {
+            closeAfterStorageFailure(new UncheckedIOException(new IOException("Failed to acknowledge QoS 2 engine interest", failure)), currentSession);
+          } else if (isActiveSession(currentSession)) {
+            pendingEngineAcknowledgements.remove(identifier);
+            reconciledDeliveries.put(identifier, delivery);
+            writeFrame(new PubRel(identifier));
+          }
+        }
+      });
+    } catch (IOException | RuntimeException failure) {
+      closeAfterStorageFailure(new UncheckedIOException(new IOException("Failed to acknowledge QoS 2 engine interest", failure)), currentSession);
+    }
+  }
+
+  private boolean isActiveSession(Session expectedSession) {
+    return !closed && !endPoint.isClosed() && expectedSession != null && session == expectedSession && !expectedSession.isClosed();
+  }
+
+  public synchronized boolean isEngineAckPending(int identifier) {
+    return pendingEngineAcknowledgements.containsKey(identifier);
+  }
+
+  public synchronized boolean consumeReconciledDelivery(int identifier) {
+    return reconciledDeliveries.remove(identifier) != null;
+  }
+
+  private void closeRecoveryFailure(Throwable failure) {
+    closeAfterStorageFailure(new UncheckedIOException(new IOException("Failed to reconcile recovered QoS 2 delivery", failure)), recoverySession);
+  }
+
+  public synchronized boolean completeRecoveredPubRel(int identifier) throws MalformedException {
+    if (recoveringPacketId == null) {
+      return false;
+    }
+    if (recoveringPacketId != identifier || !recoveredPubRelSent) {
+      throw new MalformedException("PUBCOMP does not match the active restored PUBREL " + identifier);
+    }
+    packetIdManager.completePacketId(identifier);
+    recoveredPubRels.poll();
+    sendNextRecoveredPubRel();
+    return true;
+  }
+
+  private synchronized boolean completeRecoveredEvent(MessageEvent event) {
+    if (!packetIdManager.consumeCompletedRecovery(event.getSubscription(), event.getMessage().getIdentifier())) {
+      return false;
+    }
+    event.getSubscription().ackReceived(event.getMessage().getIdentifier());
+    if (event.getCompletionTask() != null) {
+      event.getCompletionTask().run();
+    }
+    return true;
   }
 
   public void writeFrame(@NonNull @NotNull MQTT_SNPacket frame) {
@@ -238,7 +425,10 @@ public class MQTT_SNProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     MqttSnProtocolInformation information = new MqttSnProtocolInformation();
     updateInformation(information);
-    information.setSessionInfo(session.getSessionInformation());
+    Session currentSession = session;
+    if (currentSession != null) {
+      information.setSessionInfo(currentSession.getSessionInformation());
+    }
     return information;
   }
 

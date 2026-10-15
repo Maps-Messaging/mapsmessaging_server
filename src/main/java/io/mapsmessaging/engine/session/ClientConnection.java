@@ -45,6 +45,12 @@ public interface ClientConnection {
   default void releaseUnusedSendSlot(SubscribedEventManager subscription) {
   }
 
+  default void deliveryRetired(String key, long messageId) {
+  }
+
+  default void deliveriesRetired(String key) {
+  }
+
   String getName();
 
   String getVersion();

@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.tasks;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.SubscriptionManager;
@@ -53,7 +54,12 @@ public class SendMessageTask extends PacketTask {
   }
 
   private void processMessage() throws IOException {
-    String alias = manager.getContext().getAlias();
+    SubscriptionContext context = manager.getContext();
+    if (context == null) {
+      processOutput();
+      return;
+    }
+    String alias = context.getAlias();
     Sender sender = subscriptions.get(alias);
     if (sender != null) {
       byte[] tag = packLong(message.getIdentifier());

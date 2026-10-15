@@ -474,7 +474,7 @@ public class SchemaQueryApi extends BaseRestApi {
 
     List<SchemaConfigDTO> schemaList = new ArrayList<>();
     schemas.stream()
-        .map(schemaConfig -> SchemaConfigDtoMapper.toDto(schemaConfig))
+        .map(SchemaConfigDtoMapper::toDto)
         .forEachOrdered(schemaList::add);
     return Response.ok(schemaList.toArray(new SchemaConfigDTO[0]), MediaType.APPLICATION_JSON).build();
   }
@@ -625,7 +625,7 @@ public class SchemaQueryApi extends BaseRestApi {
   private List<String> convertToId(List<SchemaConfig> configs) {
     List<String> data = new ArrayList<>();
     configs.stream()
-        .map(config -> config.getUniqueId())
+        .map(SchemaConfig::getUniqueId)
         .forEachOrdered(data::add);
     return data;
   }

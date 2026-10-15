@@ -51,7 +51,7 @@ class MqttSNPublishingTest extends BaseMqttSnConfig {
     CountDownLatch published = new CountDownLatch(PUBLISH_COUNT);
     CountDownLatch received = new CountDownLatch(PUBLISH_COUNT);
 
-    MqttSnClient client = new MqttSnClient( "localhost", 1884, version);
+    MqttSn12Client client = new MqttSn12Client("localhost", 1884);
     client.connect(180, true);
 
     client.registerPublishListener((iMqttsnContext, topicPath, i, b, bytes, iMqttsnMessage) -> received.countDown());

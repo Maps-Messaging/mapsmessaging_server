@@ -176,7 +176,7 @@ class PacketIntegrityVerificationTests {
     Packet payload = createPayloadPacket();
     Packet secured = integrity.secure(clonePacket(payload));
 
-    return new TestContext(payload, integrity, secured);
+    return new TestContext(integrity, secured);
   }
 
   private static Packet createPayloadPacket() {
@@ -242,7 +242,7 @@ class PacketIntegrityVerificationTests {
     private final PacketIntegrity integrity;
     private final Packet secured;
 
-    private TestContext(Packet payload, PacketIntegrity integrity, Packet secured) {
+    private TestContext(PacketIntegrity integrity, Packet secured) {
       this.integrity = integrity;
       this.secured = secured;
     }

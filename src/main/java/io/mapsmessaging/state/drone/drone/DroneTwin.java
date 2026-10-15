@@ -122,9 +122,12 @@ public class DroneTwin extends EntityTwin {
   private String missionState;
 
   @Schema(description = "Latest outbound MAVLink transmission snapshot, retained after completion.")
+  @SuppressWarnings("java:S3077") // MavlinkTransmissionState publishes immutable snapshots; volatile publishes its replacement.
   private volatile io.mapsmessaging.state.mavlink.sender.MavlinkTransmissionState missionTransmission;
 
   @Schema(description = "Latest STANAG task upload retry state, retained after completion.")
+  // Extension callers own the map and its values; the server only publishes/replaces the reference.
+  @SuppressWarnings("java:S3077")
   private volatile Map<String, Object> taskTransmission;
 
   @Schema(description = "Vehicle heading in degrees.", example = "182.4", nullable = true)

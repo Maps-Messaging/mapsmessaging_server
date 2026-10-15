@@ -61,6 +61,29 @@ class RestApiManagerConfigBranchCoverageTest {
     assertEquals("new-host", config.getHostnames());
   }
 
+  @Test
+  void unchanged_timeout_values_do_not_report_configuration_changes() throws Exception {
+    RestApiManagerConfig config = create(new ConfigurationProperties());
+    RestApiManagerConfig identical = create(new ConfigurationProperties());
+    assertEquals(config.getInactiveTimeout(), identical.getInactiveTimeout());
+    assertFalse(config.update(identical));
+    assertFalse(config.update(create(new ConfigurationProperties())));
+  }
+
+  @Test
+  void nullable_timeout_changes_are_detected_once() throws Exception {
+    RestApiManagerConfig config = create(new ConfigurationProperties());
+    RestApiManagerConfig updated = create(new ConfigurationProperties());
+    updated.setInactiveTimeout(null);
+    assertTrue(config.update(updated));
+    assertNull(config.getInactiveTimeout());
+    assertFalse(config.update(updated));
+    updated.setInactiveTimeout(240000);
+    assertTrue(config.update(updated));
+    assertEquals(240000, config.getInactiveTimeout());
+    assertFalse(config.update(updated));
+  }
+
   private static RestApiManagerConfig create(ConfigurationProperties properties) throws Exception {
     Constructor<RestApiManagerConfig> constructor =
         RestApiManagerConfig.class.getDeclaredConstructor(ConfigurationProperties.class);

@@ -97,7 +97,7 @@ public class RegisteredTopicConfiguration {
     List<TopicConfiguration> list = topicConfigByName.get(destinationName);
     if (list != null) {
       id = searchForTopicId(from, list);
-      if(id == -1){
+      if (id == -1) {
         id = searchForWildcardTopicId(list);
       }
     }

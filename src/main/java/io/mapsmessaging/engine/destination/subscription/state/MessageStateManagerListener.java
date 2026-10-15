@@ -29,4 +29,8 @@ public interface MessageStateManagerListener {
 
   void remove(long messageIdentifier);
 
+  default void expired(long messageIdentifier) {
+    remove(messageIdentifier);
+  }
+
 }

@@ -83,7 +83,7 @@ public class AuthorisationResource extends BaseAuthRestApi {
     try {
       List<PermissionDetailsDTO> details = new ArrayList<>();
       java.util.Arrays.stream(ServerPermissions.values())
-          .map(permission -> new PermissionDetailsDTO(permission))
+          .map(PermissionDetailsDTO::new)
           .forEachOrdered(details::add);
 
       List<ResourceTypeDetailsDTO> resourceTypes = new ArrayList<>();

@@ -155,7 +155,7 @@ public class FileLockManager implements AutoCloseable {
     heartbeatThread = new Thread(() -> {
       while (!shutdown.get() && locked) {
         try {
-          lockInfo.setLastHeartbeat(OffsetDateTime.now().toString());
+          lockInfo.setLastHeartbeat(OffsetDateTime.now(java.time.ZoneId.systemDefault()).toString());
           String json = GsonFactory.getInstance().getSimpleGson().toJson(lockInfo);
           writeHeartbeat(json);
         } catch (IOException ignored) {
@@ -275,7 +275,7 @@ public class FileLockManager implements AutoCloseable {
       String content = Files.readString(heartbeatFilePath).trim();
       LockInfo info = GsonFactory.getInstance().getSimpleGson().fromJson(content, LockInfo.class);
       OffsetDateTime lastBeat = OffsetDateTime.parse(info.getLastHeartbeat());
-      return OffsetDateTime.now()
+      return OffsetDateTime.now(java.time.ZoneId.systemDefault())
           .minus(leaseTimeoutMillis, java.time.temporal.ChronoUnit.MILLIS)
           .isAfter(lastBeat);
     } catch (IOException | RuntimeException e) {

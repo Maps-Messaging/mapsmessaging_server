@@ -28,8 +28,8 @@ import java.util.*;
 
 public class LintEngine {
 
-  private static final String N_U_M_E_R_I_C__C_O_N_S_T_R_A_I_N_T__M_I_S_S_I_N_G_KEY = "NUMERIC_CONSTRAINT_MISSING";
-  private static final String S_T_R_I_N_G__E_N_U_M__A_L_L_O_W_A_B_L_E__V_A_L_U_E_S__M_I_S_S_I_N_G_KEY = "STRING_ENUM_ALLOWABLE_VALUES_MISSING";
+  private static final String NUMERIC_CONSTRAINT_MISSING_KEY = "NUMERIC_CONSTRAINT_MISSING";
+  private static final String STRING_ENUM_ALLOWABLE_VALUES_MISSING_KEY = "STRING_ENUM_ALLOWABLE_VALUES_MISSING";
 
 
   private static final Set<String> WEAK_EXAMPLES = Set.of(
@@ -328,11 +328,12 @@ public class LintEngine {
     boolean hasPattern = schema.pattern() != null && !schema.pattern().isBlank();
 
     if (!hasFormat && !hasPattern) {
-      String expected = looksLikeUrl
-          ? "uri"
-          : looksLikeMime
-          ? "media-type"
-          : "hostname";
+      String expected;
+      if (looksLikeUrl) {
+        expected = "uri";
+      } else {
+        expected = looksLikeMime ? "media-type" : "hostname";
+      }
 
       issues.add(issue(
           LintSeverity.WARN,
@@ -356,7 +357,7 @@ public class LintEngine {
   ) {
     List<LintIssue> issues = new ArrayList<>();
 
-    if (isIgnored(field, S_T_R_I_N_G__E_N_U_M__A_L_L_O_W_A_B_L_E__V_A_L_U_E_S__M_I_S_S_I_N_G_KEY)) {
+    if (isIgnored(field, STRING_ENUM_ALLOWABLE_VALUES_MISSING_KEY)) {
       return issues;
     }
 
@@ -412,7 +413,7 @@ public class LintEngine {
           configName,
           rootDtoName,
           path,
-          S_T_R_I_N_G__E_N_U_M__A_L_L_O_W_A_B_L_E__V_A_L_U_E_S__M_I_S_S_I_N_G_KEY,
+          STRING_ENUM_ALLOWABLE_VALUES_MISSING_KEY,
           "String field looks like an enum but has no @Schema(allowableValues=...)"
       ));
       return issues;
@@ -425,7 +426,7 @@ public class LintEngine {
           configName,
           rootDtoName,
           path,
-          S_T_R_I_N_G__E_N_U_M__A_L_L_O_W_A_B_L_E__V_A_L_U_E_S__M_I_S_S_I_N_G_KEY,
+          STRING_ENUM_ALLOWABLE_VALUES_MISSING_KEY,
           "String field looks like an enum but @Schema(allowableValues=...) is missing/empty"
       ));
     } else {
@@ -503,7 +504,7 @@ public class LintEngine {
   ) {
     List<LintIssue> issues = new ArrayList<>();
 
-    if (isIgnored(field, N_U_M_E_R_I_C__C_O_N_S_T_R_A_I_N_T__M_I_S_S_I_N_G_KEY)) {
+    if (isIgnored(field, NUMERIC_CONSTRAINT_MISSING_KEY)) {
       return issues;
     }
 
@@ -513,7 +514,7 @@ public class LintEngine {
           configName,
           rootDtoName,
           path,
-          N_U_M_E_R_I_C__C_O_N_S_T_R_A_I_N_T__M_I_S_S_I_N_G_KEY,
+          NUMERIC_CONSTRAINT_MISSING_KEY,
           "Numeric field missing @Schema constraints (minimum/maximum, allowableValues, or multipleOf)"
       ));
       return issues;
@@ -532,7 +533,7 @@ public class LintEngine {
           configName,
           rootDtoName,
           path,
-          N_U_M_E_R_I_C__C_O_N_S_T_R_A_I_N_T__M_I_S_S_I_N_G_KEY,
+          NUMERIC_CONSTRAINT_MISSING_KEY,
           "Numeric field must define minimum/maximum, allowableValues, or multipleOf"
       ));
     }

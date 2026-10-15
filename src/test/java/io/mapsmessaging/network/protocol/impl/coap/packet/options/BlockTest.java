@@ -26,7 +26,7 @@ class BlockTest {
     Block medium = new Block(23, 16, false, 0);
     assertEquals(2, medium.pack().length);
 
-    Block large = new Block(23, 4096, false, 7);
+    Block large = new Block(23, 4096, false, 6);
     byte[] packed = large.pack();
     assertEquals(3, packed.length);
 
@@ -34,7 +34,7 @@ class BlockTest {
     restored.update(packed);
     assertEquals(4096, restored.getNumber());
     assertFalse(restored.isMore());
-    assertEquals(7, restored.getSizeEx());
+    assertEquals(6, restored.getSizeEx());
   }
 
   @Test
@@ -57,12 +57,11 @@ class BlockTest {
   }
 
   @Test
-  void sizeExponentIsMaskedToThreeBitsWhenPacked() throws Exception {
-    Block source = new Block(23, 1, false, 15);
+  void reservedSizeExponentIsRejectedWhenDecoded() {
     Block restored = new Block(23);
 
-    restored.update(source.pack());
-
-    assertEquals(7, restored.getSizeEx());
+    assertThrows(
+        java.io.IOException.class,
+        () -> restored.update(new byte[]{0x17}));
   }
 }

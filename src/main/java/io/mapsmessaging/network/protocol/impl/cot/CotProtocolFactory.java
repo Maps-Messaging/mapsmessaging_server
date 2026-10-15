@@ -27,6 +27,7 @@ import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 import io.mapsmessaging.network.protocol.detection.MultiByteArrayDetection;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -56,7 +57,12 @@ public class CotProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
-    return null; // Inbound listener only, does not support initiating connections
+    CotProtocolConfigDTO config = (CotProtocolConfigDTO) endPoint.getConfig().getProtocolConfig("cot");
+    CotProtocol protocol = new CotProtocol(endPoint, new Packet(ByteBuffer.allocate(1_048_576)), config);
+    if (topicMap != null) {
+      topicMap.forEach(protocol::setTopicMapping);
+    }
+    return protocol;
   }
 
   @Override

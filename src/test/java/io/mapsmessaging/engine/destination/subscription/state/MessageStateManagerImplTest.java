@@ -321,6 +321,26 @@ class MessageStateManagerImplTest {
   }
 
 
+  @Test
+  void expiry_removes_a_browser_snapshot_and_does_not_resurrect_its_inflight_event() throws Exception {
+    MessageStateManagerImpl parent = createManager();
+    Message message = createMessage(2001L, 3);
+    parent.register(message);
+    IteratorStateManagerImpl browser = new IteratorStateManagerImpl("browser", 777, parent, true);
+    try {
+      browser.allocate(message);
+      Assertions.assertTrue(browser.hasMessagesInFlight());
+      parent.expired(2001L);
+      Assertions.assertFalse(parent.hasMessage(2001L));
+      Assertions.assertFalse(browser.hasMessage(2001L));
+      Assertions.assertFalse(browser.rollback(2001L));
+      Assertions.assertEquals(0, browser.pending());
+    } finally {
+      browser.close();
+      parent.close();
+    }
+  }
+
   private MessageStateManagerImpl createManager() {
     BitSetFactory bitSetFactory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
     return new MessageStateManagerImpl(MANAGER_NAME, UNIQUE_SESSION_ID, bitSetFactory);

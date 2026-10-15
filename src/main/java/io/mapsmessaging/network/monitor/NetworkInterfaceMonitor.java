@@ -38,8 +38,8 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class NetworkInterfaceMonitor implements Agent {
 
-  private static final String IPv4_ALL_HOSTS = "0.0.0.0";
-  private static final String IPv6_ALL_HOSTS = "::";
+  private static final String IPV4_ALL_HOSTS = "0.0.0.0";
+  private static final String IPV6_ALL_HOSTS = "::";
 
   @Getter
   private static final NetworkInterfaceMonitor instance = new NetworkInterfaceMonitor();
@@ -97,8 +97,8 @@ public class NetworkInterfaceMonitor implements Agent {
 
   public boolean ipAddressMatches(String source, InetAddress test) {
     return (source.equals(test.getHostAddress()) ||
-        test instanceof Inet4Address && source.equals(IPv4_ALL_HOSTS) ||
-        test instanceof Inet6Address && source.equals(IPv6_ALL_HOSTS));
+        test instanceof Inet4Address && source.equals(IPV4_ALL_HOSTS) ||
+        test instanceof Inet6Address && source.equals(IPV6_ALL_HOSTS));
   }
 
   public List<InetAddress> getIpAddressByName(String adapterName) {
@@ -106,13 +106,13 @@ public class NetworkInterfaceMonitor implements Agent {
     getCurrentNetworkInterfaces().forEach((s, networkInterfaceState) -> {
       if (networkInterfaceState.getName().equals(adapterName)) {
         list.addAll(networkInterfaceState.getIpAddresses());
-      } else if (adapterName.equals(IPv4_ALL_HOSTS)) {
+      } else if (adapterName.equals(IPV4_ALL_HOSTS)) {
         networkInterfaceState.getIpAddresses().forEach(inetAddress -> {
           if (inetAddress instanceof Inet4Address) {
             list.add(inetAddress);
           }
         });
-      } else if (adapterName.equals(IPv6_ALL_HOSTS)) {
+      } else if (adapterName.equals(IPV6_ALL_HOSTS)) {
         list.addAll(networkInterfaceState.getIpAddresses());
       }
     });

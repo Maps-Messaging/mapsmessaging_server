@@ -32,6 +32,7 @@ public class N2KAisConfigDTO {
   public static final boolean DEFAULT_ENABLED = true;
 
   public N2KAisConfigDTO() {
+    // Defaults are initialized by the field declarations.
   }
 
   @Schema(

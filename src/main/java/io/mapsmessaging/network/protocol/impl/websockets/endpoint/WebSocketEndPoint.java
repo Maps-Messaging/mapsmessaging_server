@@ -92,6 +92,9 @@ public class WebSocketEndPoint extends EndPoint implements BufferedReadEndPoint 
 
   @Override
   public int sendPacket(Packet packet) throws IOException {
+    if (closeResponseSent || decoder.isCloseReceived()) {
+      throw new ClosedChannelException();
+    }
     int consumed = writer.writeBinary(packet);
     int networkBytes = writer.getLastNetworkBytesWritten();
     if (networkBytes > 0) {

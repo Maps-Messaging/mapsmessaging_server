@@ -46,7 +46,7 @@ public class AISN2KManager implements Lifecycle {
 
   @Override
   public void start() {
-
+    // Drone monitors are created when a protocol is registered.
   }
 
   @Override

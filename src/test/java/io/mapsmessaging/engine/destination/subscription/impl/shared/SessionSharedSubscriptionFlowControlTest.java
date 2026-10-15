@@ -51,6 +51,10 @@ class SessionSharedSubscriptionFlowControlTest {
     AcknowledgementController acknowledgementController = mock(AcknowledgementController.class);
     Message message = mock(Message.class);
 
+    DestinationImpl destination = mock(DestinationImpl.class);
+    when(destination.getFullyQualifiedNamespace()).thenReturn("queue/flow-control");
+    when(sharedSubscription.getDestinationImpl()).thenReturn(destination);
+    when(context.getKey()).thenReturn("queue/flow-control");
     when(context.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
     when(session.getClientConnection()).thenReturn(clientConnection);
     when(acknowledgementController.canSend()).thenReturn(true);
@@ -82,6 +86,10 @@ class SessionSharedSubscriptionFlowControlTest {
     AcknowledgementController acknowledgementController = mock(AcknowledgementController.class);
     Message message = mock(Message.class);
 
+    DestinationImpl destination = mock(DestinationImpl.class);
+    when(destination.getFullyQualifiedNamespace()).thenReturn("queue/flow-control");
+    when(sharedSubscription.getDestinationImpl()).thenReturn(destination);
+    when(context.getKey()).thenReturn("queue/flow-control");
     when(context.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
     when(session.getClientConnection()).thenReturn(clientConnection);
     when(acknowledgementController.canSend()).thenReturn(true);
@@ -110,6 +118,8 @@ class SessionSharedSubscriptionFlowControlTest {
     SubscriptionContext sessionContext = mock(SubscriptionContext.class);
     AcknowledgementController sessionAcknowledgement = mock(AcknowledgementController.class);
 
+    when(destination.getFullyQualifiedNamespace()).thenReturn("queue/flow-control");
+    when(sessionContext.getKey()).thenReturn("queue/flow-control");
     when(sharedContext.isSync()).thenReturn(false);
     when(messageStateManager.nextMessageId()).thenReturn(42L);
     when(destination.getMessage(42L)).thenThrow(new IOException("store read failed"));
@@ -146,6 +156,8 @@ class SessionSharedSubscriptionFlowControlTest {
     AcknowledgementController sessionAcknowledgement = mock(AcknowledgementController.class);
     Message message = mock(Message.class);
 
+    when(destination.getFullyQualifiedNamespace()).thenReturn("queue/flow-control");
+    when(sessionContext.getKey()).thenReturn("queue/flow-control");
     when(sharedContext.isSync()).thenReturn(false);
     when(messageStateManager.nextMessageId()).thenReturn(42L);
     when(destination.getMessage(42L)).thenReturn(message);

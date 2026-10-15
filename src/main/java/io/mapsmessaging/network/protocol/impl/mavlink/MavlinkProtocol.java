@@ -87,7 +87,9 @@ public class MavlinkProtocol extends Protocol {
   private final Map<Integer, MavlinkAcceptedSourceDTO> acceptedComponents;
   private final Map<Integer, SequenceTracker> sequenceTrackers;
   private final String outboundTopicName;
-  protected volatile MavlinkEventFactory mavlinkEventFactory;
+  // Parsing and dialect replacement stay on the selector thread or the serial port
+  // single-thread read executor; the factory maintains mutable per-stream context.
+  protected MavlinkEventFactory mavlinkEventFactory;
   protected final MessageFormatter formatter;
   private final QualityOfService qos;
   private final boolean storeOffline;
@@ -179,7 +181,10 @@ public class MavlinkProtocol extends Protocol {
   public ProtocolInformationDTO getInformation() {
     MavlinkProtocolInformation information = new MavlinkProtocolInformation();
     updateInformation(information);
-    information.setSessionInfo(session.getSessionInformation());
+    Session currentSession = session;
+    if (currentSession != null) {
+      information.setSessionInfo(currentSession.getSessionInformation());
+    }
     return information;
   }
 
@@ -252,7 +257,10 @@ public class MavlinkProtocol extends Protocol {
     endPoint.getEndPointStatus().incrementReceivedMessages();
     endPoint.updateReadBytes(raw.length);
     ProcessedFrame env = mavlinkEventFactory.unpack(endPoint.getName(), ByteBuffer.wrap(raw)).orElse(null);
-    if(env == null) {
+    if (env == null || !env.isValid()) {
+      return;
+    }
+    if (env.getFrame().getSystemId() == 0 || env.getFrame().getComponentId() == 0) {
       return;
     }
     if (!detectedDialect && env.getFrame().getMessageId() == 0) {
@@ -391,7 +399,7 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public String getVersion() {
-    return "1.0";
+    return "1/2";
   }
 
   protected String computeTopicName(String template, Frame envelope, String messageName) {

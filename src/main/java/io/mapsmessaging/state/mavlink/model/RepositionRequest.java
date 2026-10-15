@@ -33,6 +33,6 @@ public record RepositionRequest(
   }
 
   public RepositionRequest {
-    position = Objects.requireNonNull(position, "position must not be null");
+    Objects.requireNonNull(position, "position must not be null");
   }
 }

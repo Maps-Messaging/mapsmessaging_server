@@ -30,7 +30,33 @@ import java.util.List;
 
 public class MqttSnConfig extends MqttSnConfigDTO implements Config {
 
+  // Persisted separately by toConfigurationProperties; not part of the REST DTO wire form.
+  @SuppressWarnings("java:S1948")
+  private final ConfigurationProperties protectionConfiguration;
+  // A runtime-only secret supplier must never be serialized with endpoint configuration.
+  private final transient java.util.function.Supplier<char[]> protectionEntryPasswordSupplier;
+
+  /** Endpoint-only secure settings are deliberately excluded from REST DTO serialization. */
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  public ConfigurationProperties getProtectionConfiguration() {
+    return protectionConfiguration;
+  }
+
+  public char[] resolveProtectionEntryPassword() {
+    return protectionEntryPasswordSupplier == null ? null : protectionEntryPasswordSupplier.get();
+  }
+
+
   public MqttSnConfig(ConfigurationProperties config) {
+    this(config, null);
+  }
+
+  /** Optional transient password provider for programmatic endpoint creation. */
+  public MqttSnConfig(ConfigurationProperties config,
+      java.util.function.Supplier<char[]> protectionEntryPasswordSupplier) {
+    this.protectionEntryPasswordSupplier = protectionEntryPasswordSupplier;
+    protectionConfiguration = config.get("protection") instanceof ConfigurationProperties nested
+        ? nested : null;
     setType("mqtt-sn");
     ProtocolConfigFactory.unpack(config, this);
 
@@ -148,11 +174,13 @@ public class MqttSnConfig extends MqttSnConfigDTO implements Config {
     properties.put("maxInFlightEvents", this.maxInFlightEvents);
     properties.put("dropQoS0Events", this.dropQoS0);
     properties.put("eventQueueTimeout", this.eventQueueTimeout);
+    // Persist endpoint security policy in server configuration; JSON REST getter is ignored.
+    if (protectionConfiguration != null) properties.put("protection", protectionConfiguration);
 
     // Add predefined topics list to properties
     List<ConfigurationProperties> predefinedPropsList = new ArrayList<>();
     predefinedTopicsList.stream()
-        .map(topic -> topic.toConfigurationProperties())
+        .map(Config::toConfigurationProperties)
         .forEachOrdered(predefinedPropsList::add);
     properties.put("preDefinedTopics", predefinedPropsList);
 

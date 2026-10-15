@@ -17,11 +17,11 @@ ENV LANG=en_US.UTF-8 \
     PATH=/usr/lib/jvm/zulu-21/bin:$PATH
 
 # Install required tools and JDK
-RUN apk add --no-cache dos2unix shadow wget && \
+RUN apk add --no-cache ca-certificates curl dos2unix shadow && \
     ZULU_ARCH=zulu21.44.17-ca-jdk21.0.8-linux_musl_x64.tar.gz && \
     INSTALL_DIR=$(dirname "$JAVA_HOME") && \
     ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
-    wget -q https://cdn.azul.com/zulu/bin/${ZULU_ARCH} && \
+    curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-redirs 5 --output "${ZULU_ARCH}" "https://cdn.azul.com/zulu/bin/${ZULU_ARCH}" && \
     mkdir -p ${INSTALL_DIR} && \
     tar -xf ${ZULU_ARCH} -C ${INSTALL_DIR} && \
     rm -f ${ZULU_ARCH} && \
@@ -29,7 +29,7 @@ RUN apk add --no-cache dos2unix shadow wget && \
     find ${JAVA_HOME}/bin -type f -perm -a=x -exec ln -s {} /usr/bin/ \; && \
 \
 # Download and extract the messaging server
-    wget -q https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/maps-%%MAPS_VERSION%%-install.tar.gz && \
+    curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-redirs 5 --output "maps-%%MAPS_VERSION%%-install.tar.gz" "https://github.com/Maps-Messaging/mapsmessaging_server/releases/download/%%MAPS_VERSION%%/maps-%%MAPS_VERSION%%-install.tar.gz" && \
     tar -xf maps-%%MAPS_VERSION%%-install.tar.gz && \
     rm maps-%%MAPS_VERSION%%-install.tar.gz && \
 \

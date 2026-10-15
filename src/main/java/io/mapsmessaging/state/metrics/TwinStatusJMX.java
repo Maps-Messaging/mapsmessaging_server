@@ -50,7 +50,9 @@ import java.util.function.Predicate;
 @JMXBean(description = "Digital twin counts by type and lifecycle, with MTI state and age")
 public class TwinStatusJMX {
 
-  private static final Set<String> MTI_STATES = Set.of("go", "mitigate", "hold", "unknown");
+  private static final String MITIGATE = "mitigate";
+
+  private static final Set<String> MTI_STATES = Set.of("go", MITIGATE, "hold", "unknown");
 
   private final TwinManager twinManager;
   private final TwinType twinType;
@@ -89,7 +91,7 @@ public class TwinStatusJMX {
 
   @JMXBeanAttribute(name = "Mti Mitigate Count", description = "Twins whose MTI state is mitigate")
   public long getMtiMitigateCount() {
-    return count(snapshot -> hasState(snapshot, "mitigate"));
+    return count(snapshot -> hasState(snapshot, MITIGATE));
   }
 
   @JMXBeanAttribute(name = "Mti Hold Count", description = "Twins whose MTI state is hold")
@@ -192,7 +194,7 @@ public class TwinStatusJMX {
   }
 
   private static boolean isKnown(MtiStatusSnapshot snapshot) {
-    return hasState(snapshot, "go") || hasState(snapshot, "mitigate") || hasState(snapshot, "hold");
+    return hasState(snapshot, "go") || hasState(snapshot, MITIGATE) || hasState(snapshot, "hold");
   }
 
   private long countAgeAtMost(Duration maxAge) {

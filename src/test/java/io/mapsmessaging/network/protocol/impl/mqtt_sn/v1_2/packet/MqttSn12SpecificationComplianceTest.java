@@ -1,7 +1,9 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet;
 
+import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.network.io.Packet;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -15,11 +17,18 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("conformance")
+@Tag("conformance-core")
+@Tag("mqtt-sn")
 class MqttSn12SpecificationComplianceTest {
+
+  private static final String SPEC = "MQTT-SN Version 1.2";
+  private static final String SOURCE = ProtocolRequirement.MQTT_SN_12_SOURCE;
 
   private final PacketFactory factory = new PacketFactory();
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.4 CONNECT: ProtocolId MUST be 0x01 for MQTT-SN 1.2", source = SOURCE)
   void connectProtocolIdOneIsAccepted() throws Exception {
     MQTT_SNPacket packet = parse(bytes(8, MQTT_SNPacket.CONNECT, 0x04, 0x01, 0, 30, 'i', 'd'));
 
@@ -32,6 +41,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @ValueSource(ints = {0x00, 0x02, 0x7f, 0xff})
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.4 CONNECT: ProtocolId MUST be 0x01 for MQTT-SN 1.2", source = SOURCE)
   void mqttSn12RejectsAnyConnectProtocolIdOtherThanOne(int protocolId) throws Exception {
     MQTT_SNPacket packet =
         parse(bytes(8, MQTT_SNPacket.CONNECT, 0x04, protocolId, 0, 30, 'i', 'd'));
@@ -45,6 +55,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @MethodSource("qosFlags")
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.3.4 and 5.4.12 PUBLISH: QoS bits encode levels 0, 1, 2 and -1", source = SOURCE)
   void publishDecodesAllMqttSn12QosBitPatterns(
       int qosBits, QualityOfService expected) throws Exception {
     Publish publish = assertInstanceOf(
@@ -55,6 +66,7 @@ class MqttSn12SpecificationComplianceTest {
   }
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Section 6.8 QoS -1: PUBLISH uses predefined or short topic and MsgId 0 without a connection", source = SOURCE)
   void qosMinusOnePublishUsesPredefinedTopicIdAndZeroMessageId() throws Exception {
     Publish publish = assertInstanceOf(
         Publish.class,
@@ -76,6 +88,7 @@ class MqttSn12SpecificationComplianceTest {
   }
 
   @Test
+  @ProtocolRequirement(specification = SPEC, value = "Sections 5.3.4 and 6.8 QoS -1: TopicIdType 0b10 carries a two-octet short topic name", source = SOURCE)
   void qosMinusOnePublishShortTopicCarriesTwoOctetTopicName() throws Exception {
     Publish publish = assertInstanceOf(
         Publish.class,
@@ -104,6 +117,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @MethodSource("shortNames")
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.15 SUBSCRIBE: TopicIdType 0b10 identifies a two-octet short topic name", source = SOURCE)
   void subscribeShortTopicIsExposedAsTwoOctetTopicName(String shortName) throws Exception {
     byte[] name = shortName.getBytes(StandardCharsets.US_ASCII);
     Subscribe subscribe = assertInstanceOf(
@@ -126,6 +140,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @MethodSource("shortNames")
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.17 UNSUBSCRIBE: TopicIdType 0b10 identifies a two-octet short topic name", source = SOURCE)
   void unsubscribeShortTopicIsExposedAsTwoOctetTopicName(String shortName) throws Exception {
     byte[] name = shortName.getBytes(StandardCharsets.US_ASCII);
     Unsubscribe unsubscribe = assertInstanceOf(
@@ -148,6 +163,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @MethodSource("reservedTopicTypePackets")
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.3.4 Flags: TopicIdType 0b11 is reserved in MQTT-SN 1.2", source = SOURCE)
   void reservedTopicIdTypeIsRejected(byte[] wire) {
     assertThrows(
         IOException.class,
@@ -157,6 +173,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @MethodSource("normalTopicNames")
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.15 SUBSCRIBE: TopicIdType 0b00 carries a normal topic name", source = SOURCE)
   void subscribeNormalTopicPreservesCompleteTopicName(String topic) throws Exception {
     byte[] topicBytes = topic.getBytes(StandardCharsets.UTF_8);
     byte[] wire = new byte[5 + topicBytes.length];
@@ -176,6 +193,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @MethodSource("normalTopicNames")
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.17 UNSUBSCRIBE: TopicIdType 0b00 carries a normal topic name", source = SOURCE)
   void unsubscribeNormalTopicPreservesCompleteTopicName(String topic) throws Exception {
     byte[] topicBytes = topic.getBytes(StandardCharsets.UTF_8);
     byte[] wire = new byte[5 + topicBytes.length];
@@ -195,6 +213,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @ValueSource(ints = {0, 1, 30, 60, 300, 65535})
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.21 DISCONNECT: optional Duration is a two-octet value in seconds", source = SOURCE)
   void disconnectDurationIsUnsignedSixteenBitSeconds(int duration) throws Exception {
     Disconnect disconnect = assertInstanceOf(
         Disconnect.class,
@@ -209,6 +228,7 @@ class MqttSn12SpecificationComplianceTest {
 
   @ParameterizedTest
   @MethodSource("clientIds")
+  @ProtocolRequirement(specification = SPEC, value = "Section 5.4.19 PINGREQ: ClientId MAY be included by a sleeping client when waking", source = SOURCE)
   void pingRequestMayCarryClientIdForSleepingClient(String clientId) throws Exception {
     byte[] client = clientId.getBytes(StandardCharsets.UTF_8);
     byte[] wire = new byte[2 + client.length];
@@ -221,6 +241,121 @@ class MqttSn12SpecificationComplianceTest {
     assertEquals(clientId, ping.getClientId());
   }
 
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section 5.4.10 REGISTER: TopicId, MsgId and TopicName are carried in the registration request",
+      source = SOURCE)
+  void registerCarriesTopicIdMessageIdAndName() throws Exception {
+    Register register = assertInstanceOf(
+        Register.class,
+        parse(bytes(14, MQTT_SNPacket.REGISTER, 0x12, 0x34, 0x45, 0x67,
+            's', 'e', 'n', 's', 'o', 'r', '/', 'x')));
+
+    assertEquals(0x1234, register.getTopicId());
+    assertEquals(0x4567, register.getMessageId());
+    assertEquals("sensor/x", register.getTopic());
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section 5.4.11 REGACK: acknowledgment returns TopicId, MsgId and ReturnCode",
+      source = SOURCE)
+  void regAckPreservesTopicIdMessageIdAndReturnCode() throws Exception {
+    RegisterAck ack = assertInstanceOf(
+        RegisterAck.class,
+        parse(bytes(7, MQTT_SNPacket.REGACK, 0x12, 0x34, 0x45, 0x67, 0x00)));
+
+    assertEquals(0x1234, ack.getTopicId());
+    assertEquals(0x4567, ack.getMessageId());
+    assertEquals(ReasonCodes.SUCCESS, ack.getStatus());
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section 5.4.13 PUBACK: acknowledgment returns TopicId, MsgId and ReturnCode",
+      source = SOURCE)
+  void pubAckPreservesTopicIdMessageIdAndReturnCode() throws Exception {
+    PubAck ack = assertInstanceOf(
+        PubAck.class,
+        parse(bytes(7, MQTT_SNPacket.PUBACK, 0x00, 0x2a, 0x12, 0x34, 0x00)));
+
+    assertEquals(42, ack.getTopicId());
+    assertEquals(0x1234, ack.getMessageId());
+    assertEquals(ReasonCodes.SUCCESS, ack.getStatus());
+  }
+
+  @ParameterizedTest
+  @MethodSource("qos2AcknowledgementPackets")
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section 5.4.14 PUBREC/PUBREL/PUBCOMP: QoS 2 acknowledgment packets carry the matching MsgId",
+      source = SOURCE)
+  void qos2AcknowledgementsPreserveMessageId(byte[] wire, Class<? extends MQTT_SNPacket> type)
+      throws Exception {
+    MQTT_SNPacket packet = parse(wire);
+    assertInstanceOf(type, packet);
+
+    int messageId;
+    if (packet instanceof PubRec pubRec) {
+      messageId = pubRec.getMessageId();
+    } else if (packet instanceof PubRel pubRel) {
+      messageId = pubRel.getMessageId();
+    } else {
+      messageId = ((PubComp) packet).getMessageId();
+    }
+    assertEquals(0x1234, messageId);
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section 5.4.18 UNSUBACK: acknowledgment carries the MsgId of the UNSUBSCRIBE request",
+      source = SOURCE)
+  void unsubAckEncodesMatchingMessageId() {
+    UnSubAck ack = new UnSubAck(0x1234);
+    Packet packet = new Packet(8, false);
+
+    assertEquals(4, ack.packFrame(packet));
+    packet.flip();
+    assertEquals(4, packet.getByte());
+    assertEquals(MQTT_SNPacket.UNSUBACK, packet.getByte());
+    assertEquals(0x1234, packet.getShort());
+    assertEquals(0, packet.available());
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Section 5.4.20 PINGRESP: response is a two-octet packet containing only Length and MsgType",
+      source = SOURCE)
+  void pingResponseUsesTwoOctetForm() throws Exception {
+    assertInstanceOf(
+        PingResponse.class,
+        parse(bytes(2, MQTT_SNPacket.PINGRESP)));
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = SPEC,
+      value = "Sections 5.4.6-5.4.9 Will handshake: WILLTOPIC and WILLMSG carry the prompted Will data",
+      source = SOURCE)
+  void willTopicAndMessageCarryPromptedWillData() throws Exception {
+    WillTopic topic = assertInstanceOf(
+        WillTopic.class,
+        parse(bytes(8, MQTT_SNPacket.WILLTOPIC, 0x20, 'w', 'i', 'l', 'l', '1')));
+    assertEquals("will1", topic.getTopic());
+    assertEquals(QualityOfService.AT_LEAST_ONCE, topic.getQoS());
+
+    WillMessage message = assertInstanceOf(
+        WillMessage.class,
+        parse(bytes(6, MQTT_SNPacket.WILLMSG, 'd', 'a', 't', 'a')));
+    assertArrayEquals("data".getBytes(StandardCharsets.UTF_8), message.getMessage());
+  }
+
   private MQTT_SNPacket parse(byte[] wire) throws Exception {
     return factory.parseFrame(new Packet(ByteBuffer.wrap(wire)));
   }
@@ -231,6 +366,13 @@ class MqttSn12SpecificationComplianceTest {
       result[i] = (byte) values[i];
     }
     return result;
+  }
+
+  private static Stream<Arguments> qos2AcknowledgementPackets() {
+    return Stream.of(
+        Arguments.of(bytes(4, MQTT_SNPacket.PUBREC, 0x12, 0x34), PubRec.class),
+        Arguments.of(bytes(4, MQTT_SNPacket.PUBREL, 0x12, 0x34), PubRel.class),
+        Arguments.of(bytes(4, MQTT_SNPacket.PUBCOMP, 0x12, 0x34), PubComp.class));
   }
 
   private static Stream<Arguments> qosFlags() {

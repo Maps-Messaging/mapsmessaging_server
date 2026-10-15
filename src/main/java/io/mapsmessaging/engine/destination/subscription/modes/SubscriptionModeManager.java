@@ -60,6 +60,22 @@ public abstract class SubscriptionModeManager {
     activeSubscriptions =  new LinkedHashMap<>();
   }
 
+  public void setDeliveryStateCoordinator(io.mapsmessaging.engine.session.DeliveryStateCoordinator coordinator) {
+    for (Subscription subscription : activeSubscriptions.values()) {
+      subscription.setDeliveryStateCoordinator(coordinator);
+    }
+  }
+
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(
+      io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
+    for (Subscription subscription : activeSubscriptions.values()) {
+      if (!subscription.isContextEmpty() && subscription.getDeliveryKey().equals(delivery.topic())) {
+        return subscription.acknowledgeRecoveredDelivery(delivery.messageId());
+      }
+    }
+    return null;
+  }
+
   public void shutdown(){
     closeSubscriptions(activeSubscriptions, true);
   }

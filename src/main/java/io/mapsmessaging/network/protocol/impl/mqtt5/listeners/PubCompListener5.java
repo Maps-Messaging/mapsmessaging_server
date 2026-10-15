@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -34,7 +35,16 @@ public class PubCompListener5 extends PacketListener5 {
   public MQTTPacket5 handlePacket(
       MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     PubComp5 pubComp = (PubComp5) mqttPacket;
-    ((MQTT5Protocol) protocol).getPacketIdManager().completePacketId(pubComp.getPacketIdentifier());
+    PacketIdManager manager = ((MQTT5Protocol) protocol).getPacketIdManager();
+    int qos = manager.getPacketQos(pubComp.getPacketIdentifier());
+    if ((manager.hasDeliveryStore() || qos != 0) && (qos != 2 || !manager.isAwaitingPubComp(pubComp.getPacketIdentifier()))) {
+      return null;
+    }
+    if (manager.hasDeliveryStore() && !((MQTT5Protocol) protocol).isPubRelReady(pubComp.getPacketIdentifier())) {
+      return null;
+    }
+    manager.completePacketId(pubComp.getPacketIdentifier());
+    ((MQTT5Protocol) protocol).completePubRel(pubComp.getPacketIdentifier());
 
     long id = pubComp.getPacketIdentifier();
     List<Long> outstanding = ((MQTT5Protocol) protocol).getClientOutstanding();

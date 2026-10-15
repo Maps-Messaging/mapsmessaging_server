@@ -63,7 +63,10 @@ public class MqttKeepAliveManager {
 
   public static int negotiateServerKeepAlive(int requestedKeepAlive, int minimumKeepAlive, int maximumKeepAlive) {
     if (requestedKeepAlive == 0) {
-      return minimumKeepAlive == 0 ? 0 : (maximumKeepAlive == 0 ? minimumKeepAlive : maximumKeepAlive);
+      if (minimumKeepAlive == 0) {
+        return 0;
+      }
+      return maximumKeepAlive == 0 ? minimumKeepAlive : maximumKeepAlive;
     }
     if (requestedKeepAlive < minimumKeepAlive) {
       return minimumKeepAlive;

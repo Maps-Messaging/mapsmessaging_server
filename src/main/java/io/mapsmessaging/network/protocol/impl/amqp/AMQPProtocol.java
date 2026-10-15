@@ -79,7 +79,9 @@ public class AMQPProtocol extends Protocol {
     sessionId = "";
     protonEngine = new ProtonEngine(this);
     protonEngine.processPacket(packet);
-    registerRead();
+    if (!closed) {
+      registerRead();
+    }
   }
 
   @Override
@@ -148,8 +150,11 @@ public class AMQPProtocol extends Protocol {
 
   @Override
   public boolean processPacket(@NonNull @NotNull Packet packet) throws IOException {
+    if (closed) {
+      return false;
+    }
     protonEngine.processPacket(packet);
-    return true;
+    return !closed;
   }
 
   public @NonNull @NotNull Logger getLogger() {

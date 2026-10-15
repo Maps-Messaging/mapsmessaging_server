@@ -52,8 +52,9 @@ class SessionTest extends MessageAPITest implements ProtocolMessageListener {
   @Test
   @DisplayName("Simple session construction tests")
   void sessionConstructionTest(TestInfo testInfo) throws Exception {
-    int initialCount = SessionManagerTest.getInstance().sessionCount();
-    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, false, this);
+    int initialCount = SessionManagerTest.getInstance().nonCanSessionCount();
+    String sessionName = testInfo.getTestMethod().get().getName();
+    Session session = createSession(sessionName, 5, 2, false, this);
     Assertions.assertTrue(SessionManagerTest.getInstance().hasSessions());
     Destination destinationImpl = session.findDestination("topic1", DestinationType.TOPIC).get();
     Assertions.assertNotNull(destinationImpl);
@@ -76,16 +77,22 @@ class SessionTest extends MessageAPITest implements ProtocolMessageListener {
     Assertions.assertFalse(messageList.isEmpty());
 
     close(session);
-    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());
+    Assertions.assertFalse(SessionManagerTest.getInstance().hasActiveSession(sessionName));
+    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().nonCanSessionCount());
     TimeUnit.SECONDS.sleep(4);
     if(SessionManagerTest.getInstance().hasIdleSessions()){
-      for(String sessionName:SessionManagerTest.getInstance().getIdleSessions()){
-        SubscriptionController controller = SessionManagerTest.getInstance().getIdleSubscriptions(sessionName);
-        System.err.println("Left over controller::"+controller.getSessionId()+" Timeout::"+controller.getTimeout());
-        super.closeSession(controller.getSessionId());
+      for(String idleSessionName:SessionManagerTest.getInstance().getIdleSessions()){
+        if (SessionManagerTest.getInstance().isCanBackedSession(idleSessionName)) {
+          continue;
+        }
+        SubscriptionController controller = SessionManagerTest.getInstance().getIdleSubscriptions(idleSessionName);
+        if (controller != null) {
+          System.err.println("Left over controller::"+controller.getSessionId()+" Timeout::"+controller.getTimeout());
+          super.closeSession(controller.getSessionId());
+        }
       }
     }
-    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());
+    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().nonCanSessionCount());
   }
 
   @Test

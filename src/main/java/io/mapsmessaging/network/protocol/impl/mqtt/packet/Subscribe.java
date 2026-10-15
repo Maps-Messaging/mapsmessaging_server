@@ -50,20 +50,23 @@ public class Subscribe extends MQTTPacket {
       throw new MalformedException("Subscribe Fixed Header bits 3,2,1,0 must be set as 0,0,1,0  as per the specification : [MQTT-3.8.1-1]");
     }
     messageId = readShort(packet);
-    subscriptionList = new ArrayList<>();
-    int position = 2; // Include the short we read for the message ID
-    while (position < remainingLen) {
-      String topicFilter = readUTF8(packet);
-      QualityOfService qos = QualityOfService.getInstance(packet.get() & 0b11);
-      if (qos.equals(QualityOfService.MQTT_SN_REGISTERED)) {
-        throw new MalformedException("QoS valid values are 0,1 or 2 any other values are considered a Malformed Packet : [MQTT-3-8.3-4]");
-      }
-      SubscriptionInfo info = new SubscriptionInfo(topicFilter, qos);
-      subscriptionList.add(info);
-      position += info.length() + 2; // 2 for the length of the string
+    if (messageId == 0) {
+      throw new MalformedException("SUBSCRIBE Packet Identifier must not be zero [MQTT-2.3.1-1]");
     }
-    if (subscriptionList.isEmpty()) {
-      throw new MalformedException("Subscription request must have at least 1 topic / qos entry as per [MQTT-3.8.3-3]");
+    subscriptionList = new ArrayList<>();
+    int start = packet.position();
+    while (packet.position() - start < remainingLen - 2) {
+      String topicFilter = readUTF8(packet);
+      MqttTopicFilterValidator.validate(topicFilter);
+      int options = packet.get() & 0xff;
+      if ((options & 0xfc) != 0 || (options & 0x03) == 3) {
+        throw new MalformedException("Invalid MQTT 3.1.1 SUBSCRIBE options");
+      }
+      QualityOfService qos = QualityOfService.getInstance(options);
+      subscriptionList.add(new SubscriptionInfo(topicFilter, qos));
+    }
+    if (subscriptionList.isEmpty() || packet.position() - start != remainingLen - 2) {
+      throw new MalformedException("Invalid MQTT 3.1.1 SUBSCRIBE payload length");
     }
   }
 
@@ -91,7 +94,7 @@ public class Subscribe extends MQTTPacket {
     writeVariableInt(packet, length);
     writeShort(packet, messageId);
     for (SubscriptionInfo info : subscriptionList) {
-      writeUTF8(packet, info.getTopicName());
+      writeUTF8(packet, info.getTopicFilter());
       packet.put((byte) info.getQualityOfService().getLevel());
     }
 

@@ -49,29 +49,73 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
 
   @Override
   public @Nullable SubscriptionContext getContext() {
-    if (!contextList.isEmpty()) {
-      return contextList.get(0);
+    synchronized (contextList) {
+      return contextList.isEmpty() ? null : contextList.get(0);
     }
-    return null;
+  }
+
+  /** Existing session journal used by restored offline subscriptions before first reconnect. */
+  public void setDeliveryStateCoordinator(io.mapsmessaging.engine.session.DeliveryStateCoordinator coordinator) {
+    // Subscription implementations without protocol delivery state require no attachment.
+  }
+
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    // Subscription implementations without protocol delivery state require no attachment.
+  }
+
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(long messageId) {
+    return java.util.concurrent.CompletableFuture.failedFuture(
+        new UnsupportedOperationException("Subscription cannot acknowledge recovered delivery"));
+  }
+
+  protected java.util.concurrent.CompletableFuture<Void> submitRecoveredAcknowledgement(
+      io.mapsmessaging.engine.destination.DestinationImpl destination, Runnable acknowledgement) {
+    java.util.concurrent.CompletableFuture<Void> completion = new java.util.concurrent.CompletableFuture<>();
+    try {
+      destination.submit(new io.mapsmessaging.engine.tasks.EngineTask() {
+        @Override
+        public Response taskCall() {
+          try {
+            acknowledgement.run();
+            completion.complete(null);
+            return new io.mapsmessaging.engine.tasks.VoidResponse();
+          } catch (RuntimeException error) {
+            completion.completeExceptionally(error);
+            throw error;
+          }
+        }
+      });
+    } catch (RuntimeException error) {
+      completion.completeExceptionally(error);
+    }
+    return completion;
   }
 
   public abstract void delete() throws IOException;
 
   public void addContext(SubscriptionContext context) {
-    contextList.add(context);
+    synchronized (contextList) {
+      contextList.add(context);
+    }
   }
 
   @Override
   public List<SubscriptionContext> getContexts() {
-    return new ArrayList<>(contextList);
+    synchronized (contextList) {
+      return new ArrayList<>(contextList);
+    }
   }
 
   public boolean isContextEmpty(){
-    return contextList.isEmpty();
+    synchronized (contextList) {
+      return contextList.isEmpty();
+    }
   }
 
   public void removeContext(SubscriptionContext context) {
-    contextList.remove(context);
+    synchronized (contextList) {
+      contextList.remove(context);
+    }
   }
 
   public void hibernate() {
@@ -87,7 +131,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("Context:");
-    for (SubscriptionContext context : contextList) {
+    for (SubscriptionContext context : getContexts()) {
       sb.append(context.toString()).append(",");
     }
     return sb.toString();

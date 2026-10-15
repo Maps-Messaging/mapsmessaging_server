@@ -54,12 +54,13 @@ public class StreamListHandler extends JetStreamFrameHandler {
     List<StreamEntry> entries = NamespaceManager.getInstance().getStreamEntries();
 
     // Extract pagination values
-    int offset = json.has("offset") ? json.get("offset").getAsInt() : 0;
-    int limit = json.has("limit") ? json.get("limit").getAsInt() : 1024;
+    int offset = json != null && json.has("offset") ? json.get("offset").getAsInt() : 0;
+    int limit = json != null && json.has("limit") ? json.get("limit").getAsInt() : 256;
 
     // Clamp values to avoid index errors
     offset = Math.clamp(offset, 0, entries.size());
-    int toIndex = Math.min(offset + limit, entries.size());
+    limit = Math.clamp(limit, 1, 256);
+    int toIndex = offset + Math.min(limit, entries.size() - offset);
 
     List<StreamEntry> page = entries.subList(offset, toIndex);
 

@@ -99,27 +99,44 @@ final class KpiCalculator {
 
   static KpiSnapshot compute(List<AssetAssessment> assets) {
     int roster = assets.size();
-    int eligible = 0;
-    int go = 0;
-    int covered = 0;
-    int actionable = 0;
-    int mtiStale = 0;
-    int positionStale = 0;
-    int unknown = 0;
-    int degraded = 0;
-    int unknownOrDegraded = 0;
-    int specific = 0;
-    int fallback = 0;
-    int failure = 0;
-    int scripted = 0;
-    int asExpected = 0;
-    Map<AssetAssessment.UnknownReason, Integer> reasons = new EnumMap<>(AssetAssessment.UnknownReason.class);
-    for (AssetAssessment.UnknownReason reason : AssetAssessment.UnknownReason.values()) {
-      reasons.put(reason, 0);
-    }
-    Set<String> freshMti = new TreeSet<>();
-
+    Counts counts = new Counts();
     for (AssetAssessment asset : assets) {
+      counts.add(asset);
+    }
+    return counts.snapshot(roster);
+  }
+
+  private static final class Counts {
+    private int eligible;
+    private int go;
+    private int covered;
+    private int actionable;
+    private int mtiStale;
+    private int positionStale;
+    private int unknown;
+    private int degraded;
+    private int unknownOrDegraded;
+    private int specific;
+    private int fallback;
+    private int failure;
+    private int scripted;
+    private int asExpected;
+    private final Map<AssetAssessment.UnknownReason, Integer> reasons = new EnumMap<>(AssetAssessment.UnknownReason.class);
+    private final Set<String> freshMti = new TreeSet<>();
+
+    private Counts() {
+      for (AssetAssessment.UnknownReason reason : AssetAssessment.UnknownReason.values()) {
+        reasons.put(reason, 0);
+      }
+    }
+
+    private void add(AssetAssessment asset) {
+      countMti(asset);
+      countHealth(asset);
+      countClassification(asset);
+    }
+
+    private void countMti(AssetAssessment asset) {
       if (asset.eligible()) {
         eligible++;
         if (asset.mti() == AssetAssessment.MtiCondition.GO) {
@@ -135,6 +152,9 @@ final class KpiCalculator {
           actionable++;
         }
       }
+    }
+
+    private void countHealth(AssetAssessment asset) {
       if (!asset.positionFresh()) {
         positionStale++;
       }
@@ -150,6 +170,9 @@ final class KpiCalculator {
       if (isUnknown || asset.isDegraded()) {
         unknownOrDegraded++;
       }
+    }
+
+    private void countClassification(AssetAssessment asset) {
       if (asset.isClassificationSpecific()) {
         specific++;
       } else {
@@ -160,25 +183,27 @@ final class KpiCalculator {
       }
       if (asset.classifiedAsExpected() != null) {
         scripted++;
-        if (asset.classifiedAsExpected()) {
+        if (asset.classifiedAsExpected().booleanValue()) {
           asExpected++;
         }
       }
     }
 
-    Map<KpiId, KpiSnapshot.Value> values = new EnumMap<>(KpiId.class);
-    values.put(KpiId.READINESS, new KpiSnapshot.Value(go, eligible));
-    values.put(KpiId.COVERAGE, new KpiSnapshot.Value(covered, eligible));
-    values.put(KpiId.UNKNOWN_DEGRADED, new KpiSnapshot.Value(unknownOrDegraded, roster));
-    values.put(KpiId.POSITION_STALE, new KpiSnapshot.Value(positionStale, roster));
-    values.put(KpiId.CLASSIFICATION_TRUST, new KpiSnapshot.Value(specific, roster));
-    values.put(KpiId.ACTIONABLE_TRUST, new KpiSnapshot.Value(actionable, eligible));
-    values.put(KpiId.MTI_STALE, new KpiSnapshot.Value(mtiStale, eligible));
-    values.put(KpiId.UNKNOWN, new KpiSnapshot.Value(unknown, roster));
-    values.put(KpiId.DEGRADED, new KpiSnapshot.Value(degraded, roster));
-    values.put(KpiId.CLASSIFICATION_FALLBACK, new KpiSnapshot.Value(fallback, roster));
-    values.put(KpiId.CLASSIFICATION_FAILURE, new KpiSnapshot.Value(failure, roster));
-    values.put(KpiId.CLASSIFICATION_CORRECTNESS, new KpiSnapshot.Value(asExpected, scripted));
-    return new KpiSnapshot(values, roster, eligible, reasons, freshMti);
+    private KpiSnapshot snapshot(int roster) {
+      Map<KpiId, KpiSnapshot.Value> values = new EnumMap<>(KpiId.class);
+      values.put(KpiId.READINESS, new KpiSnapshot.Value(go, eligible));
+      values.put(KpiId.COVERAGE, new KpiSnapshot.Value(covered, eligible));
+      values.put(KpiId.UNKNOWN_DEGRADED, new KpiSnapshot.Value(unknownOrDegraded, roster));
+      values.put(KpiId.POSITION_STALE, new KpiSnapshot.Value(positionStale, roster));
+      values.put(KpiId.CLASSIFICATION_TRUST, new KpiSnapshot.Value(specific, roster));
+      values.put(KpiId.ACTIONABLE_TRUST, new KpiSnapshot.Value(actionable, eligible));
+      values.put(KpiId.MTI_STALE, new KpiSnapshot.Value(mtiStale, eligible));
+      values.put(KpiId.UNKNOWN, new KpiSnapshot.Value(unknown, roster));
+      values.put(KpiId.DEGRADED, new KpiSnapshot.Value(degraded, roster));
+      values.put(KpiId.CLASSIFICATION_FALLBACK, new KpiSnapshot.Value(fallback, roster));
+      values.put(KpiId.CLASSIFICATION_FAILURE, new KpiSnapshot.Value(failure, roster));
+      values.put(KpiId.CLASSIFICATION_CORRECTNESS, new KpiSnapshot.Value(asExpected, scripted));
+      return new KpiSnapshot(values, roster, eligible, reasons, freshMti);
+    }
   }
 }

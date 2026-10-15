@@ -68,11 +68,7 @@ public class EndpointIntrospector implements ApplicationEventListener {
     } else if (parentPath == null || parentPath.isEmpty() || "/".equals(parentPath)) {
       fullPath = resourcePath.startsWith("/") ? resourcePath : "/" + resourcePath;
     } else {
-      if (parentPath.endsWith("/")) {
-        fullPath = parentPath + resourcePath;
-      } else {
-        fullPath = parentPath + resourcePath;
-      }
+      fullPath = parentPath + resourcePath;
     }
 
     for (ResourceMethod resourceMethod : resource.getResourceMethods()) {

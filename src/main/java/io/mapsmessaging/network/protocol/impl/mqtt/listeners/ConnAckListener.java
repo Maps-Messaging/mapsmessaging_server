@@ -21,9 +21,10 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.connection.ConnectionSessionId;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
@@ -41,13 +42,22 @@ public class ConnAckListener extends BaseConnectionListener {
 
     MQTTProtocol  mqttProtocol = (MQTTProtocol)protocol;
     if(mqttProtocol.getSession() != null){
-      mqttProtocol.getSession().resumeState();
-      protocol.setConnected(true);
+      Session activeSession = mqttProtocol.getSession();
+      mqttProtocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (mqttProtocol.isDeliverySessionActive(activeSession)) {
+          activeSession.resumeState();
+          protocol.setConnected(true);
+        }
+      });
       return null; // already connected
     }
-    AuthConfigDTO config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
+    EndPointConnectionServerConfigDTO connectionConfig = (EndPointConnectionServerConfigDTO) endPoint.getConfig();
+    AuthConfigDTO config = connectionConfig.getAuthConfig();
 
-    String sess = config.getSessionId();
+    String sess = mqttProtocol.getConnectionSessionId();
+    if (sess == null && config.getSessionId() != null) {
+      sess = ConnectionSessionId.derive(config.getSessionId(), ConnectionSessionId.namespaces(connectionConfig.getLinkConfigs()));
+    }
     String user = config.getUsername();
     String pass = config.getPassword();
 
@@ -65,8 +75,13 @@ public class ConnAckListener extends BaseConnectionListener {
     scb.setResetState(false);
     CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sess);
     sessionFuture.thenApply(session1 -> {
-      session1.resumeState();
-      protocol.setConnected(true);
+      mqttProtocol.setSession(session1);
+      mqttProtocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (mqttProtocol.isDeliverySessionActive(session1)) {
+          session1.resumeState();
+          protocol.setConnected(true);
+        }
+      });
       return session1;
     });
 

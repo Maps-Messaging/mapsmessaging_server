@@ -20,6 +20,9 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.cot.CotStreamDecoder;
+import io.mapsmessaging.cot.CotStreamEncoder;
+import io.mapsmessaging.cot.CotValidator;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -27,6 +30,9 @@ import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.impl.CotProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
@@ -36,9 +42,14 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.network.io.impl.Selector;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +61,10 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -91,7 +105,12 @@ public class CotProtocol extends Protocol implements Selectable {
   private final CotToTwinMapper cotToTwinMapper = new CotToTwinMapper();
   private final Packet packet;
   private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+  private final CotStreamDecoder streamDecoder = new CotStreamDecoder(MAX_BUFFER_SIZE);
+  private final CotStreamEncoder streamEncoder = new CotStreamEncoder();
+  private final CotValidator cotValidator = new CotValidator();
   private final String sessionId;
+  private volatile String inboundDestinationName = DESTINATION_NAME;
+  private final Queue<Packet> outboundPackets = new ConcurrentLinkedQueue<>();
 
   private Session session;
   private boolean closed;
@@ -125,6 +144,18 @@ public class CotProtocol extends Protocol implements Selectable {
 
   @Override
   public void selected(Selectable selectable, Selector selector, int selection) {
+    if ((selection & SelectionKey.OP_WRITE) != 0) {
+      try {
+        flushOutbound();
+      } catch (IOException e) {
+        logger.warn("Exception writing CoT XML stream", e);
+        closeQuietly();
+        return;
+      }
+    }
+    if ((selection & SelectionKey.OP_READ) == 0) {
+      return;
+    }
     try {
       endPoint.deregister(SelectionKey.OP_READ);
     } catch (ClosedChannelException e) {
@@ -165,8 +196,9 @@ public class CotProtocol extends Protocol implements Selectable {
   private void appendAndProcess(Packet packet) throws IOException {
     byte[] chunk = new byte[packet.available()];
     packet.get(chunk);
-    buffer.write(chunk);
-    processBuffer();
+    for (byte[] document : streamDecoder.accept(chunk)) {
+      publish(document);
+    }
   }
 
   private void processBuffer() {
@@ -245,16 +277,17 @@ public class CotProtocol extends Protocol implements Selectable {
         .setRetain(false)
         .build();
 
-    session.findDestination(DESTINATION_NAME, DestinationType.TOPIC).whenComplete((destination, throwable) -> {
+    String destinationName = inboundDestinationName;
+    session.findDestination(destinationName, DestinationType.TOPIC).whenComplete((destination, throwable) -> {
       if (throwable != null) {
-        logger.error("Failed to publish CoT event to {}", DESTINATION_NAME, throwable);
+        logger.error("Failed to publish CoT event to {}", destinationName, throwable);
         return;
       }
       if (destination != null) {
         try {
           destination.storeMessage(message);
         } catch (IOException e) {
-          logger.error("Failed to publish CoT event to {}", DESTINATION_NAME, e);
+          logger.error("Failed to publish CoT event to {}", destinationName, e);
         }
       }
     });
@@ -349,10 +382,85 @@ public class CotProtocol extends Protocol implements Selectable {
 
   @Override
   public void sendMessage(MessageEvent messageEvent) {
-    // This is an inbound only listener, nothing is ever subscribed through it
-    if (messageEvent.getCompletionTask() != null) {
-      messageEvent.getCompletionTask().run();
+    try {
+      ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+      if (parsedMessage == null) {
+        return;
+      }
+      byte[] xml = parsedMessage.getMessage().getOpaqueData();
+      cotValidator.validate(xml);
+      byte[] encoded = hasXmlDeclaration(xml) ? xml : streamEncoder.encode(xml);
+      Packet outboundPacket = new Packet(encoded.length, false);
+      outboundPacket.put(encoded);
+      outboundPacket.flip();
+      outboundPackets.offer(outboundPacket);
+      endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+    } catch (IOException | RuntimeException e) {
+      logger.warn("Failed to send CoT XML event", e);
+    } finally {
+      if (messageEvent.getCompletionTask() != null) {
+        messageEvent.getCompletionTask().run();
+      }
     }
+  }
+
+  private void flushOutbound() throws IOException {
+    Packet outboundPacket = outboundPackets.peek();
+    while (outboundPacket != null) {
+      int before = outboundPacket.position();
+      endPoint.sendPacket(outboundPacket);
+      if (outboundPacket.hasRemaining()) {
+        if (outboundPacket.position() == before) {
+          endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+          return;
+        }
+        endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+        return;
+      }
+      outboundPackets.poll();
+      sentMessage();
+      outboundPacket = outboundPackets.peek();
+    }
+    endPoint.register(SelectionKey.OP_READ, this);
+  }
+
+  @Override
+  public void subscribeLocal(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qualityOfService,
+      @Nullable String selector,
+      @Nullable InterServerTransformation transformer,
+      @Nullable NamespaceFilters namespaceFilters,
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties) throws IOException {
+    super.subscribeLocal(resource, mappedResource, qualityOfService, selector, transformer, namespaceFilters, statistics, linkProperties);
+    session.addSubscription(
+        createSubscriptionContextBuilder(resource, selector, qualityOfService, 10).build());
+  }
+
+  @Override
+  public void subscribeRemote(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qualityOfService,
+      @Nullable ParserExecutor parser,
+      @Nullable InterServerTransformation transformer,
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties) throws IOException {
+    super.subscribeRemote(resource, mappedResource, qualityOfService, parser, transformer, statistics, linkProperties);
+    inboundDestinationName = mappedResource;
+  }
+
+  private boolean hasXmlDeclaration(byte[] xml) {
+    int index = 0;
+    while (index < xml.length && Character.isWhitespace(xml[index] & 0xff)) {
+      index++;
+    }
+    return index + XML_DECL_START.length <= xml.length
+        && Arrays.equals(
+            Arrays.copyOfRange(xml, index, index + XML_DECL_START.length),
+            XML_DECL_START);
   }
 
   @Override
@@ -377,7 +485,7 @@ public class CotProtocol extends Protocol implements Selectable {
 
   @Override
   public String getVersion() {
-    return "1.0";
+    return "CoT 2.0 XML Streaming";
   }
 
   @Override

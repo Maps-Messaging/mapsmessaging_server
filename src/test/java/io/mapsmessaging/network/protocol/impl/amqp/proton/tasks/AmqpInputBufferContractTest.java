@@ -88,6 +88,9 @@ class AmqpInputBufferContractTest {
     private final EventListenerFactory listeners = mock(EventListenerFactory.class);
 
     private Harness(int protonInputCapacity) {
+      // This harness isolates buffer ownership; frame validity has its own real-validator tests.
+      when(engine.getInboundFrameValidator()).thenReturn(
+          mock(io.mapsmessaging.network.protocol.impl.amqp.proton.AmqpInboundFrameValidator.class));
       when(engine.getTransport()).thenReturn(transport);
       when(engine.getProtocol()).thenReturn(protocol);
       when(engine.getSaslManager()).thenReturn(sasl);

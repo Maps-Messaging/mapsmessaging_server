@@ -99,6 +99,17 @@ class StreamHandlerBranchCoverageTest {
   }
 
   @Test
+  void stop_after_subscription_context_removal_is_safe() throws Exception {
+    Session session = mock(Session.class);
+    when(session.addSubscription(any())).thenReturn(mock(SubscribedEventManager.class));
+    StreamHandler handler = new StreamHandler(config("/sensor/value", null));
+    handler.start(session);
+
+    assertDoesNotThrow(() -> handler.stop(session));
+    verify(session, never()).removeSubscription(anyString());
+  }
+
+  @Test
   void processWithoutTransformationsPreservesEventPayloadAndCompletion() {
     StreamHandler handler = new StreamHandler(config("/sensor/value", null));
     Message message = new MessageBuilder().setOpaqueData(new byte[]{1, 2, 3}).build();

@@ -41,11 +41,11 @@ public class BlockReceiveMonitor {
   }
 
   public void scanForIdle() {
-    long expired = System.currentTimeMillis() + 30_000;
+    long expired = System.currentTimeMillis() - 30_000;
     List<String> expiredList = new ArrayList<>();
     blockBasedPackets.entrySet().stream()
         .filter(entry -> entry.getValue().getLastAccess() < expired)
-        .map(entry -> entry.getKey())
+        .map(Map.Entry::getKey)
         .forEachOrdered(expiredList::add);
     for (String key : expiredList) {
       blockBasedPackets.remove(key);

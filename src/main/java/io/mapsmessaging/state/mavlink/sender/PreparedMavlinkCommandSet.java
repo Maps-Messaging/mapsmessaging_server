@@ -25,7 +25,7 @@ public record PreparedMavlinkCommandSet(
     MavlinkAcknowledgementHandler acknowledgementHandler) {
 
   public PreparedMavlinkCommandSet {
-    commandSet = Objects.requireNonNull(commandSet, "commandSet must not be null");
-    acknowledgementHandler = Objects.requireNonNull(acknowledgementHandler, "acknowledgementHandler must not be null");
+    Objects.requireNonNull(commandSet, "commandSet must not be null");
+    Objects.requireNonNull(acknowledgementHandler, "acknowledgementHandler must not be null");
   }
 }

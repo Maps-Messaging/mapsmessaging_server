@@ -242,6 +242,91 @@ class SubscriptionControllerCoreCoverageTest {
     assertFalse(h.controller.delSubscription("missing"));
   }
 
+
+  @Test
+  void removeByAliasFallsBackToRegisteredNamespace() throws Exception {
+    Harness h = harness();
+    SubscriptionContext context = new SubscriptionContext("/topic/orders");
+    context.setAlias("subscriber-1");
+    String namespace = context.getKey();
+    h.contextMap.put(namespace, context);
+    SubscriptionModeManager normal = h.managers.get(DestinationMode.NORMAL);
+    when(normal.delSubscription(namespace, h.subscriptions, h.controller)).thenReturn(true);
+
+    assertTrue(h.controller.delSubscription("subscriber-1"));
+
+    verify(normal).delSubscription("subscriber-1", h.subscriptions, h.controller);
+    verify(normal).delSubscription(namespace, h.subscriptions, h.controller);
+    assertFalse(h.contextMap.containsKey(namespace));
+  }
+
+  @Test
+  void namespaceLookupWinsOverAliasCollision() throws Exception {
+    Harness h = harness();
+    SubscriptionContext destination = new SubscriptionContext("/topic/orders");
+    destination.setAlias("actual-destination");
+    SubscriptionContext collision = new SubscriptionContext("/topic/other");
+    collision.setAlias("/topic/orders");
+    h.contextMap.put(destination.getKey(), destination);
+    h.contextMap.put(collision.getKey(), collision);
+    SubscriptionModeManager normal = h.managers.get(DestinationMode.NORMAL);
+    when(normal.delSubscription("/topic/orders", h.subscriptions, h.controller)).thenReturn(true);
+
+    assertTrue(h.controller.delSubscription("/topic/orders"));
+
+    verify(normal, never()).delSubscription(collision.getKey(), h.subscriptions, h.controller);
+    assertFalse(h.contextMap.containsKey(destination.getKey()));
+    assertTrue(h.contextMap.containsKey(collision.getKey()));
+  }
+
+  @Test
+  void ambiguousAliasNeverRemovesAnyNamespace() throws Exception {
+    Harness h = harness();
+    SubscriptionContext first = new SubscriptionContext("/topic/one");
+    first.setAlias("duplicate");
+    SubscriptionContext second = new SubscriptionContext("/topic/two");
+    second.setAlias("duplicate");
+    h.contextMap.put(first.getKey(), first);
+    h.contextMap.put(second.getKey(), second);
+
+    assertFalse(h.controller.delSubscription("duplicate"));
+
+    for (SubscriptionModeManager manager : h.managers.values()) {
+      verify(manager, never()).delSubscription(
+          eq(first.getKey()), eq(h.subscriptions), eq(h.controller));
+      verify(manager, never()).delSubscription(
+          eq(second.getKey()), eq(h.subscriptions), eq(h.controller));
+    }
+    assertEquals(2, h.contextMap.size());
+  }
+
+  @Test
+  void qualifiedNamespaceRemovalAlsoClearsRegisteredContext() throws Exception {
+    Harness h = harness();
+    SubscriptionContext context = new SubscriptionContext("/topic/direct");
+    h.contextMap.put(context.getKey(), context);
+    SubscriptionModeManager normal = h.managers.get(DestinationMode.NORMAL);
+    when(normal.delSubscription(context.getKey(), h.subscriptions, h.controller))
+        .thenReturn(true);
+
+    assertTrue(h.controller.delSubscription(context.getKey()));
+
+    assertFalse(h.contextMap.containsKey(context.getKey()));
+    verify(normal, times(1)).delSubscription(
+        context.getKey(), h.subscriptions, h.controller);
+  }
+
+  @Test
+  void aliasLookupFallsThroughWhenNoMatchingNamespaceIsRegistered() throws Exception {
+    Harness h = harness();
+    SubscriptionContext context = new SubscriptionContext("/topic/missing");
+    context.setAlias("missing-alias");
+    h.contextMap.put(context.getKey(), context);
+
+    assertFalse(h.controller.delSubscription("missing-alias"));
+    assertTrue(h.contextMap.containsKey(context.getKey()));
+  }
+
   private static Harness harness() throws Exception {
     SubscriptionController controller = mock(SubscriptionController.class, CALLS_REAL_METHODS);
     DestinationFactory destinationFactory = mock(DestinationFactory.class);

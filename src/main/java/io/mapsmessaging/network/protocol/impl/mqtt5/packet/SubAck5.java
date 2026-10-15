@@ -29,6 +29,7 @@ public class SubAck5 extends MQTTPacket5 {
 
   @Getter
   private int packetId;
+  @Getter
   private StatusCode[] result;
 
   public SubAck5(int packetId, StatusCode[] result) {

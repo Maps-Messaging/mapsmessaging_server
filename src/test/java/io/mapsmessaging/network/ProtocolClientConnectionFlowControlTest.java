@@ -25,7 +25,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.mapsmessaging.api.Session;
@@ -59,7 +58,9 @@ class ProtocolClientConnectionFlowControlTest {
     ProtocolClientConnection connection = new ProtocolClientConnection(protocol);
 
     assertTrue(connection.tryAcquireSendSlot(subscription, message));
-    verifyNoInteractions(manager);
+    verify(manager).getPacketIdentifier(subscription, 0L);
+    verify(manager, never()).tryAcquireSendSlot(subscription, 0L);
+    verify(manager, never()).setMaximumOutstanding(anyInt());
   }
 
   @Test
@@ -77,13 +78,13 @@ class ProtocolClientConnectionFlowControlTest {
     when(subscription.getContext()).thenReturn(context);
     when(context.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
     when(message.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
-    when(manager.tryAcquireSendSlot(subscription)).thenReturn(false);
+    when(manager.tryAcquireSendSlot(subscription, 0L)).thenReturn(false);
 
     ProtocolClientConnection connection = new ProtocolClientConnection(protocol);
 
     assertFalse(connection.tryAcquireSendSlot(subscription, message));
     verify(manager).setMaximumOutstanding(1);
-    verify(manager).tryAcquireSendSlot(subscription);
+    verify(manager).tryAcquireSendSlot(subscription, 0L);
   }
 
   @Test
@@ -144,7 +145,9 @@ class ProtocolClientConnectionFlowControlTest {
     ProtocolClientConnection connection = new ProtocolClientConnection(protocol);
 
     assertTrue(connection.tryAcquireSendSlot(subscription, message));
-    verifyNoInteractions(manager);
+    verify(manager).getPacketIdentifier(subscription, 0L);
+    verify(manager, never()).tryAcquireSendSlot(subscription, 0L);
+    verify(manager, never()).setMaximumOutstanding(anyInt());
   }
 
   @Test
@@ -162,13 +165,13 @@ class ProtocolClientConnectionFlowControlTest {
     when(subscription.getContext()).thenReturn(context);
     when(context.getQualityOfService()).thenReturn(QualityOfService.EXACTLY_ONCE);
     when(message.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
-    when(manager.tryAcquireSendSlot(subscription)).thenReturn(true);
+    when(manager.tryAcquireSendSlot(subscription, 0L)).thenReturn(true);
 
     ProtocolClientConnection connection = new ProtocolClientConnection(protocol);
 
     assertTrue(connection.tryAcquireSendSlot(subscription, message));
     verify(manager).setMaximumOutstanding(2);
-    verify(manager).tryAcquireSendSlot(subscription);
+    verify(manager).tryAcquireSendSlot(subscription, 0L);
   }
 
   @Test
@@ -210,13 +213,13 @@ class ProtocolClientConnectionFlowControlTest {
     when(subscription.getContext()).thenReturn(context);
     when(context.getQualityOfService()).thenReturn(QualityOfService.AT_LEAST_ONCE);
     when(message.getQualityOfService()).thenReturn(QualityOfService.AT_MOST_ONCE);
-    when(manager.tryAcquireSendSlot(subscription)).thenReturn(false);
+    when(manager.tryAcquireSendSlot(subscription, 0L)).thenReturn(false);
 
     ProtocolClientConnection connection = new ProtocolClientConnection(protocol);
 
     assertFalse(connection.tryAcquireSendSlot(subscription, message));
     verify(manager, never()).setMaximumOutstanding(anyInt());
-    verify(manager).tryAcquireSendSlot(subscription);
+    verify(manager).tryAcquireSendSlot(subscription, 0L);
     verify(manager, never()).releaseSendSlot(subscription);
   }
 }

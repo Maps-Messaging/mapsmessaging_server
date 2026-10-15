@@ -41,6 +41,7 @@ public class MavlinkStreamHandler implements StreamHandler {
   private static final int MAVLINK_V2_CRC_LEN = 2;
   private static final int MAVLINK_V2_SIGNATURE_LEN = 13;
   private static final int MAVLINK_V2_INCOMPAT_FLAG_SIGNED = 0x01;
+  private static final int MAVLINK_V2_SUPPORTED_INCOMPAT_FLAGS = MAVLINK_V2_INCOMPAT_FLAG_SIGNED;
 
   private final byte[] inputBuffer;
   private final byte[] outputBuffer;
@@ -79,18 +80,9 @@ public class MavlinkStreamHandler implements StreamHandler {
       throw new IOException("Packet is null");
     }
 
-    int magic;
-    while (true) {
-      magic = input.read();
-      if (magic < 0) {
-        return -1;
-      }
-      if (magic == MAVLINK_V1_MAGIC || magic == MAVLINK_V2_MAGIC) {
-        break;
-      }
-      if (closed) {
-        return -1;
-      }
+    int magic = readMagic(input);
+    if (magic < 0) {
+      return -1;
     }
 
     int payloadLength = input.read();
@@ -101,25 +93,50 @@ public class MavlinkStreamHandler implements StreamHandler {
     packet.clear();
 
     if (magic == MAVLINK_V1_MAGIC) {
-      int frameLength = 2 + MAVLINK_V1_HEADER_REST + payloadLength + MAVLINK_V1_CRC_LEN;
-      ensureCapacity(packet, frameLength);
-
-      packet.putByte(magic);
-      packet.putByte(payloadLength);
-
-      readFully(input, inputBuffer, 0, MAVLINK_V1_HEADER_REST);
-      packet.put(inputBuffer, 0, MAVLINK_V1_HEADER_REST);
-
-      readPayload(input, packet, payloadLength);
-
-      readFully(input, inputBuffer, 0, MAVLINK_V1_CRC_LEN);
-      packet.put(inputBuffer, 0, MAVLINK_V1_CRC_LEN);
-      return frameLength;
+      return readV1Frame(input, packet, magic, payloadLength);
     }
+    return readV2Frame(input, packet, magic, payloadLength);
+  }
 
+  private int readMagic(InputStream input) throws IOException {
+    while (true) {
+      int magic = input.read();
+      if (magic < 0) {
+        return -1;
+      }
+      if (magic == MAVLINK_V1_MAGIC || magic == MAVLINK_V2_MAGIC) {
+        return magic;
+      }
+      if (closed) {
+        return -1;
+      }
+    }
+  }
+
+  private int readV1Frame(InputStream input, Packet packet, int magic, int payloadLength) throws IOException {
+    int frameLength = 2 + MAVLINK_V1_HEADER_REST + payloadLength + MAVLINK_V1_CRC_LEN;
+    ensureCapacity(packet, frameLength);
+
+    packet.putByte(magic);
+    packet.putByte(payloadLength);
+
+    readFully(input, inputBuffer, 0, MAVLINK_V1_HEADER_REST);
+    packet.put(inputBuffer, 0, MAVLINK_V1_HEADER_REST);
+
+    readPayload(input, packet, payloadLength);
+
+    readFully(input, inputBuffer, 0, MAVLINK_V1_CRC_LEN);
+    packet.put(inputBuffer, 0, MAVLINK_V1_CRC_LEN);
+    return frameLength;
+  }
+
+  private int readV2Frame(InputStream input, Packet packet, int magic, int payloadLength) throws IOException {
     readFully(input, inputBuffer, 0, MAVLINK_V2_HEADER_REST);
 
     int incompatFlags = inputBuffer[0] & 0xFF;
+    if ((incompatFlags & ~MAVLINK_V2_SUPPORTED_INCOMPAT_FLAGS) != 0) {
+      throw new IOException("Unsupported MAVLink 2 incompatibility flags: 0x" + Integer.toHexString(incompatFlags));
+    }
     boolean signed = (incompatFlags & MAVLINK_V2_INCOMPAT_FLAG_SIGNED) != 0;
 
     int frameLength = 2 + MAVLINK_V2_HEADER_REST + payloadLength + MAVLINK_V2_CRC_LEN + (signed ? MAVLINK_V2_SIGNATURE_LEN : 0);

@@ -232,7 +232,7 @@ public class SubSystemManager {
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
-    addToMap(750, 750, new AggregatorManager());
+    addToMap(750, 250, new AggregatorManager());
 
     if(featureManager.isEnabled("management.restApi")) {
       RestApiServerManager restApiServerManager = new RestApiServerManager();

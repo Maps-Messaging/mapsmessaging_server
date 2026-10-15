@@ -139,10 +139,16 @@ def runBlock = { String stageName ->
             echo "${stageName}: running ${selectedTests.size()} test classes"
 
             def selector = selectedTests.join(",")
-            sh """#!/bin/bash
-                set -euo pipefail
-                mvn clean test -Dtest='${selector}' ${mavenCommon}
-            """
+            // Start each block with fresh authentication and data state.
+            // Keep MAPS_DATA inside this workspace even if the agent defines it globally.
+            def testDataDirectory = "${pwd()}/target/data"
+            withEnv(["MAPS_DATA=${testDataDirectory}"]) {
+                sh """#!/bin/bash
+                    set -euo pipefail
+                    rm -rf -- target/data
+                    mvn clean test -DMAPS_DATA='${testDataDirectory}' -Dtest='${selector}' ${mavenCommon}
+                """
+            }
         }
 
         stage("${stageName} - JUnit") {

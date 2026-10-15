@@ -110,6 +110,7 @@ public class TwinManager {
     return Collections.unmodifiableCollection(twins.values());
   }
 
+  @SuppressWarnings("java:S2445") // Twin initialization, updates and publication coordinate on the same EntityTwin monitor.
   public EntityTwin registerTwin(EntityTwin twin, TwinUpdateContext context) {
     Objects.requireNonNull(twin, "twin must not be null");
     Objects.requireNonNull(twin.getTwinId(), "twin.twinId must not be null");

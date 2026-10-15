@@ -112,6 +112,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     }
   }
 
+  @SuppressWarnings("java:S2445") // Serialization must use the same EntityTwin monitor as TwinManager updates.
   public void publishTwin(String twinId, EntityTwin twin) throws ExecutionException, InterruptedException, TimeoutException, IOException {
     String topic = resolveTopic(twinId, twin);
     Destination destination = resolveDestination(topic);

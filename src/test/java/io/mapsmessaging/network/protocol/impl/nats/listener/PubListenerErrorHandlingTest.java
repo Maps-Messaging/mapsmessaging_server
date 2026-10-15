@@ -23,7 +23,7 @@ import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.NatsConfigDTO;
 import io.mapsmessaging.network.protocol.impl.nats.NatsProtocol;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
@@ -56,7 +56,8 @@ class PubListenerErrorHandlingTest {
     Session session = mock(Session.class);
     Destination destination = mock(Destination.class);
     NatsProtocol protocol = mock(NatsProtocol.class);
-    ProtocolConfigDTO protocolConfig = mock(ProtocolConfigDTO.class);
+    NatsConfigDTO protocolConfig = new NatsConfigDTO();
+    protocolConfig.setEnableStreams(false);
 
     when(frame.getSubject()).thenReturn("events.test");
     when(frame.getPayload()).thenReturn("payload".getBytes(StandardCharsets.UTF_8));
@@ -70,7 +71,7 @@ class PubListenerErrorHandlingTest {
     when(engine.getProtocol()).thenReturn(protocol);
     when(protocol.getVersion()).thenReturn("1.0");
     when(protocol.getProtocolConfig()).thenReturn(protocolConfig);
-    when(protocolConfig.getMessageDefaults()).thenReturn(null);
+    when(protocol.getNatsConfig()).thenReturn(protocolConfig);
 
     when(destination.storeMessage(any(Message.class))).thenThrow(new IOException("store failed"));
 

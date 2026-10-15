@@ -174,8 +174,13 @@ public class StateManagerAgent implements Agent {
   public synchronized void stop() {
     logger.log(STATE_MANAGER_STOP);
     try {
-      for (Lifecycle lifecycle : lifecycleList) {
-        lifecycle.start();
+      for (int index = lifecycleList.size() - 1; index >= 0; index--) {
+        Lifecycle lifecycle = lifecycleList.get(index);
+        try {
+          lifecycle.stop();
+        } catch (RuntimeException exception) {
+          logger.log(STATE_MANAGER_COMPONENT_STOP_FAILED, lifecycle.getClass().getName(), exception);
+        }
       }
     } finally {
       logger.log(STATE_MANAGER_STOPPED);

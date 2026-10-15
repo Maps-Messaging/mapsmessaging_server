@@ -170,7 +170,7 @@ public class NetworkManager implements ServiceManager, Agent {
   public  List<EndPointManager> getAll(){
     List<EndPointManager> response = new ArrayList<>();
     endPointManagers.entrySet().stream()
-        .map(entry -> entry.getValue())
+        .map(Map.Entry::getValue)
         .forEachOrdered(response::add);
     return response;
   }

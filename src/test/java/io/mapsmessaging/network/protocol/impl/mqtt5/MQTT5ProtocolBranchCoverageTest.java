@@ -396,7 +396,11 @@ class MQTT5ProtocolBranchCoverageTest {
     assertEquals("/remote/source", subscribe.getSubscriptionList().get(0).getTopicName());
     assertEquals(QualityOfService.AT_LEAST_ONCE,
         subscribe.getSubscriptionList().get(0).getQualityOfService());
-    verify(fixture.endPoint).completedConnection();
+    verify(fixture.endPoint, never()).completedConnection();
+    var acknowledged = fixture.protocol.getRemoteSubscriptionTracker().awaitAcknowledgements();
+    assertFalse(acknowledged.isDone());
+    fixture.protocol.getRemoteSubscriptionTracker().acknowledge(subscribe.getMessageId(), new int[] {1});
+    assertDoesNotThrow(acknowledged::join);
   }
 
   @Test
@@ -676,12 +680,13 @@ class MQTT5ProtocolBranchCoverageTest {
           "sendPublishFrame",
           String.class,
           SubscribedEventManager.class,
+          SubscriptionContext.class,
           Message.class,
           Runnable.class,
           boolean.class);
       method.setAccessible(true);
       int before = frames.size();
-      method.invoke(protocol, topic, subscription, message, completion, retainedReplay);
+      method.invoke(protocol, topic, subscription, subscription.getContext(), message, completion, retainedReplay);
       assertEquals(before + 1, frames.size());
       return assertInstanceOf(Publish5.class, frames.get(frames.size() - 1));
     }

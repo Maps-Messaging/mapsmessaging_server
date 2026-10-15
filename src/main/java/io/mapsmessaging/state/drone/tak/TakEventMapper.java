@@ -69,7 +69,7 @@ public class TakEventMapper {
     }
 
     Instant eventTime = resolveEventTime(twin, context);
-    Instant staleTime = eventTime.plus(resolveStaleSeconds(twin), ChronoUnit.SECONDS);
+    Instant staleTime = eventTime.plus(resolveStaleSeconds(), ChronoUnit.SECONDS);
 
     GeoPosition geoPosition = twin.getGeoPosition();
     FixInfo fixInfo = twin.getFixInfo();
@@ -274,6 +274,7 @@ public class TakEventMapper {
     return sanitiseIdentifier(rawValue);
   }
 
+  @SuppressWarnings("java:S8786") // Repeated hyphens are collapsed before trailing-hyphen removal, bounding each matched run to one.
   private String sanitiseIdentifier(String value) {
     if (value == null || value.isBlank()) {
       return UNKNOWN_VALUE;
@@ -606,7 +607,7 @@ public class TakEventMapper {
     return Instant.now();
   }
 
-  private long resolveStaleSeconds(EntityTwin twin) {
+  private long resolveStaleSeconds() {
     return DEFAULT_STALE_SECONDS;
   }
 
