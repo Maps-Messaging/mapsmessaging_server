@@ -49,6 +49,7 @@ public class SessionSharedSubscription extends Subscription {
   private final String sessionId;
   private final String deliveryKey;
   private volatile boolean flowControlBlocked;
+  @SuppressWarnings("java:S3077") // Volatile safely publishes the reference; coordinator operations synchronize internally.
   private volatile io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator;
 
   public SessionSharedSubscription(
@@ -238,8 +239,9 @@ public class SessionSharedSubscription extends Subscription {
     try {
       if (sessionImpl != null) {
         sessionImpl.clearPacketIdMapping(getDeliveryKey(), messageId);
-      } else if (deliveryStateCoordinator != null) {
-        deliveryStateCoordinator.retirePending(getDeliveryKey(), messageId);
+      } else {
+        var coordinator = deliveryStateCoordinator;
+        if (coordinator != null) coordinator.retirePending(getDeliveryKey(), messageId);
       }
     } catch (IOException error) {
       throw new UncheckedIOException("Unable to retire shared delivery packet identifier", error);
@@ -249,8 +251,9 @@ public class SessionSharedSubscription extends Subscription {
   private void clearDeliveryMappings() throws IOException {
     if (sessionImpl != null) {
       sessionImpl.clearPacketIdMappings(getDeliveryKey());
-    } else if (deliveryStateCoordinator != null) {
-      deliveryStateCoordinator.retireAll(getDeliveryKey());
+    } else {
+      var coordinator = deliveryStateCoordinator;
+      if (coordinator != null) coordinator.retireAll(getDeliveryKey());
     }
   }
 
