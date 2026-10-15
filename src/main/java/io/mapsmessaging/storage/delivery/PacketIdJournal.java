@@ -80,12 +80,18 @@ final class PacketIdJournal implements AutoCloseable {
         || header.getInt() != checksum(header.array(), 12)) throw new IOException("Invalid packet identifier header/capacity");
     while (channel.position() < channel.size()) {
       long start = channel.position();
-      if (channel.size() - start < 8) { truncateTail(start); break; }
+      if (channel.size() - start < 8) {
+        truncateTail(start);
+        break;
+      }
       ByteBuffer framing = read(8);
       int length = framing.getInt();
       if (framing.getInt() != ~length) throw new IOException("Delivery record length checksum mismatch");
       if (length < 9 || length > MAX_TOPIC_BYTES + 21) throw new IOException("Invalid delivery record length");
-      if (channel.size() - channel.position() < length) { truncateTail(start); break; }
+      if (channel.size() - channel.position() < length) {
+        truncateTail(start);
+        break;
+      }
       ByteBuffer record = read(length);
       if (record.getInt(length - 4) != checksum(record.array(), length - 4)) throw new IOException("Delivery record checksum mismatch");
       apply(record, byPacket, byDelivery, stages, qosLevels);
@@ -122,15 +128,17 @@ final class PacketIdJournal implements AutoCloseable {
       long messageId = record.getLong();
       int topicLength = record.getInt();
       if (topicLength < 1 || topicLength != record.limit() - 21) throw new IOException("Invalid persisted topic length");
-      byte[] topic = new byte[topicLength]; record.get(topic);
+      byte[] topic = new byte[topicLength];
+      record.get(topic);
       String decoded;
       try {
         decoded = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(topic)).toString();
       } catch (CharacterCodingException error) { throw new IOException("Invalid persisted topic encoding", error); }
-      var delivery = new PacketIdStore.Delivery(decoded, messageId);
+      PacketIdStore.Delivery delivery = new PacketIdStore.Delivery(decoded, messageId);
       if (byPacket.containsKey(packetId) || byDelivery.containsKey(delivery)) throw new IOException("Duplicate outstanding delivery");
-      byPacket.put(packetId, delivery); byDelivery.put(delivery, packetId);
+      byPacket.put(packetId, delivery);
+      byDelivery.put(delivery, packetId);
     } else { throw new IOException("Invalid delivery record type/size"); }
   }
 
@@ -139,8 +147,10 @@ final class PacketIdJournal implements AutoCloseable {
   }
 
   void clear(int packetId) throws IOException {
-    ByteBuffer record = ByteBuffer.allocate(9); record.put((byte) CLEAR).putInt(packetId);
-    finish(record); append(record);
+    ByteBuffer record = ByteBuffer.allocate(9);
+    record.put((byte) CLEAR).putInt(packetId);
+    finish(record);
+    append(record);
   }
 
   void setStage(int packetId, int stage) throws IOException {
@@ -169,11 +179,13 @@ final class PacketIdJournal implements AutoCloseable {
     byte[] topic = delivery.topic().getBytes(StandardCharsets.UTF_8);
     ByteBuffer record = ByteBuffer.allocate(21 + topic.length);
     record.put((byte) ALLOCATE).putInt(packetId).putLong(delivery.messageId()).putInt(topic.length).put(topic);
-    finish(record); return record;
+    finish(record);
+    return record;
   }
 
   private static void finish(ByteBuffer record) {
-    record.putInt(checksum(record.array(), record.position())); record.flip();
+    record.putInt(checksum(record.array(), record.position()));
+    record.flip();
   }
 
   private void append(ByteBuffer record) throws IOException {
@@ -187,7 +199,8 @@ final class PacketIdJournal implements AutoCloseable {
 
   private static void writeRecord(FileChannel target, ByteBuffer record) throws IOException {
     ByteBuffer framed = ByteBuffer.allocate(8 + record.remaining());
-    framed.putInt(record.remaining()).putInt(~record.remaining()).put(record).flip(); writeFully(target, framed);
+    framed.putInt(record.remaining()).putInt(~record.remaining()).put(record).flip();
+    writeFully(target, framed);
   }
 
   /** Constant-time gate; conservative live-record estimate avoids frequent rewrites. */
@@ -208,7 +221,7 @@ final class PacketIdJournal implements AutoCloseable {
     try {
       try (FileChannel replacement = FileChannel.open(temporary, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
         writeFully(replacement, header());
-        for (var entry : outstanding.entrySet()) {
+        for (Map.Entry<Integer, PacketIdStore.Delivery> entry : outstanding.entrySet()) {
           writeRecord(replacement, allocation(entry.getKey(), entry.getValue()));
           Integer qos = qosLevels.get(entry.getKey());
           if (qos != null) writeRecord(replacement, qosUpdate(entry.getKey(), qos));
@@ -232,11 +245,14 @@ final class PacketIdJournal implements AutoCloseable {
 
   private ByteBuffer header() {
     ByteBuffer header = ByteBuffer.allocate(HEADER_SIZE);
-    header.putInt(MAGIC).putInt(1).putInt(maximum); finish(header); return header;
+    header.putInt(MAGIC).putInt(1).putInt(maximum);
+    finish(header);
+    return header;
   }
 
   private void truncateTail(long offset) throws IOException {
-    channel.truncate(offset); channel.force(true);
+    channel.truncate(offset);
+    channel.force(true);
   }
 
   private ByteBuffer read(int length) throws IOException {
@@ -250,7 +266,9 @@ final class PacketIdJournal implements AutoCloseable {
   }
 
   private static int checksum(byte[] bytes, int length) {
-    CRC32C crc = new CRC32C(); crc.update(bytes, 0, length); return (int) crc.getValue();
+    CRC32C crc = new CRC32C();
+    crc.update(bytes, 0, length);
+    return (int) crc.getValue();
   }
 
   private void forceDirectory() throws IOException {
@@ -260,7 +278,8 @@ final class PacketIdJournal implements AutoCloseable {
     try (FileChannel directory = FileChannel.open(file.getParent(), StandardOpenOption.READ)) { directory.force(true); }
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     IOException error = null;
     if (channel != null && channel.isOpen() && failure == null) {
       try { flush(); } catch (IOException flushFailure) { error = flushFailure; }
