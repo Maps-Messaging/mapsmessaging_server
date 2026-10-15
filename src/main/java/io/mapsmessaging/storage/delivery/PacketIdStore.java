@@ -5,6 +5,8 @@
 package io.mapsmessaging.storage.delivery;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -21,9 +23,14 @@ import java.util.Objects;
  * Mapping presence means allocation already occurred, not proof of a socket write.
  */
 public final class PacketIdStore implements AutoCloseable {
-  public enum Durability { SYNC, BATCHED }
-  public record Delivery(String topic, long messageId) {}
-  public record Allocation(int packetId, boolean existing) {}
+  public enum Durability {
+    SYNC,
+    BATCHED
+  }
+  public record Delivery(String topic, long messageId) {
+  }
+  public record Allocation(int packetId, boolean existing) {
+  }
 
   private final Map<Delivery, Integer> byDelivery = new HashMap<>();
   private final Map<Integer, Delivery> byPacket = new HashMap<>();
@@ -149,8 +156,12 @@ public final class PacketIdStore implements AutoCloseable {
     ensureOpen();
     validateId(packetId);
     Delivery delivery = byPacket.get(packetId);
-    if (delivery == null) return false;
-    if (journal != null) journal.clear(packetId);
+    if (delivery == null) {
+      return false;
+    }
+    if (journal != null) {
+      journal.clear(packetId);
+    }
     byPacket.remove(packetId);
     stages.remove(packetId);
     qosLevels.remove(packetId);
@@ -175,11 +186,15 @@ public final class PacketIdStore implements AutoCloseable {
   public synchronized int clearDeliveries(String topic) throws IOException {
     ensureOpen();
     key(topic, 0);
-    var packetIds = new java.util.ArrayList<Integer>();
-    for (var entry : byPacket.entrySet()) {
-      if (entry.getValue().topic().equals(topic)) packetIds.add(entry.getKey());
+    List<Integer> packetIds = new ArrayList<>();
+    for (Map.Entry<Integer, Delivery> entry : byPacket.entrySet()) {
+      if (entry.getValue().topic().equals(topic)) {
+        packetIds.add(entry.getKey());
+      }
     }
-    for (int packetId : packetIds) clear(packetId);
+    for (int packetId : packetIds) {
+      clear(packetId);
+    }
     return packetIds.size();
   }
 
@@ -206,13 +221,20 @@ public final class PacketIdStore implements AutoCloseable {
   /** Explicit maintenance operation; ordinary ACKs do not rewrite the store. */
   public synchronized void compact() throws IOException {
     ensureOpen();
-    if (journal != null) journal.compact(byPacket, stages, qosLevels);
+    if (journal != null) {
+      journal.compact(byPacket, stages, qosLevels);
+    }
   }
 
-  @Override public synchronized void close() throws IOException {
-    if (closed) return;
+  @Override
+  public synchronized void close() throws IOException {
+    if (closed) {
+      return;
+    }
     closed = true;
-    if (journal != null) journal.close();
+    if (journal != null) {
+      journal.close();
+    }
     byPacket.clear();
     byDelivery.clear();
     stages.clear();
@@ -247,6 +269,8 @@ public final class PacketIdStore implements AutoCloseable {
 
   private void ensureOpen() throws IOException {
     if (closed) throw new IOException("Packet identifier store is closed");
-    if (journal != null) journal.ensureUsable();
+    if (journal != null) {
+      journal.ensureUsable();
+    }
   }
 }
