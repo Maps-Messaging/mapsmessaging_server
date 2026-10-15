@@ -73,7 +73,8 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
     java.util.concurrent.CompletableFuture<Void> completion = new java.util.concurrent.CompletableFuture<>();
     try {
       destination.submit(new io.mapsmessaging.engine.tasks.EngineTask() {
-        @Override public Response taskCall() {
+        @Override
+        public Response taskCall() {
           try {
             acknowledgement.run();
             completion.complete(null);
