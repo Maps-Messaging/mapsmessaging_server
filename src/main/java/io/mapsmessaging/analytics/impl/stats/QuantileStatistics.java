@@ -170,8 +170,9 @@ public class QuantileStatistics extends AdvancedStatistics {
       } else {
         s = 0;
       }
-      if (s == 0) return;
-
+      if (s == 0) {
+        return;
+      }
       // Try parabolic interpolation
       double previousPosition = n[i - 1];
       double currentPosition = n[i];
@@ -203,7 +204,9 @@ public class QuantileStatistics extends AdvancedStatistics {
     }
 
     double value() {
-      if (m == 0) return Double.NaN;
+      if (m == 0) {
+        return Double.NaN;
+      }
       if (m < 5) {
         double[] copy = Arrays.copyOf(q, m);
         Arrays.sort(copy);
