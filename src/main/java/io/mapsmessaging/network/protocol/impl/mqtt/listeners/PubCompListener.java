@@ -33,8 +33,12 @@ public class PubCompListener extends PacketListener {
     PubComp pubComp = (PubComp) mqttPacket;
     var manager = ((MQTTProtocol) protocol).getPacketIdManager();
     int qos = manager.getPacketQos(pubComp.getPacketIdentifier());
-    if ((manager.hasDeliveryStore() || qos != 0) && (qos != 2 || !manager.isAwaitingPubComp(pubComp.getPacketIdentifier()))) return null;
-    if (manager.hasDeliveryStore() && !((MQTTProtocol) protocol).isPubRelReady(pubComp.getPacketIdentifier())) return null;
+    if ((manager.hasDeliveryStore() || qos != 0) && (qos != 2 || !manager.isAwaitingPubComp(pubComp.getPacketIdentifier()))) {
+      return null;
+    }
+    if (manager.hasDeliveryStore() && !((MQTTProtocol) protocol).isPubRelReady(pubComp.getPacketIdentifier())) {
+      return null;
+    }
     manager.completePacketId(pubComp.getPacketIdentifier());
     ((MQTTProtocol) protocol).completePubRel(pubComp.getPacketIdentifier());
     return null;
