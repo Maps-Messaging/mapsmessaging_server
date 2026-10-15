@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -83,8 +84,22 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
   public static final String FEED_PREFIX = "cot:";
   private volatile long lastMessageAt = 0L;
 
+  // sendMessage runs on the engine's message-delivery thread and only queues the payload; the
+  // worker thread does the twin updates, which store messages on other destinations and wait for
+  // them. Doing that on the delivery thread can deadlock the engine's task pool (the Kelluu adapter
+  // stalled central that way on 2026-10-07; EventPublisher avoids it the same way).
+  static final int MAX_QUEUE_SIZE = 1000;
+  private static final long DROP_LOG_INTERVAL = 1000;
+  private final LinkedBlockingDeque<PendingMessage> queue = new LinkedBlockingDeque<>(MAX_QUEUE_SIZE);
+  private final LongAdder queueFullCount = new LongAdder();
+  private Thread worker;
+  private volatile boolean running;
+
   private Session session;
   private CotIngestAdapterJMX jmxBean;
+
+  private record PendingMessage(String destinationName, byte[] payload) {
+  }
 
   public CotIngestAdapter(String topic, TwinManager twinManager) {
     this.topic = topic;
@@ -98,6 +113,7 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
 
   @Override
   public void start() {
+    startWorker();
     try {
       SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionId(), this);
       sessionContextBuilder.setUsername("anonymous")
@@ -128,6 +144,43 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
       jmxBean = null;
     }
     closeSessionQuietly();
+    stopWorker();
+  }
+
+  synchronized void startWorker() {
+    if (worker != null) {
+      return;
+    }
+    running = true;
+    worker = new Thread(this::workerLoop, "cot-ingest-worker");
+    worker.setDaemon(true);
+    worker.start();
+  }
+
+  synchronized void stopWorker() {
+    running = false;
+    if (worker != null) {
+      worker.interrupt();
+      worker = null;
+    }
+  }
+
+  private void workerLoop() {
+    while (running) {
+      PendingMessage pending;
+      try {
+        pending = queue.takeFirst();
+      } catch (InterruptedException interruptedException) {
+        Thread.currentThread().interrupt();
+        return;
+      }
+      try {
+        handle(pending.destinationName(), pending.payload());
+      } catch (Exception e) {
+        MessageOutcomeStats.failure(MessageOutcomeStats.Source.COT_INGEST, "unparseable");
+        logger.warn("CoT ingest adapter failed to process an incoming message, dropped", e);
+      }
+    }
   }
 
   private void closeSessionQuietly() {
@@ -142,21 +195,49 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
     }
   }
 
+  /** Runs on the engine's delivery thread: queue the payload and return, never touch twins here. */
   @Override
   public void sendMessage(@NotNull MessageEvent messageEvent) {
     try {
       byte[] payload = messageEvent.getMessage().getOpaqueData();
       if (payload != null && payload.length > 0) {
-        handle(messageEvent.getDestinationName(), payload);
+        enqueue(messageEvent.getDestinationName(), payload);
       }
-    } catch (Exception e) {
-      MessageOutcomeStats.failure(MessageOutcomeStats.Source.COT_INGEST, "unparseable");
-      logger.warn("CoT ingest adapter failed to process an incoming message, dropped", e);
     } finally {
       if (messageEvent.getCompletionTask() != null) {
         messageEvent.getCompletionTask().run();
       }
     }
+  }
+
+  /** Queues a message for the worker without blocking; when the queue is full the oldest is dropped. */
+  void enqueue(String destinationName, byte[] payload) {
+    PendingMessage pending = new PendingMessage(destinationName, payload.clone());
+    boolean dropped = false;
+    synchronized (queue) {
+      if (queue.remainingCapacity() == 0) {
+        queue.pollFirst();
+        dropped = true;
+      }
+      queue.offerLast(pending);
+    }
+    if (dropped) {
+      queueFullCount.increment();
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.COT_INGEST, "queue_full");
+      long total = queueFullCount.sum();
+      // Rate-limited: a stalled twin pipeline at edge CoT rates would otherwise flood the log.
+      if (total == 1 || total % DROP_LOG_INTERVAL == 0) {
+        logger.warn("CoT ingest queue full ({} messages), dropped the oldest; {} dropped so far", MAX_QUEUE_SIZE, total);
+      }
+    }
+  }
+
+  public long getQueueFullDropCount() {
+    return queueFullCount.sum();
+  }
+
+  int getQueueSize() {
+    return queue.size();
   }
 
   void handle(String destinationName, byte[] xml) {
