@@ -23,6 +23,7 @@ import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
 import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.dto.rest.session.SubscriptionContextDTO;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.impl.ClientSubscribedEventManager;
 import io.mapsmessaging.engine.tasks.SubscriptionResponse;
@@ -91,7 +92,7 @@ public final class NatsJetStreamSubscriptions {
 
   public static Set<String> filters(Session session) {
     Set<String> filters = new HashSet<>();
-    for (SubscriptionContext context : session.getSessionInformation().getSubscriptionInfo().getSubscriptionContextList()) {
+    for (SubscriptionContextDTO context : session.getSessionInformation().getSubscriptionInfo().getSubscriptionContextList()) {
       filters.add(context.getDestinationName());
     }
     return filters;
