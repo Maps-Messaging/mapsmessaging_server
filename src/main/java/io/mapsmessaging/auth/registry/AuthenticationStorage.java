@@ -139,7 +139,9 @@ public class AuthenticationStorage {
 
   public Subject update(Subject subject) {
     Subject subject1 = identityAccessManager.updateSubject(subject);
-    if (subject1 == null) return subject;
+    if (subject1 == null) {
+      return subject;
+    }
     UUID userId = SubjectHelper.getUniqueId(subject1);
     if (userId != null) {
       SessionPrivileges sessionPrivileges = userPermisionManager.get(userId);
