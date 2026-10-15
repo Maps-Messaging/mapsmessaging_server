@@ -4,6 +4,8 @@
  */
 package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdentifierMap;
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -15,8 +17,8 @@ public class UnsubAckListener5 extends PacketListener5 {
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 packet, Session session, EndPoint endPoint, Protocol protocol) {
     int identifier = ((UnsubAck5) packet).getPacketId();
-    var manager = ((MQTT5Protocol) protocol).getPacketIdManager();
-    var mapping = manager.receivedPacket(identifier);
+    PacketIdManager manager = ((MQTT5Protocol) protocol).getPacketIdManager();
+    PacketIdentifierMap mapping = manager.receivedPacket(identifier);
     if (mapping != null && mapping.getSubscription() == null && mapping.getMessageId() == -1) manager.completePacketId(identifier);
     return null;
   }
