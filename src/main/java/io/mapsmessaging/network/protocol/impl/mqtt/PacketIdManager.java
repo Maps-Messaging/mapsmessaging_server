@@ -76,7 +76,9 @@ public class PacketIdManager {
     if (deliveryStore != null) {
       for (int identifier : controlIds) {
         try { deliveryStore.releaseReservedPacketId(identifier); }
-        catch (IllegalStateException closedStore) { /* A retired endpoint may close after its session owner. */ }
+        catch (IllegalStateException closedStore) {
+          /* A retired endpoint may close after its session owner. */
+        }
       }
     }
     runtimeQos.clear();
@@ -123,7 +125,9 @@ public class PacketIdManager {
   public synchronized Integer getPacketIdentifier(SubscribedEventManager subscription, long messageId) {
     if (deliveryStore != null) {
       try { return deliveryStore.getPacketId(deliveryKey(subscription), messageId); }
-      catch (IOException failure) { throw new UncheckedIOException(failure); }
+      catch (IOException failure) {
+        throw new UncheckedIOException(failure);
+      }
     }
     for (Map.Entry<Integer, PacketIdentifierMap> entry : outstandingPacketId.entrySet()) {
       PacketIdentifierMap mapping = entry.getValue();
@@ -145,13 +149,17 @@ public class PacketIdManager {
       return runtimeQos.getOrDefault(identifier, 0);
     }
     try { return deliveryStore.getQos(identifier); }
-    catch (IOException failure) { throw new UncheckedIOException(failure); }
+    catch (IOException failure) {
+      throw new UncheckedIOException(failure);
+    }
   }
 
   public synchronized void setPacketQos(int identifier, int qos) {
     if (deliveryStore == null) { runtimeQos.put(identifier, qos); return; }
     try { deliveryStore.setQos(identifier, qos); deliveryStore.flush(); }
-    catch (IOException failure) { throw new UncheckedIOException(failure); }
+    catch (IOException failure) {
+      throw new UncheckedIOException(failure);
+    }
   }
 
   /** Reconciles broker interest that arrives after a restored PUBREL already completed. */
@@ -183,7 +191,9 @@ public class PacketIdManager {
           try {
             Integer current = deliveryStore == null ? null : deliveryStore.getPacketId(identity.topic(), identity.messageId());
             if (current == null || !current.equals(entry.getKey())) identifiers.add(entry.getKey());
-          } catch (IOException retiredStore) { /* Retirement may race closure of the old endpoint's store. */ }
+          } catch (IOException retiredStore) {
+            /* Retirement may race closure of the old endpoint's store. */
+          }
         }
       }
       for (int identifier : identifiers) {
@@ -206,13 +216,17 @@ public class PacketIdManager {
       return runtimePubComp.contains(identifier);
     }
     try { return deliveryStore.getStage(identifier) == 1; }
-    catch (IOException failure) { throw new UncheckedIOException(failure); }
+    catch (IOException failure) {
+      throw new UncheckedIOException(failure);
+    }
   }
 
   public synchronized void markAwaitingPubComp(int identifier) {
     if (deliveryStore == null) { runtimePubComp.add(identifier); return; }
     try { deliveryStore.setStage(identifier, 1); deliveryStore.flush(); }
-    catch (IOException failure) { throw new UncheckedIOException(failure); }
+    catch (IOException failure) {
+      throw new UncheckedIOException(failure);
+    }
   }
 
   public synchronized List<Integer> getAwaitingPubCompPacketIds() {
@@ -310,7 +324,12 @@ public class PacketIdManager {
           boolean reserved = consumeReservation(subscription);
           boolean active = existing != null && outstandingPacketId.containsKey(existing);
           while (!active && !reserved && !hasPublishCapacity()) {
-            try { wait(); } catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); throw new PacketIdentifierExhaustedException(); }
+            try {
+              wait();
+            } catch (InterruptedException interrupted) {
+              Thread.currentThread().interrupt();
+              throw new PacketIdentifierExhaustedException();
+            }
           }
           PacketIdStore.Allocation allocation = deliveryStore.allocate(key, messageId);
           if (qos > 0) deliveryStore.setQos(allocation.packetId(), qos);
@@ -356,7 +375,9 @@ public class PacketIdManager {
   public synchronized int nextPacketIdentifier() {
     if (deliveryStore != null) {
       try { int identifier = deliveryStore.reservePacketId(); controlIds.add(identifier); return identifier; }
-      catch (IOException failure) { throw new UncheckedIOException(failure); }
+      catch (IOException failure) {
+        throw new UncheckedIOException(failure);
+      }
     }
     while (!hasAvailablePacketIdentifier()) {
       try {
@@ -395,7 +416,9 @@ public class PacketIdManager {
         try {
           if (controlIds.contains(id)) {
             try { deliveryStore.releaseReservedPacketId(id); }
-            catch (IllegalStateException closedStore) { /* Connection-scoped reservation was already released by owner close. */ }
+            catch (IllegalStateException closedStore) {
+              /* Connection-scoped reservation was already released by owner close. */
+            }
           }
           else {
             PacketIdStore.Delivery identity = deliveryIdentities.get(id);
