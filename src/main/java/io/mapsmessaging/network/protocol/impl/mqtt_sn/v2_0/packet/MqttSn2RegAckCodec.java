@@ -29,23 +29,35 @@ public final class MqttSn2RegAckCodec {
   private MqttSn2RegAckCodec() {}
 
   public static RegAck decode(MqttSn2FrameCodec.Frame frame) throws IOException {
-    if (frame.type() != MqttSn2PacketType.REGACK) throw new IOException("Expected REGACK");
+    if (frame.type() != MqttSn2PacketType.REGACK) {
+      throw new IOException("Expected REGACK");
+    }
     ByteBuffer data = frame.payload().asReadOnlyBuffer();
-    if (data.remaining() < 3) throw new IOException("Truncated REGACK");
+    if (data.remaining() < 3) {
+      throw new IOException("Truncated REGACK");
+    }
     int flags = Byte.toUnsignedInt(data.get());
     int type = flags & 3;
     if ((flags & 0xF8) != 0 || (type != 0 && type != 1)) {
       throw new IOException("Malformed REGACK flags");
     }
     int id = Short.toUnsignedInt(data.getShort());
-    if (id == 0) throw new IOException("Zero REGACK Packet Identifier");
+    if (id == 0) {
+      throw new IOException("Zero REGACK Packet Identifier");
+    }
     Integer alias = null;
     if ((flags & 4) != 0) {
-      if (data.remaining() < 2) throw new IOException("Truncated REGACK Topic Alias");
+      if (data.remaining() < 2) {
+        throw new IOException("Truncated REGACK Topic Alias");
+      }
       alias = Short.toUnsignedInt(data.getShort());
-      if (alias == 0) throw new IOException("Zero REGACK Topic Alias");
+      if (alias == 0) {
+        throw new IOException("Zero REGACK Topic Alias");
+      }
     }
-    if (data.remaining() > 1) throw new IOException("REGACK trailing bytes");
+    if (data.remaining() > 1) {
+      throw new IOException("REGACK trailing bytes");
+    }
     return new RegAck(type, alias, id, data.hasRemaining() ? Byte.toUnsignedInt(data.get()) : null);
   }
 
@@ -69,6 +81,8 @@ public final class MqttSn2RegAckCodec {
   }
 
   private static void checkId(int id) {
-    if (id < 1 || id > 65535) throw new IllegalArgumentException("Identifier must be 1..65535");
+    if (id < 1 || id > 65535) {
+      throw new IllegalArgumentException("Identifier must be 1..65535");
+    }
   }
 }
