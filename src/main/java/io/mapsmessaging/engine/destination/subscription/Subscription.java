@@ -70,7 +70,7 @@ public abstract class Subscription implements Runnable, SubscribedEventManager, 
 
   protected java.util.concurrent.CompletableFuture<Void> submitRecoveredAcknowledgement(
       io.mapsmessaging.engine.destination.DestinationImpl destination, Runnable acknowledgement) {
-    var completion = new java.util.concurrent.CompletableFuture<Void>();
+    java.util.concurrent.CompletableFuture<Void> completion = new java.util.concurrent.CompletableFuture<>();
     try {
       destination.submit(new io.mapsmessaging.engine.tasks.EngineTask() {
         @Override public Response taskCall() {
