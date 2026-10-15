@@ -138,7 +138,10 @@ public class CotProtocol extends Protocol implements Selectable {
     if (endPoint.getConfig() != null && endPoint.getConfig().getEndPointConfig() != null) {
       configured = endPoint.getConfig().getEndPointConfig().getServerReadBufferSize();
     }
-    return (int) Math.max(MIN_READ_BUFFER_SIZE, Math.min(configured, MAX_BUFFER_SIZE));
+    if (configured < MIN_READ_BUFFER_SIZE) {
+      return MIN_READ_BUFFER_SIZE;
+    }
+    return (int) Math.min(configured, MAX_BUFFER_SIZE);
   }
 
   private void createSession() throws IOException {

@@ -99,6 +99,28 @@ public class CotIngestAdapter implements StateMessageAdapter, ClientConnection, 
   private CotIngestAdapterJMX jmxBean;
 
   private record PendingMessage(String destinationName, byte[] payload) {
+
+    @Override
+    public boolean equals(Object other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof PendingMessage(String name, byte[] payload1))) {
+        return false;
+      }
+      return java.util.Objects.equals(destinationName, name) && java.util.Arrays.equals(payload, payload1);
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * java.util.Objects.hashCode(destinationName) + java.util.Arrays.hashCode(payload);
+    }
+
+    @Override
+    @NotNull
+    public String toString() {
+      return "PendingMessage[destinationName=" + destinationName + ", payload=" + java.util.Arrays.toString(payload) + "]";
+    }
   }
 
   public CotIngestAdapter(String topic, TwinManager twinManager) {
