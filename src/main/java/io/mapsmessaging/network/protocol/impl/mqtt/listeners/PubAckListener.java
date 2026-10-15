@@ -35,7 +35,9 @@ public class PubAckListener extends PacketListener {
     PubAck pubAck = (PubAck) mqttPacket;
     var manager = ((MQTTProtocol) protocol).getPacketIdManager();
     int qos = manager.getPacketQos(pubAck.getPacketIdentifier());
-    if ((manager.hasDeliveryStore() || qos != 0) && (qos != 1 || manager.isAwaitingPubComp(pubAck.getPacketIdentifier()))) return null;
+    if ((manager.hasDeliveryStore() || qos != 0) && (qos != 1 || manager.isAwaitingPubComp(pubAck.getPacketIdentifier()))) {
+      return null;
+    }
     PacketIdentifierMap mapping = manager.completePacketId(pubAck.getPacketIdentifier());
     if (mapping != null && mapping.getSubscription() != null) {
       mapping.getSubscription().ackReceived(mapping.getMessageId());
