@@ -95,12 +95,18 @@ public class PacketIdManager {
 
   /** Borrow session state; manager close must not close or clear persistent deliveries. */
   public synchronized void bindStore(PacketIdStore store) {
-    if (store == null) return; // Test/memory-only adapters may have no session store.
-    if (deliveryStore == store) return;
-    if (deliveryStore != null || !outstandingPacketId.isEmpty()) throw new IllegalStateException("Delivery store must attach before sending");
+    if (store == null) {
+      return;
+    }
+    if (deliveryStore == store) {
+      return;
+    }
+    if (deliveryStore != null || !outstandingPacketId.isEmpty()) {
+      throw new IllegalStateException("Delivery store must attach before sending");
+    }
     deliveryStore = store;
     try {
-      for (var entry : store.outstanding().entrySet()) {
+      for (Map.Entry<Integer, PacketIdStore.Delivery> entry : store.outstanding().entrySet()) {
         if (store.getStage(entry.getKey()) == 1) {
           outstandingPacketId.put(entry.getKey(), new PacketIdentifierMap(entry.getKey(), null, entry.getValue().messageId()));
           existingPacketIds.add(entry.getKey());
@@ -119,9 +125,11 @@ public class PacketIdManager {
       try { return deliveryStore.getPacketId(deliveryKey(subscription), messageId); }
       catch (IOException failure) { throw new UncheckedIOException(failure); }
     }
-    for (var entry : outstandingPacketId.entrySet()) {
-      var mapping = entry.getValue();
-      if (mapping.getSubscription() == subscription && mapping.getMessageId() == messageId) return entry.getKey();
+    for (Map.Entry<Integer, PacketIdentifierMap> entry : outstandingPacketId.entrySet()) {
+      PacketIdentifierMap mapping = entry.getValue();
+      if (mapping.getSubscription() == subscription && mapping.getMessageId() == messageId) {
+        return entry.getKey();
+      }
     }
     return null;
   }
@@ -133,7 +141,9 @@ public class PacketIdManager {
   public synchronized boolean hasDeliveryStore() { return deliveryStore != null; }
 
   public synchronized int getPacketQos(int identifier) {
-    if (deliveryStore == null) return runtimeQos.getOrDefault(identifier, 0);
+    if (deliveryStore == null) {
+      return runtimeQos.getOrDefault(identifier, 0);
+    }
     try { return deliveryStore.getQos(identifier); }
     catch (IOException failure) { throw new UncheckedIOException(failure); }
   }
@@ -166,9 +176,9 @@ public class PacketIdManager {
   private void retireDeliveries(String key, Long messageId) {
     SubscribedEventManager wake;
     synchronized (this) {
-      var identifiers = new ArrayList<Integer>();
-      for (var entry : deliveryIdentities.entrySet()) {
-        var identity = entry.getValue();
+      List<Integer> identifiers = new ArrayList<>();
+      for (Map.Entry<Integer, PacketIdStore.Delivery> entry : deliveryIdentities.entrySet()) {
+        PacketIdStore.Delivery identity = entry.getValue();
         if (identity.topic().equals(key) && (messageId == null || identity.messageId() == messageId)) {
           try {
             Integer current = deliveryStore == null ? null : deliveryStore.getPacketId(identity.topic(), identity.messageId());
@@ -192,7 +202,9 @@ public class PacketIdManager {
   public synchronized boolean isExistingPacketId(int identifier) { return existingPacketIds.contains(identifier); }
 
   public synchronized boolean isAwaitingPubComp(int identifier) {
-    if (deliveryStore == null) return runtimePubComp.contains(identifier);
+    if (deliveryStore == null) {
+      return runtimePubComp.contains(identifier);
+    }
     try { return deliveryStore.getStage(identifier) == 1; }
     catch (IOException failure) { throw new UncheckedIOException(failure); }
   }
@@ -210,20 +222,26 @@ public class PacketIdManager {
   public void discard(SubscribedEventManager subscription, long messageId) {
     String key = null;
     synchronized (this) {
-      for (var entry : outstandingPacketId.entrySet()) {
-        var mapping = entry.getValue();
+      for (Map.Entry<Integer, PacketIdentifierMap> entry : outstandingPacketId.entrySet()) {
+        PacketIdentifierMap mapping = entry.getValue();
         if (mapping.getSubscription() == subscription && mapping.getMessageId() == messageId) {
-          var identity = deliveryIdentities.get(entry.getKey());
+          PacketIdStore.Delivery identity = deliveryIdentities.get(entry.getKey());
           if (identity != null) key = identity.topic();
           else if (deliveryStore == null) { completePacketId(entry.getKey()); return; }
           break;
         }
       }
-      if (deliveryStore == null) return;
+      if (deliveryStore == null) {
+        return;
+      }
       if (key == null && subscription.getContext() != null) key = deliveryKey(subscription);
-      if (key == null) return;
+      if (key == null) {
+        return;
+      }
       try {
-        if (!deliveryStore.clearPendingDelivery(key, messageId)) return;
+        if (!deliveryStore.clearPendingDelivery(key, messageId)) {
+          return;
+        }
         deliveryStore.flush();
       } catch (IOException failure) { throw new UncheckedIOException(failure); }
     }
@@ -299,8 +317,8 @@ public class PacketIdManager {
           deliveryStore.flush();
           int identifier = allocation.packetId();
           if (allocation.existing()) existingPacketIds.add(identifier); else existingPacketIds.remove(identifier);
-          var identity = new PacketIdStore.Delivery(key, messageId);
-          var stale = deliveryIdentities.entrySet().stream().filter(entry -> entry.getKey() != identifier && entry.getValue().equals(identity))
+          PacketIdStore.Delivery identity = new PacketIdStore.Delivery(key, messageId);
+          List<Integer> stale = deliveryIdentities.entrySet().stream().filter(entry -> entry.getKey() != identifier && entry.getValue().equals(identity))
               .map(Map.Entry::getKey).toList();
           for (int retired : stale) {
             deliveryIdentities.remove(retired); outstandingPacketId.remove(retired); existingPacketIds.remove(retired);
@@ -370,7 +388,9 @@ public class PacketIdManager {
     SubscribedEventManager wake = null;
     synchronized (this) {
       result = outstandingPacketId.get(id);
-      if (result == null && !controlIds.contains(id)) return null;
+      if (result == null && !controlIds.contains(id)) {
+        return null;
+      }
       if (deliveryStore != null) {
         try {
           if (controlIds.contains(id)) {
@@ -378,7 +398,7 @@ public class PacketIdManager {
             catch (IllegalStateException closedStore) { /* Connection-scoped reservation was already released by owner close. */ }
           }
           else {
-            var identity = deliveryIdentities.get(id);
+            PacketIdStore.Delivery identity = deliveryIdentities.get(id);
             boolean awaitingPubComp = deliveryStore.getStage(id) == 1;
             if (identity != null && Integer.valueOf(id).equals(deliveryStore.getPacketId(identity.topic(), identity.messageId()))
                 && deliveryStore.clear(identity.topic(), identity.messageId())) {
