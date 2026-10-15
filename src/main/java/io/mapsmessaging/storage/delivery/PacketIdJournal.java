@@ -124,10 +124,14 @@ final class PacketIdJournal implements AutoCloseable {
       Map<PacketIdStore.Delivery, Integer> byDelivery, Map<Integer, Integer> stages, Map<Integer, Integer> qosLevels) throws IOException {
     int type = record.get() & 0xff;
     int packetId = record.getInt();
-    if (packetId < 1 || packetId > maximum) throw new IOException("Invalid persisted packet identifier");
+    if (packetId < 1 || packetId > maximum) {
+      throw new IOException("Invalid persisted packet identifier");
+    }
     if (type == CLEAR && record.limit() == 9) {
       PacketIdStore.Delivery removed = byPacket.remove(packetId);
-      if (removed == null) throw new IOException("Completion without allocation");
+      if (removed == null) {
+        throw new IOException("Completion without allocation");
+      }
       byDelivery.remove(removed);
       stages.remove(packetId);
       qosLevels.remove(packetId);
@@ -147,16 +151,22 @@ final class PacketIdJournal implements AutoCloseable {
     } else if (type == ALLOCATE && record.limit() >= 22) {
       long messageId = record.getLong();
       int topicLength = record.getInt();
-      if (topicLength < 1 || topicLength != record.limit() - 21) throw new IOException("Invalid persisted topic length");
+      if (topicLength < 1 || topicLength != record.limit() - 21) {
+        throw new IOException("Invalid persisted topic length");
+      }
       byte[] topic = new byte[topicLength];
       record.get(topic);
       String decoded;
       try {
         decoded = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(topic)).toString();
-      } catch (CharacterCodingException error) { throw new IOException("Invalid persisted topic encoding", error); }
+      } catch (CharacterCodingException error) {
+        throw new IOException("Invalid persisted topic encoding", error);
+      }
       PacketIdStore.Delivery delivery = new PacketIdStore.Delivery(decoded, messageId);
-      if (byPacket.containsKey(packetId) || byDelivery.containsKey(delivery)) throw new IOException("Duplicate outstanding delivery");
+      if (byPacket.containsKey(packetId) || byDelivery.containsKey(delivery)) {
+        throw new IOException("Duplicate outstanding delivery");
+      }
       byPacket.put(packetId, delivery);
       byDelivery.put(delivery, packetId);
     } else { throw new IOException("Invalid delivery record type/size"); }
@@ -214,7 +224,10 @@ final class PacketIdJournal implements AutoCloseable {
       writeRecord(channel, record);
       recordCount++;
       if (durability == PacketIdStore.Durability.SYNC) channel.force(false);
-    } catch (IOException error) { failure = error; throw error; }
+    } catch (IOException error) {
+      failure = error;
+      throw error;
+    }
   }
 
   private static void writeRecord(FileChannel target, ByteBuffer record) throws IOException {
@@ -232,7 +245,12 @@ final class PacketIdJournal implements AutoCloseable {
 
   void flush() throws IOException {
     ensureUsable();
-    try { channel.force(false); } catch (IOException error) { failure = error; throw error; }
+    try {
+      channel.force(false);
+    } catch (IOException error) {
+      failure = error;
+      throw error;
+    }
   }
 
   void compact(Map<Integer, PacketIdStore.Delivery> outstanding, Map<Integer, Integer> stages, Map<Integer, Integer> qosLevels) throws IOException {
@@ -256,7 +274,9 @@ final class PacketIdJournal implements AutoCloseable {
       forceDirectory();
       channel = FileChannel.open(file, StandardOpenOption.READ, StandardOpenOption.WRITE, java.nio.file.LinkOption.NOFOLLOW_LINKS);
       dataLock = channel.tryLock();
-      if (dataLock == null) throw new IOException("Replacement delivery journal already owned");
+      if (dataLock == null) {
+        throw new IOException("Replacement delivery journal already owned");
+      }
       channel.position(channel.size());
       recordCount = (long) outstanding.size() + stages.size() + qosLevels.size();
     } catch (IOException error) { failure = error; throw error;
@@ -294,7 +314,9 @@ final class PacketIdJournal implements AutoCloseable {
   private void forceDirectory() throws IOException {
     // Windows NIO cannot open a directory channel. File contents are still
     // forced, but directory-entry power-loss durability is platform-dependent.
-    if (System.getProperty("os.name", "").startsWith("Windows")) return;
+    if (System.getProperty("os.name", "").startsWith("Windows")) {
+      return;
+    }
     try (FileChannel directory = FileChannel.open(file.getParent(), StandardOpenOption.READ)) { directory.force(true); }
   }
 
@@ -302,21 +324,29 @@ final class PacketIdJournal implements AutoCloseable {
   public void close() throws IOException {
     IOException error = null;
     if (channel != null && channel.isOpen() && failure == null) {
-      try { flush(); } catch (IOException flushFailure) { error = flushFailure; }
+      try {
+        flush();
+      } catch (IOException flushFailure) {
+        error = flushFailure;
+      }
     }
     IOException cleanup = release();
     if (error == null) error = cleanup;
     else if (cleanup != null) {
         error.addSuppressed(cleanup);
       }
-    if (error != null) throw error;
+    if (error != null) {
+      throw error;
+    }
   }
 
   private IOException release() {
     IOException error = null;
     for (AutoCloseable resource : new AutoCloseable[]{dataLock, channel, lock, owner}) {
       if (resource == null || (resource instanceof FileLock fileLock && !fileLock.isValid())) continue;
-      try { resource.close(); } catch (Exception closeFailure) {
+      try {
+        resource.close();
+      } catch (Exception closeFailure) {
         if (error == null) error = new IOException("Failed to close packet identifier persistence", closeFailure);
         else error.addSuppressed(closeFailure);
       }
