@@ -101,7 +101,9 @@ public final class DeliveryStateCoordinator {
       try {
         synchronized (store) {
           for (PacketIdStore.Delivery delivery : store.outstanding().values()) {
-            if (delivery.topic().equals(key)) retired.add(delivery);
+            if (delivery.topic().equals(key)) {
+              retired.add(delivery);
+            }
           }
           if (store.clearDeliveries(key) > 0) {
             store.flush();
