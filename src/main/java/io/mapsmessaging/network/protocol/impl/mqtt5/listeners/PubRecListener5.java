@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -34,7 +35,7 @@ public class PubRecListener5 extends PacketListener5 {
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     PubRec5 pubRec = (PubRec5) mqttPacket;
-    var manager = ((MQTT5Protocol) protocol).getPacketIdManager();
+    PacketIdManager manager = ((MQTT5Protocol) protocol).getPacketIdManager();
     int qos = manager.getPacketQos(pubRec.getPacketIdentifier());
     if (qos != 0 && qos != 2) {
       return null;
