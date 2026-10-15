@@ -151,7 +151,9 @@ public class SubscriptionController implements DestinationManagerListener {
       io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
     for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
       var completion = manager.acknowledgeRecoveredDelivery(delivery);
-      if (completion != null) return completion;
+      if (completion != null) {
+        return completion;
+      }
     }
     // Permanently removed subscriptions no longer hold interest in the delivery.
     return java.util.concurrent.CompletableFuture.completedFuture(null);
