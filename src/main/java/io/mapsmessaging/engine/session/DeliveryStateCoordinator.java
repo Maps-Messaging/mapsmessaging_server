@@ -23,6 +23,8 @@ import io.mapsmessaging.storage.delivery.PacketIdStore;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Serializes a session's journal ownership across offline cleanup and reconnect. */
 public final class DeliveryStateCoordinator {
@@ -79,17 +81,21 @@ public final class DeliveryStateCoordinator {
       changed = mutate(key, messageId);
       connection = clientConnection;
     }
-    if (changed && connection != null) connection.deliveryRetired(key, messageId);
+    if (changed && connection != null) {
+      connection.deliveryRetired(key, messageId);
+    }
   }
 
   public void retireAll(String key) throws IOException {
     ClientConnection connection;
-    java.util.List<PacketIdStore.Delivery> retired = new java.util.ArrayList<>();
+    List<PacketIdStore.Delivery> retired = new ArrayList<>();
     synchronized (this) {
       PacketIdStore store = liveStore;
       boolean temporary = store == null;
       if (temporary) {
-        if (path == null || !Files.isRegularFile(path)) return;
+        if (path == null || !Files.isRegularFile(path)) {
+          return;
+        }
         store = PacketIdStore.open(path, maximum, PacketIdStore.Durability.BATCHED);
       }
       try {
@@ -97,11 +103,15 @@ public final class DeliveryStateCoordinator {
           for (PacketIdStore.Delivery delivery : store.outstanding().values()) {
             if (delivery.topic().equals(key)) retired.add(delivery);
           }
-          if (store.clearDeliveries(key) > 0) store.flush();
+          if (store.clearDeliveries(key) > 0) {
+            store.flush();
+          }
         }
         connection = clientConnection;
       } finally {
-        if (temporary) store.close();
+        if (temporary) {
+          store.close();
+        }
       }
     }
     if (connection != null) {
@@ -115,15 +125,21 @@ public final class DeliveryStateCoordinator {
     PacketIdStore store = liveStore;
     boolean temporary = store == null;
     if (temporary) {
-      if (path == null || !Files.isRegularFile(path)) return false;
+      if (path == null || !Files.isRegularFile(path)) {
+        return false;
+      }
       store = PacketIdStore.open(path, maximum, PacketIdStore.Durability.BATCHED);
     }
     try {
       boolean changed = messageId == null ? store.clearDeliveries(key) > 0 : store.clearPendingDelivery(key, messageId);
-      if (changed) store.flush();
+      if (changed) {
+        store.flush();
+      }
       return changed;
     } finally {
-      if (temporary) store.close();
+      if (temporary) {
+          store.close();
+        }
     }
   }
 }
