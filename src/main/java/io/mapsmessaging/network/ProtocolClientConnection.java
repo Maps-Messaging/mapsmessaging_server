@@ -69,8 +69,12 @@ public class ProtocolClientConnection implements ClientConnection {
     PacketIdManager manager = packetIdManager();
     Integer savedIdentifier = manager == null || subscription == null || message == null ? null : manager.getPacketIdentifier(subscription, message.getIdentifier());
     boolean savedReliableDelivery = savedIdentifier != null && manager.getPacketQos(savedIdentifier) > 0;
-    if (!savedReliableDelivery && protocol instanceof MQTT5Protocol && !mqtt5RequiresPacketIdentifier(subscription, message)) return true;
-    if (!savedReliableDelivery && protocol instanceof MQTTProtocol && !subscriptionRequiresPacketIdentifier(subscription)) return true;
+    if (!savedReliableDelivery && protocol instanceof MQTT5Protocol && !mqtt5RequiresPacketIdentifier(subscription, message)) {
+      return true;
+    }
+    if (!savedReliableDelivery && protocol instanceof MQTTProtocol && !subscriptionRequiresPacketIdentifier(subscription)) {
+      return true;
+    }
     if (manager != null && message != null) {
       if (protocol instanceof MQTT5Protocol mqtt5 && mqtt5.getSession() != null && mqtt5.getSession().getReceiveMaximum() > 0) {
         manager.setMaximumOutstanding(mqtt5.getSession().getReceiveMaximum());
@@ -139,7 +143,9 @@ public class ProtocolClientConnection implements ClientConnection {
   }
 
   private PacketIdManager packetIdManager() {
-    if (protocol instanceof MQTT_SNProtocol mqttSn) return mqttSn.getPacketIdManager();
+    if (protocol instanceof MQTT_SNProtocol mqttSn) {
+      return mqttSn.getPacketIdManager();
+    }
     if (protocol instanceof MQTTProtocol mqttProtocol) {
       return mqttProtocol.getPacketIdManager();
     }
