@@ -359,10 +359,14 @@ public final class MqttSn2Protocol extends Protocol {
             request.authentication() ? request.authenticationMethod() : null, saslFinalResponse,
             request.clientIdentifier().isEmpty() ? clientIdentifier : ""));
         send(response, () -> {
-          if (!isCurrentSession(created)) return;
+          if (!isCurrentSession(created)) {
+            return;
+          }
           try {
             outgoing.recoverAfterBrokerAck(created::ackRecoveredDelivery, System.currentTimeMillis()).whenComplete((recovered, failureDuringRecovery) -> {
-              if (!isCurrentSession(created)) return;
+              if (!isCurrentSession(created)) {
+                return;
+              }
               if (failureDuringRecovery != null) {
                 deliveryFailure(failureDuringRecovery);
                 return;
@@ -373,7 +377,9 @@ public final class MqttSn2Protocol extends Protocol {
               }
               created.resumeState();
             });
-          } catch (IOException failureDuringRecovery) { deliveryFailure(failureDuringRecovery); }
+          } catch (IOException failureDuringRecovery) {
+            deliveryFailure(failureDuringRecovery);
+          }
         });
         lifecycle.connected();
         setConnected(true);
@@ -612,7 +618,9 @@ public final class MqttSn2Protocol extends Protocol {
     Session current = session.get();
     if (retryTask != null) retryTask.cancel(false);
     outgoing.acknowledgeAfterBrokerAck(ack, System.currentTimeMillis(), current::ackRecoveredDelivery).whenComplete((next, failure) -> {
-      if (!isCurrentSession(current)) return;
+      if (!isCurrentSession(current)) {
+        return;
+      }
       if (failure != null) {
         deliveryFailure(failure);
         return;
@@ -635,7 +643,9 @@ public final class MqttSn2Protocol extends Protocol {
   private void scheduleRetry() {
     if (retryTask != null) retryTask.cancel(false);
     retryTask = SimpleTaskScheduler.getInstance().schedule(() -> {
-      if (closed) return;
+      if (closed) {
+        return;
+      }
       ByteBuffer retry = outgoing.retryExpired(System.currentTimeMillis());
       if (retry != null) {
         send(retry, null);
@@ -696,7 +706,9 @@ public final class MqttSn2Protocol extends Protocol {
     while (awakeBudget > 0 && !outgoing.hasInFlightDelivery()) {
       MessageEvent event;
       synchronized (sleepingQueue) {
-        if (lifecycle.state() != MqttSn2Lifecycle.State.AWAKE) return;
+        if (lifecycle.state() != MqttSn2Lifecycle.State.AWAKE) {
+          return;
+        }
         event = sleepingQueue.pollFirst();
         if (event != null) awakeBudget--;
       }
@@ -819,9 +831,13 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void retireDelivery(String subscriptionKey, Long messageId) {
-    if (closed) return;
+    if (closed) {
+      return;
+    }
     try {
-      if (messageId != null && outgoing.hasDeliveryMapping(subscriptionKey, messageId)) return;
+      if (messageId != null && outgoing.hasDeliveryMapping(subscriptionKey, messageId)) {
+        return;
+      }
       synchronized (sleepingQueue) {
         var iterator = sleepingQueue.iterator();
         while (iterator.hasNext()) {
@@ -845,7 +861,9 @@ public final class MqttSn2Protocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    if (closed) return;
+    if (closed) {
+      return;
+    }
     closed = true;
     lifecycle.close();
     outgoing.disconnect();
