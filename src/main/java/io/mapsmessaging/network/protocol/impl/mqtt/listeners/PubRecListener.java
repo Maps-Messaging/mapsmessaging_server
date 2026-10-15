@@ -36,7 +36,9 @@ public class PubRecListener extends PacketListener {
     PubRec pubRec = (PubRec) mqttPacket;
     var manager = ((MQTTProtocol) protocol).getPacketIdManager();
     int qos = manager.getPacketQos(pubRec.getPacketIdentifier());
-    if ((manager.hasDeliveryStore() || qos != 0) && qos != 2) return null;
+    if ((manager.hasDeliveryStore() || qos != 0) && qos != 2) {
+      return null;
+    }
     PacketIdentifierMap mapping = manager.receivedPacket(pubRec.getPacketIdentifier());
     if (mapping != null) {
       boolean accepted = manager.isAwaitingPubComp(pubRec.getPacketIdentifier());
