@@ -254,7 +254,7 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
   }
 
   public boolean isPubRelReady(int packetId) {
-    var gate = pubRelAcknowledgements.get(packetId);
+    PubRelGate gate = pubRelAcknowledgements.get(packetId);
     return gate != null && gate.ready().get();
   }
 
