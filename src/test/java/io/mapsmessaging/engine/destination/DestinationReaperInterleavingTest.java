@@ -92,7 +92,10 @@ class DestinationReaperInterleavingTest {
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
-      Future<?> first = executor.submit(() -> fixture.executeNextReaper());
+      Future<?> first = executor.submit((Callable<Void>) () -> {
+        fixture.executeNextReaper();
+        return null;
+      });
       assertTrue(entered.await(10, TimeUnit.SECONDS), "First reaper must reach the controlled processing point");
 
       fixture.destination.complete(102);
