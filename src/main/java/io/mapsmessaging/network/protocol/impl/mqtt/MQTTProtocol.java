@@ -240,7 +240,9 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
       packetIdManager.bindStore(session.getOrCreatePacketIdStore(65535));
     } catch (IOException | java.io.UncheckedIOException error) {
       try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
-      if (error instanceof java.io.UncheckedIOException unchecked) throw unchecked;
+      if (error instanceof java.io.UncheckedIOException unchecked) {
+        throw unchecked;
+      }
       throw new java.io.UncheckedIOException((IOException) error);
     }
     completedConnection();
@@ -263,9 +265,13 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
   /** PUBREL is safe only once its exact broker interest has been durably acknowledged. */
   public java.util.concurrent.CompletableFuture<Void> sendPubRelAfterBrokerAck(int packetId) {
     Session activeSession = session;
-    if (!isDeliverySessionActive(activeSession)) return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    if (!isDeliverySessionActive(activeSession)) {
+      return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    }
     io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery = packetIdManager.getDelivery(packetId);
-    if (delivery == null) return java.util.concurrent.CompletableFuture.completedFuture(null);
+    if (delivery == null) {
+      return java.util.concurrent.CompletableFuture.completedFuture(null);
+    }
     PubRelGate gate;
     for (;;) {
       PubRelGate existing = pubRelAcknowledgements.get(packetId);
@@ -317,7 +323,9 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
 
   public java.util.concurrent.CompletableFuture<Void> recoverOutgoingDeliveries() {
     Session activeSession = session;
-    if (!isDeliverySessionActive(activeSession)) return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    if (!isDeliverySessionActive(activeSession)) {
+      return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    }
     java.util.List<java.util.concurrent.CompletableFuture<Void>> recovered = new java.util.ArrayList<>();
     for (int packetId : packetIdManager.getAwaitingPubCompPacketIds()) recovered.add(sendPubRelAfterBrokerAck(packetId));
     return java.util.concurrent.CompletableFuture.allOf(recovered.toArray(java.util.concurrent.CompletableFuture[]::new));
@@ -460,7 +468,9 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
       messageEvent.getCompletionTask().run();
       return;
     }
-    if (reconcileRecoveredDelivery(messageEvent.getSubscription(), msg.getIdentifier(), messageEvent.getCompletionTask())) return;
+    if (reconcileRecoveredDelivery(messageEvent.getSubscription(), msg.getIdentifier(), messageEvent.getCompletionTask())) {
+      return;
+    }
     QualityOfService qos = subInfo.getQualityOfService();
     Integer existingId = packetIdManager.getPacketIdentifier(messageEvent.getSubscription(), msg.getIdentifier());
     if (existingId != null && packetIdManager.getPacketQos(existingId) > 0) qos = QualityOfService.getInstance(packetIdManager.getPacketQos(existingId));
@@ -491,7 +501,9 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
       return true;
     }
     Integer existingId = packetIdManager.getPacketIdentifier(subscription, messageId);
-    if (existingId == null || !packetIdManager.isAwaitingPubComp(existingId)) return false;
+    if (existingId == null || !packetIdManager.isAwaitingPubComp(existingId)) {
+      return false;
+    }
     packetIdManager.nextPacketIdentifier(subscription, messageId);
     sendPubRelAfterBrokerAck(existingId).thenRun(completion);
     return true;
