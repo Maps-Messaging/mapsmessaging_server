@@ -44,7 +44,9 @@ public final class MqttSn2CryptoProviders {
 
   public MqttSn2CryptoProvider require(int scheme) {
     MqttSn2CryptoProvider result = schemes.get(scheme);
-    if (result == null) throw new IllegalArgumentException("Unconfigured protection scheme: " + scheme);
+    if (result == null) {
+      throw new IllegalArgumentException("Unconfigured protection scheme: " + scheme);
+    }
     return result;
   }
 }
