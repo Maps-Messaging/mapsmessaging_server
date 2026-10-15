@@ -47,7 +47,9 @@ public final class JcaAeadProtectionProvider implements MqttSn2CryptoProvider {
     cipher.updateAAD(authenticatedPrefix);
     byte[] encrypted = payload.protectedBytes();
     byte[] tag = payload.tag();
-    if (tag.length != 16) throw new GeneralSecurityException("AEAD tag must be 16 bytes");
+    if (tag.length != 16) {
+      throw new GeneralSecurityException("AEAD tag must be 16 bytes");
+    }
     byte[] input = Arrays.copyOf(encrypted, encrypted.length + tag.length);
     System.arraycopy(tag, 0, input, encrypted.length, tag.length);
     return cipher.doFinal(input);
@@ -76,7 +78,8 @@ public final class JcaAeadProtectionProvider implements MqttSn2CryptoProvider {
   }
 
   private static void validateScheme(int scheme) {
-    if (scheme < 0x46 || scheme > 0x49)
+    if (scheme < 0x46 || scheme > 0x49) {
       throw new IllegalArgumentException("Unsupported JCA AEAD scheme");
+    }
   }
 }
