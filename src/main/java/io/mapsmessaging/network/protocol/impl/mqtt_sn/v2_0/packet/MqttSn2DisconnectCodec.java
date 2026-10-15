@@ -35,25 +35,39 @@ public final class MqttSn2DisconnectCodec {
   // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
   @SuppressWarnings("java:S3776")
   public static Disconnect decode(MqttSn2FrameCodec.Frame frame) throws IOException {
-    if (frame.type() != MqttSn2PacketType.DISCONNECT) throw new IOException("Expected DISCONNECT");
+    if (frame.type() != MqttSn2PacketType.DISCONNECT) {
+      throw new IOException("Expected DISCONNECT");
+    }
     ByteBuffer body = frame.payload().asReadOnlyBuffer();
-    if (!body.hasRemaining()) throw new IOException("DISCONNECT flags missing");
+    if (!body.hasRemaining()) {
+      throw new IOException("DISCONNECT flags missing");
+    }
     int flags = Byte.toUnsignedInt(body.get());
-    if ((flags & 0xF8) != 0) throw new IOException("Reserved DISCONNECT flags");
+    if ((flags & 0xF8) != 0) {
+      throw new IOException("Reserved DISCONNECT flags");
+    }
     Integer packetIdentifier = null;
     Integer reasonCode = null;
     Long expiry = null;
     if ((flags & 1) != 0) {
-      if (body.remaining() < 2) throw new IOException("Truncated DISCONNECT packet identifier");
+      if (body.remaining() < 2) {
+        throw new IOException("Truncated DISCONNECT packet identifier");
+      }
       packetIdentifier = Short.toUnsignedInt(body.getShort());
-      if (packetIdentifier == 0) throw new IOException("Zero DISCONNECT packet identifier");
+      if (packetIdentifier == 0) {
+        throw new IOException("Zero DISCONNECT packet identifier");
+      }
     }
     if ((flags & 4) != 0) {
-      if (!body.hasRemaining()) throw new IOException("Truncated DISCONNECT reason code");
+      if (!body.hasRemaining()) {
+        throw new IOException("Truncated DISCONNECT reason code");
+      }
       reasonCode = Byte.toUnsignedInt(body.get());
     }
     if ((flags & 2) != 0) {
-      if (body.remaining() < 4) throw new IOException("Truncated DISCONNECT expiry");
+      if (body.remaining() < 4) {
+        throw new IOException("Truncated DISCONNECT expiry");
+      }
       expiry = Integer.toUnsignedLong(body.getInt());
     }
     String message;
@@ -65,7 +79,9 @@ public final class MqttSn2DisconnectCodec {
     } catch (CharacterCodingException e) {
       throw new IOException("Invalid DISCONNECT reason string", e);
     }
-    if (message.indexOf('\u0000') >= 0) throw new IOException("Invalid DISCONNECT reason string");
+    if (message.indexOf('\u0000') >= 0) {
+      throw new IOException("Invalid DISCONNECT reason string");
+    }
     return new Disconnect(packetIdentifier, reasonCode, expiry, message);
   }
 
@@ -96,7 +112,9 @@ public final class MqttSn2DisconnectCodec {
       length += 4;
     }
     String reasonString = packet.reasonString() == null ? "" : packet.reasonString();
-    if (reasonString.indexOf('\u0000') >= 0) throw new IllegalArgumentException("Invalid reason string");
+    if (reasonString.indexOf('\u0000') >= 0) {
+      throw new IllegalArgumentException("Invalid reason string");
+    }
     byte[] reason = reasonString.getBytes(StandardCharsets.UTF_8);
     ByteBuffer body = ByteBuffer.allocate(length + reason.length).put((byte) flags);
     if (packet.packetIdentifier() != null) body.putShort((short) packet.packetIdentifier().intValue());
