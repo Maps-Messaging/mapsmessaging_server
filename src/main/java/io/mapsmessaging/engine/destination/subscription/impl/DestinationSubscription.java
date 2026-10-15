@@ -125,10 +125,19 @@ public class DestinationSubscription extends Subscription {
     deliveryStateOwner = sessionImpl;
     if (messageStateManager instanceof MessageStateManagerImpl state) {
       state.add(new MessageStateManagerListener() {
-        @Override public void add(long id, int priority) { }
-        @Override public void addAll(Collection<Long> ids) { }
-        @Override public void remove(long id) { }
-        @Override public void expired(long id) { clearDeliveryMapping(id); }
+        @Override
+        public void add(long id, int priority) {
+        }
+        @Override
+        public void addAll(Collection<Long> ids) {
+        }
+        @Override
+        public void remove(long id) {
+        }
+        @Override
+        public void expired(long id) {
+          clearDeliveryMapping(id);
+        }
       });
     }
     activeSubscription = this;
