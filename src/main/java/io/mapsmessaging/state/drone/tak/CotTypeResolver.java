@@ -35,13 +35,48 @@ import java.util.Optional;
  * has one (MAVLink vehicles); the MIL-STD-2525D symbol of its STANAG 4817 description -- the
  * {@code symbol_set} and the {@code entity}, {@code entity_type} and {@code entity_subtype} codes
  * -- translated through the table's 2525D crosswalk, which falls back to the parent entity when a
- * symbol has no 2525C counterpart; the dimension of the {@code symbol_set} alone; otherwise the
- * "other" dimension. A vehicle-class type is checked against the table and falls back to its
+ * symbol has no 2525C counterpart; the twin's STANAG 4817 node specialization, when it names a
+ * platform the table can place and does not contradict the symbol set; the dimension of the
+ * {@code symbol_set} alone; otherwise the "other" dimension. A vehicle-class type is checked against the table and falls back to its
  * dimension alone when the table does not carry it.
  */
 final class CotTypeResolver {
 
   private static final String SYMBOL_SET_PREFIX = "SYMBOLSETENUM_";
+  private static final String SPECIALIZATION_PREFIX = "NODESPECIALIZATIONTYPEENUM_";
+  private static final String DISCRIMINATOR = "$discriminator";
+
+  /**
+   * The CoT function of a STANAG 4817 node specialization, where the type table carries one.
+   * A single letter is a battle dimension and nothing more: a crewed vessel says which medium it
+   * moves in, not that it is a combatant. Values the table cannot place (OTHER, VEHICLE, and the
+   * sensors with no physical counterpart) are deliberately absent -- they say nothing the symbol
+   * set has not said already.
+   */
+  private static final Map<String, String> SPECIALIZATION_TYPES = Map.ofEntries(
+      Map.entry("SURFACE_UNMANNED_SYSTEM", "S-C-U"),      // unmanned surface water vehicle
+      Map.entry("SUBSURFACE_UNMANNED_SYSTEM", "U-S-U"),   // autonomous / unmanned underwater vehicle
+      Map.entry("GROUND_UNMANNED_SYSTEM", "G-U-C-V-U"),   // unmanned systems
+      Map.entry("SURFACE_VESSEL", "S"),
+      Map.entry("VESSEL", "S"),
+      Map.entry("SUBSURFACE_VESSEL", "U"),
+      Map.entry("AIRCRAFT", "A"),
+      Map.entry("SPACECRAFT", "P"),
+      Map.entry("LAND_VEHICLE", "G"),
+      Map.entry("RADAR", "G-E-S-R"),
+      Map.entry("CBRN_SENSOR", "G-E-X-N"),
+      // the table has one sensor symbol: every other sensing specialization resolves to it
+      Map.entry("SENSOR", "G-E-S"),
+      Map.entry("ACOUSTIC_SENSOR", "G-E-S"),
+      Map.entry("SONAR", "G-E-S"),
+      Map.entry("INFRARED_SENSOR", "G-E-S"),
+      Map.entry("MAGNETIC_FIELD_SENSOR", "G-E-S"),
+      Map.entry("OPTICAL_SENSOR", "G-E-S"),
+      Map.entry("TACTILE_SENSOR", "G-E-S"),
+      Map.entry("SOUND_RANGING_SENSOR", "G-E-S"),
+      Map.entry("VERTICAL_LINE_ARRAY_DIFAR", "G-E-S"),
+      Map.entry("ELECTROMAGNETIC_SPECTRUM_SENSOR", "G-E-S"),
+      Map.entry("OTHER_ELECTROMAGNETIC_SPECTRUM_SENSOR", "G-E-S"));
 
   private final CotTypeRegistry registry;
 
@@ -54,6 +89,11 @@ final class CotTypeResolver {
   }
 
   String resolve(Affiliation affiliation, VehicleClass vehicleClass, Map<String, Object> description) {
+    return resolve(affiliation, vehicleClass, description, null);
+  }
+
+  String resolve(Affiliation affiliation, VehicleClass vehicleClass, Map<String, Object> description,
+      Map<String, Object> specialization) {
     Affiliation resolvedAffiliation = affiliation == null ? Affiliation.UNKNOWN : affiliation;
     if (vehicleClass != null && vehicleClass != VehicleClass.UNKNOWN) {
       return vehicleType(resolvedAffiliation, vehicleClass).toString();
@@ -62,7 +102,56 @@ final class CotTypeResolver {
     if (symbol.isPresent()) {
       return symbol.get().toString();
     }
-    return CotType.of(resolvedAffiliation, symbolSetDimension(description), FunctionKey.empty()).toString();
+    BattleDimension dimension = symbolSetDimension(description);
+    return specializationType(resolvedAffiliation, specialization, dimension)
+        .orElseGet(() -> CotType.of(resolvedAffiliation, dimension, FunctionKey.empty()))
+        .toString();
+  }
+
+  /**
+   * The type of the node's STANAG 4817 specialization, when it names a platform the table can
+   * place. It is ignored when it contradicts the symbol set: the set is the 2525 statement, a
+   * disagreement is an error at the source, and moving a sea track into the air dimension would
+   * be worse than saying less about it.
+   */
+  private Optional<CotType> specializationType(Affiliation affiliation, Map<String, Object> specialization,
+      BattleDimension symbolSetDimension) {
+    String name = specializationName(specialization);
+    String typeKey = name == null ? null : SPECIALIZATION_TYPES.get(name);
+    if (typeKey == null) {
+      return Optional.empty();
+    }
+    BattleDimension dimension = dimensionOf(typeKey);
+    if (symbolSetDimension != BattleDimension.OTHER && symbolSetDimension != dimension) {
+      return Optional.empty();
+    }
+    CotType byDimension = CotType.of(affiliation, dimension, FunctionKey.empty());
+    if (typeKey.length() == 1 || registry == null) {
+      return Optional.of(byDimension);
+    }
+    return Optional.of(registry.find(affiliation, typeKey).orElse(byDimension));
+  }
+
+  /**
+   * The specialization's enum value: its {@code $discriminator} with or without the
+   * {@code NodeSpecializationTypeEnum_} prefix, else the name of the one object it carries
+   * ({@code surface_vessel}).
+   */
+  private static String specializationName(Map<String, Object> specialization) {
+    if (specialization == null || specialization.isEmpty()) {
+      return null;
+    }
+    Object discriminator = specialization.get(DISCRIMINATOR);
+    if (discriminator != null) {
+      String name = String.valueOf(discriminator).trim().toUpperCase(Locale.ROOT);
+      return name.startsWith(SPECIALIZATION_PREFIX) ? name.substring(SPECIALIZATION_PREFIX.length()) : name;
+    }
+    for (String key : specialization.keySet()) {
+      if (key != null && !key.startsWith("$")) {
+        return key.trim().toUpperCase(Locale.ROOT);
+      }
+    }
+    return null;
   }
 
   /** The type of the description's 2525D symbol, when it carries an entity code the table maps. */
