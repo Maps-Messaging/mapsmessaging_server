@@ -21,7 +21,7 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
-import java.security.Principal;
+import io.mapsmessaging.security.access.Identity;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.impl.ClientSubscribedEventManager;
@@ -105,7 +105,7 @@ public final class NatsJetStreamSubscriptions {
   }
 
   private static void check(Session session, Destination destination) throws IOException {
-    Principal identity = session.getSecurityContext().getIdentity();
+    Identity identity = session.getSecurityContext().getIdentity();
     AuthManager auth = AuthManager.getInstance();
     if (!auth.canAccess(identity, ServerPermissions.SUBSCRIBE, destination.protectedResource)
         || (session.sessionImpl.getContext().isPersistentSession()
