@@ -102,7 +102,9 @@ public final class MqttSn2OutgoingDeliveryManager {
 
   /** Attaches session-owned state before recovered engine deliveries are resumed. */
   public synchronized void attach(PacketIdStore store) throws IOException {
-    if (inFlight != null || !pending.isEmpty()) throw new IllegalStateException("Cannot replace an active delivery store");
+    if (inFlight != null || !pending.isEmpty()) {
+      throw new IllegalStateException("Cannot replace an active delivery store");
+    }
     packetIds = Objects.requireNonNull(store, "store");
     connectionGeneration++;
     brokerAckBarrier = null;
@@ -110,7 +112,7 @@ public final class MqttSn2OutgoingDeliveryManager {
     brokerAcknowledged.clear();
     restoredIdentities.clear();
     completedRecovered.clear();
-    for (var entry : store.outstanding().entrySet()) {
+    for (Map.Entry<Integer, PacketIdStore.Delivery> entry : store.outstanding().entrySet()) {
       if (store.getStage(entry.getKey()) == 1) {
         PacketIdStore.Delivery identity = entry.getValue();
         restoredIdentities.add(identity);
@@ -134,10 +136,16 @@ public final class MqttSn2OutgoingDeliveryManager {
     }
     CompletableFuture<ByteBuffer> barrier = CompletableFuture.allOf(completions.toArray(CompletableFuture[]::new)).thenApply(ignored -> {
       synchronized (this) {
-        if (generation != connectionGeneration) return null;
+        if (generation != connectionGeneration) {
+          return null;
+        }
         brokerAcknowledged.addAll(restoredIdentities);
         recovered.replaceAll((identity, delivery) -> withCompletion(delivery, null));
-        try { return recover(now); } catch (IOException failure) { throw new CompletionException(failure); }
+        try {
+          return recover(now);
+        } catch (IOException failure) {
+          throw new CompletionException(failure);
+        }
       }
     });
     synchronized (this) { brokerAckBarrier = barrier; }
@@ -222,7 +230,9 @@ public final class MqttSn2OutgoingDeliveryManager {
       return true;
     }
     Delivery waiting = recovered.get(identity);
-    if (waiting == null) return false;
+    if (waiting == null) {
+      return false;
+    }
     recovered.put(identity, withCompletion(waiting, brokerAcknowledged.contains(identity) ? null : completion));
     return true;
   }
@@ -375,13 +385,15 @@ public final class MqttSn2OutgoingDeliveryManager {
 
   private ByteBuffer startNext(long now) throws IOException {
     if (!recovered.isEmpty()) {
-      var first = recovered.entrySet().iterator().next();
+      Map.Entry<PacketIdStore.Delivery, Delivery> first = recovered.entrySet().iterator().next();
       ByteBuffer frame = start(first.getValue(), now);
       recovered.remove(first.getKey());
       return frame;
     }
     Delivery next = pending.peekFirst();
-    if (next == null) return null;
+    if (next == null) {
+      return null;
+    }
     ByteBuffer frame = start(next, now);
     pending.removeFirst();
     return frame;
