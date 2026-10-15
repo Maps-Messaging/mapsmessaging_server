@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
+import java.util.Iterator;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
@@ -839,7 +840,7 @@ public final class MqttSn2Protocol extends Protocol {
         return;
       }
       synchronized (sleepingQueue) {
-        var iterator = sleepingQueue.iterator();
+        Iterator<MessageEvent> iterator = sleepingQueue.iterator();
         while (iterator.hasNext()) {
           MessageEvent event = iterator.next();
           long identifier = event.getMessage().getIdentifier();
