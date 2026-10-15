@@ -43,7 +43,9 @@ public final class PacketIdStore implements AutoCloseable {
   private boolean closed;
 
   private PacketIdStore(int maximum, PacketIdJournal journal) {
-    if (maximum < 1 || maximum > 0xffff) throw new IllegalArgumentException("Packet identifier capacity must be 1..65535");
+    if (maximum < 1 || maximum > 0xffff) {
+      throw new IllegalArgumentException("Packet identifier capacity must be 1..65535");
+    }
     this.maximum = maximum;
     this.journal = journal;
   }
@@ -58,14 +60,20 @@ public final class PacketIdStore implements AutoCloseable {
    */
   @SuppressWarnings("java:S2095") // Successful return transfers journal ownership to PacketIdStore; recovery failures close it.
   public static PacketIdStore open(Path file, int maximum, Durability durability) throws IOException {
-    if (maximum < 1 || maximum > 0xffff) throw new IllegalArgumentException("Packet identifier capacity must be 1..65535");
+    if (maximum < 1 || maximum > 0xffff) {
+      throw new IllegalArgumentException("Packet identifier capacity must be 1..65535");
+    }
     PacketIdJournal journal = new PacketIdJournal(file, maximum, Objects.requireNonNull(durability));
     PacketIdStore persistent = new PacketIdStore(maximum, journal);
     try {
       journal.recover(persistent.byPacket, persistent.byDelivery, persistent.stages, persistent.qosLevels);
       return persistent;
     } catch (IOException | RuntimeException failure) {
-      try { journal.close(); } catch (IOException closeFailure) { failure.addSuppressed(closeFailure); }
+      try {
+        journal.close();
+      } catch (IOException closeFailure) {
+        failure.addSuppressed(closeFailure);
+      }
       throw failure;
     }
   }
@@ -74,7 +82,9 @@ public final class PacketIdStore implements AutoCloseable {
     ensureOpen();
     Delivery delivery = key(topic, messageId);
     Integer existing = byDelivery.get(delivery);
-    if (existing != null) return new Allocation(existing, true);
+    if (existing != null) {
+      return new Allocation(existing, true);
+    }
     validateTopic(topic);
     int candidate = nextAvailableId();
     if (journal != null) journal.allocate(candidate, delivery);
@@ -95,7 +105,9 @@ public final class PacketIdStore implements AutoCloseable {
 
   /** Releases only a control reservation, never an outstanding delivery. */
   public synchronized boolean releaseReservedPacketId(int packetId) {
-    if (closed) throw new IllegalStateException("Packet identifier store is closed");
+    if (closed) {
+      throw new IllegalStateException("Packet identifier store is closed");
+    }
     validateId(packetId);
     return reserved.remove(packetId);
   }
@@ -111,11 +123,19 @@ public final class PacketIdStore implements AutoCloseable {
   public synchronized void setStage(int packetId, int stage) throws IOException {
     ensureOpen();
     validateId(packetId);
-    if (!byPacket.containsKey(packetId)) throw new IllegalArgumentException("No outstanding delivery for packet identifier");
+    if (!byPacket.containsKey(packetId)) {
+      throw new IllegalArgumentException("No outstanding delivery for packet identifier");
+    }
     int current = stages.getOrDefault(packetId, 0);
-    if (stage < current || stage > 1 || stage < 0) throw new IllegalArgumentException("Invalid delivery stage transition");
-    if (stage == 1 && qosLevels.getOrDefault(packetId, 0) == 1) throw new IllegalArgumentException("QoS 1 delivery cannot await PUBCOMP");
-    if (stage == current) return;
+    if (stage < current || stage > 1 || stage < 0) {
+      throw new IllegalArgumentException("Invalid delivery stage transition");
+    }
+    if (stage == 1 && qosLevels.getOrDefault(packetId, 0) == 1) {
+      throw new IllegalArgumentException("QoS 1 delivery cannot await PUBCOMP");
+    }
+    if (stage == current) {
+      return;
+    }
     if (journal != null) journal.setStage(packetId, stage);
     stages.put(packetId, stage);
   }
@@ -131,11 +151,19 @@ public final class PacketIdStore implements AutoCloseable {
   public synchronized void setQos(int packetId, int qos) throws IOException {
     ensureOpen();
     validateId(packetId);
-    if (!byPacket.containsKey(packetId)) throw new IllegalArgumentException("No outstanding delivery for packet identifier");
-    if (qos != 1 && qos != 2) throw new IllegalArgumentException("Delivery QoS must be 1 or 2");
+    if (!byPacket.containsKey(packetId)) {
+      throw new IllegalArgumentException("No outstanding delivery for packet identifier");
+    }
+    if (qos != 1 && qos != 2) {
+      throw new IllegalArgumentException("Delivery QoS must be 1 or 2");
+    }
     int current = getQos(packetId);
-    if (current != 0 && current != qos) throw new IllegalArgumentException("Delivery QoS cannot change");
-    if (qosLevels.containsKey(packetId)) return;
+    if (current != 0 && current != qos) {
+      throw new IllegalArgumentException("Delivery QoS cannot change");
+    }
+    if (qosLevels.containsKey(packetId)) {
+      return;
+    }
     if (journal != null) journal.setQos(packetId, qos);
     qosLevels.put(packetId, qos);
   }
@@ -243,7 +271,9 @@ public final class PacketIdStore implements AutoCloseable {
   }
 
   private int nextAvailableId() throws IOException {
-    if (byPacket.size() + reserved.size() == maximum) throw new IOException("All packet identifiers are outstanding or reserved");
+    if (byPacket.size() + reserved.size() == maximum) {
+      throw new IOException("All packet identifiers are outstanding or reserved");
+    }
     int candidate = cursor;
     do { candidate = candidate == maximum ? 1 : candidate + 1; }
     while (byPacket.containsKey(candidate) || reserved.contains(candidate));
@@ -252,7 +282,9 @@ public final class PacketIdStore implements AutoCloseable {
 
   private Delivery key(String topic, long messageId) {
     Objects.requireNonNull(topic, "topic");
-    if (topic.isEmpty()) throw new IllegalArgumentException("Topic must not be empty");
+    if (topic.isEmpty()) {
+      throw new IllegalArgumentException("Topic must not be empty");
+    }
     return new Delivery(topic, messageId);
   }
 
@@ -264,11 +296,15 @@ public final class PacketIdStore implements AutoCloseable {
   }
 
   private void validateId(int packetId) {
-    if (packetId < 1 || packetId > maximum) throw new IllegalArgumentException("Packet identifier outside capacity");
+    if (packetId < 1 || packetId > maximum) {
+      throw new IllegalArgumentException("Packet identifier outside capacity");
+    }
   }
 
   private void ensureOpen() throws IOException {
-    if (closed) throw new IOException("Packet identifier store is closed");
+    if (closed) {
+      throw new IOException("Packet identifier store is closed");
+    }
     if (journal != null) {
       journal.ensureUsable();
     }
