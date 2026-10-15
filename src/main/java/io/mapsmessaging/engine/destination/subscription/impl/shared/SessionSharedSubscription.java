@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
+import io.mapsmessaging.engine.session.DeliveryStateCoordinator;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.SubscribedEventManager;
 import java.io.UncheckedIOException;
@@ -240,7 +241,7 @@ public class SessionSharedSubscription extends Subscription {
       if (sessionImpl != null) {
         sessionImpl.clearPacketIdMapping(getDeliveryKey(), messageId);
       } else {
-        var coordinator = deliveryStateCoordinator;
+        DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
         if (coordinator != null) {
           coordinator.retirePending(getDeliveryKey(), messageId);
         }
@@ -254,7 +255,7 @@ public class SessionSharedSubscription extends Subscription {
     if (sessionImpl != null) {
       sessionImpl.clearPacketIdMappings(getDeliveryKey());
     } else {
-      var coordinator = deliveryStateCoordinator;
+      DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
       if (coordinator != null) {
         coordinator.retireAll(getDeliveryKey());
       }
@@ -268,7 +269,7 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void setDeliveryJournalPath(java.nio.file.Path path) {
-    var coordinator = new io.mapsmessaging.engine.session.DeliveryStateCoordinator();
+    DeliveryStateCoordinator coordinator = new DeliveryStateCoordinator();
     coordinator.setPath(path);
     setDeliveryStateCoordinator(coordinator);
   }
