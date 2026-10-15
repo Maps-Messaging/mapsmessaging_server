@@ -21,7 +21,9 @@ package io.mapsmessaging.api;
 
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.auth.ServerPermissions;
+import java.security.Principal;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.impl.ClientSubscribedEventManager;
 import io.mapsmessaging.engine.tasks.SubscriptionResponse;
 import io.mapsmessaging.engine.tasks.Response;
@@ -43,7 +45,7 @@ public final class NatsJetStreamSubscriptions {
     check(session, destination);
     try {
       Response response = destination.destinationImpl.submit(() -> {
-        var subscription = destination.destinationImpl.getSubscription(session.getName());
+        DestinationSubscription subscription = destination.destinationImpl.getSubscription(session.getName());
         if (subscription == null) {
           return new SubscriptionResponse(null);
         }
@@ -89,7 +91,7 @@ public final class NatsJetStreamSubscriptions {
 
   public static Set<String> filters(Session session) {
     Set<String> filters = new HashSet<>();
-    for (var context : session.getSessionInformation().getSubscriptionInfo().getSubscriptionContextList()) {
+    for (SubscriptionContext context : session.getSessionInformation().getSubscriptionInfo().getSubscriptionContextList()) {
       filters.add(context.getDestinationName());
     }
     return filters;
@@ -103,7 +105,7 @@ public final class NatsJetStreamSubscriptions {
   }
 
   private static void check(Session session, Destination destination) throws IOException {
-    var identity = session.getSecurityContext().getIdentity();
+    Principal identity = session.getSecurityContext().getIdentity();
     AuthManager auth = AuthManager.getInstance();
     if (!auth.canAccess(identity, ServerPermissions.SUBSCRIBE, destination.protectedResource)
         || (session.sessionImpl.getContext().isPersistentSession()
