@@ -72,7 +72,7 @@ class MtiStatusAdapterTest {
     assertNotNull(mitigate);
     assertEquals(-23296, mitigate.colorArgb());
     assertEquals(Boolean.FALSE, mitigate.readiness());
-    assertEquals("ddos3_64x64.png", mitigate.cyberIconFile());
+    assertEquals("mitigate_64x64.png", mitigate.cyberIconFile());
 
     adapter.handle(message("update", "hold", "2026-09-19T12:00:00Z", "2099-01-01T00:00:00Z"));
     MtiLookupResult hold = adapter.lookup("asset-1");

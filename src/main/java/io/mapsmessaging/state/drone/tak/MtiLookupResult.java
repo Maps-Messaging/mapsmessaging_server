@@ -49,9 +49,10 @@ package io.mapsmessaging.state.drone.tak;
  *     healthy state).
  * @param cyberIconFile filename (not a path) of a custom cyber-compromise icon within the
  *     shared iconset {@link CotEventPolicy} references (e.g. {@code "exploit_64x64.png"}), or
- *     {@code null} for no override. {@code CotEventPolicy} owns the iconset UUID/path prefix and
+ *     {@code null} for none. {@code CotEventPolicy} owns the iconset UUID/path prefix and
  *     decides which twins are eligible (drones only) - this field only says "this severity, if
- *     applicable". WinTAK/ATAK-only: {@code <usericon>} needs the iconset locally imported on the
+ *     applicable". The asset keeps its own icon; this one is drawn on a second marker placed just
+ *     east of it. WinTAK/ATAK-only: {@code <usericon>} needs the iconset locally imported on the
  *     client, which WebTAK's browser rendering does not support (see {@code colorArgb} above for
  *     the same class of WebTAK gap) - kept as a genuine addition alongside colour/readiness, not
  *     a replacement for them.
