@@ -216,8 +216,12 @@ public final class MqttSn2ProtectionVerifier {
     if (scheme != 0 && scheme != 1) {
       throw new IOException("Unsupported protection scheme");
     }
-    if (code == 0 || code == 1) return 32;
-    if (code >= 4 && code <= 15) return code * 2;
+    if (code == 0 || code == 1) {
+      return 32;
+    }
+    if (code >= 4 && code <= 15) {
+      return code * 2;
+    }
     throw new IOException("Invalid HMAC tag length code");
   }
 }
