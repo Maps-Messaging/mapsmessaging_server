@@ -31,6 +31,7 @@ import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamArc
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfo;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,20 +78,20 @@ public class StreamDeleteHandler extends JetStreamFrameHandler {
     // A JetStream stream is logical membership, not ownership of MAPS data.
     List<Destination> destinations = new ArrayList<>();
     try {
-      for (var streamInfo : info.getSubjects()) {
-        var destination = sessionState.getSession().findDestination(
+      for (StreamInfo streamInfo : info.getSubjects()) {
+        Destination destination = sessionState.getSession().findDestination(
             streamInfo.getDestination().getFullyQualifiedNamespace(),
             DestinationType.TOPIC).get(20, TimeUnit.SECONDS);
         NatsJetStreamDestinations.checkRemoval(destination);
         destinations.add(destination);
       }
-      for (var destination : destinations) {
+      for (Destination destination : destinations) {
         // Also reconnect the persistent archive after a server restart so removal
         // releases the restored MAPS subscription rather than just the local cache.
         JetStreamArchiveManager.getInstance().ensureArchive(sessionState, streamName,
             destination.getFullyQualifiedNamespace());
       }
-      for (var destination : destinations) {
+      for (Destination destination : destinations) {
         NatsJetStreamDestinations.disable(destination);
       }
       JetStreamArchiveManager.getInstance().releaseStream(streamName);
