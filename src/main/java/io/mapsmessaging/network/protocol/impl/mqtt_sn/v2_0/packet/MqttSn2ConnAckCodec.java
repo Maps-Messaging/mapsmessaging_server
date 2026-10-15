@@ -118,11 +118,17 @@ public final class MqttSn2ConnAckCodec {
       throw new IOException("Expected CONNACK");
     }
     ByteBuffer body = frame.payload().asReadOnlyBuffer();
-    if (body.remaining() < 4) throw new IOException("Truncated CONNACK");
+    if (body.remaining() < 4) {
+      throw new IOException("Truncated CONNACK");
+    }
     int flags = Byte.toUnsignedInt(body.get());
-    if ((flags & 0xF0) != 0) throw new IOException("Reserved CONNACK flags");
+    if ((flags & 0xF0) != 0) {
+      throw new IOException("Reserved CONNACK flags");
+    }
     int identifier = Short.toUnsignedInt(body.getShort());
-    if (identifier == 0) throw new IOException("Zero CONNACK Packet Identifier");
+    if (identifier == 0) {
+      throw new IOException("Zero CONNACK Packet Identifier");
+    }
     int reason = Byte.toUnsignedInt(body.get());
     if ((flags & 1) != 0 && reason != 0) {
       throw new IOException("Session Present must be zero on failed CONNACK");
@@ -132,23 +138,35 @@ public final class MqttSn2ConnAckCodec {
     String method = null;
     byte[] authData = null;
     if ((flags & 2) != 0) {
-      if (body.remaining() < 4) throw new IOException("Truncated CONNACK expiry");
+      if (body.remaining() < 4) {
+        throw new IOException("Truncated CONNACK expiry");
+      }
       expiry = Integer.toUnsignedLong(body.getInt());
     }
     if ((flags & 4) != 0) {
-      if (body.remaining() < 2) throw new IOException("Truncated CONNACK keep alive");
+      if (body.remaining() < 2) {
+        throw new IOException("Truncated CONNACK keep alive");
+      }
       keepAlive = Short.toUnsignedInt(body.getShort());
-      if (keepAlive == 0) throw new IOException("Zero server keep alive");
+      if (keepAlive == 0) {
+        throw new IOException("Zero server keep alive");
+      }
     }
     if ((flags & 8) != 0) {
-      if (!body.hasRemaining()) throw new IOException("Truncated CONNACK auth method length");
+      if (!body.hasRemaining()) {
+        throw new IOException("Truncated CONNACK auth method length");
+      }
       int len = Byte.toUnsignedInt(body.get());
-      if (body.remaining() < len + 2) throw new IOException("Truncated CONNACK auth method");
+      if (body.remaining() < len + 2) {
+        throw new IOException("Truncated CONNACK auth method");
+      }
       byte[] methodBytes = new byte[len];
       body.get(methodBytes);
       method = strictUtf8(methodBytes);
       int dataLength = Short.toUnsignedInt(body.getShort());
-      if (body.remaining() < dataLength) throw new IOException("Truncated CONNACK auth data");
+      if (body.remaining() < dataLength) {
+        throw new IOException("Truncated CONNACK auth data");
+      }
       authData = new byte[dataLength];
       body.get(authData);
     }
