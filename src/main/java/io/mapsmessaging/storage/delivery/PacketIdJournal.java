@@ -42,7 +42,9 @@ final class PacketIdJournal implements AutoCloseable {
 
   PacketIdJournal(Path file, int maximum, PacketIdStore.Durability durability) throws IOException {
     this.file = file.toAbsolutePath().normalize();
-    if (Files.isSymbolicLink(this.file)) throw new IOException("Symbolic-link delivery journals are unsupported");
+    if (Files.isSymbolicLink(this.file)) {
+      throw new IOException("Symbolic-link delivery journals are unsupported");
+    }
     this.maximum = maximum;
     this.durability = durability;
     Files.createDirectories(this.file.getParent());
@@ -50,11 +52,15 @@ final class PacketIdJournal implements AutoCloseable {
       owner = FileChannel.open(this.file.resolveSibling(this.file.getFileName() + ".lock"),
           StandardOpenOption.CREATE, StandardOpenOption.WRITE);
       lock = owner.tryLock();
-      if (lock == null) throw new IOException("Packet identifier store already owned");
+      if (lock == null) {
+        throw new IOException("Packet identifier store already owned");
+      }
       boolean exists = Files.exists(this.file);
       channel = FileChannel.open(this.file, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, java.nio.file.LinkOption.NOFOLLOW_LINKS);
       dataLock = channel.tryLock();
-      if (dataLock == null) throw new IOException("Packet identifier journal already owned");
+      if (dataLock == null) {
+        throw new IOException("Packet identifier journal already owned");
+      }
       if (!exists) {
         writeFully(channel, header());
         channel.force(true);
@@ -62,19 +68,27 @@ final class PacketIdJournal implements AutoCloseable {
       }
     } catch (IOException | RuntimeException error) {
       IOException cleanup = release();
-      if (cleanup != null) error.addSuppressed(cleanup);
-      if (error instanceof OverlappingFileLockException) throw new IOException("Packet identifier store already owned", error);
+      if (cleanup != null) {
+        error.addSuppressed(cleanup);
+      }
+      if (error instanceof OverlappingFileLockException) {
+        throw new IOException("Packet identifier store already owned", error);
+      }
       throw error;
     }
   }
 
   void ensureUsable() throws IOException {
-    if (failure != null) throw new IOException("Packet identifier persistence failed", failure);
+    if (failure != null) {
+      throw new IOException("Packet identifier persistence failed", failure);
+    }
   }
 
   void recover(Map<Integer, PacketIdStore.Delivery> byPacket, Map<PacketIdStore.Delivery, Integer> byDelivery, Map<Integer, Integer> stages, Map<Integer, Integer> qosLevels) throws IOException {
     channel.position(0);
-    if (channel.size() < HEADER_SIZE) throw new IOException("Truncated packet identifier header");
+    if (channel.size() < HEADER_SIZE) {
+      throw new IOException("Truncated packet identifier header");
+    }
     ByteBuffer header = read(HEADER_SIZE);
     if (header.getInt() != MAGIC || header.getInt() != 1 || header.getInt() != maximum
         || header.getInt() != checksum(header.array(), 12)) throw new IOException("Invalid packet identifier header/capacity");
@@ -86,14 +100,20 @@ final class PacketIdJournal implements AutoCloseable {
       }
       ByteBuffer framing = read(8);
       int length = framing.getInt();
-      if (framing.getInt() != ~length) throw new IOException("Delivery record length checksum mismatch");
-      if (length < 9 || length > MAX_TOPIC_BYTES + 21) throw new IOException("Invalid delivery record length");
+      if (framing.getInt() != ~length) {
+        throw new IOException("Delivery record length checksum mismatch");
+      }
+      if (length < 9 || length > MAX_TOPIC_BYTES + 21) {
+        throw new IOException("Invalid delivery record length");
+      }
       if (channel.size() - channel.position() < length) {
         truncateTail(start);
         break;
       }
       ByteBuffer record = read(length);
-      if (record.getInt(length - 4) != checksum(record.array(), length - 4)) throw new IOException("Delivery record checksum mismatch");
+      if (record.getInt(length - 4) != checksum(record.array(), length - 4)) {
+        throw new IOException("Delivery record checksum mismatch");
+      }
       apply(record, byPacket, byDelivery, stages, qosLevels);
       recordCount++;
     }
@@ -286,7 +306,9 @@ final class PacketIdJournal implements AutoCloseable {
     }
     IOException cleanup = release();
     if (error == null) error = cleanup;
-    else if (cleanup != null) error.addSuppressed(cleanup);
+    else if (cleanup != null) {
+        error.addSuppressed(cleanup);
+      }
     if (error != null) throw error;
   }
 
