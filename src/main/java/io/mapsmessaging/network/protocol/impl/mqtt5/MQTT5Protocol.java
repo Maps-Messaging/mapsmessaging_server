@@ -269,7 +269,11 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
     try {
       packetIdManager.bindStore(session.getOrCreatePacketIdStore(65535));
     } catch (IOException | java.io.UncheckedIOException error) {
-      try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+      try {
+        endPoint.close();
+      } catch (IOException closeError) {
+        error.addSuppressed(closeError);
+      }
       if (error instanceof java.io.UncheckedIOException unchecked) {
         throw unchecked;
       }
@@ -339,13 +343,21 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
         ownedGate.ready().set(false);
         ownedGate.future().completeExceptionally(error);
         if (!closed && session == activeSession) {
-          try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+          try {
+            endPoint.close();
+          } catch (IOException closeError) {
+            error.addSuppressed(closeError);
+          }
         }
       });
     } catch (RuntimeException error) {
       ownedGate.future().completeExceptionally(error);
       if (!closed && session == activeSession) {
-        try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+        try {
+          endPoint.close();
+        } catch (IOException closeError) {
+          error.addSuppressed(closeError);
+        }
       }
     }
     return ownedGate.future();
@@ -503,7 +515,11 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
     try {
       sendDelivery(messageEvent);
     } catch (java.io.UncheckedIOException error) {
-      try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+      try {
+        endPoint.close();
+      } catch (IOException closeError) {
+        error.addSuppressed(closeError);
+      }
     }
   }
 
