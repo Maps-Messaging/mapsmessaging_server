@@ -270,7 +270,9 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
       packetIdManager.bindStore(session.getOrCreatePacketIdStore(65535));
     } catch (IOException | java.io.UncheckedIOException error) {
       try { endPoint.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
-      if (error instanceof java.io.UncheckedIOException unchecked) throw unchecked;
+      if (error instanceof java.io.UncheckedIOException unchecked) {
+        throw unchecked;
+      }
       throw new java.io.UncheckedIOException((IOException) error);
     }
     completedConnection();
@@ -293,9 +295,13 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
   /** PUBREL is safe only once its exact broker interest has been durably acknowledged. */
   public java.util.concurrent.CompletableFuture<Void> sendPubRelAfterBrokerAck(int packetId) {
     Session activeSession = session;
-    if (!isDeliverySessionActive(activeSession)) return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    if (!isDeliverySessionActive(activeSession)) {
+      return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    }
     io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery = packetIdManager.getDelivery(packetId);
-    if (delivery == null) return java.util.concurrent.CompletableFuture.completedFuture(null);
+    if (delivery == null) {
+      return java.util.concurrent.CompletableFuture.completedFuture(null);
+    }
     PubRelGate gate;
     for (;;) {
       PubRelGate existing = pubRelAcknowledgements.get(packetId);
@@ -347,7 +353,9 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
 
   public java.util.concurrent.CompletableFuture<Void> recoverOutgoingDeliveries() {
     Session activeSession = session;
-    if (!isDeliverySessionActive(activeSession)) return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    if (!isDeliverySessionActive(activeSession)) {
+      return java.util.concurrent.CompletableFuture.failedFuture(new IOException("Delivery session is closed"));
+    }
     java.util.List<java.util.concurrent.CompletableFuture<Void>> recovered = new java.util.ArrayList<>();
     for (int packetId : packetIdManager.getAwaitingPubCompPacketIds()) recovered.add(sendPubRelAfterBrokerAck(packetId));
     return java.util.concurrent.CompletableFuture.allOf(recovered.toArray(java.util.concurrent.CompletableFuture[]::new));
@@ -506,7 +514,9 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
       messageEvent.getCompletionTask().run();
       return;
     }
-    if (reconcileRecoveredDelivery(messageEvent.getSubscription(), messageEvent.getMessage().getIdentifier(), messageEvent.getCompletionTask())) return;
+    if (reconcileRecoveredDelivery(messageEvent.getSubscription(), messageEvent.getMessage().getIdentifier(), messageEvent.getCompletionTask())) {
+      return;
+    }
     boolean retainedReplay = messageEvent.getSubscription().isRetainedReplay(messageEvent.getMessage().getIdentifier());
     ParsedMessage parsedMessage = parseOutboundMessage(messageEvent, context);
     if(parsedMessage == null) {
@@ -528,7 +538,9 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
 
   private void sendPublishFrame(@NonNull @NotNull String normalisedName, @NonNull @NotNull SubscribedEventManager subscription, @NonNull @NotNull SubscriptionContext subInfo, @NonNull @NotNull Message message,
                                 @NonNull @NotNull Runnable completionTask, boolean retainedReplay) {
-    if (reconcileRecoveredDelivery(subscription, message.getIdentifier(), completionTask)) return;
+    if (reconcileRecoveredDelivery(subscription, message.getIdentifier(), completionTask)) {
+      return;
+    }
     QualityOfService qos = QualityOfService.getInstance(Math.min(subInfo.getQualityOfService().getLevel(), message.getQualityOfService().getLevel()));
     Integer existingId = packetIdManager.getPacketIdentifier(subscription, message.getIdentifier());
     if (existingId != null && packetIdManager.getPacketQos(existingId) > 0) qos = QualityOfService.getInstance(packetIdManager.getPacketQos(existingId));
@@ -572,7 +584,9 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
       return true;
     }
     Integer existingId = packetIdManager.getPacketIdentifier(subscription, messageId);
-    if (existingId == null || !packetIdManager.isAwaitingPubComp(existingId)) return false;
+    if (existingId == null || !packetIdManager.isAwaitingPubComp(existingId)) {
+      return false;
+    }
     packetIdManager.nextPacketIdentifier(subscription, messageId);
     sendPubRelAfterBrokerAck(existingId).thenRun(completion);
     return true;
