@@ -150,7 +150,7 @@ public class SubscriptionController implements DestinationManagerListener {
   public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(
       io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
     for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
-      var completion = manager.acknowledgeRecoveredDelivery(delivery);
+      CompletableFuture<Void> completion = manager.acknowledgeRecoveredDelivery(delivery);
       if (completion != null) {
         return completion;
       }
