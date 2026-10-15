@@ -67,6 +67,7 @@ public class DestinationSubscription extends Subscription {
   private final String sessionId;
   // Retain the owner while offline; cleanup must not create stores for other protocols.
   private SessionImpl deliveryStateOwner;
+  @SuppressWarnings("java:S3077") // Volatile safely publishes the reference; coordinator operations synchronize internally.
   private volatile io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator;
 
   @Getter
@@ -548,7 +549,8 @@ public class DestinationSubscription extends Subscription {
       if (owner != null) {
         owner.clearPacketIdMapping(getDeliveryKey(), messageId);
       } else {
-        if (deliveryStateCoordinator != null) deliveryStateCoordinator.retirePending(getDeliveryKey(), messageId);
+        var coordinator = deliveryStateCoordinator;
+        if (coordinator != null) coordinator.retirePending(getDeliveryKey(), messageId);
       }
     } catch (IOException error) {
       throw new UncheckedIOException("Unable to retire delivery packet identifier", error);
@@ -567,7 +569,8 @@ public class DestinationSubscription extends Subscription {
       if (owner != null) {
         owner.clearPacketIdMappings(key);
       } else {
-        if (deliveryStateCoordinator != null) deliveryStateCoordinator.retireAll(key);
+        var coordinator = deliveryStateCoordinator;
+        if (coordinator != null) coordinator.retireAll(key);
       }
     } catch (IOException error) {
       throw new UncheckedIOException("Unable to retire subscription packet identifiers", error);
