@@ -241,7 +241,9 @@ public class SessionSharedSubscription extends Subscription {
         sessionImpl.clearPacketIdMapping(getDeliveryKey(), messageId);
       } else {
         var coordinator = deliveryStateCoordinator;
-        if (coordinator != null) coordinator.retirePending(getDeliveryKey(), messageId);
+        if (coordinator != null) {
+          coordinator.retirePending(getDeliveryKey(), messageId);
+        }
       }
     } catch (IOException error) {
       throw new UncheckedIOException("Unable to retire shared delivery packet identifier", error);
@@ -253,7 +255,9 @@ public class SessionSharedSubscription extends Subscription {
       sessionImpl.clearPacketIdMappings(getDeliveryKey());
     } else {
       var coordinator = deliveryStateCoordinator;
-      if (coordinator != null) coordinator.retireAll(getDeliveryKey());
+      if (coordinator != null) {
+        coordinator.retireAll(getDeliveryKey());
+      }
     }
   }
 
