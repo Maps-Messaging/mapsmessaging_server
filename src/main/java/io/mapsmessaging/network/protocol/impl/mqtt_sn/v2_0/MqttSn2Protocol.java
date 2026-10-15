@@ -157,7 +157,9 @@ public final class MqttSn2Protocol extends Protocol {
 
   /** Use a distinct MAPS session namespace for each authenticated sender. */
   public String brokerSessionIdentifier(String clientId) {
-    if (authenticatedSender == null) return clientId;
+    if (authenticatedSender == null) {
+      return clientId;
+    }
     return "mqtt-sn2/" + java.util.HexFormat.of().formatHex(authenticatedSender)
         + "/" + clientId.length() + ":" + clientId;
   }
@@ -169,7 +171,9 @@ public final class MqttSn2Protocol extends Protocol {
         == MqttSn2PacketType.PROTECTION_ENCAPSULATION;
     MqttSn2ProtectionPolicy policy = protectionSession;
     if (policy != null) {
-      if (!wrapped) throw new IOException("Unprotected MQTT-SN 2.0 packet on secured session");
+      if (!wrapped) {
+        throw new IOException("Unprotected MQTT-SN 2.0 packet on secured session");
+      }
       MqttSn2ProtectionPolicy.Authenticated verified = policy.receiveAuthenticated(input);
       if (authenticatedSender == null || !java.util.Arrays.equals(
           authenticatedSender, verified.senderIdentifier())) {
@@ -316,7 +320,9 @@ public final class MqttSn2Protocol extends Protocol {
       } else {
         willTopic = null;
       }
-      if (willTopic == null) throw new IOException("Unknown or unsupported CONNECT Will Topic alias");
+      if (willTopic == null) {
+        throw new IOException("Unknown or unsupported CONNECT Will Topic alias");
+      }
       MessageBuilder will = new MessageBuilder().setOpaqueData(request.willPayload())
           .setRetain(request.willRetained()).setQoS(qos(request.willQos()))
           .setTransformation(getProtocolMessageTransformation());
@@ -770,7 +776,9 @@ public final class MqttSn2Protocol extends Protocol {
 
   private void deliver(MessageEvent event) {
     ParsedMessage parsed = parseOutboundMessage(event);
-    if (parsed == null) return;
+    if (parsed == null) {
+      return;
+    }
     // Initial delivery QoS is bounded by the subscription's granted maximum, not
     // merely the publishing client's QoS. Otherwise a QoS 0 subscriber can
     // receive QoS 1 and consume send credit waiting for an ACK it cannot owe.
