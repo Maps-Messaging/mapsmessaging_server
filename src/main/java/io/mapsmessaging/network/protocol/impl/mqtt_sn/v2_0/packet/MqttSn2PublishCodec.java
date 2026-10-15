@@ -50,7 +50,9 @@ public final class MqttSn2PublishCodec {
   // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
   @SuppressWarnings("java:S3776")
   public static ByteBuffer encode(Publish publish) {
-    if (publish == null) throw new IllegalArgumentException("Missing PUBLISH");
+    if (publish == null) {
+      throw new IllegalArgumentException("Missing PUBLISH");
+    }
     int type = publish.topicType();
     int qos = publish.qos();
     boolean wos = publish.withoutSession();
@@ -70,7 +72,9 @@ public final class MqttSn2PublishCodec {
         throw new IllegalArgumentException("Invalid PUBLISH Topic Name");
       }
       topic = publish.topicName().getBytes(StandardCharsets.UTF_8);
-      if (topic.length > 65535) throw new IllegalArgumentException("Topic Name too long");
+      if (topic.length > 65535) {
+        throw new IllegalArgumentException("Topic Name too long");
+      }
     } else {
       if (publish.topicAlias() < 1 || publish.topicAlias() > 65535) {
         throw new IllegalArgumentException("Invalid PUBLISH Topic Alias");
