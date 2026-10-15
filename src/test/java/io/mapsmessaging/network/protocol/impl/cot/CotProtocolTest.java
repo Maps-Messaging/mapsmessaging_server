@@ -3,6 +3,7 @@ package io.mapsmessaging.network.protocol.impl.cot;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.CotProtocolConfigDTO;
 import io.mapsmessaging.engine.session.security.SecurityContext;
@@ -10,13 +11,17 @@ import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.mockito.MockedStatic;
 
 import javax.security.auth.Subject;
+import java.nio.channels.SelectionKey;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class CotProtocolTest {
@@ -63,6 +68,110 @@ class CotProtocolTest {
   }
 
   @Test
+  @Timeout(10)
+  void readTask_whenReadReportsBytesButDecodesNoPayload_parksInsteadOfSpinning() throws Exception {
+    boolean original = JMXManager.isEnableJMX();
+    JMXManager.setEnableJMX(false);
+    SessionManager manager = mock(SessionManager.class);
+    Session session = mock(Session.class);
+    SecurityContext security = mock(SecurityContext.class);
+    Subject subject = new Subject();
+    when(session.getSecurityContext()).thenReturn(security);
+    when(security.getSubject()).thenReturn(subject);
+    when(manager.create(any(), any())).thenReturn(session);
+
+    try (MockedStatic<SessionManager> mocked = mockStatic(SessionManager.class)) {
+      mocked.when(SessionManager::getInstance).thenReturn(manager);
+      EndPoint endpoint = endpoint();
+      // Simulate the wedged SSL case: readPacket reports a positive (encrypted)
+      // count but leaves the application packet empty - no decoded payload. With
+      // the old while(read > 0) loop this spun the reader at 100% CPU forever.
+      when(endpoint.readPacket(any())).thenReturn(16708);
+
+      CotProtocol protocol =
+          new CotProtocol(endpoint, new Packet(0, false), new CotProtocolConfigDTO());
+      // The constructor registers OP_READ once; clear that interaction first.
+      verify(endpoint).register(eq(SelectionKey.OP_READ), eq(protocol));
+      clearInvocations(endpoint);
+
+      protocol.selected(protocol, null, SelectionKey.OP_READ);
+
+      // The reader must stop after a bounded number of reads and re-arm the
+      // selector, rather than looping on the empty positive count.
+      verify(endpoint, timeout(5000)).register(eq(SelectionKey.OP_READ), eq(protocol));
+      verify(endpoint, atMost(5)).readPacket(any());
+      verify(endpoint, never()).close();
+
+      protocol.close();
+    } finally {
+      JMXManager.setEnableJMX(original);
+    }
+  }
+
+  @Test
+  @Timeout(10)
+  void readTask_readsIntoBufferThatHoldsATlsRecord_notTheDetectionPacket() throws Exception {
+    withSession(endpoint -> {
+      List<Packet> readTargets = new CopyOnWriteArrayList<>();
+      when(endpoint.readPacket(any())).thenAnswer(invocation -> {
+        readTargets.add(invocation.getArgument(0));
+        return 16708;
+      });
+      // Protocol detection hands over its own 1 KB buffer - over ssl:// a TLS record decrypts
+      // to up to 16 KB and can never be unwrapped into it.
+      Packet detectionPacket = new Packet(1024, true);
+      CotProtocol protocol = new CotProtocol(endpoint, detectionPacket, new CotProtocolConfigDTO());
+      clearInvocations(endpoint);
+
+      protocol.selected(protocol, null, SelectionKey.OP_READ);
+      verify(endpoint, timeout(5000)).register(eq(SelectionKey.OP_READ), eq(protocol));
+
+      assertFalse(readTargets.isEmpty());
+      for (Packet target : readTargets) {
+        assertNotSame(detectionPacket, target);
+        assertTrue(target.getRawBuffer().capacity() >= 16704,
+            "read buffer of " + target.getRawBuffer().capacity() + " bytes cannot hold a TLS record");
+      }
+      protocol.close();
+    });
+  }
+
+  @Test
+  void readBufferSize_usesConfiguredSize_withinTlsRecordFloorAndSafetyCap() {
+    assertEquals(100_000, CotProtocol.readBufferSize(endpointWithReadBufferSize(100_000)));
+    assertEquals(32 * 1024, CotProtocol.readBufferSize(endpointWithReadBufferSize(10_240)));
+    assertEquals(32 * 1024, CotProtocol.readBufferSize(endpointWithReadBufferSize(1024)));
+    assertEquals(1_048_576, CotProtocol.readBufferSize(endpointWithReadBufferSize(4_000_000)));
+    assertEquals(32 * 1024, CotProtocol.readBufferSize(endpoint()));
+  }
+
+  @Test
+  @Timeout(10)
+  void readTask_doesNotGrowThePooledThreadNameAcrossRuns() throws Exception {
+    withSession(endpoint -> {
+      List<String> readerNames = new CopyOnWriteArrayList<>();
+      when(endpoint.readPacket(any())).thenAnswer(invocation -> {
+        readerNames.add(Thread.currentThread().getName());
+        return 16708;
+      });
+      CotProtocol protocol = new CotProtocol(endpoint, new Packet(0, false), new CotProtocolConfigDTO());
+
+      for (int run = 0; run < 3; run++) {
+        clearInvocations(endpoint);
+        protocol.selected(protocol, null, SelectionKey.OP_READ);
+        verify(endpoint, timeout(5000)).register(eq(SelectionKey.OP_READ), eq(protocol));
+      }
+
+      assertEquals(3, readerNames.size());
+      for (String name : readerNames) {
+        assertTrue(name.startsWith("CoT Protocol Reader::"), name);
+        assertFalse(name.startsWith("CoT Protocol Reader::CoT Protocol Reader::"), name);
+      }
+      protocol.close();
+    });
+  }
+
+  @Test
   void staticFrameSearchHelpersHandleBoundsAndWhitespace() throws Exception {
     byte[] data = "xx<?xml?>  <event>1</event>tail".getBytes();
 
@@ -80,6 +189,36 @@ class CotProtocolTest {
     assertEquals(2, last.invoke(null, data, "<?xml".getBytes(), 0, 11));
     assertEquals(true, whitespace.invoke(null, data, 9, 11));
     assertEquals(-1, index.invoke(null, data, "missing".getBytes(), 0));
+  }
+
+  @FunctionalInterface
+  private interface SessionBody {
+    void run(EndPoint endpoint) throws Exception;
+  }
+
+  private static void withSession(SessionBody body) throws Exception {
+    boolean original = JMXManager.isEnableJMX();
+    JMXManager.setEnableJMX(false);
+    SessionManager manager = mock(SessionManager.class);
+    Session session = mock(Session.class);
+    SecurityContext security = mock(SecurityContext.class);
+    when(session.getSecurityContext()).thenReturn(security);
+    when(security.getSubject()).thenReturn(new Subject());
+    when(manager.create(any(), any())).thenReturn(session);
+    try (MockedStatic<SessionManager> mocked = mockStatic(SessionManager.class)) {
+      mocked.when(SessionManager::getInstance).thenReturn(manager);
+      body.run(endpoint());
+    } finally {
+      JMXManager.setEnableJMX(original);
+    }
+  }
+
+  private static EndPoint endpointWithReadBufferSize(long size) {
+    EndPoint endpoint = endpoint();
+    EndPointConfigDTO endPointConfig = mock(EndPointConfigDTO.class);
+    when(endPointConfig.getServerReadBufferSize()).thenReturn(size);
+    when(endpoint.getConfig().getEndPointConfig()).thenReturn(endPointConfig);
+    return endpoint;
   }
 
   private static EndPoint endpoint() {
