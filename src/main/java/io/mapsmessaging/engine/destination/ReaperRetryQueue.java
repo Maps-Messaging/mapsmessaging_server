@@ -100,6 +100,10 @@ final class ReaperRetryQueue {
     batchFailure = false;
   }
 
+  String cleanupTraceState() {
+    return "held=" + held + " pendingDeadlines=" + pending + " batchFailure=" + batchFailure + " retryAfter=" + retryAfter + " now=" + nanoClock.getAsLong();
+  }
+
   void clear() {
     pending.clear();
     held.clear();

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SharedSubscription extends DestinationSubscription {
 
@@ -69,6 +71,10 @@ public class SharedSubscription extends DestinationSubscription {
   public Subscription addSession(SessionImpl sessionImpl, String sessionId, SubscriptionContext context, AcknowledgementController acknowledgementController) {
     SessionSharedSubscription subscription = new SessionSharedSubscription(this, sessionImpl, sessionId, context, acknowledgementController);
     subscriptions.add(subscription);
+    subscription.traceCleanupState("MEMBER-ADD");
+    if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+      QueueCleanupTrace.captureOnFinish(destinationImpl.getFullyQualifiedNamespace(), () -> subscription.traceCleanupState("TEST-FINAL"));
+    }
 
     if (hibernating && sessionImpl != null) {
       wakeUp(sessionImpl);
@@ -80,7 +86,10 @@ public class SharedSubscription extends DestinationSubscription {
   }
 
   public void removeSession(SessionImpl remove) {
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "MEMBER-REMOVE-BEGIN", -1,
+        remove == null ? "null" : remove.getName(), "members", subscriptions.size());
     subscriptions.remove(remove);
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "MEMBER-REMOVE-END", -1, "members", subscriptions.size());
     if (subscriptions.isEmpty()) {
       destinationImpl.removeSubscription(getSessionId());
       close();
@@ -96,6 +105,7 @@ public class SharedSubscription extends DestinationSubscription {
 
     reservedSubscription = subscriptions.reserveNext(message);
     if (reservedSubscription == null) {
+      QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "NO-ELIGIBLE-CONSUMER", message.getIdentifier(), "members", subscriptions.size());
       return null;
     }
 
@@ -130,6 +140,7 @@ public class SharedSubscription extends DestinationSubscription {
     if (subscription != null) {
       subscription.releaseProtocolSendSlot();
     }
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "SEND-ROLLBACK", message.getIdentifier());
     rollbackReceived(message.getIdentifier());
     // Unable to send for any number of reasons
   }
@@ -154,7 +165,7 @@ public class SharedSubscription extends DestinationSubscription {
 
     public SessionSubscriptionMap() {
       lookupMap = new LinkedHashMap<>();
-      flatMap = new ArrayList<>();
+      flatMap = new CopyOnWriteArrayList<>();
       idx = -1;
     }
 

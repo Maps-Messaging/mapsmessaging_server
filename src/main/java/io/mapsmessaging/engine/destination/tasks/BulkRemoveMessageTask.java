@@ -20,6 +20,7 @@
 package io.mapsmessaging.engine.destination.tasks;
 
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
 import io.mapsmessaging.engine.tasks.EngineTask;
 import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
@@ -88,6 +89,7 @@ public class BulkRemoveMessageTask extends EngineTask {
           destination.removeMessage(messageId);
           removed++;
         } catch (IOException | RuntimeException failure) {
+          QueueCleanupTrace.record(destination.getFullyQualifiedNamespace(), "REMOVE-FAILED", messageId, failure.toString());
           failedMessages.add(messageId);
           destination.holdCompletedMessage(messageId);
           logger.log(ServerLogMessages.DESTINATION_REAPER_REMOVE_FAILED, failure, destination.getFullyQualifiedNamespace(), messageId);

@@ -665,6 +665,7 @@ public class DestinationImpl implements BaseDestination {
    * @param messageId that the delivery is complete
    */
   public void complete(long messageId) {
+    QueueCleanupTrace.record(fullyQualifiedNamespace, "COMPLETE", messageId, "retained", retainManager.current());
     if (retainManager.current() != messageId) {
       completionQueue.add(messageId);
       requestReaper();
@@ -874,7 +875,9 @@ public class DestinationImpl implements BaseDestination {
    */
   public void removeMessage(long messageId) throws IOException {
     long nano = System.nanoTime();
+    QueueCleanupTrace.record(fullyQualifiedNamespace, "REMOVE-BEGIN", messageId);
     resource.remove(messageId);
+    QueueCleanupTrace.record(fullyQualifiedNamespace, "REMOVE-END", messageId);
     if (messageId == retainManager.current()) {
       stats.retainedMessages(-1);
       retainManager.replace(-1);
@@ -893,6 +896,7 @@ public class DestinationImpl implements BaseDestination {
   public void addMessage(Message message) throws IOException {
     long nano = System.nanoTime();
     resource.add(message);
+    QueueCleanupTrace.record(fullyQualifiedNamespace, "STORED", message.getIdentifier());
     if (message.isRetain()) {
       if (message.getOpaqueData() == null || message.getOpaqueData().length == 0) {
         retainManager.replace(-1);
@@ -916,6 +920,17 @@ public class DestinationImpl implements BaseDestination {
   }
 
   //</editor-fold>
+
+  /** Diagnostic snapshot only; subscription/resource observations are not an atomic cross-thread view. */
+  public void traceCleanupState(String stage) throws IOException {
+    if (QueueCleanupTrace.isEnabled(fullyQualifiedNamespace)) {
+      QueueCleanupTrace.record(fullyQualifiedNamespace, stage, -1, "storedIds", resource.getKeys(), "interest", subscriptionManager.getAll());
+      synchronized (reaperLock) {
+        QueueCleanupTrace.record(fullyQualifiedNamespace, "REAPER-STATE", -1, "queued", reaperQueued, "running", reaperRunning,
+            "pending", reaperPending, "completionEmpty", completionQueue.isEmpty(), "retry", reaperRetries.cleanupTraceState());
+      }
+    }
+  }
 
   /** Guard already queued removals against failures discovered after their interest snapshot. */
   public boolean prepareCompletedRemoval(Queue<Long> messageIds) {
@@ -942,6 +957,9 @@ public class DestinationImpl implements BaseDestination {
     synchronized (reaperLock) {
       if (closed) {
         return;
+      }
+      if (QueueCleanupTrace.isEnabled(fullyQualifiedNamespace)) {
+        QueueCleanupTrace.record(fullyQualifiedNamespace, "DEFER", -1, "batchFailure", batchFailure, messageIds.toString());
       }
       reaperRetries.defer(messageIds, batchFailure);
     }
@@ -1001,7 +1019,14 @@ public class DestinationImpl implements BaseDestination {
           reaperRetries.drainReadyInto(completed);
         }
         if (!completed.isEmpty()) {
-          completed.removeAll(subscriptionManager.getAll());
+          Queue<Long> interested = subscriptionManager.getAll();
+          if (QueueCleanupTrace.isEnabled(fullyQualifiedNamespace)) {
+            QueueCleanupTrace.record(fullyQualifiedNamespace, "REAPER-INTEREST", -1, "candidates", completed.toString(), "interested", interested.toString());
+          }
+          completed.removeAll(interested);
+          if (QueueCleanupTrace.isEnabled(fullyQualifiedNamespace)) {
+            QueueCleanupTrace.record(fullyQualifiedNamespace, "REAPER-REMOVE", -1, completed.toString());
+          }
           if (!completed.isEmpty()) {
             // Same serial task scheduler, so removal cannot overtake reaper processing.
             subscriptionTaskQueue.submit(new BulkRemoveMessageTask(DestinationImpl.this, completed));
