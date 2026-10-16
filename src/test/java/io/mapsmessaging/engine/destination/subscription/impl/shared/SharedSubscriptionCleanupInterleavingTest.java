@@ -57,10 +57,8 @@ class SharedSubscriptionCleanupInterleavingTest {
     SharedSubscriptionManager registry = new SharedSubscriptionManager(DESTINATION);
     Mockito.when(destination.findShareRegister(DESTINATION)).thenReturn(registry);
 
-    SubscriptionContext context = new SubscriptionContextBuilder(DESTINATION, ClientAcknowledgement.AUTO)
-        .setQos(QualityOfService.AT_LEAST_ONCE).build();
-    MessageStateManagerImpl state = new MessageStateManagerImpl("cleanup-interleaving", 42,
-        new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
+    SubscriptionContext context = new SubscriptionContextBuilder(DESTINATION, ClientAcknowledgement.AUTO).setQos(QualityOfService.AT_LEAST_ONCE).build();
+    MessageStateManagerImpl state = new MessageStateManagerImpl("cleanup-interleaving", 42, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     AutoAcknowledgementController sharedAcknowledgements = new AutoAcknowledgementController(new FixedCreditManager(10));
     SharedSubscription shared = new SharedSubscription(destination, context, "cleanup-interleaving", state, sharedAcknowledgements, "group");
     registry.add("group", shared);
@@ -75,8 +73,7 @@ class SharedSubscriptionCleanupInterleavingTest {
       AutoAcknowledgementController receivingAcknowledgements = new AutoAcknowledgementController(new FixedCreditManager(10));
 
       shared.addSession(firstSession, "first", context, new AutoAcknowledgementController(new FixedCreditManager(10)));
-      SessionSharedSubscription expiring = (SessionSharedSubscription) shared.addSession(expiringSession, "expiring", context,
-          new AutoAcknowledgementController(new FixedCreditManager(10)));
+      SessionSharedSubscription expiring = (SessionSharedSubscription) shared.addSession(expiringSession, "expiring", context, new AutoAcknowledgementController(new FixedCreditManager(10)));
       shared.addSession(receivingSession, "receiving", context, receivingAcknowledgements);
 
       // Block at the session's storage boundary after the shared consumer iterator has started.
