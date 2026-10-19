@@ -106,6 +106,7 @@ public final class MqttSn2Protocol extends Protocol {
   private byte[] saslFinalResponse;
   private ScheduledFuture<?> retryTask;
   private ScheduledFuture<?> sleepTask;
+  private long sleepDurationSeconds;
   // Serializes SASL renewal, timeout/close and the paused outbound packet queue.
   private final Object authenticationLock = new Object();
   private final MqttSn2PausedWrites authenticationQueue = new MqttSn2PausedWrites();
@@ -123,6 +124,13 @@ public final class MqttSn2Protocol extends Protocol {
     this.manager = manager;
     this.address = address;
     this.selectorTask = selectorTask;
+  }
+
+  @Override
+  public long getTimeOut() {
+    MqttSn2Lifecycle.State state = lifecycle.state();
+    // The UDP idle monitor must not apply Keep Alive to sleep/wake cycles.
+    return state == MqttSn2Lifecycle.State.ASLEEP || state == MqttSn2Lifecycle.State.AWAKE ? Long.MAX_VALUE : super.getTimeOut();
   }
 
   public String getVersion() {
@@ -776,26 +784,42 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void sleep(MqttSn2SleepCodec.SleepRequest request) throws IOException {
+    long generation;
     synchronized (sleepingQueue) {
       lifecycle.sleep();
-    }
-    if (!request.retainAliases()) {
-      // CSD01 3.15.2.1: clear session aliases only; predefined aliases remain configured.
-      aliases.clear();
-    }
-    send(MqttSn2SleepCodec.encodeResponse(new MqttSn2SleepCodec.SleepResponse(
-        request.packetIdentifier(), null, 0)), null);
-    if (sleepTask != null) sleepTask.cancel(false);
-    sleepTask = SimpleTaskScheduler.getInstance().schedule(() -> {
-      try {
-        close();
-      } catch (IOException ignored) {
+      sleepDurationSeconds = request.durationSeconds();
+      generation = lifecycle.sleepGeneration();
+      if (!request.retainAliases()) {
+        // CSD01 3.15.2.1: predefined aliases remain configured.
+        aliases.clear();
       }
-    }, Math.max(1L, request.durationSeconds() * 1_500L), TimeUnit.MILLISECONDS);
+      if (sleepTask != null) {
+        sleepTask.cancel(false);
+      }
+    }
+    send(MqttSn2SleepCodec.encodeResponse(new MqttSn2SleepCodec.SleepResponse(request.packetIdentifier(), null, 0)), () -> restartSleepTimer(generation));
   }
 
   // Serialized with sleep/wake transitions. Delayed callbacks cannot arm an older cycle.
-
+  private void restartSleepTimer(long generation) {
+    synchronized (sleepingQueue) {
+      if (closed || lifecycle.state() != MqttSn2Lifecycle.State.ASLEEP || lifecycle.sleepGeneration() != generation) {
+        return;
+      }
+      if (sleepTask != null) {
+        sleepTask.cancel(false);
+      }
+      sleepTask = SimpleTaskScheduler.getInstance().schedule(() -> {
+        if (lifecycle.expireSleep(generation)) {
+          try {
+            close();
+          } catch (IOException failure) {
+            AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_EXCEPTION_RASIED, failure);
+          }
+        }
+      }, Math.max(1L, sleepDurationSeconds * 1_500L), TimeUnit.MILLISECONDS);
+    }
+  }
 
   private void ping(int packetIdentifier) throws IOException {
     boolean waking;
@@ -806,8 +830,12 @@ public final class MqttSn2Protocol extends Protocol {
     if (waking) {
       if (sleepTask != null) sleepTask.cancel(false);
       if (defaultAwakeMessages == 0) {
-        lifecycle.sleepAgain();
-        send(MqttSn2ControlCodec.encodePingResponse(packetIdentifier, queueSize()), null);
+        long generation;
+        synchronized (sleepingQueue) {
+          lifecycle.sleepAgain();
+          generation = lifecycle.sleepGeneration();
+        }
+        send(MqttSn2ControlCodec.encodePingResponse(packetIdentifier, queueSize()), () -> restartSleepTimer(generation));
       } else {
         wakePacketIdentifier = packetIdentifier;
         awakeBudget = defaultAwakeMessages;
@@ -822,7 +850,7 @@ public final class MqttSn2Protocol extends Protocol {
   private int awakeBudget;
 
   private int queueSize() {
-    synchronized (sleepingQueue) { return Math.min(0xFFFF, sleepingQueue.size()); }
+    synchronized (sleepingQueue) { return Math.min(0xFF, sleepingQueue.size()); }
   }
 
   private synchronized void drainSleepingQueue() {
@@ -840,20 +868,23 @@ public final class MqttSn2Protocol extends Protocol {
       deliver(event);
     }
     int remaining = -1;
+    long generation = -1;
     synchronized (sleepingQueue) {
       if (!outgoing.hasInFlightDelivery()
           && lifecycle.state() == MqttSn2Lifecycle.State.AWAKE
           && (sleepingQueue.isEmpty() || awakeBudget == 0)) {
         try {
           lifecycle.sleepAgain();
-          remaining = Math.min(0xFFFF, sleepingQueue.size());
+          generation = lifecycle.sleepGeneration();
+          remaining = Math.min(0xFF, sleepingQueue.size());
         } catch (IOException ignored) {
           // Connection lifecycle changed while draining.
         }
       }
     }
     if (remaining >= 0) {
-      send(MqttSn2ControlCodec.encodePingResponse(wakePacketIdentifier, remaining), null);
+      long completedGeneration = generation;
+      send(MqttSn2ControlCodec.encodePingResponse(wakePacketIdentifier, remaining), () -> restartSleepTimer(completedGeneration));
     }
   }
 

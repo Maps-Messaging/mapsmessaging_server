@@ -71,13 +71,13 @@ public final class MqttSn2ControlCodec {
 
   public static ByteBuffer encodePingResponse(int identifier, Integer remainingMessages) {
     checkIdentifier(identifier);
-    if (remainingMessages != null && (remainingMessages < 0 || remainingMessages > 65535)) {
+    if (remainingMessages != null && (remainingMessages < 0 || remainingMessages > 255)) {
       throw new IllegalArgumentException("Invalid PINGRESP remaining messages");
     }
-    ByteBuffer body = ByteBuffer.allocate(remainingMessages == null ? 2 : 4);
+    ByteBuffer body = ByteBuffer.allocate(remainingMessages == null ? 2 : 3);
     body.putShort((short) identifier);
     if (remainingMessages != null) {
-      body.putShort((short) remainingMessages.intValue());
+      body.put((byte) remainingMessages.intValue());
     }
     body.flip();
     return MqttSn2FrameCodec.encode(MqttSn2PacketType.PINGRESP, body);
@@ -85,11 +85,11 @@ public final class MqttSn2ControlCodec {
 
   public static PingResponse decodePingResponse(MqttSn2FrameCodec.Frame frame) throws IOException {
     ByteBuffer body = requireBody(frame, MqttSn2PacketType.PINGRESP);
-    if (body.remaining() != 2 && body.remaining() != 4) {
+    if (body.remaining() != 2 && body.remaining() != 3) {
       throw new IOException("Invalid PINGRESP payload length");
     }
     int identifier = requirePacketIdentifier(Short.toUnsignedInt(body.getShort()));
-    return new PingResponse(identifier, body.hasRemaining() ? Short.toUnsignedInt(body.getShort()) : null);
+    return new PingResponse(identifier, body.hasRemaining() ? Byte.toUnsignedInt(body.get()) : null);
   }
 
   public static Auth decodeAuth(MqttSn2FrameCodec.Frame frame) throws IOException {

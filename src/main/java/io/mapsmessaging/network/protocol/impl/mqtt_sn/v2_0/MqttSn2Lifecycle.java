@@ -33,6 +33,7 @@ public final class MqttSn2Lifecycle {
 
   private State state = State.NEW;
   private boolean reauthenticating;
+  private long sleepGeneration;
 
   public synchronized boolean isReauthenticating() {
     return reauthenticating;
@@ -54,9 +55,18 @@ public final class MqttSn2Lifecycle {
     reauthenticating = false;
   }
 
+  public synchronized long sleepGeneration() {
+    return sleepGeneration;
+  }
 
-
-
+  /** Claim expiry atomically with renew/wake transitions; stale callbacks do nothing. */
+  public synchronized boolean expireSleep(long generation) {
+    if (state != State.ASLEEP || generation != sleepGeneration) {
+      return false;
+    }
+    close();
+    return true;
+  }
 
   public synchronized State state() {
     return state;
@@ -89,18 +99,23 @@ public final class MqttSn2Lifecycle {
   }
 
   public synchronized void sleep() throws IOException {
-    require(State.CONNECTED);
+    if (state != State.CONNECTED && state != State.ASLEEP) {
+      throw new IOException("MQTT-SN 2.0 cannot sleep from " + state);
+    }
     state = State.ASLEEP;
+    sleepGeneration++;
   }
 
   public synchronized void wake() throws IOException {
     require(State.ASLEEP);
     state = State.AWAKE;
+    sleepGeneration++;
   }
 
   public synchronized void sleepAgain() throws IOException {
     require(State.AWAKE);
     state = State.ASLEEP;
+    sleepGeneration++;
   }
 
   public synchronized void checkAllowed(MqttSn2PacketType type) throws IOException {
@@ -119,7 +134,7 @@ public final class MqttSn2Lifecycle {
       case NEGOTIATING_WILL, ESTABLISHING -> false;
       case CONNECTED -> type != MqttSn2PacketType.CONNECT && type != MqttSn2PacketType.CONNACK
           && type != MqttSn2PacketType.SLEEPRESP;
-      case ASLEEP -> type == MqttSn2PacketType.PINGREQ || type == MqttSn2PacketType.DISCONNECT;
+      case ASLEEP -> type == MqttSn2PacketType.SLEEPREQ || type == MqttSn2PacketType.PINGREQ || type == MqttSn2PacketType.DISCONNECT;
       case AWAKE -> type == MqttSn2PacketType.PUBACK || type == MqttSn2PacketType.PUBREC
           || type == MqttSn2PacketType.PUBCOMP || type == MqttSn2PacketType.REGACK
           || type == MqttSn2PacketType.DISCONNECT;
@@ -133,6 +148,7 @@ public final class MqttSn2Lifecycle {
   public synchronized void close() {
     state = State.CLOSED;
     reauthenticating = false;
+    sleepGeneration++;
   }
 
   private void require(State expected) throws IOException {

@@ -80,9 +80,34 @@ class MqttSn2LifecycleTest {
     assertThrows(IOException.class, () -> lifecycle.begin(false, false));
     assertThrows(IOException.class, () -> lifecycle.checkAllowed(MqttSn2PacketType.CONNECT));
   }
+  @Test
+  void repeated_sleep_accepts_new_cycle_and_ignores_old_expiry() throws Exception {
+    MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
+    lifecycle.begin(false, false);
+    lifecycle.connected();
+    lifecycle.sleep();
+    long firstCycle = lifecycle.sleepGeneration();
+    lifecycle.checkAllowed(MqttSn2PacketType.SLEEPREQ);
+    lifecycle.sleep();
+    assertFalse(lifecycle.expireSleep(firstCycle));
+    assertEquals(MqttSn2Lifecycle.State.ASLEEP, lifecycle.state());
+    assertTrue(lifecycle.expireSleep(lifecycle.sleepGeneration()));
+    assertEquals(MqttSn2Lifecycle.State.CLOSED, lifecycle.state());
+  }
 
-
-
+  @Test
+  void wake_and_return_to_sleep_invalidate_previous_expiry() throws Exception {
+    MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
+    lifecycle.begin(false, false);
+    lifecycle.connected();
+    lifecycle.sleep();
+    long firstCycle = lifecycle.sleepGeneration();
+    lifecycle.wake();
+    assertFalse(lifecycle.expireSleep(firstCycle));
+    lifecycle.sleepAgain();
+    assertFalse(lifecycle.expireSleep(firstCycle));
+    assertTrue(lifecycle.expireSleep(lifecycle.sleepGeneration()));
+  }
 
   @Test
   void renewal_pauses_other_packets_and_preserves_connected_state() throws Exception {

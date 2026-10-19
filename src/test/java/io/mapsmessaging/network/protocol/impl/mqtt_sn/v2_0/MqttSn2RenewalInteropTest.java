@@ -40,6 +40,7 @@ import io.mapsmessaging.mqttsn.PacketType;
 import io.mapsmessaging.mqttsn.PublishOptions;
 import io.mapsmessaging.mqttsn.PublishPacket;
 import io.mapsmessaging.mqttsn.QoS;
+import io.mapsmessaging.mqttsn.SleepRequest;
 import io.mapsmessaging.mqttsn.SubscribeOptions;
 import io.mapsmessaging.mqttsn.TopicRef;
 import io.mapsmessaging.mqttsn.auth.AuthenticationExchange;
@@ -61,7 +62,7 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import org.junit.jupiter.api.Test;
 
-/** MSG-325: CSD01 4.11.1.1 using the actual Java client. */
+/** MSG-325: CSD01 4.11.1.1, 3.15.5-7 and 4.14.2-7 using the actual Java client. */
 class MqttSn2RenewalInteropTest extends BaseTestConfig {
 
   private static final InetSocketAddress AUTH_GATEWAY = new InetSocketAddress("127.0.0.1", 1887);
@@ -147,11 +148,58 @@ class MqttSn2RenewalInteropTest extends BaseTestConfig {
     }
   }
 
+  @Test
+  void repeated_sleep_and_lost_response_retry_preserve_queued_delivery() throws Exception {
+    try (AuthenticatedPeer peer = authenticatedPeer();
+         UdpMqttSnClient publisher = plainClient()) {
+      String topic = "mqttsn/sleep-renewal/" + UUID.randomUUID();
+      subscribe(peer.client, topic);
+      SessionImpl original = serverSession(peer.username);
+      sleep(peer.client, 1);
+      assertEquals(Long.MAX_VALUE, original.getClientConnection().getTimeOut(), "Keep Alive is suspended while ASLEEP");
+      int renewalId = peer.client.session().nextPacketIdentifier();
+      byte[] renewal = MqttSnCodec.encodeSleepReq(new SleepRequest(renewalId, true, 60));
+      peer.client.send(renewal);
+      // Consume the datagram without session tracking, simulating a lost SLEEPRESP.
+      peer.socket.setSoTimeout((int) PACKET_TIMEOUT.toMillis());
+      peer.socket.receive(new DatagramPacket(new byte[1024], 1024));
+      peer.client.send(renewal);
+      assertEquals(renewalId, MqttSnCodec.decodeSleepResp(receive(peer.client)).packetIdentifier());
+      assertEquals(ClientState.ASLEEP, peer.client.session().state());
+      publisher.send(MqttSnCodec.encodePublish(new PublishOptions(QoS.AT_LEAST_ONCE, false, false,
+          publisher.session().nextPacketIdentifier(), TopicRef.name(topic), new byte[] {7})));
+      assertEquals(PacketType.PUBACK, receive(publisher).type());
+      // Cross the old 1.5 s expiry: no buffered packet may leave before PINGREQ.
+      assertThrows(SocketTimeoutException.class, () -> peer.client.receive(Duration.ofMillis(1800), packet -> {}));
+      assertSame(original, serverSession(peer.username));
+      int pingId = peer.client.session().nextPacketIdentifier();
+      peer.client.send(MqttSnCodec.encodePingReq(pingId));
+      PublishPacket delivered = MqttSnCodec.decodePublish(receive(peer.client));
+      assertArrayEquals(new byte[] {7}, delivered.payload());
+      peer.client.send(MqttSnCodec.encodeAck(PacketType.PUBACK, delivered.packetIdentifier(), null));
+      assertEquals(pingId, MqttSnCodec.decodePingResp(receive(peer.client)).packetIdentifier());
+      assertEquals(ClientState.ASLEEP, peer.client.session().state());
+    }
+  }
 
+  @Test
+  void sleep_timeout_restarts_after_an_empty_wake_cycle() throws Exception {
+    try (AuthenticatedPeer peer = authenticatedPeer()) {
+      SessionImpl original = serverSession(peer.username);
+      sleep(peer.client, 1);
+      peer.client.send(MqttSnCodec.encodePingReq(peer.client.session().nextPacketIdentifier()));
+      assertEquals(PacketType.PINGRESP, receive(peer.client).type());
+      assertEquals(ClientState.ASLEEP, peer.client.session().state());
+      WaitForState.waitFor(5, TimeUnit.SECONDS, original::isClosed);
+      assertTrue(original.isClosed(), "Returning to ASLEEP must restart expiry processing");
+    }
+  }
 
-
-
-
+  private static void sleep(UdpMqttSnClient client, long duration) throws Exception {
+    int identifier = client.session().nextPacketIdentifier();
+    client.send(MqttSnCodec.encodeSleepReq(new SleepRequest(identifier, true, duration)));
+    assertEquals(identifier, MqttSnCodec.decodeSleepResp(receive(client)).packetIdentifier());
+  }
 
   private static void subscribe(UdpMqttSnClient client, String topic) throws Exception {
     client.send(MqttSnCodec.encodeSubscribe(new SubscribeOptions(client.session().nextPacketIdentifier(), TopicRef.filter(topic), 0, false, QoS.AT_LEAST_ONCE, false)));

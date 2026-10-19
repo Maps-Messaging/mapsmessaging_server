@@ -39,7 +39,7 @@ class MqttSn2ControlCodecTest {
   @Test
   void pingRespRoundTripsWithOptionalRemainingMessages() throws Exception {
     ByteBuffer bytes = MqttSn2ControlCodec.encodePingResponse(42, 7);
-    assertArrayEquals(new byte[]{6, 13, 0, 42, 0, 7}, copy(bytes));
+    assertArrayEquals(new byte[]{5, 13, 0, 42, 7}, copy(bytes));
     assertEquals(new MqttSn2ControlCodec.PingResponse(42, 7),
         MqttSn2ControlCodec.decodePingResponse(MqttSn2FrameCodec.decode(bytes)));
 
@@ -50,10 +50,11 @@ class MqttSn2ControlCodecTest {
   }
 
   @Test
-  void pingRespSupportsCsd01SixteenBitMessagesLeftSentinel() throws Exception {
-    ByteBuffer bytes = MqttSn2ControlCodec.encodePingResponse(42, 0xFFFF);
+  void pingRespSupportsCsd01OneByteMessagesLeftSentinel() throws Exception {
+    ByteBuffer bytes = MqttSn2ControlCodec.encodePingResponse(42, 0xFF);
 
-    assertEquals(new MqttSn2ControlCodec.PingResponse(42, 0xFFFF),
+    assertThrows(IllegalArgumentException.class, () -> MqttSn2ControlCodec.encodePingResponse(42, 256));
+    assertEquals(new MqttSn2ControlCodec.PingResponse(42, 0xFF),
         MqttSn2ControlCodec.decodePingResponse(MqttSn2FrameCodec.decode(bytes)));
   }
 
