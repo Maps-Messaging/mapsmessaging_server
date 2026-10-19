@@ -164,7 +164,7 @@
 
     <license.fetch.skip>false</license.fetch.skip>
     <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
-    <mqttSn2ClientVersion>0.1.0-SNAPSHOT</mqttSn2ClientVersion>
+    <mqttSn2ClientVersion>0.2.0-SNAPSHOT</mqttSn2ClientVersion>
 
   </properties>
 
@@ -1224,7 +1224,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- Released CSD01 client used as an independent MQTT-SN 2.0 test peer. -->
+    <!-- CSD01 client with AUTH/sleep renewal used as the MQTT-SN 2.0 test peer. -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>mqtt-sn-2-client</artifactId>

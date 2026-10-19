@@ -46,10 +46,11 @@ public class UDPWriteTask extends WriteTask {
       frame.packFrame(packet);
       packet.flip();
       try {
-        selectorCallback.getEndPoint().sendPacket(packet);
-        frame.complete();
-        logger.log(UDP_WRITE_TASK_SENT_PACKET, packet);
+        if (frame.writeTo(selectorCallback.getEndPoint(), packet)) {
+          logger.log(UDP_WRITE_TASK_SENT_PACKET, packet);
+        }
       } catch (IOException e) {
+        frame.failed(e);
         logger.log(UDP_WRITE_TASK_SEND_PACKET_ERROR, e);
       }
       if (outboundFrame.isEmpty()) {

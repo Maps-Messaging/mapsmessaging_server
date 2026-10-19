@@ -57,6 +57,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -105,6 +106,14 @@ public final class MqttSn2Protocol extends Protocol {
   private byte[] saslFinalResponse;
   private ScheduledFuture<?> retryTask;
   private ScheduledFuture<?> sleepTask;
+  // Serializes SASL renewal, timeout/close and the paused outbound packet queue.
+  private final Object authenticationLock = new Object();
+  private final MqttSn2PausedWrites authenticationQueue = new MqttSn2PausedWrites();
+  private ScheduledFuture<?> authenticationTask;
+  private long authenticationGeneration;
+  private int authenticationPacketIdentifier;
+  private String authenticatedUsername;
+
   private boolean cleanWillOnClose;
   private int defaultAwakeMessages = 0xFFFF;
 
@@ -243,6 +252,7 @@ public final class MqttSn2Protocol extends Protocol {
     }
     lifecycle.begin(request.authentication(), request.will());
     connectRequest = request;
+    authenticationPacketIdentifier = request.packetIdentifier();
     clientIdentifier = request.clientIdentifier().isEmpty()
         ? java.util.UUID.randomUUID().toString() : request.clientIdentifier();
     defaultAwakeMessages = request.defaultAwakeMessages() == null ? 0xFFFF : request.defaultAwakeMessages();
@@ -277,23 +287,118 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void authenticate(MqttSn2ControlCodec.Auth auth) throws IOException {
-    if (sasl == null || connectRequest == null || auth.packetIdentifier() != connectRequest.packetIdentifier()
-        || !connectRequest.authenticationMethod().equals(auth.mechanism()) || auth.reasonCode() != 0x18) {
-      throw new IOException("Unexpected MQTT-SN 2.0 AUTH exchange");
-    }
-    try {
-      byte[] response = sasl.challenge(auth.data());
-      if (sasl.complete()) {
-        saslFinalResponse = response == null ? null : response.clone();
-        lifecycle.authenticated(connectRequest.will());
-        establishSession();
-      } else {
-        send(MqttSn2ControlCodec.encodeAuth(new MqttSn2ControlCodec.Auth(
-            auth.packetIdentifier(), 0x18, auth.mechanism(), response)), null);
+    synchronized (authenticationLock) {
+      if (lifecycle.state() == MqttSn2Lifecycle.State.AUTHENTICATING) {
+        if (sasl == null || connectRequest == null || !connectRequest.authenticationMethod().equals(auth.mechanism()) || auth.reasonCode() != 0x18) {
+          throw new IOException("Unexpected MQTT-SN 2.0 initial AUTH exchange");
+        }
+        authenticationPacketIdentifier = auth.packetIdentifier();
+        try {
+          byte[] response = sasl.challenge(auth.data());
+          if (sasl.complete()) {
+            saslFinalResponse = response == null ? null : response.clone();
+            lifecycle.authenticated(connectRequest.will());
+            establishSession();
+          } else {
+            send(MqttSn2ControlCodec.encodeAuth(new MqttSn2ControlCodec.Auth(auth.packetIdentifier(), 0x18, auth.mechanism(), response)), null);
+          }
+        } catch (IOException failure) {
+          AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, failure);
+          sendConnectFailure(connectRequest, 0x87);
+        }
+        return;
       }
+      if (connectRequest == null || !connectRequest.authentication() || !connectRequest.authenticationMethod().equals(auth.mechanism())) {
+        failReauthentication(0x8C);
+        return;
+      }
+      try {
+        if (!lifecycle.isReauthenticating()) {
+          if (auth.reasonCode() != 0x19) {
+            failReauthentication(0x82);
+            return;
+          }
+          lifecycle.beginReauthentication();
+          if (retryTask != null) {
+            retryTask.cancel(false);
+          }
+          SaslConfigDTO configuration = endPoint.getConfig().getSaslConfig();
+          Map<String, String> properties = new HashMap<>();
+          properties.put(Sasl.QOP, "auth");
+          sasl = new SaslAuthenticationMechanism(auth.mechanism(), configuration.getRealmName(), "mqtt-sn", properties, endPoint.getConfig());
+          long generation = ++authenticationGeneration;
+          authenticationTask = SimpleTaskScheduler.getInstance().schedule(() -> {
+            synchronized (authenticationLock) {
+              if (!closed && lifecycle.isReauthenticating() && generation == authenticationGeneration) {
+                failReauthentication(0x87);
+              }
+            }
+          }, Math.max(1L, connectRequest.keepAliveSeconds()), TimeUnit.SECONDS);
+        } else if (auth.reasonCode() != 0x18 || sasl == null) {
+          failReauthentication(0x82);
+          return;
+        }
+        byte[] response = sasl.challenge(auth.data());
+        if (!sasl.complete()) {
+          send(MqttSn2ControlCodec.encodeAuth(new MqttSn2ControlCodec.Auth(auth.packetIdentifier(), 0x18, auth.mechanism(), response)), null);
+          return;
+        }
+        // The existing security context belongs to this identity. Changing it requires CONNECT.
+        if (!Objects.equals(authenticatedUsername, sasl.getUsername())) {
+          failReauthentication(0x87);
+          return;
+        }
+        sasl.close();
+        sasl = null;
+        send(MqttSn2ControlCodec.encodeAuth(new MqttSn2ControlCodec.Auth(auth.packetIdentifier(), 0, auth.mechanism(), response)), this::resumeAfterReauthentication);
+      } catch (IOException failure) {
+        AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, failure);
+        failReauthentication(0x87);
+      }
+    }
+  }
+
+  private void resumeAfterReauthentication() {
+    synchronized (authenticationLock) {
+      if (closed || !lifecycle.isReauthenticating()) {
+        return;
+      }
+      try {
+        lifecycle.reauthenticated();
+        authenticationGeneration++;
+        if (authenticationTask != null) {
+          authenticationTask.cancel(false);
+        }
+        while (!authenticationQueue.isEmpty() && !closed) {
+          MqttSn2PausedWrites.Pending packet = authenticationQueue.poll();
+          send(packet.wire(), packet.completion(), packet.sequence());
+        }
+        if (outgoing.hasInFlightDelivery()) {
+          scheduleRetry();
+        }
+      } catch (IOException failure) {
+        AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, failure);
+        failReauthentication(0x87);
+      }
+    }
+  }
+
+  private void failReauthentication(int reason) {
+    authenticationGeneration++;
+    if (authenticationTask != null) {
+      authenticationTask.cancel(false);
+    }
+    lifecycle.close();
+    // A stalled writer must not keep a failed Virtual Connection alive indefinitely.
+    authenticationTask = SimpleTaskScheduler.getInstance().schedule(this::closeAfterAuthenticationFailure, 5, TimeUnit.SECONDS);
+    send(MqttSn2DisconnectCodec.encode(new MqttSn2DisconnectCodec.Disconnect(null, reason, null, "")), this::closeAfterAuthenticationFailure);
+  }
+
+  private void closeAfterAuthenticationFailure() {
+    try {
+      close();
     } catch (IOException failure) {
       AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, failure);
-      sendConnectFailure(connectRequest, 0x87);
     }
   }
 
@@ -357,7 +462,7 @@ public final class MqttSn2Protocol extends Protocol {
         outgoing.attach(created.getOrCreatePacketIdStore(65535));
         created.login();
         ByteBuffer response = MqttSn2ConnAckCodec.encode(new MqttSn2ConnAckCodec.ConnAck(
-            created.isRestored(), request.packetIdentifier(), 0, request.sessionExpirySeconds(), null,
+            created.isRestored(), authenticationPacketIdentifier, 0, request.sessionExpirySeconds(), null,
             request.authentication() ? request.authenticationMethod() : null, saslFinalResponse,
             request.clientIdentifier().isEmpty() ? clientIdentifier : ""));
         send(response, () -> {
@@ -386,6 +491,7 @@ public final class MqttSn2Protocol extends Protocol {
         lifecycle.connected();
         setConnected(true);
         if (sasl != null) {
+          authenticatedUsername = sasl.getUsername();
           sasl.close();
           sasl = null;
         }
@@ -651,7 +757,7 @@ public final class MqttSn2Protocol extends Protocol {
   private void scheduleRetry() {
     if (retryTask != null) retryTask.cancel(false);
     retryTask = SimpleTaskScheduler.getInstance().schedule(() -> {
-      if (closed) {
+      if (closed || lifecycle.isReauthenticating()) {
         return;
       }
       ByteBuffer retry = outgoing.retryExpired(System.currentTimeMillis());
@@ -687,6 +793,9 @@ public final class MqttSn2Protocol extends Protocol {
       }
     }, Math.max(1L, request.durationSeconds() * 1_500L), TimeUnit.MILLISECONDS);
   }
+
+  // Serialized with sleep/wake transitions. Delayed callbacks cannot arm an older cycle.
+
 
   private void ping(int packetIdentifier) throws IOException {
     boolean waking;
@@ -763,6 +872,37 @@ public final class MqttSn2Protocol extends Protocol {
   }
 
   private void send(ByteBuffer wire, Runnable completion) {
+    synchronized (authenticationLock) {
+      send(wire, completion, authenticationQueue.nextSequence());
+    }
+  }
+
+  private void send(ByteBuffer wire, Runnable completion, long sequence) {
+    synchronized (authenticationLock) {
+      if (closed) {
+        return;
+      }
+      if (lifecycle.isReauthenticating() || lifecycle.state() == MqttSn2Lifecycle.State.CLOSED) {
+        try {
+          MqttSn2PacketType type = MqttSn2FrameCodec.decode(wire.asReadOnlyBuffer()).type();
+          if (lifecycle.state() == MqttSn2Lifecycle.State.CLOSED && type != MqttSn2PacketType.DISCONNECT) {
+            return;
+          }
+          if (type != MqttSn2PacketType.AUTH && type != MqttSn2PacketType.DISCONNECT) {
+            authenticationQueue.defer(sequence, wire, completion);
+            return;
+          }
+        } catch (IOException failure) {
+          deliveryFailure(failure);
+          return;
+        }
+      }
+      sendNow(wire, completion, sequence);
+    }
+  }
+
+  private void sendNow(ByteBuffer wire, Runnable completion, long sequence) {
+    ByteBuffer plaintext = wire.asReadOnlyBuffer();
     MqttSn2ProtectionPolicy policy = protectionSession;
     if (policy != null) {
       try {
@@ -777,8 +917,29 @@ public final class MqttSn2Protocol extends Protocol {
         return;
       }
     }
-    selectorTask.push(new MqttSn2OutboundPacket(wire, address, completion));
+    selectorTask.push(new MqttSn2OutboundPacket(wire, address, completion,
+        (endpoint, packet, written) -> writeOutbound(sequence, plaintext, completion, endpoint, packet, written), this::deliveryFailure));
     sentMessage();
+  }
+
+  /** Gate at actual UDP write time as well as submission; queued protected frames are re-encoded after renewal. */
+  private boolean writeOutbound(long sequence, ByteBuffer plaintext, Runnable completion, EndPoint endpoint, Packet packet, Runnable written) throws IOException {
+    synchronized (authenticationLock) {
+      if (closed) {
+        return false;
+      }
+      MqttSn2PacketType type = MqttSn2FrameCodec.decode(plaintext.asReadOnlyBuffer()).type();
+      if (lifecycle.state() == MqttSn2Lifecycle.State.CLOSED && type != MqttSn2PacketType.DISCONNECT) {
+        return false;
+      }
+      if (lifecycle.isReauthenticating() && type != MqttSn2PacketType.AUTH && type != MqttSn2PacketType.DISCONNECT) {
+        authenticationQueue.defer(sequence, plaintext, completion);
+        return false;
+      }
+      endpoint.sendPacket(packet);
+      written.run();
+      return true;
+    }
   }
 
   @Override
@@ -890,7 +1051,22 @@ public final class MqttSn2Protocol extends Protocol {
     // Disconnect must not destroy aliases belonging to a persistent session.
     if (retryTask != null) retryTask.cancel(false);
     if (sleepTask != null) sleepTask.cancel(false);
-    if (sasl != null) sasl.close();
+    synchronized (authenticationLock) {
+      authenticationGeneration++;
+      if (authenticationTask != null) {
+        authenticationTask.cancel(false);
+      }
+      authenticationQueue.clear();
+      if (sasl != null) {
+        SaslAuthenticationMechanism closingAuthentication = sasl;
+        sasl = null;
+        try {
+          closingAuthentication.close();
+        } catch (IOException failure) {
+          AUTH_LOGGER.log(ServerLogMessages.MQTT_SN_AUTHENTICATION_FAILED, failure);
+        }
+      }
+    }
     Session closingSession = session.getAndSet(null);
     if (closingSession != null && !closingSession.isClosed()) {
       SessionManager.getInstance().close(closingSession, cleanWillOnClose);

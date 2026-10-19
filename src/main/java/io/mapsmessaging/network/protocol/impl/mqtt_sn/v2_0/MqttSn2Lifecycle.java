@@ -32,6 +32,31 @@ public final class MqttSn2Lifecycle {
   public enum State { NEW, AUTHENTICATING, NEGOTIATING_WILL, ESTABLISHING, CONNECTED, ASLEEP, AWAKE, CLOSED }
 
   private State state = State.NEW;
+  private boolean reauthenticating;
+
+  public synchronized boolean isReauthenticating() {
+    return reauthenticating;
+  }
+
+  public synchronized void beginReauthentication() throws IOException {
+    require(State.CONNECTED);
+    if (reauthenticating) {
+      throw new IOException("MQTT-SN 2.0 re-authentication is already active");
+    }
+    reauthenticating = true;
+  }
+
+  public synchronized void reauthenticated() throws IOException {
+    require(State.CONNECTED);
+    if (!reauthenticating) {
+      throw new IOException("MQTT-SN 2.0 re-authentication is not active");
+    }
+    reauthenticating = false;
+  }
+
+
+
+
 
   public synchronized State state() {
     return state;
@@ -82,12 +107,18 @@ public final class MqttSn2Lifecycle {
     if (state == State.CLOSED) {
       throw new IOException("MQTT-SN 2.0 connection is closed");
     }
+    if (reauthenticating) {
+      if (type != MqttSn2PacketType.AUTH && type != MqttSn2PacketType.DISCONNECT) {
+        throw new IOException("MQTT-SN 2.0 traffic paused during re-authentication");
+      }
+      return;
+    }
     boolean allowed = switch (state) {
       case NEW -> type == MqttSn2PacketType.CONNECT;
       case AUTHENTICATING -> type == MqttSn2PacketType.AUTH;
       case NEGOTIATING_WILL, ESTABLISHING -> false;
       case CONNECTED -> type != MqttSn2PacketType.CONNECT && type != MqttSn2PacketType.CONNACK
-          && type != MqttSn2PacketType.AUTH && type != MqttSn2PacketType.SLEEPRESP;
+          && type != MqttSn2PacketType.SLEEPRESP;
       case ASLEEP -> type == MqttSn2PacketType.PINGREQ || type == MqttSn2PacketType.DISCONNECT;
       case AWAKE -> type == MqttSn2PacketType.PUBACK || type == MqttSn2PacketType.PUBREC
           || type == MqttSn2PacketType.PUBCOMP || type == MqttSn2PacketType.REGACK
@@ -101,6 +132,7 @@ public final class MqttSn2Lifecycle {
 
   public synchronized void close() {
     state = State.CLOSED;
+    reauthenticating = false;
   }
 
   private void require(State expected) throws IOException {

@@ -80,4 +80,23 @@ class MqttSn2LifecycleTest {
     assertThrows(IOException.class, () -> lifecycle.begin(false, false));
     assertThrows(IOException.class, () -> lifecycle.checkAllowed(MqttSn2PacketType.CONNECT));
   }
+
+
+
+
+  @Test
+  void renewal_pauses_other_packets_and_preserves_connected_state() throws Exception {
+    MqttSn2Lifecycle lifecycle = new MqttSn2Lifecycle();
+    lifecycle.begin(false, false);
+    lifecycle.connected();
+    lifecycle.beginReauthentication();
+    lifecycle.checkAllowed(MqttSn2PacketType.AUTH);
+    lifecycle.checkAllowed(MqttSn2PacketType.DISCONNECT);
+    assertThrows(IOException.class, () -> lifecycle.checkAllowed(MqttSn2PacketType.PUBLISH));
+    assertThrows(IOException.class, lifecycle::beginReauthentication);
+    lifecycle.reauthenticated();
+    assertEquals(MqttSn2Lifecycle.State.CONNECTED, lifecycle.state());
+    lifecycle.checkAllowed(MqttSn2PacketType.PUBLISH);
+  }
+
 }

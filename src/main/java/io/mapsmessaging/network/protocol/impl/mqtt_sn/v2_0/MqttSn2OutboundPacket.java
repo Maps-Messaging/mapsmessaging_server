@@ -19,6 +19,9 @@
 package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.EndPoint;
+import java.io.IOException;
+import java.util.function.Consumer;
 import io.mapsmessaging.network.io.ServerPacket;
 
 import java.net.SocketAddress;
@@ -35,14 +38,39 @@ public final class MqttSn2OutboundPacket implements ServerPacket {
   private final byte[] wire;
   private final SocketAddress destination;
   private final AtomicReference<Runnable> completion;
+  private final WriteGuard writeGuard;
+  private final Consumer<IOException> failureHandler;
+
+  @FunctionalInterface
+  public interface WriteGuard {
+    boolean write(EndPoint endPoint, Packet packet, Runnable completion) throws IOException;
+  }
 
   public MqttSn2OutboundPacket(ByteBuffer frame, SocketAddress destination, Runnable completion) {
+    this(frame, destination, completion, null, null);
+  }
+
+  public MqttSn2OutboundPacket(ByteBuffer frame, SocketAddress destination, Runnable completion, WriteGuard writeGuard, Consumer<IOException> failureHandler) {
     Objects.requireNonNull(frame, "frame");
     ByteBuffer data = frame.asReadOnlyBuffer();
     wire = new byte[data.remaining()];
     data.get(wire);
     this.destination = Objects.requireNonNull(destination, "destination");
     this.completion = new AtomicReference<>(completion);
+    this.writeGuard = writeGuard;
+    this.failureHandler = failureHandler;
+  }
+
+  @Override
+  public boolean writeTo(EndPoint endPoint, Packet packet) throws IOException {
+    return writeGuard == null ? ServerPacket.super.writeTo(endPoint, packet) : writeGuard.write(endPoint, packet, this::complete);
+  }
+
+  @Override
+  public void failed(IOException failure) {
+    if (failureHandler != null) {
+      failureHandler.accept(failure);
+    }
   }
 
   @Override
