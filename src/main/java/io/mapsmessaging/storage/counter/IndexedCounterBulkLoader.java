@@ -83,10 +83,13 @@ public final class IndexedCounterBulkLoader {
       // Publication must be atomic: no partially initialized directory is visible.
       Files.move(staging, target, StandardCopyOption.ATOMIC_MOVE);
       published = true;
-      // Directory synchronization is platform-dependent. Fail if Linux cannot
-      // provide it; never claim a durable commit without a parent barrier.
-      try (FileChannel directory = FileChannel.open(parent, StandardOpenOption.READ)) {
-        directory.force(true);
+      // Windows NIO cannot open directory channels. File contents are forced above;
+      // directory-entry power-loss durability is platform-dependent on Windows.
+      // Other platforms must still report a failed directory barrier.
+      if (!System.getProperty("os.name", "").startsWith("Windows")) {
+        try (FileChannel directory = FileChannel.open(parent, StandardOpenOption.READ)) {
+          directory.force(true);
+        }
       }
     } finally {
       if (!published) {

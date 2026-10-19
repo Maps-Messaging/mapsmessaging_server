@@ -229,7 +229,13 @@ public final class GenerationCounterStore implements CounterStore {
       Files.write(temp, b.array(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
       try (FileChannel f = FileChannel.open(temp, StandardOpenOption.WRITE)) { f.force(true); }
       Files.move(temp, manifest, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-      try (FileChannel dir = FileChannel.open(root, StandardOpenOption.READ)) { dir.force(true); }
+      // Windows NIO cannot force directories; the manifest file is still forced above.
+      // Keep the directory barrier mandatory on platforms that support it.
+      if (!System.getProperty("os.name", "").startsWith("Windows")) {
+        try (FileChannel directory = FileChannel.open(root, StandardOpenOption.READ)) {
+          directory.force(true);
+        }
+      }
     } finally {
       Files.deleteIfExists(temp);
     }
