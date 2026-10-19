@@ -24,6 +24,7 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.security.certificates.CertificateManager;
 import io.mapsmessaging.security.certificates.CertificateManagerFactory;
 import io.mapsmessaging.security.certificates.SecretKeyManager;
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -33,7 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class KeyStoreProtectionKeyResolverTest {
-  @TempDir Path root;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path root;
   private static final byte[] SENDER = {1, 2, 3, 4, 5, 6, 7, 8};
   private static final char[] PASSWORD = "entry-password".toCharArray();
 

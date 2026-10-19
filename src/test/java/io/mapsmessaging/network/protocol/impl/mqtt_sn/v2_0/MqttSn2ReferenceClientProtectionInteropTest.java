@@ -26,6 +26,7 @@ import io.mapsmessaging.mqttsn.protection.ProtectionEnvelope;
 import io.mapsmessaging.mqttsn.protection.bc.BouncyCastleProtectionProvider;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ControlCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.MqttSn2CryptoProviders;
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.HexFormat;
@@ -40,7 +41,7 @@ import org.junit.jupiter.api.io.TempDir;
  * and server ServiceLoader protection, in both directions for all CSD01 schemes.
  */
 class MqttSn2ReferenceClientProtectionInteropTest {
-  @TempDir Path storage;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path storage;
   private static final byte[] SENDER = HexFormat.of().parseHex("aabbccddeeff0011");
   private static final byte[] RANDOM = {3, 4, 5, 6};
 

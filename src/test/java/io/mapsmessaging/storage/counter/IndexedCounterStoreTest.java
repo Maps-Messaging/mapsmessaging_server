@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -27,7 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class IndexedCounterStoreTest {
 
-  @TempDir Path directory;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path directory;
 
   private Path base() {
     return directory.resolve("replay-state");

@@ -39,6 +39,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.MqttSn2Cry
 import io.mapsmessaging.network.EndPointURLFactory;
 import io.mapsmessaging.network.io.impl.udp.UDPEndPointServerFactory;
 import io.mapsmessaging.test.BaseTestConfig;
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
@@ -61,7 +62,7 @@ import org.junit.jupiter.params.provider.ValueSource;
  * independent mqtt-sn-2-client wire protection in both directions.
  */
 class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
-  @TempDir Path root;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path root;
 
   private static final byte[] CLIENT = HexFormat.of().parseHex("0102030405060708");
   private static final byte[] GATEWAY = HexFormat.of().parseHex("aabbccddeeff0011");

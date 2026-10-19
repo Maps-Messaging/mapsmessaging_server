@@ -6,6 +6,7 @@ package io.mapsmessaging.storage.counter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class IndexedCounterBulkLoaderTest {
-  @TempDir Path directory;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path directory;
 
   @Test
   void happyBulkLoadAndUpdateAcrossRestart() throws Exception {

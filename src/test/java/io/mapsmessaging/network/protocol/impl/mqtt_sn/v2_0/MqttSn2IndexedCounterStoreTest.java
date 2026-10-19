@@ -20,6 +20,7 @@ package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -27,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class MqttSn2IndexedCounterStoreTest {
-  @TempDir Path directory;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path directory;
 
   private Path storePath() {
     return directory.resolve("mqtt-sn-protection");

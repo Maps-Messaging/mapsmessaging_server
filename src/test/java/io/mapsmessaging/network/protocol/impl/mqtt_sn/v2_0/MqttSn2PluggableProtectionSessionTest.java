@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet.MqttSn2ControlCodec;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.MqttSn2CryptoProviders;
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
@@ -32,7 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class MqttSn2PluggableProtectionSessionTest {
-  @TempDir Path root;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path root;
   private static final byte[] SENDER = {1, 2, 3, 4, 5, 6, 7, 8};
 
   private static SecretKey key(byte[] sender, int scheme) throws IOException {

@@ -6,6 +6,7 @@ package io.mapsmessaging.storage.counter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class IndexedCounterCompactorTest {
-  @TempDir Path root;
+  @TempDir(factory = TargetDataTempDirFactory.class) Path root;
 
   private Path source() {
     return root.resolve("source");
