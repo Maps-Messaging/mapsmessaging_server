@@ -17,6 +17,9 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
         throw "Unable to determine project version from $PomPath"
     }
     $Version = $VersionNode.InnerText.Trim()
+    if ($env:BUILDKITE_BRANCH -eq "development" -and -not $Version.EndsWith("-SNAPSHOT")) {
+        throw "Development branch must package a snapshot version, found '$Version'"
+    }
     Write-Host "Packaging project version $Version from $PomPath"
 }
 else {
