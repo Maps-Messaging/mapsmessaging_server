@@ -22,6 +22,7 @@ package io.mapsmessaging.network.io.impl;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
+import io.mapsmessaging.network.io.BufferedReadEndPoint;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.Selectable;
@@ -109,24 +110,9 @@ public class ReadTask implements Selectable {
       underflow++;
     }
     logger.log(READ_TASK_POST_PROCESSING, packet);
-    //
-    // If the position == limit then it means that all the data has been read and there is no
-    // outstanding data to be processed. Basically the packet contained a complete protocol
-    // event/frame
-    //
     if (packet.position() == packet.limit()) {
       packet.clear();
-    }
-
-    //
-    // If there is data left in the packet, it means that the protocol has not been able to
-    // construct a complete event/frame from the packet and more data is required. In this case
-    // lets compact the buffer ( moves the data to the start of the buffer ) and this should set up
-    // for the next read to start at the end of the current data
-    // This is important else we will either write over the buffer or ignore it in the next read
-    // cycle
-    //
-    else if (packet.position() < packet.limit()) {
+    } else if (packet.position() < packet.limit()) {
       if (packet.position() != 0) {
         packet.compact();
         logger.log(READ_TASK_COMPACT, packet);
@@ -135,36 +121,40 @@ public class ReadTask implements Selectable {
         packet.limit(packet.capacity());
         logger.log(READ_TASK_POSITION, packet);
       }
-    }
-    //
-    // Not sure how this occurs, it means we have read more than our limit and we
-    // should log this and clear the buffer
-    //
-    else {
+    } else {
       packet.clear();
     }
   }
 
   public void read() throws IOException {
-    int response = endPoint.readPacket(packet);
-    logger.log(READ_TASK_COMPLETED, packet.position(), packet.limit(), response);
-    if (response > 0) {
-      handleDataToProcess(response);
-    } else if (response < 0) {
-      logger.log(READ_TASK_NEGATIVE_CLOSE);
-      closeProtocol();
-    } else {
-      logger.log(READ_TASK_ZERO_BYTE, packet.position(), packet.limit(), packet.capacity());
-      if (packet.position() == packet.limit()) {
-        packet.clear();
+    int response;
+    do {
+      response = endPoint.readPacket(packet);
+      logger.log(READ_TASK_COMPLETED, packet.position(), packet.limit(), response);
+      if (response > 0) {
+        handleDataToProcess(response);
+      } else if (response < 0) {
+        logger.log(READ_TASK_NEGATIVE_CLOSE);
+        closeProtocol();
+        return;
+      } else {
+        logger.log(READ_TASK_ZERO_BYTE, packet.position(), packet.limit(), packet.capacity());
+        if (packet.position() == packet.limit()) {
+          packet.clear();
+        }
+        return;
       }
-    }
+    } while (hasBufferedReadData() && packet.hasRemaining());
+  }
+
+  private boolean hasBufferedReadData() {
+    return endPoint instanceof BufferedReadEndPoint bufferedEndPoint
+        && bufferedEndPoint.hasBufferedReadData();
   }
 
   class ScheduledRead implements Runnable {
 
     private final Selectable selectable;
-
 
     ScheduledRead(Selectable selectable) {
       this.selectable = selectable;

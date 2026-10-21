@@ -34,11 +34,11 @@ import javax.net.ssl.*;
 public class DTLSPacketTransport implements PacketTransport {
 
   private static final int MAXIMUM_PACKET_SIZE = 8192;
-  private static final String pathToStores = "";
-  private static final String keyStoreFile = "my-keystore.jks";
-  private static final String trustStoreFile = "my-truststore.jks";
-  private static final String keyFilename = pathToStores + keyStoreFile;
-  private static final String trustFilename = pathToStores + trustStoreFile;
+  private static final String PATH_TO_STORES = "";
+  private static final String KEY_STORE_FILE = "my-keystore.jks";
+  private static final String TRUST_STORE_FILE = "my-truststore.jks";
+  private static final String KEY_FILENAME = PATH_TO_STORES + KEY_STORE_FILE;
+  private static final String TRUST_FILENAME = PATH_TO_STORES + TRUST_STORE_FILE;
 
   private final UDPPacketTransport udpPacketTransport;
   private final SSLEngine sslEngine;
@@ -56,7 +56,7 @@ public class DTLSPacketTransport implements PacketTransport {
     Packet pkt = new Packet(MAXIMUM_PACKET_SIZE, false);
     udpPacketTransport.readPacket(pkt);
     pkt.flip();
-    SSLEngineResult rs = sslEngine.unwrap(pkt.getRawBuffer(), packet.getRawBuffer());
+    sslEngine.unwrap(pkt.getRawBuffer(), packet.getRawBuffer());
     return packet.position()- pos;
   }
 
@@ -125,11 +125,11 @@ public class DTLSPacketTransport implements PacketTransport {
 
     char[] passphrase = "password".toCharArray();
 
-    try (FileInputStream fis = new FileInputStream(keyFilename)) {
+    try (FileInputStream fis = new FileInputStream(KEY_FILENAME)) {
       ks.load(fis, passphrase);
     }
 
-    try (FileInputStream fis = new FileInputStream(trustFilename)) {
+    try (FileInputStream fis = new FileInputStream(TRUST_FILENAME)) {
       ts.load(fis, passphrase);
     }
 

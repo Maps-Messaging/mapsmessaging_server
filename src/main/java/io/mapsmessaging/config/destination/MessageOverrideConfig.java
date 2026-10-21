@@ -32,21 +32,33 @@ import java.util.Objects;
 
 public class MessageOverrideConfig extends MessageOverrideDTO implements Config {
 
+  private static final String RETAIN_KEY = "retain";
+  private static final String STORE_OFFLINE = "storeOffline";
+
   public MessageOverrideConfig(ConfigurationProperties properties) {
     this.expiry = properties.getLongProperty("expiry", -1);
-    this.priority = Priority.valueOf (properties.getProperty("priority", Priority.NORMAL.name()));
-    String qos = properties.getProperty("qos", null);
-    if(qos != null) {
-      this.qualityOfService= QualityOfService.valueOf(qos);
+    String configuredPriority = properties.getProperty("priority", null);
+    if (configuredPriority != null) {
+      this.priority = Priority.valueOf(configuredPriority);
+    }
+    String qos = properties.getProperty("qos", properties.getProperty("qualityOfService", null));
+    if (qos != null) {
+      this.qualityOfService = QualityOfService.valueOf(qos);
     }
     this.responseTopic = properties.getProperty("responseTopic", null);
     this.contentType = properties.getProperty("contentType", null);
     this.schemaId = properties.getProperty("schemaId", null);
-    if(properties.containsKey("retain")) {
-      this.retain = properties.getBooleanProperty("retain",false);
+    if(properties.containsKey(RETAIN_KEY)) {
+      this.retain = properties.getBooleanProperty(RETAIN_KEY,false);
     }
     else{
       this.retain = null;
+    }
+    if (properties.containsKey(STORE_OFFLINE)) {
+      this.storeOffline = properties.getBooleanProperty(STORE_OFFLINE, false);
+    }
+    else{
+      this.storeOffline = null;
     }
     ConfigurationProperties metaConfig = ((ConfigurationProperties)properties.get("meta"));
     if(metaConfig != null) {
@@ -54,7 +66,9 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
       if (preMeta != null) {
         meta = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : preMeta.entrySet()) {
-          meta.put(entry.getKey(), entry.getValue().toString());
+          if (entry.getValue() != null) {
+            meta.put(entry.getKey(), entry.getValue().toString());
+          }
         }
       }
     }
@@ -66,16 +80,41 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
 
   @Override
   public ConfigurationProperties toConfigurationProperties() {
+    return toConfigurationProperties(this);
+  }
+
+  public static ConfigurationProperties toConfigurationProperties(MessageOverrideDTO config) {
     ConfigurationProperties properties = new ConfigurationProperties();
-    properties.put("expiry", this.expiry);
-    properties.put("priority", this.priority);
-    properties.put("qualityOfService", this.qualityOfService);
-    properties.put("responseTopic", this.responseTopic);
-    properties.put("contentType", this.contentType);
-    properties.put("schemaId", this.schemaId);
-    properties.put("retain", this.retain);
-    properties.put("meta", this.meta);
-    properties.put("dataMap", this.dataMap);
+    if (config.getExpiry() != null && config.getExpiry() >= 0) {
+      properties.put("expiry", config.getExpiry());
+    }
+    if (config.getPriority() != null) {
+      properties.put("priority", config.getPriority());
+    }
+    if (config.getQualityOfService() != null) {
+      properties.put("qos", config.getQualityOfService().name());
+    }
+    if (config.getResponseTopic() != null) {
+      properties.put("responseTopic", config.getResponseTopic());
+    }
+    if (config.getContentType() != null) {
+      properties.put("contentType", config.getContentType());
+    }
+    if (config.getSchemaId() != null) {
+      properties.put("schemaId", config.getSchemaId());
+    }
+    if (config.getRetain() != null) {
+      properties.put(RETAIN_KEY, config.getRetain());
+    }
+    if (config.getStoreOffline() != null) {
+      properties.put(STORE_OFFLINE, config.getStoreOffline());
+    }
+    if (config.getMeta() != null) {
+      properties.put("meta", new ConfigurationProperties(new LinkedHashMap<>(config.getMeta())));
+    }
+    if (config.getDataMap() != null) {
+      properties.put("dataMap", new ConfigurationProperties(new LinkedHashMap<>(config.getDataMap())));
+    }
     return properties;
   }
 
@@ -114,6 +153,10 @@ public class MessageOverrideConfig extends MessageOverrideDTO implements Config 
     }
     if (!Objects.equals(this.retain, newConfig.getRetain())) {
       this.retain = newConfig.getRetain();
+      hasChanged = true;
+    }
+    if (!Objects.equals(this.storeOffline, newConfig.getStoreOffline())) {
+      this.storeOffline = newConfig.getStoreOffline();
       hasChanged = true;
     }
     if (!Objects.equals(this.meta, newConfig.getMeta())) {

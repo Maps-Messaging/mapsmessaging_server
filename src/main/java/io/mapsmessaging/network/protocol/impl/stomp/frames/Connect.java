@@ -41,6 +41,11 @@ public class Connect extends Frame {
     return "STOMP".getBytes();
   }
 
+  @Override
+  protected boolean escapeHeaders() {
+    return false;
+  }
+
   public void setLogin(String login) {
     putHeader("login", login);
     this.login = login;
@@ -58,6 +63,7 @@ public class Connect extends Frame {
 
   public void setHeartBeat(HeartBeat heartBeat) {
     this.heartBeat = heartBeat;
+    putHeader("heart-beat", heartBeat.toString());
   }
 
   public void setHost(String host) {
@@ -106,14 +112,10 @@ public class Connect extends Frame {
     }
     acceptVersion = removeHeader("accept-version");
     if (acceptVersion == null) {
-      acceptVersion = "1.0"; // This is the only version that allows this
+      acceptVersion = "1.0";
     }
     String tmp = removeHeader("heart-beat");
-    if (tmp != null) {
-      heartBeat = new HeartBeat(tmp);
-    } else {
-      heartBeat = new HeartBeat(0, 0); // default
-    }
+    heartBeat = tmp == null ? new HeartBeat(0, 0) : new HeartBeat(tmp);
     super.parseCompleted();
   }
 

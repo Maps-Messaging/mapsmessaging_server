@@ -78,7 +78,6 @@ public class Selector implements SelectorInt {
           processSelectionList(selectedKeys);
         }
       } catch (Throwable e) {
-        e.printStackTrace();
         logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL, e);
         isOpen.set(false);
       }

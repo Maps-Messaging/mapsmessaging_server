@@ -4,6 +4,16 @@ target/
 *.jar
 !**/src/**/lib/*.jar
 
+# Self-signed test certs/keystores generated at build time by the
+# config-self-signed-certs exec-maven-plugin step, at the repo root
+/ca.jks
+/ca.pem
+/my-keystore.jks
+/my-truststore.jks
+/root.jks
+/root.pem
+/server.pem
+
 # Maven
 pom.xml.tag
 pom.xml.releaseBackup

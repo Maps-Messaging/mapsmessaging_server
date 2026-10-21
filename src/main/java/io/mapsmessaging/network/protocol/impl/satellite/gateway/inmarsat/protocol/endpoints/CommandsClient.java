@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MobileTerminatedSubmitResponse;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.MuteCommand;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.List;
@@ -32,13 +33,13 @@ public final class CommandsClient extends BaseInmarsatClient {
     super(base, http, gson, authReset);
   }
 
-  public MobileTerminatedSubmitResponse mute(String bearer, String xMailbox, List<MuteCommand> cmds, boolean usePost) {
+  public MobileTerminatedSubmitResponse mute(String bearer, String xMailbox, List<MuteCommand> cmds, boolean usePost) throws IOException {
     return usePost
         ? postJson("messages/mobileTerminated/mute", cmds, bearer, xMailbox, MobileTerminatedSubmitResponse.class)
         : getWithBodyJson("messages/mobileTerminated/mute", cmds, bearer, xMailbox, MobileTerminatedSubmitResponse.class);
   }
 
-  public MobileTerminatedSubmitResponse mute(String b, String x, MuteCommand c, boolean post) {
+  public MobileTerminatedSubmitResponse mute(String b, String x, MuteCommand c, boolean post) throws IOException {
     return mute(b, x, List.of(c), post);
   }
 }

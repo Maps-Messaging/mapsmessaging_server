@@ -19,8 +19,15 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl;
 
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
+import io.mapsmessaging.engine.session.DeliveryStateCoordinator;
 import io.mapsmessaging.admin.SubscriptionJMX;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.engine.destination.subscription.state.MessageStateManagerImpl;
+import io.mapsmessaging.engine.destination.subscription.state.MessageStateManagerListener;
+import java.io.UncheckedIOException;
+import java.util.Collection;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.subscription.Subscribable;
@@ -40,10 +47,10 @@ import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Future;
@@ -51,7 +58,6 @@ import java.util.concurrent.Future;
 /**
  * Note: This is a complex class that maintains the state of events for a specific subscription to a specific destination.
  */
-@ToString
 public class DestinationSubscription extends Subscription {
 
   @Getter
@@ -62,6 +68,10 @@ public class DestinationSubscription extends Subscription {
   protected final Logger logger;
   private final SubscriptionJMX mbean;
   private final String sessionId;
+  // Retain the owner while offline; cleanup must not create stores for other protocols.
+  private SessionImpl deliveryStateOwner;
+  @SuppressWarnings("java:S3077") // Volatile safely publishes the reference; coordinator operations synchronize internally.
+  private volatile io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator;
 
   @Getter
   protected final DestinationImpl destinationImpl;
@@ -78,6 +88,8 @@ public class DestinationSubscription extends Subscription {
   @Setter
   private boolean sync;
 
+  private volatile boolean flowControlBlocked;
+
   protected long messagesIgnored;
   protected long messagesRegistered;
   @Getter
@@ -90,11 +102,21 @@ public class DestinationSubscription extends Subscription {
 
   // <editor-fold desc="Life cycle functions">
   public DestinationSubscription(DestinationImpl destinationImpl,
-      SubscriptionContext context,
-      SessionImpl sessionImpl,
-      String sessionId,
-      AcknowledgementController acknowledgementController,
-      MessageStateManager messageStateManager) {
+                                 SubscriptionContext context,
+                                 SessionImpl sessionImpl,
+                                 String sessionId,
+                                 AcknowledgementController acknowledgementController,
+                                 MessageStateManager messageStateManager) {
+    this(destinationImpl, context, sessionImpl, sessionId, acknowledgementController, messageStateManager, true);
+  }
+
+  public DestinationSubscription(DestinationImpl destinationImpl,
+                                 SubscriptionContext context,
+                                 SessionImpl sessionImpl,
+                                 String sessionId,
+                                 AcknowledgementController acknowledgementController,
+                                 MessageStateManager messageStateManager,
+                                 boolean registerWithDestination) {
     super(sessionImpl, context);
     logger = LoggerFactory.getLogger(DestinationSubscription.class);
     this.eventStateManager = new ClientSubscribedEventManager(destinationImpl, this);
@@ -102,26 +124,49 @@ public class DestinationSubscription extends Subscription {
     this.messageStateManager = messageStateManager;
     this.acknowledgementController = acknowledgementController;
     this.sessionId = sessionId;
+    deliveryStateOwner = sessionImpl;
+    if (messageStateManager instanceof MessageStateManagerImpl state) {
+      state.add(new MessageStateManagerListener() {
+        @Override
+        public void add(long id, int priority) {
+        }
+        @Override
+        public void addAll(Collection<Long> ids) {
+        }
+        @Override
+        public void remove(long id) {
+        }
+        @Override
+        public void expired(long id) {
+          clearDeliveryMapping(id);
+        }
+      });
+    }
     activeSubscription = this;
     messagesSent = 0;
     messagesRegistered = 0;
     messagesIgnored = 0;
     messagesExpired = 0;
     isPaused = false;
+    flowControlBlocked = false;
     sync = context.isSync();
-    mbean = new SubscriptionJMX(destinationImpl.getTypePath(), this);
+    mbean = registerWithDestination ? new SubscriptionJMX(destinationImpl.getTypePath(), this) : null;
     completionTask = new MessageDeliveryCompletionTask(this, acknowledgementController);
-    destinationImpl.addSubscription(this);
+    if (registerWithDestination) {
+      destinationImpl.addSubscription(this);
+    }
   }
 
   @Override
   public void close() {
-    mbean.close();
+    traceCleanupState("SUBSCRIPTION-CLOSE");
+    releaseProtocolSendSlot();
+    if (mbean != null) {
+      mbean.close();
+    }
     acknowledgementController.close();
     messageStateManager.rollbackInFlightMessages();
 
-    // We need to see if any other subscriptions have interest in these events, and if not then simply
-    // remove the events. Just like when we deliver all the events in a subscription
     try {
       messageStateManager.close();
     } catch (IOException e) {
@@ -130,13 +175,15 @@ public class DestinationSubscription extends Subscription {
   }
 
   public void delete() {
-    mbean.close();
+    clearDeliveryMappings();
+    releaseProtocolSendSlot();
+    if (mbean != null) {
+      mbean.close();
+    }
     acknowledgementController.close();
     messageStateManager.rollbackInFlightMessages();
     destinationImpl.removeSubscription(sessionId);
 
-    // We need to see if any other subscriptions have interest in these events, and if not then simply
-    // remove the events. Just like when we deliver all the events in a subscription
     try {
       messageStateManager.delete();
     } catch (IOException e) {
@@ -144,15 +191,12 @@ public class DestinationSubscription extends Subscription {
     }
   }
 
-
   @Override
   public void hibernate() {
     logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_HIBERNATE, destinationImpl.getFullyQualifiedNamespace(), sessionId);
+    releaseProtocolSendSlot();
     acknowledgementController.clear();
     messageStateManager.rollbackInFlightMessages();
-    //
-    // Remove the session since it is now redundant
-    //
     super.hibernate();
   }
 
@@ -160,6 +204,7 @@ public class DestinationSubscription extends Subscription {
   public void wakeUp(SessionImpl sessionImpl) {
     if (this.sessionImpl == null && hibernating && sessionImpl != null) {
       super.wakeUp(sessionImpl);
+      deliveryStateOwner = sessionImpl;
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_WAKEUP, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName());
       schedule();
     }
@@ -167,6 +212,7 @@ public class DestinationSubscription extends Subscription {
 
   @Override
   public void cancel() throws IOException {
+    clearDeliveryMappings();
     Subscribable sub = destinationImpl.removeSubscription(sessionId);
     if (sub != null) {
       sub.close();
@@ -175,7 +221,6 @@ public class DestinationSubscription extends Subscription {
   // </editor-fold>
 
   // <editor-fold desc="Get Functions">
-
 
   @Override
   public int size() {
@@ -253,7 +298,6 @@ public class DestinationSubscription extends Subscription {
   @Override
   public boolean hasMessage(long messageId) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
-
     return messageStateManager.hasMessage(messageId);
   }
 
@@ -261,6 +305,15 @@ public class DestinationSubscription extends Subscription {
   @Override
   public void ackReceived(long messageId) {
     handleTransaction(true, messageId);
+  }
+
+  @Override
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(long messageId) {
+    return submitRecoveredAcknowledgement(destinationImpl, () -> {
+      handleTransaction(true, messageId);
+      // Restart and hibernation restore this delivery at rest, outside the in-flight set.
+      messageStateManager.expired(messageId);
+    });
   }
 
   @Override
@@ -306,8 +359,8 @@ public class DestinationSubscription extends Subscription {
     ThreadContext.clear();
   }
 
-  public Future<Response> getNext()  {
-    return destinationImpl.submit( new NextMessageTask(this));
+  public Future<Response> getNext() {
+    return destinationImpl.submit(new NextMessageTask(this));
   }
 
   public Message rawGetNext() throws IOException {
@@ -318,29 +371,90 @@ public class DestinationSubscription extends Subscription {
     return message;
   }
 
+  protected Message retrieveNextMessageWithFlowControl() throws IOException {
+    Message message = peekNextMessage();
+    if (message == null) {
+      return null;
+    }
+    if (!tryAcquireProtocolSendSlot(message)) {
+      return null;
+    }
+    try {
+      allocateMessage(message);
+      return message;
+    } catch (RuntimeException e) {
+      releaseProtocolSendSlot();
+      throw e;
+    }
+  }
+
   protected Message retrieveNextMessage() throws IOException {
+    Message message = peekNextMessage();
+    if (message != null) {
+      allocateMessage(message);
+    }
+    return message;
+  }
+
+  protected Message peekNextMessage() throws IOException {
     for (;;) {
       long nextMessageId = messageStateManager.nextMessageId();
       if (nextMessageId < 0) {
-        break;
+        return null;
       }
       Message message = destinationImpl.getMessage(nextMessageId);
       if (message != null) {
-        messageStateManager.allocate(message);
-        messagesSent++;
         return message;
-      } else {
-        messageStateManager.expired(nextMessageId);
-        messagesExpired++;
+      }
+      expired(nextMessageId);
+      messagesExpired++;
+    }
+  }
+
+  protected void allocateMessage(Message message) {
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "ALLOCATE-BEGIN", message.getIdentifier(), sessionId);
+    messageStateManager.allocate(message);
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "ALLOCATE-END", message.getIdentifier(), sessionId);
+    messagesSent++;
+  }
+
+  private boolean tryAcquireProtocolSendSlot(Message message) {
+    SessionImpl session = sessionImpl;
+    if (session == null) {
+      flowControlBlocked = false;
+      return true;
+    }
+    ClientConnection clientConnection = session.getClientConnection();
+    if (clientConnection == null) {
+      flowControlBlocked = false;
+      return true;
+    }
+
+    flowControlBlocked = true;
+    if (clientConnection.tryAcquireSendSlot(eventStateManager, message)) {
+      flowControlBlocked = false;
+      return true;
+    }
+    return false;
+  }
+
+  protected void releaseProtocolSendSlot() {
+    SessionImpl session = sessionImpl;
+    if (session != null) {
+      ClientConnection clientConnection = session.getClientConnection();
+      if (clientConnection != null) {
+        clientConnection.releaseSendSlot(eventStateManager);
       }
     }
-    return null;
+    flowControlBlocked = false;
+  }
+
+  public void sendCapacityAvailable() {
+    flowControlBlocked = false;
+    schedule();
   }
 
   private Message prepareMessage(Message message) {
-    //
-    // Update state in an atomic fashion and then send the message
-    //
     if (!hasAtRestMessages()) {
       message.setLastMessage(true);
     }
@@ -353,6 +467,7 @@ public class DestinationSubscription extends Subscription {
   @Override
   public boolean expired(long messageIdentifier) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
+    clearDeliveryMapping(messageIdentifier);
     messageStateManager.expired(messageIdentifier);
     return true;
   }
@@ -396,8 +511,10 @@ public class DestinationSubscription extends Subscription {
   public void handleTransaction(boolean isAck, long messageId) {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
 
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "TRANSACTION-BEGIN", messageId, "ack", isAck, sessionId);
     if (isAck) {
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_ACK, messageId, destinationImpl.getFullyQualifiedNamespace(), sessionId);
+      clearDeliveryMapping(messageId);
       acknowledgementController.ack(messageId);
       messageStateManager.commit(messageId);
       messagesAcked++;
@@ -408,6 +525,7 @@ public class DestinationSubscription extends Subscription {
       messageStateManager.rollback(messageId);
       messagesRolledBack++;
     }
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "TRANSACTION-END", messageId, "ack", isAck, sessionId);
     schedule();
   }
 
@@ -417,10 +535,6 @@ public class DestinationSubscription extends Subscription {
 
   public void acknowledgePreviousEvent() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
-
-    //
-    // Chained completion handlers
-    //
     long messageId = acknowledgementController.messageSent();
     if (messageId > -1) {
       completeMessage(messageId);
@@ -429,9 +543,72 @@ public class DestinationSubscription extends Subscription {
   }
 
   public void completeMessage(long messageId) {
+    QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "AUTO-COMMIT", messageId, sessionId);
+    clearDeliveryMapping(messageId);
     messageStateManager.commit(messageId);
     messagesAcked++;
     destinationImpl.complete(messageId);
+  }
+
+  @Override
+  public String getDeliveryKey() {
+    return SubscribedEventManager.deliveryKey(getContext(), destinationImpl.getFullyQualifiedNamespace());
+  }
+
+  @Override
+  public void removeContext(SubscriptionContext context) {
+    clearDeliveryMappings(SubscribedEventManager.deliveryKey(context, destinationImpl.getFullyQualifiedNamespace()));
+    super.removeContext(context);
+  }
+
+  protected void clearDeliveryMapping(long messageId) {
+    SessionImpl owner = sessionImpl != null ? sessionImpl : deliveryStateOwner;
+    try {
+      if (owner != null) {
+        owner.clearPacketIdMapping(getDeliveryKey(), messageId);
+      } else {
+        DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
+        if (coordinator != null) {
+          coordinator.retirePending(getDeliveryKey(), messageId);
+        }
+      }
+    } catch (IOException error) {
+      throw new UncheckedIOException("Unable to retire delivery packet identifier", error);
+    }
+  }
+
+  private void clearDeliveryMappings() {
+    for (SubscriptionContext context : getContexts()) {
+      clearDeliveryMappings(SubscribedEventManager.deliveryKey(context, destinationImpl.getFullyQualifiedNamespace()));
+    }
+  }
+
+  private void clearDeliveryMappings(String key) {
+    SessionImpl owner = sessionImpl != null ? sessionImpl : deliveryStateOwner;
+    try {
+      if (owner != null) {
+        owner.clearPacketIdMappings(key);
+      } else {
+        DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
+        if (coordinator != null) {
+          coordinator.retireAll(key);
+        }
+      }
+    } catch (IOException error) {
+      throw new UncheckedIOException("Unable to retire subscription packet identifiers", error);
+    }
+  }
+
+  @Override
+  public void setDeliveryStateCoordinator(io.mapsmessaging.engine.session.DeliveryStateCoordinator coordinator) {
+    deliveryStateCoordinator = coordinator;
+  }
+
+  @Override
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    DeliveryStateCoordinator coordinator = new DeliveryStateCoordinator();
+    coordinator.setPath(path);
+    setDeliveryStateCoordinator(coordinator);
   }
 
   @Override
@@ -439,8 +616,8 @@ public class DestinationSubscription extends Subscription {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
     try {
       while (isReady()) {
-        Message message = retrieveNextMessage();
-        if(message != null) {
+        Message message = retrieveNextMessageWithFlowControl();
+        if (message != null) {
           sendMessage(message);
         } else {
           break;
@@ -455,11 +632,22 @@ public class DestinationSubscription extends Subscription {
     }
   }
 
-  //
-  // So we have a message to send, but we are not scheduled to run
-  //
+  /** Best-effort diagnostic view; does not alter subscription scheduling or message ownership. */
+  public void traceCleanupState(String stage) {
+    if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+      try {
+        QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), stage, -1, "subscription", sessionId,
+            "atRest", new ArrayList<>(messageStateManager.getAllAtRest()), "all", new ArrayList<>(messageStateManager.getAll()),
+            "hibernating", hibernating, "paused", isPaused,
+            "sent", messagesSent, "acked", messagesAcked, "rolledBack", messagesRolledBack);
+      } catch (RuntimeException diagnosticFailure) {
+        QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "SNAPSHOT-FAILED", -1, stage, diagnosticFailure.toString());
+      }
+    }
+  }
+
   public boolean schedule() {
-    if (isReady()) {
+    if (!flowControlBlocked && isReady()) {
       destinationImpl.scanForDelivery(this);
       return true;
     }

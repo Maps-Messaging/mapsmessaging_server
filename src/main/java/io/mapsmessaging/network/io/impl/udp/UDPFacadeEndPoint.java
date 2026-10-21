@@ -32,6 +32,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class UDPFacadeEndPoint extends EndPoint {
@@ -40,13 +41,18 @@ public class UDPFacadeEndPoint extends EndPoint {
 
   private final EndPoint endPoint;
   private final SocketAddress fromAddress;
+  private final AtomicBoolean closed = new AtomicBoolean();
 
   public UDPFacadeEndPoint(EndPoint endPoint, SocketAddress fromAddress, EndPointServerStatus server) {
     super(counter.incrementAndGet(), server);
     this.endPoint = endPoint;
     this.fromAddress = fromAddress;
     List<String> end = new ArrayList<>(endPoint.getJMXTypePath());
-    end.remove(end.size() - 1);
+    // Programmatic endpoints may have no JMX parent hierarchy. Do not
+    // fail the UDP client connection when management registration is absent.
+    if (!end.isEmpty()) {
+      end.remove(end.size() - 1);
+    }
 
     String entry = strip("endPointName=" + endPoint.getName());
     end.add(entry);
@@ -71,16 +77,25 @@ public class UDPFacadeEndPoint extends EndPoint {
 
   @Override
   public int sendPacket(Packet packet) throws IOException {
+    if (closed.get()) {
+      throw new IOException("UDP facade endpoint is closed");
+    }
     return endPoint.sendPacket(packet);
   }
 
   @Override
   public int readPacket(Packet packet) throws IOException {
+    if (closed.get()) {
+      return -1;
+    }
     return endPoint.readPacket(packet);
   }
 
   @Override
   public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) throws IOException {
+    if (closed.get()) {
+      throw new ClosedChannelException();
+    }
     return endPoint.register(selectionKey, runner);
   }
 
@@ -112,7 +127,10 @@ public class UDPFacadeEndPoint extends EndPoint {
 
   @Override
   public void close() throws IOException {
-    endPoint.close();
+    if (!closed.compareAndSet(false, true)) {
+      return;
+    }
+    super.close();
     EndPointServer endPointServer = (EndPointServer)endPoint.getServer();
     endPointServer.handleCloseEndPoint(this);
   }

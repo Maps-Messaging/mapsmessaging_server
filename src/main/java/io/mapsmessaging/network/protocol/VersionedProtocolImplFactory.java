@@ -24,6 +24,7 @@ import io.mapsmessaging.network.io.Packet;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class VersionedProtocolImplFactory extends ProtocolImplFactory {
@@ -40,9 +41,9 @@ public class VersionedProtocolImplFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     int idx = (int) (index.incrementAndGet() % protocolFactories.size());
-    return protocolFactories.get(idx).connect(endPoint, sessionId, username, password);
+    return protocolFactories.get(idx).connect(endPoint, sessionId, username, password,  topicMap);
   }
 
   @Override

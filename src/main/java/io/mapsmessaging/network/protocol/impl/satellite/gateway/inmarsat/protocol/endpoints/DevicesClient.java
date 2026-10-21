@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.DeviceInfo;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -38,7 +39,7 @@ public final class DevicesClient extends BaseInmarsatClient {
     super(base, http, gson, authReset);
   }
 
-  public List<DeviceInfo> listDevices(String bearer, String xMailbox, Integer limit, Integer offset, String deviceId) {
+  public List<DeviceInfo> listDevices(String bearer, String xMailbox, Integer limit, Integer offset, String deviceId) throws IOException {
     Map<String, String> q = new LinkedHashMap<>();
     if (deviceId != null && !deviceId.isBlank()) q.put("deviceId", deviceId);
     if (limit != null) q.put("limit", String.valueOf(limit));

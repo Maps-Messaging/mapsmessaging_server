@@ -36,12 +36,9 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCo
 import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5Disconnect;
 import io.mapsmessaging.security.MapsSecurityProvider;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -50,7 +47,6 @@ import javax.net.ssl.*;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -93,7 +89,8 @@ class MqttAuthSaslTest extends MQTTBaseTest {
   @ParameterizedTest
   @MethodSource("mqttGetAuthUrls")
   void testInvalidUser(int version, String protocol) throws Exception {
-    SaslClient saslClient = setForSasl(null, "admin", "Bad Password");
+    String invalidUser = "invalid-" + UUID.randomUUID();
+    SaslClient saslClient = setForSasl(null, invalidUser, "Bad Password");
     boolean isSsl = protocol.equalsIgnoreCase("ssl") || protocol.equalsIgnoreCase("wss");
     Mqtt5EnhancedAuthMechanism mqtt5EnhancedAuthMechanism = new Mqtt5SaslAuth(saslClient);
     Mqtt5ClientBuilder builder = MqttClient.builder()
@@ -106,26 +103,19 @@ class MqttAuthSaslTest extends MQTTBaseTest {
       builder.sslConfig(getConfig());
     }
     Mqtt5AsyncClient client = builder.buildAsync();
-    try {
-      client.connect().join();
-    } catch (CompletionException e) {
-      Throwable cause = e.getCause();
-      if(cause instanceof Mqtt5ConnAckException){
-        Assertions.assertTrue( cause.getMessage().contains("BAD_USER_NAME_OR_PASSWORD"));
-      }
-      else{
-        Assertions.fail("Should have logged bad username or password");
-      }
-    }
+    CompletionException exception = Assertions.assertThrows(CompletionException.class, () -> client.connect().join());
+    Throwable cause = exception.getCause();
+    Assertions.assertInstanceOf(Mqtt5ConnAckException.class, cause);
+    Assertions.assertTrue(cause.getMessage().contains("BAD_USER_NAME_OR_PASSWORD"));
   }
 
   @DisplayName("Test unknown authentication mechanism")
   @ParameterizedTest
   @MethodSource("mqttGetAuthUrls")
   void testInvalidMechanism(int version, String protocol) throws Exception {
-    SaslClient saslClient = badMechanism(null, "admin", "Bad Password");
+    SaslClient saslClient = setForSasl(null, "admin", getPassword("admin"));
     boolean isSsl = protocol.equalsIgnoreCase("ssl") || protocol.equalsIgnoreCase("wss");
-    Mqtt5EnhancedAuthMechanism mqtt5EnhancedAuthMechanism = new Mqtt5SaslAuth(saslClient);
+    Mqtt5EnhancedAuthMechanism mqtt5EnhancedAuthMechanism = new Mqtt5SaslAuth(saslClient, true);
     Mqtt5ClientBuilder builder = MqttClient.builder()
         .useMqttVersion5()
         .enhancedAuth(mqtt5EnhancedAuthMechanism)
@@ -136,17 +126,10 @@ class MqttAuthSaslTest extends MQTTBaseTest {
       builder.sslConfig(getConfig());
     }
     Mqtt5AsyncClient client = builder.buildAsync();
-    try {
-      client.connect().join();
-    } catch (CompletionException e) {
-      Throwable cause = e.getCause();
-      if(cause instanceof Mqtt5ConnAckException){
-        Assertions.assertTrue( cause.getMessage().contains("BAD_AUTHENTICATION_METHOD"));
-      }
-      else{
-        Assertions.fail("Should have logged bad username or password");
-      }
-    }
+    CompletionException exception = Assertions.assertThrows(CompletionException.class, () -> client.connect().join());
+    Throwable cause = exception.getCause();
+    Assertions.assertInstanceOf(Mqtt5ConnAckException.class, cause);
+    Assertions.assertTrue(cause.getMessage().contains("BAD_AUTHENTICATION_METHOD"));
   }
 
 
@@ -180,20 +163,6 @@ class MqttAuthSaslTest extends MQTTBaseTest {
         .build();
   }
 
-  public SaslClient badMechanism(MqttConnectionOptions options, String username, String password) throws IOException {
-    String mechanism = "SCRAM-SHA-512";
-    Map<String, String> props = new HashMap<>();
-    props.put(Sasl.QOP, "auth");
-    String[] mechanisms = {mechanism};
-    ClientCallbackHandler clientHandler = new ClientCallbackHandler(username, password, "servername");
-    SaslClient saslClient = Sasl.createSaslClient(mechanisms, "authorizationId", "MQTT", "serverName", props, clientHandler);
-    if (options != null) {
-      options.setAuthMethod(mechanism);
-      options.setAuthData(new byte[0]);
-    }
-    return saslClient;
-  }
-
   private static class Mqtt5SaslAuth implements Mqtt5EnhancedAuthMechanism {
 
     private final SaslClient saslClient;
@@ -204,15 +173,13 @@ class MqttAuthSaslTest extends MQTTBaseTest {
       this.failMechanism = failMechanism;
     }
 
-
-
     public Mqtt5SaslAuth(SaslClient saslClient) {
       this(saslClient, false);
     }
 
     @Override
     public @NotNull MqttUtf8String getMethod() {
-      if(failMechanism){
+      if (failMechanism) {
         return MqttUtf8String.of("SCRAM-SHA-512");
       }
       return MqttUtf8String.of(saslClient.getMechanismName());
@@ -224,9 +191,20 @@ class MqttAuthSaslTest extends MQTTBaseTest {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> onAuth(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Connect mqtt5Connect, @NotNull Mqtt5EnhancedAuthBuilder mqtt5EnhancedAuthBuilder) {
-      mqtt5EnhancedAuthBuilder.data(new byte[0]);
-      return CompletableFuture.completedFuture(null);
+    public @NotNull CompletableFuture<Void> onAuth(
+        @NotNull Mqtt5ClientConfig mqtt5ClientConfig,
+        @NotNull Mqtt5Connect mqtt5Connect,
+        @NotNull Mqtt5EnhancedAuthBuilder mqtt5EnhancedAuthBuilder) {
+
+      try {
+        byte[] initialResponse = saslClient.evaluateChallenge(new byte[0]);
+        if (initialResponse != null) {
+          mqtt5EnhancedAuthBuilder.data(initialResponse);
+        }
+        return CompletableFuture.completedFuture(null);
+      } catch (SaslException e) {
+        return CompletableFuture.failedFuture(e);
+      }
     }
 
     @Override
@@ -235,25 +213,45 @@ class MqttAuthSaslTest extends MQTTBaseTest {
     }
 
     @Override
-    public @NotNull CompletableFuture<Boolean> onContinue(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Auth mqtt5Auth, @NotNull Mqtt5AuthBuilder mqtt5AuthBuilder) {
+    public @NotNull CompletableFuture<Boolean> onContinue(
+        @NotNull Mqtt5ClientConfig mqtt5ClientConfig,
+        @NotNull Mqtt5Auth mqtt5Auth,
+        @NotNull Mqtt5AuthBuilder mqtt5AuthBuilder) {
+
       try {
-        ByteBuffer byteBuffer = mqtt5Auth.getData().get();
+        ByteBuffer byteBuffer = mqtt5Auth.getData().orElseThrow(() -> new SaslException("Missing SCRAM authentication data"));
         byte[] challenge = new byte[byteBuffer.remaining()];
         byteBuffer.get(challenge);
-        byte[] client = saslClient.evaluateChallenge(challenge);
-        mqtt5AuthBuilder.data(client);
-        if (saslClient.isComplete()) {
-          return CompletableFuture.completedFuture(true);
+
+        byte[] response = saslClient.evaluateChallenge(challenge);
+        if (response != null) {
+          mqtt5AuthBuilder.data(response);
         }
-        return CompletableFuture.completedFuture(false);
+
+        return CompletableFuture.completedFuture(true);
       } catch (SaslException e) {
-        throw new RuntimeException(e);
+        return CompletableFuture.failedFuture(e);
       }
     }
 
     @Override
     public @NotNull CompletableFuture<Boolean> onAuthSuccess(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5ConnAck mqtt5ConnAck) {
-      return CompletableFuture.completedFuture(true);
+      try {
+        ByteBuffer byteBuffer =
+            mqtt5ConnAck
+                .getEnhancedAuth()
+                .flatMap(auth -> auth.getData())
+                .orElseThrow(() -> new SaslException("Missing SCRAM server-final authentication data"));
+
+        byte[] serverFinal = new byte[byteBuffer.remaining()];
+        byteBuffer.get(serverFinal);
+
+        saslClient.evaluateChallenge(serverFinal);
+
+        return CompletableFuture.completedFuture(saslClient.isComplete());
+      } catch (SaslException e) {
+        return CompletableFuture.failedFuture(e);
+      }
     }
 
     @Override
@@ -262,20 +260,16 @@ class MqttAuthSaslTest extends MQTTBaseTest {
     }
 
     @Override
-    public void onAuthRejected(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5ConnAck mqtt5ConnAck) {
-    }
+    public void onAuthRejected(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5ConnAck mqtt5ConnAck) {}
 
     @Override
-    public void onReAuthRejected(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Disconnect mqtt5Disconnect) {
-    }
+    public void onReAuthRejected(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Mqtt5Disconnect mqtt5Disconnect) {}
 
     @Override
-    public void onAuthError(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Throwable throwable) {
-    }
+    public void onAuthError(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Throwable throwable) {}
 
     @Override
-    public void onReAuthError(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Throwable throwable) {
-    }
-  };
+    public void onReAuthError(@NotNull Mqtt5ClientConfig mqtt5ClientConfig, @NotNull Throwable throwable) {}
+  }
 
 }

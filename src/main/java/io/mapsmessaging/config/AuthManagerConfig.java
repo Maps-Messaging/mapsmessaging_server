@@ -39,11 +39,12 @@ import java.util.Objects;
 @NoArgsConstructor
 @ToString
 @Schema(description = "Auth Manager Configuration")
-public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigManager {
+public class AuthManagerConfig extends AuthManagerConfigDTO implements Config, ConfigManager {
 
   private AuthManagerConfig(ConfigurationProperties properties) {
     authenticationEnabled = properties.getBooleanProperty("authenticationEnabled", authenticationEnabled);
     authorisationEnabled = properties.getBooleanProperty("authorisationEnabled", authorisationEnabled) && authenticationEnabled;
+    allowAnonymous = properties.getBooleanProperty("allowAnonymous", allowAnonymous);
     authConfig = ConfigHelper.buildMap((ConfigurationProperties) properties.get("config"));
     minimumPasswordLength = properties.getIntProperty("minimumPasswordLength", minimumPasswordLength);
     maximumPasswordLength = properties.getIntProperty("maximumPasswordLength", maximumPasswordLength);
@@ -83,6 +84,7 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
     return ConfigurationManager.getInstance().getConfiguration(AuthManagerConfig.class);
   }
 
+  @Override
   public boolean update(BaseConfigDTO config) {
     AuthManagerConfig newConfig = (AuthManagerConfig) config;
     boolean hasChanged = false;
@@ -94,6 +96,11 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
 
     if (authorisationEnabled != newConfig.authorisationEnabled) {
       authorisationEnabled = newConfig.authorisationEnabled;
+      hasChanged = true;
+    }
+
+    if (allowAnonymous != newConfig.allowAnonymous) {
+      allowAnonymous = newConfig.allowAnonymous;
       hasChanged = true;
     }
 
@@ -199,11 +206,13 @@ public class AuthManagerConfig extends AuthManagerConfigDTO implements ConfigMan
     return hasChanged;
   }
 
+  @Override
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("authenticationEnabled", authenticationEnabled);
     properties.put("authorizationEnabled", authorisationEnabled);
     properties.put("authorisationEnabled", authorisationEnabled);
+    properties.put("allowAnonymous", allowAnonymous);
     properties.put("config", authConfig);
     properties.put("minimumPasswordLength", minimumPasswordLength);
     properties.put("maximumPasswordLength", maximumPasswordLength);

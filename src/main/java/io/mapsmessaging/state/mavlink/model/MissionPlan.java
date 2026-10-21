@@ -1,0 +1,84 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.state.mavlink.model;
+
+import java.util.List;
+import java.util.Objects;
+
+public record MissionPlan(
+    List<PlanItem> items,
+    int iterations,
+    boolean repeatIndefinitely,
+    int repeatStartIndex) {
+
+  public static final int REPEAT_FOREVER = -1;
+
+  public MissionPlan(List<PlanItem> items) {
+    this(items, 1, false, 0);
+  }
+
+  public MissionPlan(List<PlanItem> items, int iterations) {
+    this(items, iterations, false, 0);
+  }
+
+  public MissionPlan(List<PlanItem> items, int iterations, boolean repeatIndefinitely) {
+    this(items, iterations, repeatIndefinitely, 0);
+  }
+
+  public MissionPlan {
+    items = List.copyOf(Objects.requireNonNull(items, "items must not be null"));
+
+    if (items.isEmpty()) {
+      throw new IllegalArgumentException("items must not be empty");
+    }
+    if (iterations < 1) {
+      throw new IllegalArgumentException("iterations must be at least 1");
+    }
+    if (repeatIndefinitely && iterations != 1) {
+      throw new IllegalArgumentException(
+          "An indefinitely repeating mission must use one logical iteration");
+    }
+    if (repeatStartIndex < 0 || repeatStartIndex >= items.size()) {
+      throw new IllegalArgumentException(
+          "repeatStartIndex must address a mission item");
+    }
+    if (!repeatIndefinitely && iterations == 1 && repeatStartIndex != 0) {
+      throw new IllegalArgumentException(
+          "A one-shot mission cannot define a repeatStartIndex");
+    }
+  }
+
+  public static MissionPlan repeatIndefinitely(List<PlanItem> items) {
+    return repeatIndefinitely(items, 0);
+  }
+
+  public static MissionPlan repeatIndefinitely(
+      List<PlanItem> items, int repeatStartIndex) {
+    return new MissionPlan(items, 1, true, repeatStartIndex);
+  }
+
+  public boolean repeats() {
+    return repeatIndefinitely || iterations > 1;
+  }
+
+  public int jumpRepeatCount() {
+    return repeatIndefinitely ? REPEAT_FOREVER : iterations - 1;
+  }
+}

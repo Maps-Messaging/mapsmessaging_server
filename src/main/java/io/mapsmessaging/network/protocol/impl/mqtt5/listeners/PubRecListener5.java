@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
@@ -34,13 +35,30 @@ public class PubRecListener5 extends PacketListener5 {
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     PubRec5 pubRec = (PubRec5) mqttPacket;
-    PacketIdentifierMap mapping = ((MQTT5Protocol) protocol).getPacketIdManager().receivedPacket(pubRec.getPacketIdentifier());
+    PacketIdManager manager = ((MQTT5Protocol) protocol).getPacketIdManager();
+    int qos = manager.getPacketQos(pubRec.getPacketIdentifier());
+    if (qos != 0 && qos != 2) {
+      return null;
+    }
+    if (Byte.toUnsignedInt(pubRec.getStatusCode().getValue()) >= 0x80) {
+      boolean accepted = manager.isAwaitingPubComp(pubRec.getPacketIdentifier());
+      PacketIdentifierMap rejected = manager.completePacketId(pubRec.getPacketIdentifier());
+      if (!accepted && rejected != null && rejected.getSubscription() != null) rejected.getSubscription().ackReceived(rejected.getMessageId());
+      return null;
+    }
+    PacketIdentifierMap mapping = manager.receivedPacket(pubRec.getPacketIdentifier());
     if (mapping != null) {
-      mapping.getSubscription().ackReceived(mapping.getMessageId());
+      boolean accepted = manager.isAwaitingPubComp(pubRec.getPacketIdentifier());
+      manager.markAwaitingPubComp(pubRec.getPacketIdentifier());
+      if (manager.hasDeliveryStore()) {
+        ((MQTT5Protocol) protocol).sendPubRelAfterBrokerAck(pubRec.getPacketIdentifier());
+        return null;
+      }
+      if (!accepted && mapping.getSubscription() != null) mapping.getSubscription().ackReceived(mapping.getMessageId());
       return new PubRel5(mapping.getPacketIdentifier());
     }
     PubRel5 pubRel = new PubRel5(pubRec.getPacketIdentifier());
     pubRel.setStatusCode(StatusCode.PACKET_IDENTIFIER_NOT_FOUND);
-    return pubRec;
+    return pubRel;
   }
 }

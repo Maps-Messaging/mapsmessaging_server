@@ -4,10 +4,11 @@
  *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
- *  (the "License"); you may not use this file except in compliance with the License.
+ *  (the "License"); you may not use this file except in compliance with
+ *  the License.
  *  You may obtain a copy of the License at:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,22 +21,21 @@ package io.mapsmessaging.dto.rest.config.transformer.impl;
 
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmapper.JsonMapOpDTO;
-import io.mapsmessaging.dto.rest.config.transformer.jsonmutate.JsonMutateOpDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.mapsmessaging.dto.rest.config.transformer.TransformationType.JSON_MAPPER;
-import static io.mapsmessaging.dto.rest.config.transformer.TransformationType.JSON_MUTATE;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(
-    title = "JSON Mutate Transformation DTO",
-    description = "Applies a small set of JSON mutations: set/remove/rename using dot paths."
+    title = "JSON Mapper Transformation DTO",
+    description = "Applies an ordered list of JSON mapping operations."
 )
 public class JsonMapperTransformationDTO extends TransformationConfigDTO {
 
@@ -43,14 +43,19 @@ public class JsonMapperTransformationDTO extends TransformationConfigDTO {
     super(JSON_MAPPER);
   }
 
+  public JsonMapperTransformationDTO(List<JsonMapOpDTO> operations) {
+    super(JSON_MAPPER);
+    this.operations = operations;
+  }
+
   @ArraySchema(
       minItems = 1,
       arraySchema = @Schema(
-          description = "Ordered list of mutation operations",
+          description = "Ordered list of JSON mapping operations",
           requiredMode = Schema.RequiredMode.REQUIRED,
           nullable = false
       ),
       schema = @Schema(implementation = JsonMapOpDTO.class)
   )
-  protected List<JsonMapOpDTO> operations;
+  protected List<JsonMapOpDTO> operations = new ArrayList<>();
 }

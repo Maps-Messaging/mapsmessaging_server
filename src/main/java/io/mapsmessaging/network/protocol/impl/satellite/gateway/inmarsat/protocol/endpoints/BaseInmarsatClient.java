@@ -35,6 +35,10 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class BaseInmarsatClient {
+
+  private static final String MAILBOX_HEADER = "X-Mailbox";
+  private static final String JSON_MEDIA_TYPE = "application/json";
+
   private static final String USER_AGENT = "MapsMessaging-InmarsatClient/1.0";
   private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
   private static final int MAX_RETRIES = 3;
@@ -98,22 +102,22 @@ public abstract class BaseInmarsatClient {
   }
 
   // ---------- Public parse wrappers ----------
-  protected <T> T send(HttpRequest req, Class<T> cls) {
+  protected <T> T send(HttpRequest req, Class<T> cls) throws IOException {
     String body = doSendWithRetry(req);
     return gson.fromJson(body, cls);
   }
 
-  protected <T> T send(HttpRequest req, Type type) {
+  protected <T> T send(HttpRequest req, Type type) throws IOException {
     String body = doSendWithRetry(req);
     return gson.fromJson(body, type);
   }
 
-  protected void sendVoid(HttpRequest req) {
+  protected void sendVoid(HttpRequest req) throws IOException {
     doSendWithRetry(req);
   }
 
   // ---------- Core send with retry/backoff ----------
-  private String doSendWithRetry(HttpRequest req) {
+  private String doSendWithRetry(HttpRequest req) throws IOException {
     int attempt = 0;
     while (true) {
       try {
@@ -122,10 +126,9 @@ public abstract class BaseInmarsatClient {
         if (code / 100 == 2) {
           return resp.body();
         }
-        if(resp.statusCode() == 401){
-          if(authReset != null) {
-            authReset.resetAuth();
-          }
+        if (resp.statusCode() == 401
+            && authReset != null) {
+          authReset.resetAuth();
         }
         if (shouldRetry(code) && attempt < MAX_RETRIES) {
           sleepBackoff(attempt, resp.headers());
@@ -136,6 +139,8 @@ public abstract class BaseInmarsatClient {
         throw errorFor(resp);
       } catch (InterruptedException ie) {
         Thread.currentThread().interrupt();
+        //log this, do not throw
+
         throw new RuntimeException("HTTP request interrupted", ie);
       } catch (IOException ioe) {
         if (attempt < MAX_RETRIES) {
@@ -143,7 +148,7 @@ public abstract class BaseInmarsatClient {
           attempt++;
           continue;
         }
-        throw new RuntimeException("HTTP transport failure", ioe);
+        throw new IOException("HTTP transport failure", ioe);
       }
     }
   }
@@ -165,40 +170,40 @@ public abstract class BaseInmarsatClient {
   }
 
   // ---------- With X-Mailbox ----------
-  protected <T> T get(String path, Map<String, String> query, String bearer, String xMailbox, Class<T> cls) {
+  protected <T> T get(String path, Map<String, String> query, String bearer, String xMailbox, Class<T> cls) throws IOException {
     HttpRequest req = baseRequest(path + qs(query), bearer)
-        .header("X-Mailbox", Objects.requireNonNull(xMailbox))
+        .header(MAILBOX_HEADER, Objects.requireNonNull(xMailbox))
         .GET().build();
     return send(req, cls);
   }
 
-  protected <T> T get(String path, Map<String, String> query, String bearer, String xMailbox, Type type) {
+  protected <T> T get(String path, Map<String, String> query, String bearer, String xMailbox, Type type) throws IOException {
     HttpRequest req = baseRequest(path + qs(query), bearer)
-        .header("X-Mailbox", Objects.requireNonNull(xMailbox))
+        .header(MAILBOX_HEADER, Objects.requireNonNull(xMailbox))
         .GET().build();
     return send(req, type);
   }
 
-  protected <T> T postJson(String path, Object body, String bearer, String xMailbox, Class<T> cls) {
+  protected <T> T postJson(String path, Object body, String bearer, String xMailbox, Class<T> cls) throws IOException {
     HttpRequest req = baseRequest(path, bearer)
-        .header("X-Mailbox", Objects.requireNonNull(xMailbox))
-        .header("Content-Type", "application/json")
+        .header(MAILBOX_HEADER, Objects.requireNonNull(xMailbox))
+        .header("Content-Type", JSON_MEDIA_TYPE)
         .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(body)))
         .build();
     return send(req, cls);
   }
 
-  protected <T> T getWithBodyJson(String path, Object body, String bearer, String xMailbox, Class<T> cls) {
+  protected <T> T getWithBodyJson(String path, Object body, String bearer, String xMailbox, Class<T> cls) throws IOException {
     HttpRequest req = baseRequest(path, bearer)
-        .header("X-Mailbox", Objects.requireNonNull(xMailbox))
-        .header("Content-Type", "application/json")
+        .header(MAILBOX_HEADER, Objects.requireNonNull(xMailbox))
+        .header("Content-Type", JSON_MEDIA_TYPE)
         .method("GET", HttpRequest.BodyPublishers.ofString(gson.toJson(body)))
         .build();
     return send(req, cls);
   }
 
   // ---------- No X-Mailbox (VAR endpoints) ----------
-  protected <T> T getNoMailbox(String path, Map<String, String> query, String bearer, Type type) {
+  protected <T> T getNoMailbox(String path, Map<String, String> query, String bearer, Type type) throws IOException {
     HttpRequest req = baseRequest(path + qs(query), bearer).GET().build();
     return send(req, type);
   }
@@ -208,7 +213,7 @@ public abstract class BaseInmarsatClient {
     HttpRequest.Builder b = HttpRequest.newBuilder(base.resolve(path))
         .timeout(REQUEST_TIMEOUT)
         .header("User-Agent", USER_AGENT)
-        .header("Accept", "application/json");
+        .header("Accept", JSON_MEDIA_TYPE);
     if (bearerOrNull != null && !bearerOrNull.isBlank()) {
       b.header("Authorization", "Bearer " + bearerOrNull);
     }

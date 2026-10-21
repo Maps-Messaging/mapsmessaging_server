@@ -25,11 +25,13 @@ public abstract class ClientSubscriptionTransaction extends Frame {
 
   private String subscription;
   private String messageId;
+  private String acknowledgementId;
   private String transaction;
 
   @Override
   public boolean isValid() {
-    return subscription != null && messageId != null;
+    return (acknowledgementId != null && !acknowledgementId.isBlank())
+        || (subscription != null && messageId != null);
   }
 
   public String getSubscription() {
@@ -40,12 +42,17 @@ public abstract class ClientSubscriptionTransaction extends Frame {
     return messageId;
   }
 
+  public String getAcknowledgementId() {
+    return acknowledgementId;
+  }
+
   public String getTransaction() {
     return transaction;
   }
 
   @Override
   public void parseCompleted() throws IOException {
+    acknowledgementId = getHeader("id");
     subscription = getHeader("subscription");
     messageId = getHeader("message-id");
     transaction = getHeader("transaction");

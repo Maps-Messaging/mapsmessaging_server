@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -52,6 +53,7 @@ public class JolokiaConfigDTO extends BaseManagerConfigDTO {
     super("JolokiaConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Jolokia";

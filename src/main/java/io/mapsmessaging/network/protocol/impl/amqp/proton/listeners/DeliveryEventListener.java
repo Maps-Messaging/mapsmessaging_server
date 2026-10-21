@@ -106,10 +106,14 @@ public class DeliveryEventListener extends BaseEventListener {
         delivery.disposition(rejected);
       }
     } else {
-      if (!delivery.isPartial() && receiver.getTarget() != null) {
-        String destinationName = receiver.getTarget().getAddress();
+      if (!delivery.isPartial()) {
+        // An unidentified AMQP sender has no link target. Its destination is
+        // supplied per transfer in the message Properties.to field (JMSProducer).
+        // Decode once to avoid consuming the Proton receiver buffer twice.
+        org.apache.qpid.proton.message.Message protonMsg = parseIncomingMessage(receiver);
+        String destinationName = resolveDestination(receiver.getTarget(), protonMsg.getAddress());
         if (destinationName != null) {
-          processIncomingMessage(event, delivery, receiver, destinationName);
+          processIncomingMessage(event, delivery, receiver, destinationName, protonMsg);
         } else {
           Rejected rejected = new Rejected();
           rejected.setError(new ErrorCondition(DeliveryError, "Message delivery failed, no destination supplied"));
@@ -118,6 +122,13 @@ public class DeliveryEventListener extends BaseEventListener {
         delivery.settle();
       }
     }
+  }
+
+  static String resolveDestination(Target linkTarget, String messageAddress) {
+    if (linkTarget != null && linkTarget.getAddress() != null && !linkTarget.getAddress().isBlank()) {
+      return linkTarget.getAddress();
+    }
+    return messageAddress == null || messageAddress.isBlank() ? null : messageAddress;
   }
 
   private void processTransaction(Delivery delivery, Receiver receiver, Event event) throws LoginException, IOException {
@@ -212,11 +223,8 @@ public class DeliveryEventListener extends BaseEventListener {
 
   // Process the incoming message and either push to the transaction or the destination
   @SneakyThrows
-  private void processIncomingMessage(Event evt, Delivery delivery, Receiver receiver, String destinationName) {
-
-    // Let's parse the data into a Proton Message so we can then create the appropriate internal message
-    org.apache.qpid.proton.message.Message protonMsg = parseIncomingMessage(receiver);
-
+  private void processIncomingMessage(Event evt, Delivery delivery, Receiver receiver,
+                                      String destinationName, org.apache.qpid.proton.message.Message protonMsg) {
     MessageTranslator translator = MessageTranslatorFactory.getMessageTranslator(protonMsg.getMessageAnnotations());
     MessageBuilder mb = new MessageBuilder();
     MessageBuilder messageBuilder = translator.decode(mb, protonMsg);

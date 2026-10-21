@@ -122,24 +122,24 @@ public final class YamlCommentEmitter {
     }
 
     String prefix = "allowed: ";
-    String current = prefix;
+    StringBuilder current = new StringBuilder(prefix);
 
     for (String value : schemaDoc.getAllowedValues()) {
       String token = value;
-      if (!current.equals(prefix)) {
+      if (!current.toString().equals(prefix)) {
         token = ", " + token;
       }
 
       if ((current.length() + token.length()) > MAX_COMMENT_LINE_LENGTH) {
-        lines.add(current);
-        current = "         " + value;
+        lines.add(current.toString());
+        current = new StringBuilder("         ").append(value);
       } else {
-        current = current + token;
+        current.append(token);
       }
     }
 
-    if (!current.isBlank()) {
-      lines.add(current);
+    if (!current.toString().isBlank()) {
+      lines.add(current.toString());
     }
 
     return lines;

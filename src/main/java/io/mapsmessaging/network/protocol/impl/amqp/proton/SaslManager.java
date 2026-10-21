@@ -37,24 +37,39 @@ public class SaslManager {
   private String username;
 
   public SaslManager(ProtonEngine protonEngine) throws IOException {
-    saslAuthenticationMechanism = buildMechansim(protonEngine.getProtocol().getEndPoint().getConfig());
-    sasl = protonEngine.getTransport().sasl();
-    String mechanism = saslAuthenticationMechanism != null ? saslAuthenticationMechanism.getMechanism() : "ANONYMOUS";
-    sasl.setMechanisms(mechanism);
+    this(protonEngine.getTransport().sasl(),
+        buildMechanism(protonEngine.getProtocol().getEndPoint().getConfig()));
+  }
+
+  // Package-private to test SASL transport progress without requiring real credentials.
+  SaslManager(Sasl sasl, SaslAuthenticationMechanism mechanism) {
+    this.sasl = sasl;
+    this.saslAuthenticationMechanism = mechanism;
+    String mechanismName = mechanism == null ? "ANONYMOUS" : mechanism.getMechanism();
+    sasl.setMechanisms(mechanismName);
     sasl.server();
-    if (mechanism.equalsIgnoreCase("ANONYMOUS")) {
+    if ("ANONYMOUS".equalsIgnoreCase(mechanismName)) {
       sasl.done(Sasl.PN_SASL_OK);
     }
   }
 
   public void challenge() throws IOException {
+    if (saslAuthenticationMechanism == null) {
+      return;
+    }
     int pending = Math.max(0, sasl.pending());
-    byte[] challenge;
-    if (pending > 0) {
-      challenge = new byte[pending];
-      sasl.recv(challenge, 0, challenge.length);
-    } else {
-      challenge = new byte[0];
+    if (pending == 0) {
+      // SCRAM is client-first. Do not advance the mechanism or consume a
+      // challenge attempt until Proton actually supplies client bytes.
+      return;
+    }
+    byte[] challenge = new byte[pending];
+    int received = sasl.recv(challenge, 0, challenge.length);
+    if (received <= 0) {
+      return;
+    }
+    if (received != challenge.length) {
+      challenge = java.util.Arrays.copyOf(challenge, received);
     }
     byte[] response = saslAuthenticationMechanism.challenge(challenge);
     if (response != null && response.length > 0) {
@@ -66,7 +81,7 @@ public class SaslManager {
     }
   }
 
-  private SaslAuthenticationMechanism buildMechansim(EndPointServerConfigDTO config) throws IOException {
+  private static SaslAuthenticationMechanism buildMechanism(EndPointServerConfigDTO config) throws IOException {
     SaslAuthenticationMechanism authenticationContext = null;
     SaslConfigDTO saslConfig = config.getSaslConfig();
     if (saslConfig != null) {
@@ -80,11 +95,16 @@ public class SaslManager {
   }
 
   public boolean isDone() {
-    if (saslAuthenticationMechanism != null && saslAuthenticationMechanism.complete()) {
-      sasl.done(Sasl.PN_SASL_OK);
-    }
+    // SASL-OUTCOME is emitted exactly once by challenge() on completion.
+    // Repeating done() on each transport poll can disrupt the AMQP handoff.
+    return saslAuthenticationMechanism == null
+        || Sasl.SaslOutcome.PN_SASL_OK.equals(sasl.getOutcome());
+  }
 
-    return saslAuthenticationMechanism == null || sasl.getOutcome().equals(Sasl.SaslOutcome.PN_SASL_OK);
+  public void close() throws IOException {
+    if (saslAuthenticationMechanism != null) {
+      saslAuthenticationMechanism.close();
+    }
   }
 
 }

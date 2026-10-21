@@ -23,6 +23,7 @@ package io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protoc
 import com.google.gson.Gson;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.AccessToken;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -38,7 +39,7 @@ public final class AuthClient extends BaseInmarsatClient implements AuthReset {
     super(baseUrl, http, gson, null);
   }
 
-  public void loadAccessToken(String clientId, String clientSecret) {
+  public void loadAccessToken(String clientId, String clientSecret) throws IOException {
     URI reqUri = base.resolve("oauth/token");
     HttpRequest req = HttpRequest.newBuilder(reqUri)
         .header("ClientId", Objects.requireNonNull(clientId))
@@ -49,7 +50,7 @@ public final class AuthClient extends BaseInmarsatClient implements AuthReset {
     cache.set(new Cached(token, Instant.now()));
   }
 
-  public String getValidBearer(String clientId, String clientSecret) {
+  public String getValidBearer(String clientId, String clientSecret) throws IOException {
     Cached c = cache.get();
     Instant now = Instant.now();
     if (c == null || now.isAfter(c.token.expiresAt(c.obtainedAt, DEFAULT_SKEW_SECONDS))) {

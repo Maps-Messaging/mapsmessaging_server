@@ -26,7 +26,6 @@ import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
-import io.mapsmessaging.dto.rest.config.protocol.NamespaceFilterDTO;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,6 +33,9 @@ import java.util.List;
 
 
 public class LinkConfig extends LinkConfigDTO implements Config {
+
+  private static final String LINK_PROPERTIES_KEY = "linkProperties";
+
 
   public LinkConfig(ConfigurationProperties config) {
     this.direction = config.getProperty("direction");
@@ -72,7 +74,7 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     else{
       statistics = null;
     }
-    if(config.containsKey("linkProperties") && config.get("linkProperties") instanceof ConfigurationProperties props){
+    if(config.containsKey(LINK_PROPERTIES_KEY) && config.get(LINK_PROPERTIES_KEY) instanceof ConfigurationProperties props){
       this.linkProperties = props.getMap();
     }
     else{
@@ -99,9 +101,9 @@ public class LinkConfig extends LinkConfigDTO implements Config {
 
     if (this.namespaceFilters != null && !this.namespaceFilters.isEmpty()) {
       List<ConfigurationProperties> configList = new ArrayList<>();
-      for (NamespaceFilterDTO filter : namespaceFilters) {
-        configList.add(((NamespaceFilter) filter).toConfigurationProperties());
-      }
+      namespaceFilters.stream()
+          .map(filter -> ((NamespaceFilter) filter).toConfigurationProperties())
+          .forEachOrdered(configList::add);
       config.put("namespaceFilters", configList);
     }
 
@@ -110,7 +112,7 @@ public class LinkConfig extends LinkConfigDTO implements Config {
     }
 
     if (this.linkProperties != null && !this.linkProperties.isEmpty()) {
-      config.put("linkProperties", this.linkProperties);
+      config.put(LINK_PROPERTIES_KEY, this.linkProperties);
     }
 
     return config;

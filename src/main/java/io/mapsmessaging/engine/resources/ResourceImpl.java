@@ -24,6 +24,8 @@ import io.mapsmessaging.api.message.MessageFactory;
 import io.mapsmessaging.config.destination.DestinationConfig;
 import io.mapsmessaging.dto.rest.config.destination.*;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.storage.*;
 import io.mapsmessaging.storage.impl.file.config.DeferredConfig;
 import io.mapsmessaging.storage.impl.file.config.PartitionStorageConfig;
@@ -42,7 +44,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static io.mapsmessaging.logging.ServerLogMessages.*;
+
 public class ResourceImpl implements Resource {
+
+  private static final Logger logger = LoggerFactory.getLogger(ResourceImpl.class);
 
   private static final AtomicLong INTERNAL_RESOURCE_COUNTER = new AtomicLong(0);
 
@@ -73,7 +79,7 @@ public class ResourceImpl implements Resource {
     isClosed = false;
     name = fileName + "message.data";
     this.resourceProperties = resourceProperties;
-
+    logger.log(RESOURCE_LOADING_STORE, fileName);
     if (destinationConfig == null) {
       destinationConfig = new DestinationConfig();
       destinationConfig.setType("Memory");
@@ -85,8 +91,9 @@ public class ResourceImpl implements Resource {
 
     // Convert to storage configs
     StorageConfigDTO config = destinationConfig.getStorageConfig();
-    StorageConfig storageConfig = convert(config);
+    StorageConfig storageConfig = ConfigConvertor.convert(config);
     if (storageConfig == null) {
+      logger.log(RESOURCE_INVALID_CONFIG, name);
       throw new IOException("Cannot build config");
     }
 
@@ -112,11 +119,12 @@ public class ResourceImpl implements Resource {
     }
 
     Storage<Message> s = builder.build();
-    persistent = config instanceof MemoryStorageConfigDTO;
+    persistent = !(config instanceof MemoryStorageConfigDTO);
     store = new AsyncStorage<>(s);
     if (destinationConfig.getAutoPauseTimeout() > 0) {
       store.enableAutoPause(TimeUnit.SECONDS.toMillis(destinationConfig.getAutoPauseTimeout()));  // Convert to milliseconds
     }
+    logger.log(RESOURCE_LOADED_STORE, name, s.size());
   }
 
   @Override
@@ -124,70 +132,10 @@ public class ResourceImpl implements Resource {
     if (!isClosed) {
       isClosed = true;
       store.close();
+      logger.log(RESOURCE_CLOSED, name);
     }
   }
 
-  private StorageConfig convert(StorageConfigDTO config) {
-    if(config instanceof MemoryStorageConfigDTO memoryConfigDTO) {
-      MemoryStorageConfig memoryStorageConfig = new MemoryStorageConfig();
-      memoryStorageConfig.setCapacity(memoryConfigDTO.getCapacity());
-      memoryStorageConfig.setExpiredEventPoll(memoryConfigDTO.getExpiredEventPoll());
-      memoryStorageConfig.setType(memoryConfigDTO.getType());
-      memoryStorageConfig.setDebug(config.isDebug());
-      memoryStorageConfig.setType("Memory");
-      return memoryStorageConfig;
-
-    }
-    else if(config instanceof PartitionStorageConfigDTO partitionStorageConfigDTO) {
-      PartitionStorageConfig partitionStorageConfig = new PartitionStorageConfig();
-      partitionStorageConfig.setType(partitionStorageConfigDTO.getType());
-      partitionStorageConfig.setDebug(config.isDebug());
-      partitionStorageConfig.setCapacity(partitionStorageConfigDTO.getCapacity());
-      partitionStorageConfig.setExpiredEventPoll(partitionStorageConfigDTO.getExpiredEventPoll());
-      partitionStorageConfig.setMaxPartitionSize(partitionStorageConfigDTO.getMaxPartitionSize());
-      partitionStorageConfig.setItemCount(partitionStorageConfigDTO.getItemCount());
-      partitionStorageConfig.setDeferredConfig(convert(partitionStorageConfigDTO.getDeferredConfig()));
-      partitionStorageConfig.setSync(partitionStorageConfigDTO.isSync());
-      partitionStorageConfig.setType("Partition");
-      return partitionStorageConfig;
-    }
-    else if(config instanceof MemoryTierConfigDTO memoryTierConfigDTO) {
-      MemoryTierConfig memoryTierConfig = new MemoryTierConfig();
-      memoryTierConfig.setDebug(config.isDebug());
-      memoryTierConfig.setType(memoryTierConfigDTO.getType());
-      memoryTierConfig.setMaximumCount(memoryTierConfigDTO.getMaximumCount());
-      memoryTierConfig.setMigrationTime(memoryTierConfigDTO.getMigrationTime());
-      memoryTierConfig.setScanInterval(memoryTierConfigDTO.getScanInterval());
-      memoryTierConfig.setMemoryStorageConfig((MemoryStorageConfig) convert(memoryTierConfigDTO.getMemoryStorageConfig()));
-      memoryTierConfig.setPartitionStorageConfig((PartitionStorageConfig) convert(memoryTierConfigDTO.getPartitionStorageConfig()));
-      memoryTierConfig.setType("MemoryTier");
-      return memoryTierConfig;
-    }
-    return null;
-  }
-
-
-  private DeferredConfig convert(DeferredConfigDTO config) {
-    DeferredConfig deferredConfig = new DeferredConfig();
-    deferredConfig.setDeferredName(config.getDeferredName());
-    deferredConfig.setDigestName(config.getDigestName());
-    deferredConfig.setIdleTime(config.getIdleTime());
-    deferredConfig.setMigrationDestination(config.getMigrationDestination());
-    if(config.getS3Config() != null) {
-      deferredConfig.setS3Config(convert(config.getS3Config()));
-    }
-    return deferredConfig;
-  }
-
-  private S3Config convert(io.mapsmessaging.dto.rest.config.S3Config config) {
-    S3Config s3Config = new S3Config();
-    s3Config.setBucketName(config.getBucket());
-    s3Config.setRegionName(config.getRegion());
-    s3Config.setAccessKeyId(config.getAccessKey());
-    s3Config.setSecretAccessKey(config.getSecretKey());
-    s3Config.setCompression(config.isCompression());
-    return s3Config;
-  }
 
   @Override
   public void add(Message message) throws IOException {
@@ -215,6 +163,7 @@ public class ResourceImpl implements Resource {
   @Override
   public void keepOnly(List<Long> validKeys) throws IOException {
     checkLoaded();
+    logger.log(RESOURCE_KEEP_ONLY, name, validKeys.size());
     store.keepOnly(validKeys);
   }
 

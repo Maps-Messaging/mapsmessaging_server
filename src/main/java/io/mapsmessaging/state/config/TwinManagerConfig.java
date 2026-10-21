@@ -1,0 +1,944 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.state.config;
+
+import io.mapsmessaging.config.Config;
+import io.mapsmessaging.config.ConfigManager;
+import io.mapsmessaging.config.network.KeyStoreConfig;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakServerDTO;
+import io.mapsmessaging.license.FeatureManager;
+import io.mapsmessaging.state.config.capability.*;
+import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigSupport;
+import io.mapsmessaging.state.config.n2k.N2KAisConfig;
+import io.mapsmessaging.state.config.n2k.N2KAisConfigDTO;
+import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
+import io.mapsmessaging.utilities.configuration.ConfigurationManager;
+import java.io.IOException;
+import java.util.*;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, ConfigManager {
+
+  private static final String TRUST_STORE = "trustStore";
+  private static final String KEY_STORE = "keyStore";
+  private static final String TLS_CONTEXT = "tlsContext";
+  private static final String TLS_ENABLED = "tlsEnabled";
+  private static final String HOSTNAME = "hostname";
+  private static final String SPECIALIZATION = "specialization";
+  private static final String ALTITUDE_METERS = "altitudeMeters";
+  private static final String DESCRIPTION = "description";
+  private static final String GEOSPATIAL_KEY = "geospatial";
+  private static final String TOPIC = "topic";
+  private static final String ENABLED = "enabled";
+  private static final String DRONE_INFO = "droneInfo";
+  private static final String VEHICLE_CLASS = "vehicleClass";
+  private static final String PUBLISH_KEY = "publish";
+  private static final String MAVLINK_KEY = "mavlink";
+  private static final String KNOWN_SOURCES = "knownSources";
+  private static final String STATE_ADAPTERS_CONFIG_KEY = "stateAdapters";
+
+  private TwinManagerConfig(ConfigurationProperties properties) {
+    this.heartbeatTimeoutMillis = properties.getLongProperty("heartbeatTimeoutMillis", heartbeatTimeoutMillis);
+    this.staleTimeoutMillis = properties.getLongProperty("staleTimeoutMillis", staleTimeoutMillis);
+    this.retentionTimeoutMillis = properties.getLongProperty("retentionTimeoutMillis", retentionTimeoutMillis);
+    this.removeExpiredTwins = properties.getBooleanProperty("removeExpiredTwins", removeExpiredTwins);
+    this.defaultRootPath = properties.getProperty("defaultRootPath", defaultRootPath);
+
+    if (properties.containsKey("tak")) {
+      ConfigurationProperties takProps = (ConfigurationProperties) properties.get("tak");
+      TakProtocolDTO takProtocolDTO = new TakProtocolDTO();
+      takProtocolDTO.setHostname(takProps.getProperty(HOSTNAME, null));
+      takProtocolDTO.setPort(takProps.getIntProperty("port", takProtocolDTO.getPort()));
+      takProtocolDTO.setSharedConnection(takProps.getBooleanProperty("sharedConnection", takProtocolDTO.isSharedConnection()));
+      takProtocolDTO.setTopic(takProps.getProperty(TOPIC, null));
+      takProtocolDTO.setTlsEnabled(takProps.getBooleanProperty(TLS_ENABLED, takProtocolDTO.isTlsEnabled()));
+      takProtocolDTO.setTlsContext(takProps.getProperty(TLS_CONTEXT, takProtocolDTO.getTlsContext()));
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) takProps.get(KEY_STORE);
+      if (keyStoreProps != null) {
+        takProtocolDTO.setKeyStore(new KeyStoreConfig(keyStoreProps));
+      }
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) takProps.get(TRUST_STORE);
+      if (trustStoreProps != null) {
+        takProtocolDTO.setTrustStore(new KeyStoreConfig(trustStoreProps));
+      }
+      takProtocolDTO.setAdditionalServers(parseAdditionalTakServers(takProps.get("additionalServers")));
+      this.tak = takProtocolDTO;
+    }
+
+    if (properties.containsKey(GEOSPATIAL_KEY)) {
+      this.geospatial = GeoSpatialConfigSupport.parse(properties.get(GEOSPATIAL_KEY));
+    }
+
+    if (properties.containsKey(PUBLISH_KEY)) {
+      ConfigurationProperties publishProps = (ConfigurationProperties) properties.get(PUBLISH_KEY);
+      TwinPublishConfigDTO publishConfig = new TwinPublishConfigDTO();
+      publishConfig.setEnabled(publishProps.getBooleanProperty(ENABLED, publishConfig.isEnabled()));
+      publishConfig.setTopicTemplate(publishProps.getProperty("topicTemplate", publishConfig.getTopicTemplate()));
+      publishConfig.setPublishRateMs(publishProps.getLongProperty("publishRateMs", publishConfig.getPublishRateMs()));
+      this.publish = publishConfig;
+    }
+
+    if (properties.containsKey(DRONE_INFO)) {
+      this.droneInfo = parseDroneInfos(properties.get(DRONE_INFO));
+    }
+
+    if (properties.containsKey(MAVLINK_KEY)) {
+      this.mavlink = parseMavlinkConfigs(properties.get(MAVLINK_KEY));
+    }
+
+    if (properties.containsKey(STATE_ADAPTERS_CONFIG_KEY)) {
+      parseAdapterConfigs(properties.get(STATE_ADAPTERS_CONFIG_KEY));
+    }
+
+    n2KTwinConfig = new N2KTwinConfig();
+    if (properties.containsKey("n2k")) {
+      ConfigurationProperties n2kProps = (ConfigurationProperties) properties.get("n2k");
+      n2KTwinConfig.setEnable(n2kProps.getBooleanProperty(ENABLED, n2KTwinConfig.isEnable()));
+      n2KTwinConfig.setTopic(n2kProps.getProperty(TOPIC, n2KTwinConfig.getTopic()));
+      n2KTwinConfig.setName(n2kProps.getProperty("name", n2KTwinConfig.getName()));
+      n2KTwinConfig.setVehicleClass(n2kProps.getProperty(VEHICLE_CLASS, n2KTwinConfig.getVehicleClass()));
+      n2KTwinConfig.setPublishMavlinkDrones(n2kProps.getBooleanProperty("publishMavlinkDrones", n2KTwinConfig.isPublishMavlinkDrones()));
+      if (n2kProps.containsKey("ais")) {
+        Object aisConfig = n2kProps.get("ais");
+        if (aisConfig instanceof ConfigurationProperties aisProperties) {
+          n2KTwinConfig.setAis(new N2KAisConfig(aisProperties));
+        } else if (aisConfig instanceof N2KAisConfigDTO aisDto) {
+          n2KTwinConfig.setAis(aisDto);
+        }
+      }
+    } else {
+      n2KTwinConfig.setEnable(false);
+      n2KTwinConfig.setPublishMavlinkDrones(false);
+    }
+  }
+
+  public static TwinManagerConfig getInstance() {
+    return ConfigurationManager.getInstance().getConfiguration(TwinManagerConfig.class);
+  }
+
+  @Override
+  public ConfigManager load(FeatureManager featureManager) {
+    return new TwinManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+  }
+
+  @Override
+  public void save() throws IOException {
+    ConfigurationManager.getInstance().saveConfiguration(getName(), toConfigurationProperties());
+  }
+
+  @Override
+  public String getName() {
+    return "TwinManager";
+  }
+
+  @Override
+  public ConfigurationProperties toConfigurationProperties() {
+    ConfigurationProperties props = new ConfigurationProperties();
+
+    props.put("heartbeatTimeoutMillis", this.heartbeatTimeoutMillis);
+    props.put("staleTimeoutMillis", this.staleTimeoutMillis);
+    props.put("retentionTimeoutMillis", this.retentionTimeoutMillis);
+    props.put("removeExpiredTwins", this.removeExpiredTwins);
+    props.put("defaultRootPath", this.defaultRootPath);
+
+    if (this.tak != null) {
+      ConfigurationProperties takProps = new ConfigurationProperties();
+      takProps.put(HOSTNAME, this.tak.getHostname());
+      takProps.put("port", this.tak.getPort());
+      takProps.put("sharedConnection", this.tak.isSharedConnection());
+      takProps.put(TOPIC, this.tak.getTopic());
+      if (this.tak.getAdditionalServers() != null && !this.tak.getAdditionalServers().isEmpty()) {
+        takProps.put("additionalServers", toAdditionalTakServerProperties(this.tak.getAdditionalServers()));
+      }
+      props.put("tak", takProps);
+    }
+
+    if (this.geospatial != null && this.geospatial.getAreas() != null && !this.geospatial.getAreas().isEmpty()) {
+      props.put(GEOSPATIAL_KEY, GeoSpatialConfigSupport.toConfigurationProperties(this.geospatial));
+    }
+
+    if (this.publish != null) {
+      ConfigurationProperties publishProps = new ConfigurationProperties();
+      publishProps.put(ENABLED, this.publish.isEnabled());
+      publishProps.put("topicTemplate", this.publish.getTopicTemplate());
+      publishProps.put("publishRateMs", this.publish.getPublishRateMs());
+      props.put(PUBLISH_KEY, publishProps);
+    }
+
+    if (this.droneInfo != null && !this.droneInfo.isEmpty()) {
+      props.put(DRONE_INFO, toDroneInfoConfigurationProperties(this.droneInfo));
+    }
+
+    if (this.mavlink != null && !this.mavlink.isEmpty()) {
+      props.put(MAVLINK_KEY, toMavlinkConfigurationProperties(this.mavlink));
+    }
+
+    if (this.adapterConfig != null && !this.adapterConfig.isEmpty()) {
+      props.put(STATE_ADAPTERS_CONFIG_KEY, new ConfigurationProperties(new LinkedHashMap<>(this.adapterConfig)));
+    }
+
+    if (shouldWriteN2kConfiguration()) {
+      ConfigurationProperties n2kProps = new ConfigurationProperties();
+      n2kProps.put(ENABLED, this.n2KTwinConfig.isEnable());
+      n2kProps.put(TOPIC, this.n2KTwinConfig.getTopic());
+      n2kProps.put("name", this.n2KTwinConfig.getName());
+      n2kProps.put(VEHICLE_CLASS, this.n2KTwinConfig.getVehicleClass());
+      n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
+
+      if (n2KTwinConfig.getAis() != null) {
+        n2kProps.put("ais", N2KAisConfig.toConfigurationProperties(n2KTwinConfig.getAis()));
+      }
+      props.put("n2k", n2kProps);
+    }
+
+    return props;
+  }
+
+  @Override
+  public boolean update(BaseConfigDTO config) {
+    if (!(config instanceof TwinManagerConfigDTO newConfig)) {
+      return false;
+    }
+
+    boolean hasChanged = false;
+
+    if (n2KTwinConfig.isPublishMavlinkDrones() != newConfig.n2KTwinConfig.isPublishMavlinkDrones()) {
+      n2KTwinConfig.setPublishMavlinkDrones(newConfig.n2KTwinConfig.isPublishMavlinkDrones());
+      hasChanged = true;
+    }
+
+    if (n2KTwinConfig.getAis() == null && newConfig.n2KTwinConfig.getAis() != null) {
+      n2KTwinConfig.setAis(newConfig.getN2KTwinConfig().getAis());
+      hasChanged = true;
+    } else if (n2KTwinConfig.getAis() != null && !n2KTwinConfig.getAis().equals(newConfig.n2KTwinConfig.getAis())) {
+      n2KTwinConfig.setAis(newConfig.n2KTwinConfig.getAis());
+      hasChanged = true;
+    }
+
+    if (this.heartbeatTimeoutMillis != newConfig.getHeartbeatTimeoutMillis()) {
+      this.heartbeatTimeoutMillis = newConfig.getHeartbeatTimeoutMillis();
+      hasChanged = true;
+    }
+
+    if (this.staleTimeoutMillis != newConfig.getStaleTimeoutMillis()) {
+      this.staleTimeoutMillis = newConfig.getStaleTimeoutMillis();
+      hasChanged = true;
+    }
+
+    if (this.retentionTimeoutMillis != newConfig.getRetentionTimeoutMillis()) {
+      this.retentionTimeoutMillis = newConfig.getRetentionTimeoutMillis();
+      hasChanged = true;
+    }
+
+    if (this.removeExpiredTwins != newConfig.isRemoveExpiredTwins()) {
+      this.removeExpiredTwins = newConfig.isRemoveExpiredTwins();
+      hasChanged = true;
+    }
+
+    String newDefaultRootPath = newConfig.getDefaultRootPath();
+    if (newDefaultRootPath == null) {
+      newDefaultRootPath = "/";
+    }
+
+    if (this.defaultRootPath == null || !this.defaultRootPath.equals(newDefaultRootPath)) {
+      this.defaultRootPath = newDefaultRootPath;
+      hasChanged = true;
+    }
+
+    if (this.tak != newConfig.getTak()) {
+      this.tak = newConfig.getTak();
+      hasChanged = true;
+    }
+
+    if (!Objects.equals(this.geospatial, newConfig.getGeospatial())) {
+      this.geospatial = newConfig.getGeospatial();
+      hasChanged = true;
+    }
+
+    if (this.publish != newConfig.getPublish()) {
+      this.publish = newConfig.getPublish();
+      hasChanged = true;
+    }
+
+    if (this.droneInfo != newConfig.getDroneInfo()) {
+      this.droneInfo = newConfig.getDroneInfo();
+      hasChanged = true;
+    }
+
+    if (this.mavlink != newConfig.getMavlink()) {
+      this.mavlink = newConfig.getMavlink();
+      hasChanged = true;
+    }
+
+    if (this.droneInfo != newConfig.getDroneInfo()) {
+      this.droneInfo = newConfig.getDroneInfo();
+      hasChanged = true;
+    }
+
+    if (newConfig.getAdapterConfig() != null && !this.adapterConfig.equals(newConfig.getAdapterConfig())) {
+      this.adapterConfig = new LinkedHashMap<>(newConfig.getAdapterConfig());
+      hasChanged = true;
+    }
+
+    return hasChanged;
+  }
+
+  private void parseAdapterConfigs(Object value) {
+    if (value instanceof ConfigurationProperties properties) {
+      for (var entry : properties.entrySet()) {
+        if (entry.getValue() instanceof ConfigurationProperties adapterProperties) {
+          this.adapterConfig.put(entry.getKey(), adapterProperties);
+        }
+      }
+    } else if (value instanceof Map<?, ?> entries) {
+      for (var entry : entries.entrySet()) {
+        if (entry.getKey() instanceof String adapterName && entry.getValue() instanceof ConfigurationProperties adapterProperties) {
+          this.adapterConfig.put(adapterName, adapterProperties);
+        }
+      }
+    }
+  }
+
+  private List<TakServerDTO> parseAdditionalTakServers(Object value) {
+    List<TakServerDTO> servers = new ArrayList<>();
+    // The YAML loader replaces a one-entry list with that entry, so a single additional server
+    // arrives as ConfigurationProperties, not as a List.
+    List<?> entries;
+    if (value instanceof List<?> list) {
+      entries = list;
+    } else if (value instanceof ConfigurationProperties single) {
+      entries = List.of(single);
+    } else {
+      return servers;
+    }
+    for (Object entry : entries) {
+      if (!(entry instanceof ConfigurationProperties serverProps)) {
+        continue;
+      }
+      TakServerDTO server = new TakServerDTO();
+      server.setHostname(serverProps.getProperty(HOSTNAME, null));
+      server.setPort(serverProps.getIntProperty("port", server.getPort()));
+      server.setTlsEnabled(serverProps.getBooleanProperty(TLS_ENABLED, server.isTlsEnabled()));
+      server.setTlsContext(serverProps.getProperty(TLS_CONTEXT, server.getTlsContext()));
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) serverProps.get(KEY_STORE);
+      if (keyStoreProps != null) {
+        server.setKeyStore(new KeyStoreConfig(keyStoreProps));
+      }
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) serverProps.get(TRUST_STORE);
+      if (trustStoreProps != null) {
+        server.setTrustStore(new KeyStoreConfig(trustStoreProps));
+      }
+      if (server.getHostname() != null && !server.getHostname().isBlank() && server.getPort() > 0) {
+        servers.add(server);
+      }
+    }
+    return servers;
+  }
+
+  private List<ConfigurationProperties> toAdditionalTakServerProperties(List<TakServerDTO> servers) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+    for (TakServerDTO server : servers) {
+      ConfigurationProperties serverProps = new ConfigurationProperties();
+      serverProps.put(HOSTNAME, server.getHostname());
+      serverProps.put("port", server.getPort());
+      serverProps.put(TLS_ENABLED, server.isTlsEnabled());
+      serverProps.put(TLS_CONTEXT, server.getTlsContext());
+      if (server.getKeyStore() instanceof Config keyStore) {
+        serverProps.put(KEY_STORE, keyStore.toConfigurationProperties());
+      }
+      if (server.getTrustStore() instanceof Config trustStore) {
+        serverProps.put(TRUST_STORE, trustStore.toConfigurationProperties());
+      }
+      values.add(serverProps);
+    }
+    return values;
+  }
+
+  private List<MavlinkTwinConfigDTO> parseMavlinkConfigs(Object value) {
+    List<MavlinkTwinConfigDTO> configs = new ArrayList<>();
+
+    if (value instanceof ConfigurationProperties entry) {
+      configs.add(parseMavlinkConfig(entry));
+    } else if (value instanceof List<?> list) {
+      for (Object entry : list) {
+        if (entry instanceof ConfigurationProperties mavlinkProps) {
+          configs.add(parseMavlinkConfig(mavlinkProps));
+        }
+      }
+    }
+
+    return configs;
+  }
+
+  private MavlinkTwinConfigDTO parseMavlinkConfig(ConfigurationProperties properties) {
+    MavlinkTwinConfigDTO config = new MavlinkTwinConfigDTO();
+    config.setName(properties.getProperty("name", config.getName()));
+    config.setTopic(properties.getProperty(TOPIC, config.getTopic()));
+    config.setDialectName(properties.getProperty("dialectName", config.getDialectName()));
+
+    if (properties.containsKey(KNOWN_SOURCES)) {
+      config.setKnownSources(parseKnownSources(properties.get(KNOWN_SOURCES)));
+    }
+
+    return config;
+  }
+
+  private List<MavlinkKnownSourceDTO> parseKnownSources(Object value) {
+    List<MavlinkKnownSourceDTO> knownSources = new ArrayList<>();
+
+    if (!(value instanceof List<?> entries)) {
+      if (value instanceof ConfigurationProperties sourceProps) {
+        knownSources.add(parseKnownSource(sourceProps));
+      }
+      return knownSources;
+    }
+
+    entries.stream().filter(ConfigurationProperties.class::isInstance).map(ConfigurationProperties.class::cast)
+        .map(this::parseKnownSource)
+        .forEachOrdered(knownSources::add);
+
+    return knownSources;
+  }
+
+  private MavlinkKnownSourceDTO parseKnownSource(ConfigurationProperties properties) {
+    MavlinkKnownSourceDTO knownSource = new MavlinkKnownSourceDTO();
+    knownSource.setName(properties.getProperty("name", knownSource.getName()));
+    knownSource.setDescription(properties.getProperty(DESCRIPTION, knownSource.getDescription()));
+    knownSource.setSystemId(properties.getIntProperty("systemId", knownSource.getSystemId()));
+    knownSource.setComponentId(properties.getIntProperty("componentId", knownSource.getComponentId()));
+    knownSource.setVehicleClass(parseVehicleClass(properties.getProperty(VEHICLE_CLASS, null), knownSource.getVehicleClass()));
+    knownSource.setCotClassification(properties.getProperty("cotClassification", null));
+    return knownSource;
+  }
+
+  private List<DroneInfoDTO> parseDroneInfos(Object properties) {
+    List<DroneInfoDTO> droneInfos = new ArrayList<>();
+
+    if (!(properties instanceof List<?> entries)) {
+      if (properties instanceof ConfigurationProperties sourceProps) {
+        droneInfos.add(parseDroneInfo(sourceProps));
+      }
+      return droneInfos;
+    }
+
+    entries.stream().filter(ConfigurationProperties.class::isInstance).map(ConfigurationProperties.class::cast)
+        .map(this::parseDroneInfo)
+        .forEachOrdered(droneInfos::add);
+
+    return droneInfos;
+  }
+
+  private DroneInfoDTO parseDroneInfo(ConfigurationProperties properties) {
+    DroneInfoDTO droneInfo = new DroneInfoDTO();
+
+    String uuidString = properties.getProperty("uuid", null);
+    if (uuidString != null) {
+      droneInfo.setUuid(UUID.fromString(uuidString));
+    }
+    droneInfo.setBatteryCapacityAh(properties.getDoubleProperty("batteryCapacityAh", droneInfo.getBatteryCapacityAh()));
+    droneInfo.setBatteryCapacityHours(properties.getDoubleProperty("batteryCapacityHours", droneInfo.getBatteryCapacityHours()));
+    droneInfo.setName(properties.getProperty("name", droneInfo.getName()));
+    droneInfo.setModelName(properties.getProperty("modelName", droneInfo.getModelName()));
+    droneInfo.setGeospatialArea(properties.getProperty("geospatialArea", droneInfo.getGeospatialArea()));
+    droneInfo.setRangeMeters(readOptionalPositiveDouble(properties, "rangeMeters"));
+    droneInfo.setSurveyRadiusMeters(readOptionalPositiveDouble(properties, "surveyRadiusMeters"));
+    droneInfo.setArrivalToleranceMeters(readOptionalPositiveDouble(properties, "arrivalToleranceMeters"));
+    droneInfo.setAltitudeMode(parseAltitudeMode(properties.getProperty("altitudeMode", null), droneInfo.getAltitudeMode()));
+    if (properties.containsKey(ALTITUDE_METERS)) {
+      double altitudeMeters = properties.getDoubleProperty(ALTITUDE_METERS, Double.NaN);
+      if (!Double.isFinite(altitudeMeters)) {
+        throw new IllegalArgumentException("altitudeMeters must be a finite value");
+      }
+      droneInfo.setAltitudeMeters(altitudeMeters);
+    }
+    droneInfo.setMessageEncoding(parseMessageEncoding(properties.getProperty("messageEncoding", null), droneInfo.getMessageEncoding()));
+    StopActionEnum legacyStopAction = parseTerminalAction(properties.getProperty("stopAction", null), droneInfo.getCancelAction());
+    droneInfo.setCancelAction(parseTerminalAction(properties.getProperty("cancelAction", null), legacyStopAction));
+    droneInfo.setMissionEndAction(parseTerminalAction(properties.getProperty("missionEndAction", null), droneInfo.getMissionEndAction()));
+    droneInfo.setMissionTimeoutAction(parseTerminalAction(properties.getProperty("missionTimeoutAction", null), droneInfo.getMissionTimeoutAction()));
+    if (properties.get(DESCRIPTION) instanceof ConfigurationProperties descriptionProperties) {
+      droneInfo.setDescription(descriptionProperties.getMap());
+    } else if (properties.get(DESCRIPTION) instanceof Map<?, ?> descriptionMap) {
+      droneInfo.setDescription(toStringObjectMap(descriptionMap));
+    }
+
+    if (properties.get(SPECIALIZATION) instanceof ConfigurationProperties specializationProperties) {
+      droneInfo.setSpecialization(toNestedStringObjectMap(specializationProperties.getMap()));
+    } else if (properties.get(SPECIALIZATION) instanceof Map<?, ?> specializationMap) {
+      droneInfo.setSpecialization(toNestedStringObjectMap(specializationMap));
+    }
+
+    droneInfo.setDataProducts(
+        DataProductConfigLoader.parseProducts(properties.get("data_products")));
+    droneInfo.setCapabilities(parseTaskCapabilities(properties.get("capabilities")));
+    return droneInfo;
+  }
+
+  private Double readOptionalPositiveDouble(ConfigurationProperties properties, String propertyName) {
+    if (!properties.containsKey(propertyName)) {
+      return null;
+    }
+    double value = properties.getDoubleProperty(propertyName, 0.0d);
+    return Double.isFinite(value) && value > 0.0d ? value : null;
+  }
+
+  private AltitudeMode parseAltitudeMode(String value, AltitudeMode defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    return AltitudeMode.valueOf(value.trim().toUpperCase(Locale.ROOT));
+  }
+
+  private MessageEncodingEnum parseMessageEncoding(String value, MessageEncodingEnum defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    return MessageEncodingEnum.valueOf(value.trim().toUpperCase(Locale.ROOT));
+  }
+
+  private StopActionEnum parseTerminalAction(String value, StopActionEnum defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    return StopActionEnum.valueOf(value.trim().toUpperCase(Locale.ROOT));
+  }
+
+  private List<ConfigurationProperties> toDroneInfoConfigurationProperties(List<DroneInfoDTO> droneInfos) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (DroneInfoDTO droneInfo : droneInfos) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+      properties.put("name", droneInfo.getName());
+
+      if (droneInfo.getUuid() != null) {
+        properties.put("uuid", droneInfo.getUuid().toString());
+      }
+
+      if (droneInfo.getModelName() != null) {
+        properties.put("modelName", droneInfo.getModelName());
+      }
+
+      if (droneInfo.getGeospatialArea() != null) {
+        properties.put("geospatialArea", droneInfo.getGeospatialArea());
+      }
+
+      if (droneInfo.getRangeMeters() != null && droneInfo.getRangeMeters() > 0.0d) {
+        properties.put("rangeMeters", droneInfo.getRangeMeters());
+      }
+
+      if (droneInfo.getSurveyRadiusMeters() != null && droneInfo.getSurveyRadiusMeters() > 0.0d) {
+        properties.put("surveyRadiusMeters", droneInfo.getSurveyRadiusMeters());
+      }
+
+      if (droneInfo.getArrivalToleranceMeters() != null
+          && droneInfo.getArrivalToleranceMeters() > 0.0d) {
+        properties.put(
+            "arrivalToleranceMeters", droneInfo.getArrivalToleranceMeters());
+      }
+
+      if (droneInfo.getAltitudeMode() != null) {
+        properties.put("altitudeMode", droneInfo.getAltitudeMode().name());
+      }
+
+      if (droneInfo.getAltitudeMeters() != null
+          && Double.isFinite(droneInfo.getAltitudeMeters())) {
+        properties.put(ALTITUDE_METERS, droneInfo.getAltitudeMeters());
+      }
+
+      if (droneInfo.getMessageEncoding() != null) {
+        properties.put("messageEncoding", droneInfo.getMessageEncoding().name());
+      }
+
+      if (droneInfo.getCancelAction() != null) {
+        properties.put("cancelAction", droneInfo.getCancelAction().name());
+      }
+
+      if (droneInfo.getMissionEndAction() != null) {
+        properties.put("missionEndAction", droneInfo.getMissionEndAction().name());
+      }
+
+      if (droneInfo.getMissionTimeoutAction() != null) {
+        properties.put("missionTimeoutAction", droneInfo.getMissionTimeoutAction().name());
+      }
+
+      properties.put("batteryCapacityAh", droneInfo.getBatteryCapacityAh());
+      properties.put("batteryCapacityHours", droneInfo.getBatteryCapacityHours());
+
+      if (droneInfo.getDescription() != null && !droneInfo.getDescription().isEmpty()) {
+        properties.put(DESCRIPTION, new ConfigurationProperties(new LinkedHashMap<>(droneInfo.getDescription())));
+      }
+
+      if (droneInfo.getSpecialization() != null && !droneInfo.getSpecialization().isEmpty()) {
+        properties.put(SPECIALIZATION, toConfigurationProperties(droneInfo.getSpecialization()));
+      }
+
+      if (!droneInfo.getDataProducts().isEmpty()) {
+        properties.put(
+            "data_products",
+            toDataProductConfigurationProperties(droneInfo.getDataProducts()));
+      }
+
+      if (droneInfo.getCapabilities() != null) {
+        properties.put("capabilities", toTaskCapabilitiesConfigurationProperties(droneInfo.getCapabilities()));
+      }
+
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  private List<ConfigurationProperties> toDataProductConfigurationProperties(
+      List<DataProductConfig> dataProducts) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (DataProductConfig dataProduct : dataProducts) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+      if (dataProduct.getIdentifier() != null) {
+        properties.put("identifier", dataProduct.getIdentifier());
+      }
+      if (dataProduct.getDescription() != null) {
+        properties.put(DESCRIPTION, dataProduct.getDescription());
+      }
+      if (dataProduct.getUri() != null) {
+        properties.put("uri", dataProduct.getUri());
+      }
+      if (dataProduct.getProductType() != null && !dataProduct.getProductType().isEmpty()) {
+        properties.put(
+            "product_type",
+            new ConfigurationProperties(
+                new LinkedHashMap<>(dataProduct.getProductType())));
+      }
+      if (dataProduct.getConformsTo() != null && !dataProduct.getConformsTo().isEmpty()) {
+        properties.put(
+            "conforms_to",
+            new ConfigurationProperties(
+                new LinkedHashMap<>(dataProduct.getConformsTo())));
+      }
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> toStringObjectMap(Map<?, ?> source) {
+    Map<String, Object> target = new LinkedHashMap<>();
+
+    for (Map.Entry<?, ?> entry : source.entrySet()) {
+      if (entry.getKey() instanceof String key) {
+        target.put(key, entry.getValue());
+      }
+    }
+
+    return target;
+  }
+
+  private Map<String, Object> toNestedStringObjectMap(Map<?, ?> source) {
+    Map<String, Object> target = new LinkedHashMap<>();
+
+    for (Map.Entry<?, ?> entry : source.entrySet()) {
+      if (entry.getKey() instanceof String key) {
+        target.put(key, normaliseConfigurationValue(entry.getValue()));
+      }
+    }
+
+    return target;
+  }
+
+  private Object normaliseConfigurationValue(Object value) {
+    if (value instanceof ConfigurationProperties properties) {
+      return toNestedStringObjectMap(properties.getMap());
+    }
+    if (value instanceof Map<?, ?> map) {
+      return toNestedStringObjectMap(map);
+    }
+    if (value instanceof List<?> list) {
+      List<Object> values = new ArrayList<>(list.size());
+      list.stream()
+          .map(this::normaliseConfigurationValue)
+          .forEachOrdered(values::add);
+      return values;
+    }
+    return value;
+  }
+
+  private ConfigurationProperties toConfigurationProperties(Map<String, Object> source) {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    for (Map.Entry<String, Object> entry : source.entrySet()) {
+      properties.put(entry.getKey(), toConfigurationValue(entry.getValue()));
+    }
+    return properties;
+  }
+
+  private Object toConfigurationValue(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      return toConfigurationProperties(toNestedStringObjectMap(map));
+    }
+    if (value instanceof List<?> list) {
+      List<Object> values = new ArrayList<>(list.size());
+      list.stream()
+          .map(this::toConfigurationValue)
+          .forEachOrdered(values::add);
+      return values;
+    }
+    return value;
+  }
+
+  private TaskCapabilities parseTaskCapabilities(Object value) {
+    TaskCapabilities capabilities = new TaskCapabilities();
+
+    if (value instanceof ConfigurationProperties configurationProperties) {
+      capabilities.setTasks(parseTaskCapabilityList(configurationProperties.get("tasks")));
+
+      if (capabilities.getTasks().isEmpty()) {
+        capabilities.setTasks(parseTaskCapabilityList(configurationProperties.get("task_capabilities")));
+      }
+
+      capabilities.setTaskConditionsMode(parseTaskConditionMode(configurationProperties.getProperty("task_conditions_mode", null), capabilities.getTaskConditionsMode()));
+      capabilities.setTaskConditionsTemplate(parseTaskTemplateMode(configurationProperties.getProperty("task_conditions_template", null), capabilities.getTaskConditionsTemplate()));
+    } else if (value instanceof List<?> list) {
+      capabilities.setTasks(parseTaskCapabilityList(list));
+    }
+
+    return capabilities;
+  }
+
+  private ConfigurationProperties toTaskCapabilitiesConfigurationProperties(TaskCapabilities capabilities) {
+    ConfigurationProperties properties = new ConfigurationProperties();
+
+    if (capabilities.getTasks() != null && !capabilities.getTasks().isEmpty()) {
+      properties.put("tasks", toTaskCapabilityConfigurationProperties(capabilities.getTasks()));
+    }
+
+    if (capabilities.getTaskConditionsMode() != null) {
+      properties.put("task_conditions_mode", capabilities.getTaskConditionsMode().name());
+    }
+
+    if (capabilities.getTaskConditionsTemplate() != null) {
+      properties.put("task_conditions_template", capabilities.getTaskConditionsTemplate().name());
+    }
+
+    return properties;
+  }
+
+  private List<ConfigurationProperties> toTaskCapabilityConfigurationProperties(List<TaskCapability> taskCapabilities) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (TaskCapability taskCapability : taskCapabilities) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+
+      if (taskCapability.getTaskType() != null) {
+        properties.put("task_type", taskCapability.getTaskType().name());
+      }
+
+      if (taskCapability.getSpecialization() != null) {
+        properties.put("task_specialization", taskCapability.getSpecialization().name());
+      }
+
+      if (taskCapability.getAuthorities() != null && taskCapability.getAuthorities().length > 0) {
+        properties.put("authorities", toTaskAuthoritiesConfigurationProperties(taskCapability.getAuthorities()));
+      }
+
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  private List<ConfigurationProperties> toTaskAuthoritiesConfigurationProperties(Authorities[] authorities) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (Authorities authority : authorities) {
+      if (authority != null && authority.getGuid() != null) {
+        ConfigurationProperties properties = new ConfigurationProperties();
+        properties.put("guid", authority.getGuid().toString());
+        values.add(properties);
+      }
+    }
+
+    return values;
+  }
+
+  private List<TaskCapability> parseTaskCapabilityList(Object value) {
+    List<TaskCapability> taskCapabilities = new ArrayList<>();
+
+    if (value instanceof ConfigurationProperties configurationProperties) {
+      taskCapabilities.add(parseTaskCapability(configurationProperties));
+    } else if (value instanceof List<?> list) {
+      for (Object entry : list) {
+        if (entry instanceof ConfigurationProperties configurationProperties) {
+          taskCapabilities.add(parseTaskCapability(configurationProperties));
+        }
+      }
+    }
+
+    return taskCapabilities;
+  }
+
+  private TaskCapability parseTaskCapability(ConfigurationProperties properties) {
+    TaskCapability taskCapability = new TaskCapability();
+
+    taskCapability.setTaskType(parsePlanTaskType(properties.getProperty("task_type", null), taskCapability.getTaskType()));
+    taskCapability.setSpecialization(parseTaskSpecialization(properties.getProperty("task_specialization", null), taskCapability.getSpecialization()));
+    taskCapability.setAuthorities(parseTaskAuthorities(properties.get("authorities")));
+    return taskCapability;
+  }
+
+  private Authorities[] parseTaskAuthorities(Object authorities) {
+    if (authorities == null) {
+      return new Authorities[0];
+    }
+
+    List<Authorities> authoritiesList = new ArrayList<>();
+    if (authorities instanceof ConfigurationProperties configurationProperties) {
+      parseAuthority(authoritiesList, configurationProperties);
+    } else if (authorities instanceof List<?>) {
+      for (Object entry : (List<?>) authorities) {
+        if (entry instanceof ConfigurationProperties configurationProperties) {
+          parseAuthority(authoritiesList, configurationProperties);
+        }
+      }
+    }
+
+    return authoritiesList.toArray(new Authorities[0]);
+  }
+
+  private void parseAuthority(List<Authorities> authoritiesList, ConfigurationProperties configurationProperties) {
+    String guid = configurationProperties.getProperty("guid", null);
+    if (guid != null) {
+      authoritiesList.add(new Authorities(UUID.fromString(guid)));
+    }
+  }
+
+  private PlanTaskType parsePlanTaskType(String value, PlanTaskType defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    return PlanTaskType.fromConfigurationValue(value);
+  }
+
+  private TaskSpecialization parseTaskSpecialization(String value, TaskSpecialization defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    String normalisedValue = removePrefix(value, "TaskSpecializationEnum_");
+    return TaskSpecialization.valueOf(normalisedValue);
+  }
+
+  private TaskConditionMode parseTaskConditionMode(String value, TaskConditionMode defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    String normalisedValue = removePrefix(value, "TaskConditionModeEnum_");
+    return TaskConditionMode.valueOf(normalisedValue);
+  }
+
+  private TaskTemplateMode parseTaskTemplateMode(String value, TaskTemplateMode defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    String normalisedValue = removePrefix(value, "TaskTemplateModeEnum_");
+    return TaskTemplateMode.valueOf(normalisedValue);
+  }
+
+  private String removePrefix(String value, String prefix) {
+    if (value.startsWith(prefix)) {
+      return value.substring(prefix.length());
+    }
+
+    return value;
+  }
+
+  private VehicleClass parseVehicleClass(String value, VehicleClass defaultValue) {
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+
+    return VehicleClass.valueOf(value.trim().toUpperCase());
+  }
+
+  private List<ConfigurationProperties> toMavlinkConfigurationProperties(List<MavlinkTwinConfigDTO> configs) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (MavlinkTwinConfigDTO config : configs) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+      properties.put("name", config.getName());
+      properties.put(TOPIC, config.getTopic());
+      properties.put("dialectName", config.getDialectName());
+
+      if (config.getKnownSources() != null && !config.getKnownSources().isEmpty()) {
+        properties.put(KNOWN_SOURCES, toKnownSourceConfigurationProperties(config.getKnownSources()));
+      }
+
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  private List<ConfigurationProperties> toKnownSourceConfigurationProperties(List<MavlinkKnownSourceDTO> knownSources) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+
+    for (MavlinkKnownSourceDTO knownSource : knownSources) {
+      ConfigurationProperties properties = new ConfigurationProperties();
+      properties.put("name", knownSource.getName());
+      properties.put(DESCRIPTION, knownSource.getDescription());
+      properties.put("systemId", knownSource.getSystemId());
+      properties.put("componentId", knownSource.getComponentId());
+
+      if (knownSource.getVehicleClass() != null) {
+        properties.put(VEHICLE_CLASS, knownSource.getVehicleClass().name());
+      }
+      if (knownSource.getCotClassification() != null) {
+        properties.put("cotClassification", knownSource.getCotClassification());
+      }
+
+      values.add(properties);
+    }
+
+    return values;
+  }
+
+  private boolean shouldWriteN2kConfiguration() {
+    if (this.n2KTwinConfig == null) {
+      return false;
+    }
+    if (this.n2KTwinConfig.isEnable() || this.n2KTwinConfig.isPublishMavlinkDrones()) {
+      return true;
+    }
+    if (this.n2KTwinConfig.getName() != null || this.n2KTwinConfig.getVehicleClass() != null) {
+      return true;
+    }
+    return this.n2KTwinConfig.getTopic() != null && !"/canbus0/n2k/json/#".equals(this.n2KTwinConfig.getTopic());
+  }
+}

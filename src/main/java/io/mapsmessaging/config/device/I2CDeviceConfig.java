@@ -28,12 +28,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class I2CDeviceConfig extends I2CDeviceConfigDTO implements Config {
 
+  @SuppressWarnings("java:S2692") // A leading decimal point has no integral device address and must remain invalid.
   public I2CDeviceConfig(ConfigurationProperties props) {
     String addrString = props.getProperty("address", "0");
-    if(addrString.indexOf(".") > 0){
+    if (addrString.indexOf(".") > 0) {
       addrString = addrString.substring(0, addrString.indexOf("."));
     }
-    setAddress(Integer.parseInt(addrString, addrString.contains("x") ? 16 : 10));
+    boolean hexadecimal = addrString.startsWith("0x") || addrString.startsWith("0X");
+    if (hexadecimal) {
+      addrString = addrString.substring(2);
+    }
+    setAddress(Integer.parseInt(addrString, hexadecimal ? 16 : 10));
     setName(props.getProperty("name"));
     setSelector(props.getProperty("selector", ""));
   }

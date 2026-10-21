@@ -1,3 +1,22 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package io.mapsmessaging.engine.destination.subscription.state;
 
 import io.mapsmessaging.api.message.Message;
@@ -301,6 +320,26 @@ class MessageStateManagerImplTest {
     Assertions.assertEquals(-1L, manager.nextMessageId());
   }
 
+
+  @Test
+  void expiry_removes_a_browser_snapshot_and_does_not_resurrect_its_inflight_event() throws Exception {
+    MessageStateManagerImpl parent = createManager();
+    Message message = createMessage(2001L, 3);
+    parent.register(message);
+    IteratorStateManagerImpl browser = new IteratorStateManagerImpl("browser", 777, parent, true);
+    try {
+      browser.allocate(message);
+      Assertions.assertTrue(browser.hasMessagesInFlight());
+      parent.expired(2001L);
+      Assertions.assertFalse(parent.hasMessage(2001L));
+      Assertions.assertFalse(browser.hasMessage(2001L));
+      Assertions.assertFalse(browser.rollback(2001L));
+      Assertions.assertEquals(0, browser.pending());
+    } finally {
+      browser.close();
+      parent.close();
+    }
+  }
 
   private MessageStateManagerImpl createManager() {
     BitSetFactory bitSetFactory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);

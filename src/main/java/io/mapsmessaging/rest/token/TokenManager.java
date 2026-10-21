@@ -29,6 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("java:S6548") // yes it is a singleton
 public class TokenManager {
 
+  private static final String TOKEN_KEY = "token";
+
+
 
   private static class Holder {
     static final TokenManager INSTANCE = new TokenManager();
@@ -51,10 +54,10 @@ public class TokenManager {
     String token = UuidGenerator.getInstance().generate(RandomVersions.RANDOM).toString();
     TokenDetails tokenDetails = new TokenDetails(session.getId(), resource);
 
-    Map<String, TokenDetails > tokens = (Map) session.getAttribute("token");
+    Map<String, TokenDetails > tokens = (Map) session.getAttribute(TOKEN_KEY);
     if(tokens == null) {
       tokens = new ConcurrentHashMap<>();
-      session.setAttribute("token", tokens);
+      session.setAttribute(TOKEN_KEY, tokens);
     }
     if(tokens.size() > 2){
       tokens.clear();
@@ -68,7 +71,7 @@ public class TokenManager {
   }
 
   public boolean useToken(HttpSession session, String token, String resource) {
-    Map<String, TokenDetails > tokens = (Map) session.getAttribute("token");
+    Map<String, TokenDetails > tokens = (Map) session.getAttribute(TOKEN_KEY);
     if(tokens == null) {
       return false;
     }

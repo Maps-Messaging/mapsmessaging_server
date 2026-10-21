@@ -94,6 +94,23 @@ class LimitedMessageStateManagerTest {
   }
 
   @Test
+  void registerRetainedReplay_overLimitClearsReplayMarkerForEvictedMessage() {
+    EventReaperQueue eventReaperQueue = new EventReaperQueue();
+    BitSetFactoryImpl bitSetFactory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
+
+    LimitedMessageStateManager manager =
+        new LimitedMessageStateManager("test", 1L, bitSetFactory, 1, eventReaperQueue);
+
+    manager.registerRetainedReplay(10L);
+    Assertions.assertTrue(manager.isRetainedReplay(10L));
+
+    manager.register(20L);
+
+    Assertions.assertFalse(manager.isRetainedReplay(10L));
+    Assertions.assertTrue(eventReaperQueue.getAndClear().contains(10L));
+  }
+
+  @Test
   void register_messageUsesIdentifierAndPriority_andCanTriggerReaping() {
     EventReaperQueue eventReaperQueue = new EventReaperQueue();
     BitSetFactoryImpl bitSetFactory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);

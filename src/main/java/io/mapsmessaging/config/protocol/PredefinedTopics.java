@@ -37,8 +37,7 @@ public class PredefinedTopics extends PredefinedTopicsDTO implements Config {
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
 
-    if (config instanceof PredefinedTopicsDTO) {
-    PredefinedTopicsDTO newConfig = (PredefinedTopicsDTO) config;
+    if (config instanceof PredefinedTopicsDTO newConfig) {
       if (this.id != newConfig.getId()) {
         this.id = newConfig.getId();
         hasChanged = true;

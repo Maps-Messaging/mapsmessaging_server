@@ -44,8 +44,7 @@ public class ReceiverLinkLocalOpenEventListener extends LinkLocalOpenEventListen
   @Override
   public boolean handleEvent(Event event) {
     Link link = event.getLink();
-    if (link instanceof Receiver) {
-      Receiver receiver = (Receiver) link;
+    if (link instanceof Receiver receiver) {
       receiver.setSource(receiver.getRemoteSource());
       receiver.setTarget(receiver.getRemoteTarget());
       Target target = receiver.getTarget();

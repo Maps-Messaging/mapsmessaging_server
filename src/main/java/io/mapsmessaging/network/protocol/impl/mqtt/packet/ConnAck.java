@@ -56,7 +56,7 @@ public class ConnAck extends MQTTPacket {
       packet.put((byte) 0);
     }
     packet.put(response);
-    return 2;
+    return 4;
   }
 
   public byte getResponseCode() {
@@ -103,5 +103,9 @@ public class ConnAck extends MQTTPacket {
 
   public void setRestoredFlag(boolean restored) {
     isPresent = restored;
+  }
+
+  public boolean isSessionPresent() {
+    return isPresent;
   }
 }

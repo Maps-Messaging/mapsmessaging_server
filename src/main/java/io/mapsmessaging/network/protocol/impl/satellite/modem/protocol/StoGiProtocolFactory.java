@@ -28,6 +28,7 @@ import io.mapsmessaging.network.protocol.detection.NoOpDetection;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 public class StoGiProtocolFactory extends ProtocolImplFactory {
 
@@ -36,7 +37,7 @@ public class StoGiProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     return build(endPoint, new Packet(ByteBuffer.allocate(1024)));
   }
 

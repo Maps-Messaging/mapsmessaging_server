@@ -37,8 +37,8 @@ public class TcpConfig extends TcpConfigDTO implements Config {
 
   public boolean update(BaseConfigDTO update) {
     boolean hasChanged = false;
-    if (update instanceof TcpConfigDTO) {
-      hasChanged = NetworkConfigFactory.update(this, (TcpConfigDTO) update);
+    if (update instanceof TcpConfigDTO matchedTcpConfigDTO) {
+      hasChanged = NetworkConfigFactory.update(this, matchedTcpConfigDTO);
     }
 
     return hasChanged;

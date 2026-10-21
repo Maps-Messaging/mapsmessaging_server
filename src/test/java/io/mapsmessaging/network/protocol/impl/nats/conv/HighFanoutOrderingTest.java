@@ -1,3 +1,22 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package io.mapsmessaging.network.protocol.impl.nats.conv;
 
 import io.mapsmessaging.test.BaseTestConfig;
@@ -15,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HighFanoutOrderingTest extends BaseTestConfig {
 
@@ -24,7 +44,7 @@ class HighFanoutOrderingTest extends BaseTestConfig {
     final int nSubs = 100;
     final int nPubs = 500;
 
-    final AtomicInteger[] counters = new AtomicInteger[nConns];
+    final AtomicInteger orderingErrors = new AtomicInteger();
 
     String url = "nats://localhost:4222";
     String subject = "test.inbox." + System.nanoTime();
@@ -40,10 +60,7 @@ class HighFanoutOrderingTest extends BaseTestConfig {
         Connection conn = Nats.connect(new Options.Builder().server(url).build());
         connections.add(conn);
 
-        AtomicInteger local = new AtomicInteger();
-        counters[i] = local;
-
-        Dispatcher dispatcher = conn.createDispatcher(msg -> local.incrementAndGet());
+        Dispatcher dispatcher = conn.createDispatcher(msg -> orderingErrors.incrementAndGet());
         dispatchers.add(dispatcher);
 
         for (int j = 0; j < nSubs; j++) {
@@ -52,21 +69,28 @@ class HighFanoutOrderingTest extends BaseTestConfig {
           dispatcher.subscribe(subject, msg -> {
             int val = Integer.parseInt(new String(msg.getData()));
             int exp = expected.getAndIncrement();
-            if (val == exp && exp + 1 == nPubs) {
+            if (val != exp) {
+              orderingErrors.incrementAndGet();
+            }
+            if (exp + 1 == nPubs) {
               latch.countDown();
             }
           });
         }
       }
 
+      for (Connection connection : connections) {
+        connection.flush(Duration.ofSeconds(30));
+      }
+
       publisherConnection = Nats.connect(new Options.Builder().server(url).build());
       for (int i = 0; i < nPubs; i++) {
         publisherConnection.publish(subject, Integer.toString(i).getBytes());
       }
-      publisherConnection.flush(Duration.ofSeconds(30));
 
-      boolean completed = latch.await(30, TimeUnit.SECONDS);
-      assertEquals(true, completed, "Not all subscriptions received ordered messages");
+      boolean completed = latch.await(90, TimeUnit.SECONDS);
+      assertTrue(completed, "Not all subscriptions received all messages");
+      assertEquals(0, orderingErrors.get(), "Subscriptions received out-of-order messages");
     }
     finally {
       if (publisherConnection != null) {
@@ -75,7 +99,7 @@ class HighFanoutOrderingTest extends BaseTestConfig {
 
       for (int i = 0; i < connections.size(); i++) {
         Connection conn = connections.get(i);
-        Dispatcher dispatcher = dispatchers.get(i);
+        Dispatcher dispatcher = i < dispatchers.size() ? dispatchers.get(i) : null;
 
         if (dispatcher != null) {
           conn.closeDispatcher(dispatcher);

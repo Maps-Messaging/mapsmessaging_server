@@ -1,0 +1,32 @@
+name: MAVLink area mission validation
+
+on:
+  pull_request:
+    branches:
+      - development
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Prepare test resources
+        run: mkdir -p src/test/resources
+      - name: Run MAVLink mission tests
+        run: >-
+          mvn -B
+          -Dtest=MissionPlanRepeatTest,SticklebackArdupilotUsvModelMissionTest,MavlinkCommandSetPreparerTest,MavlinkEventListSenderTest,MavlinkEventListSenderConcurrencyTest,MissionCurrentListenerTest,SticklebackPassiveDetectionCapabilityTest,PlanTaskTypeTest,TwinManagerConfigPlanTaskTypeTest
+          test
+      - name: Run MAVLink bootstrap tests
+        run: >-
+          mvn -B
+          -Dtest=MavlinkBootstrapRequestPublisherTest,AutopilotVersionListenerTest,MavlinkBootstrapStateEngineTest
+          test

@@ -19,7 +19,13 @@
 
 package io.mapsmessaging.engine.session;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 public class KeepAliveTask implements Runnable {
+
+  private static final Logger logger = LoggerFactory.getLogger(KeepAliveTask.class);
 
   private final ClientConnection clientConnection;
 
@@ -29,6 +35,10 @@ public class KeepAliveTask implements Runnable {
 
   @Override
   public void run() {
-    clientConnection.sendKeepAlive();
+    try {
+      clientConnection.sendKeepAlive();
+    } catch (RuntimeException exception) {
+      logger.log(ServerLogMessages.SESSION_MANAGER_KEEP_ALIVE_EXCEPTION, exception);
+    }
   }
 }

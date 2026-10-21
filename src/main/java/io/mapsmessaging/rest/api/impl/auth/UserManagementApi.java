@@ -57,6 +57,11 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/auth/users")
 public class UserManagementApi extends BaseAuthRestApi {
 
+  private static final String USERS_PATH = "/auth/users";
+  private static final String INVALID_UUID = "Invalid UUID";
+  private static final String USER_NOT_FOUND = "User not found";
+
+
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
@@ -84,7 +89,13 @@ public class UserManagementApi extends BaseAuthRestApi {
           description = "Optional filter string",
           schema = @Schema(type = "string", example = "username = 'bill'")
       )
-      @QueryParam("filter") String filter) {
+      @QueryParam("filter") String filter,
+        @Parameter(
+            description = "Optional string that is used to match names",
+            schema = @Schema(type = "string", example = "admin")
+        )
+        @QueryParam("startsWith") String startsWith
+  ) {
 
     hasAccess(RESOURCE);
 
@@ -104,6 +115,7 @@ public class UserManagementApi extends BaseAuthRestApi {
     UserDTO[] result = users.stream()
         .map(userDetails -> buildUser(userDetails, authManager))
         .filter(userDto -> parserExecutor == null || parserExecutor.evaluate(userDto))
+        .filter(userDto -> startsWith == null || userDto.getUsername().startsWith(startsWith))
         .toList()
         .toArray(new UserDTO[0]);
 
@@ -133,7 +145,7 @@ public class UserManagementApi extends BaseAuthRestApi {
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(
               responseCode = "404",
-              description = "User not found",
+              description = USER_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
       }
@@ -153,7 +165,7 @@ public class UserManagementApi extends BaseAuthRestApi {
       uuid = UUID.fromString(userUuid);
     } catch (IllegalArgumentException ex) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid UUID"))
+          .entity(new StatusResponse(INVALID_UUID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -166,7 +178,7 @@ public class UserManagementApi extends BaseAuthRestApi {
         .map(user -> buildUser(user, authManager))
         .map(userDto -> Response.ok(userDto).type(MediaType.APPLICATION_JSON).build())
         .orElseGet(() -> Response.status(Response.Status.NOT_FOUND)
-            .entity(new StatusResponse("User not found"))
+            .entity(new StatusResponse(USER_NOT_FOUND))
             .type(MediaType.APPLICATION_JSON)
             .build());
   }
@@ -242,7 +254,7 @@ public class UserManagementApi extends BaseAuthRestApi {
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
-    removeUriFromCache(URI_PATH + "/auth/users");
+    removeUriFromCache(URI_PATH + USERS_PATH);
 
     return Response.status(Response.Status.CREATED)
         .entity(new StatusResponse("User added successfully"))
@@ -269,7 +281,7 @@ public class UserManagementApi extends BaseAuthRestApi {
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(
               responseCode = "404",
-              description = "User not found",
+              description = USER_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
       }
@@ -289,7 +301,7 @@ public class UserManagementApi extends BaseAuthRestApi {
       uuid = UUID.fromString(userUuid);
     } catch (IllegalArgumentException ex) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid UUID"))
+          .entity(new StatusResponse(INVALID_UUID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -299,13 +311,13 @@ public class UserManagementApi extends BaseAuthRestApi {
 
     if (identity == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("User not found"))
+          .entity(new StatusResponse(USER_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
 
     authManager.delUser(identity.getUsername());
-    removeUriFromCache(URI_PATH + "/auth/users");
+    removeUriFromCache(URI_PATH + USERS_PATH);
     return Response.noContent().build();
   }
 
@@ -333,7 +345,7 @@ public class UserManagementApi extends BaseAuthRestApi {
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
           @ApiResponse(
               responseCode = "404",
-              description = "User not found",
+              description = USER_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(
@@ -360,7 +372,7 @@ public class UserManagementApi extends BaseAuthRestApi {
       uuid = UUID.fromString(userUuid);
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid UUID"))
+          .entity(new StatusResponse(INVALID_UUID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -377,14 +389,14 @@ public class UserManagementApi extends BaseAuthRestApi {
 
     if (identity == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("User not found"))
+          .entity(new StatusResponse(USER_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
 
     try {
       authManager.updatePassword(identity, request.getNewPassword().toCharArray());
-      removeUriFromCache(URI_PATH + "/auth/users");
+      removeUriFromCache(URI_PATH + USERS_PATH);
       return Response.noContent().build();
     } catch (GeneralSecurityException | IOException ex) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

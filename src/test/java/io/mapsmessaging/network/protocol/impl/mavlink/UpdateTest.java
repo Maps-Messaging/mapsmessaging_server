@@ -19,12 +19,13 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.mavlink.ProcessedFrame;
-import io.mapsmessaging.network.protocol.impl.mavlink.listener.*;
-import io.mapsmessaging.network.protocol.impl.mavlink.packet.*;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.mavlink.listener.*;
+import io.mapsmessaging.state.mavlink.packet.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -58,6 +59,7 @@ class UpdateTest {
         null,
         fields,
         true,
+        null,
         null
     );
 
@@ -89,7 +91,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     AttitudePacket packet = new AttitudePacket(frame);
@@ -129,7 +132,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     HeartbeatPacket packet = new HeartbeatPacket(frame);
@@ -142,7 +146,7 @@ class UpdateTest {
 
     DroneTwin updated = (DroneTwin) manager.getTwin("mavlink:test:1").orElseThrow();
 
-    assertEquals("2", updated.getVehicleClass());
+    assertEquals(VehicleClass.UAV, updated.getVehicleClass());
     assertTrue(updated.getArmed());
     assertEquals("4", updated.getFlightMode());
     assertNotNull(updated.getLinkState());
@@ -168,7 +172,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     SysStatusPacket packet = new SysStatusPacket(frame);
@@ -206,7 +211,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     GpsRawIntPacket packet = new GpsRawIntPacket(frame);
@@ -244,7 +250,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     SystemTimePacket packet = new SystemTimePacket(frame);
@@ -280,7 +287,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     AltitudePacket packet = new AltitudePacket(frame);
@@ -295,7 +303,8 @@ class UpdateTest {
 
     assertNotNull(updated.getGeoPosition());
     assertEquals(123.45, updated.getGeoPosition().getAltitudeMslMeters(), 0.0001);
-    assertEquals(18.75, updated.getGeoPosition().getAltitudeAglMeters(), 0.0001);
+    assertEquals(18.75, updated.getGeoPosition().getAltitudeRelativeMeters(), 0.0001);
+    assertNull(updated.getGeoPosition().getAltitudeAglMeters());
     assertEquals(context.getReceivedTime(), updated.getNavigationUpdatedAt());
   }
 
@@ -315,7 +324,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     ExtendedSysStatePacket packet = new ExtendedSysStatePacket(frame);
@@ -348,7 +358,8 @@ class UpdateTest {
         null,
         fields,
         true,
-        List.of()
+        List.of(),
+        null
     );
 
     MissionCurrentPacket packet = new MissionCurrentPacket(frame);

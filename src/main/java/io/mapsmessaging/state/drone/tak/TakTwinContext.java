@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.state.drone.tak;
 
+import io.mapsmessaging.state.config.CotConfigDTO;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,9 +28,14 @@ import lombok.Setter;
 public class TakTwinContext {
   private long lastUpdate;
   private TakSocketConnection socketConnection;
+  private CotConfigDTO cotConfig;
+  // True while an MTI cyber-icon marker for this twin is on the map, so it can be taken off
+  // again when MTI clears the status or the twin goes away.
+  private boolean cyberIconPublished;
 
   public TakTwinContext(){
     lastUpdate = 0;
     socketConnection = null;
+    cotConfig = null;
   }
 }

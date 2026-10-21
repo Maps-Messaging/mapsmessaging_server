@@ -19,32 +19,29 @@
 
 package io.mapsmessaging.network.io.connection.state;
 
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
-import io.mapsmessaging.engine.session.SessionContext;
+import io.mapsmessaging.dto.rest.config.protocol.LinkConfigDTO;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.EndPointURL;
-import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.auth.TokenGenerator;
 import io.mapsmessaging.network.auth.TokenGeneratorManager;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
+import io.mapsmessaging.network.io.connection.ConnectionSessionId;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.io.impl.SelectorLoadManager;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolFactory;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
-
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 import io.mapsmessaging.network.route.link.LinkState;
 
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -52,14 +49,27 @@ import static io.mapsmessaging.network.io.connection.Constants.DELAYED_TIME;
 
 public class Disconnected extends State implements EndPointConnectedCallback {
 
+  private final Object activeEndPointLock = new Object();
+
   private EndPoint activeEndPoint;
+  private boolean cancelled;
 
   public Disconnected(EndPointConnection connection) {
     super(connection);
   }
 
+  public EndPoint getActiveEndPoint() {
+    synchronized (activeEndPointLock) {
+      return activeEndPoint;
+    }
+  }
+
   @Override
   public void connected(EndPoint endpoint) {
+    if (!registerActiveEndPoint(endpoint)) {
+      closeEndpoint(endpoint);
+      return;
+    }
     String protocol = endPointConnection.getProperties().getProtocols();
     String url = endPointConnection.getUrl().toString();
     try {
@@ -75,16 +85,8 @@ public class Disconnected extends State implements EndPointConnectedCallback {
       String transformationName = properties.getLinkTransformation();
 
       if(sessionId == null) {sessionId = UUID.randomUUID().toString();}
-      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(transformationName);
-      if (transformation == null) {
-        String protocolImplName = null;
-        if(protocolImplFactory != null){
-          protocolImplName = protocolImplFactory.getName();
-        }
-        if(username != null && protocolImplName != null) {
-          transformation = TransformationManager.getInstance().getTransformation(endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolImplName, username);
-        }
-      }
+      ProtocolMessageTransformation transformation = resolveTransformation(
+          transformationName, username, protocolImplFactory, endpoint);
 
       if (transformation != null) {
         sessionId = sessionId + "?Transformation=" + transformation.getName();
@@ -93,13 +95,29 @@ public class Disconnected extends State implements EndPointConnectedCallback {
         TokenGenerator tokenGenerator = TokenGeneratorManager.getInstance().get(tokenGeneratorName).getInstance(properties.getAuthConfig().getTokenConfig());
         password = tokenGenerator.generate();
       }
-      Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password);
+      Map<String, String> topicMap = getTopicMap(properties.getLinkConfigs());
+      if ("MQTT".equalsIgnoreCase(protocolImplFactory.getName())) {
+        sessionId = ConnectionSessionId.derive(sessionId, ConnectionSessionId.namespaces(properties.getLinkConfigs()));
+      }
+      Protocol protocolImpl = protocolImplFactory.connect(endpoint, sessionId, username, password, topicMap);
+
+      if (!isCurrentAttempt()) {
+        closeEndpoint(endpoint);
+        return;
+      }
+
       protocolImpl.setProtocolMessageTransformation(transformation);
       endPointConnection.setProtocol(protocolImpl);
+      synchronized (activeEndPointLock) {
+        activeEndPoint = null;
+      }
       endPointConnection.scheduleState(new Connecting(endPointConnection));
     } catch (IOException ioException) {
       endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_PROTOCOL_FAILED, url, protocol, ioException);
-      endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
+      cancel();
+      if (endPointConnection.getState() == this) {
+        endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
+      }
     }
   }
 
@@ -109,22 +127,35 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     try {
       SelectorLoadManager selectorLoadManager = endPointConnection.getSelectorLoadManager();
       List<String> jmxPath = endPointConnection.getJMXPath();
-      activeEndPoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
+      EndPoint endpoint = endPointConnection.getEndPointConnectionFactory().connect(url, selectorLoadManager, this, endPointConnection, jmxPath);
+      if (!registerActiveEndPoint(endpoint)) {
+        Protocol protocol = endPointConnection.getProtocol();
+        if (protocol == null || protocol.getEndPoint() != endpoint) {
+          closeEndpoint(endpoint);
+        }
+      }
     } catch (Exception ioException) {
-      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
-      endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
+      if(ioException.getMessage() != null && !ioException.getMessage().contains("Connection timed out")) {
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, url, ioException);
+      }
+      else{
+        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_FAILED, url);
+      }
+      if (endPointConnection.getState() == this) {
+        endPointConnection.scheduleState(new Delayed(endPointConnection), DELAYED_TIME);
+      }
     }
   }
 
   @Override
   public void cancel() {
-    if (activeEndPoint != null) {
-      try {
-        activeEndPoint.close();
-      } catch (IOException ioException) {
-        // we are closing it, not too fussed about an exception here
-      }
+    EndPoint endpoint;
+    synchronized (activeEndPointLock) {
+      cancelled = true;
+      endpoint = activeEndPoint;
+      activeEndPoint = null;
     }
+    closeEndpoint(endpoint);
   }
 
   @Override
@@ -137,16 +168,71 @@ public class Disconnected extends State implements EndPointConnectedCallback {
     return LinkState.DISCONNECTED;
   }
 
-  private Session createSession(String sessionId, Protocol protocol) throws LoginException, IOException {
-    SessionContext sessionContext = new SessionContextBuilder("Internal-"+sessionId, new ProtocolClientConnection(protocol))
-        .setPersistentSession(true)
-        .setSessionExpiry(TimeUnit.DAYS.toMillis(1))
-        .setResetState(false)
-        .setUsername("admin")
-        .isInternal(true)
-        .setResetState(false)
-        .isAuthorized(true)
-        .build();
-    return SessionManager.getInstance().create(sessionContext, protocol);
+  private boolean registerActiveEndPoint(EndPoint endpoint) {
+    boolean currentAttempt = isCurrentAttempt();
+    synchronized (activeEndPointLock) {
+      // Cancellation may finish while the transport returns or eligibility is checked.
+      if (cancelled || !currentAttempt) {
+        return false;
+      }
+      activeEndPoint = endpoint;
+      return true;
+    }
+  }
+
+  private boolean isCurrentAttempt() {
+    synchronized (activeEndPointLock) {
+      if (cancelled) {
+        return false;
+      }
+    }
+    return endPointConnection.getState() == this
+        && endPointConnection.isRunning()
+        && !endPointConnection.isPaused();
+  }
+
+  private void closeEndpoint(EndPoint endpoint) {
+    if (endpoint == null) {
+      return;
+    }
+    try {
+      endpoint.close();
+    } catch (IOException ioException) {
+      // we are closing it, not too fussed about an exception here
+    }
+  }
+
+  private ProtocolMessageTransformation resolveTransformation(String name, String username,
+      ProtocolImplFactory protocolFactory, EndPoint endpoint) {
+    ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(name);
+    if (transformation == null) {
+      String protocolName = null;
+      if (protocolFactory != null) {
+        protocolName = protocolFactory.getName();
+      }
+      if (username != null && protocolName != null) {
+        transformation = TransformationManager.getInstance().getTransformation(
+            endpoint.getProtocol(), endPointConnection.getUrl().getHost(), protocolName, username);
+      }
+    }
+    return transformation;
+  }
+
+  private Map<String, String> getTopicMap(List<LinkConfigDTO> linkConfigs){
+    Map<String, String> topicMap = new HashMap<>();
+    for (LinkConfigDTO property : linkConfigs) {
+      String direction = property.getDirection();
+      String remote = property.getRemoteNamespace();
+      String local = property.getLocalNamespace();
+      if (direction.equalsIgnoreCase("pull")) {
+        topicMap.put(local, remote);
+      } else if (direction.equalsIgnoreCase("push")) {
+        if (remote.endsWith("#")) {
+          remote = remote.substring(0, remote.length() - 1);
+        }
+        topicMap.put(local, remote);
+      }
+    }
+    return topicMap;
   }
 }

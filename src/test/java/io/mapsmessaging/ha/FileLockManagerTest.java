@@ -160,6 +160,56 @@ class FileLockManagerTest {
     }
   }
 
+  @Test
+  void tryAcquireLockWithTakeover_whenAlreadyShutdown_returnsFalse_andReleasesChannel() {
+    Path lockFile = tempDir.resolve("maps.lock");
+
+    try (FileLockManager manager = new FileLockManager(lockFile, 300, code -> { })) {
+      manager.shutdown();
+
+      assertFalse(manager.tryAcquireLockWithTakeover());
+      assertFalse(manager.isLocked());
+    }
+
+    try (FileLockManager replacement = new FileLockManager(lockFile, 300, code -> { })) {
+      assertTrue(replacement.tryAcquireLockWithTakeover(),
+          "an unsuccessful acquisition must not retain the file channel or lock");
+    }
+  }
+
+  @Test
+  void stopSignal_whenLocked_invokesShutdownCallback_andExitHandler() throws Exception {
+    Path lockFile = tempDir.resolve("maps.lock");
+    Path stopSignal = Path.of(lockFile + ".stop");
+    CountDownLatch shutdownCallback = new CountDownLatch(1);
+    CountDownLatch exitCalled = new CountDownLatch(1);
+    AtomicInteger exitCode = new AtomicInteger(Integer.MIN_VALUE);
+
+    try (FileLockManager manager = new FileLockManager(lockFile, 300, code -> {
+      exitCode.set(code);
+      exitCalled.countDown();
+    })) {
+      manager.setOnShutdown(shutdownCallback::countDown);
+      assertTrue(manager.tryAcquireLockWithTakeover());
+
+      createUntilHandled(stopSignal, exitCalled);
+
+      assertTrue(manager.isShutdown());
+      assertTrue(shutdownCallback.await(2, TimeUnit.SECONDS));
+      assertEquals(1, exitCode.get());
+    }
+  }
+
+  private static void createUntilHandled(Path file, CountDownLatch handled) throws Exception {
+    long end = System.currentTimeMillis() + 2_000;
+    while (handled.getCount() > 0 && System.currentTimeMillis() < end) {
+      Files.deleteIfExists(file);
+      Files.writeString(file, "stop");
+      handled.await(25, TimeUnit.MILLISECONDS);
+    }
+    assertEquals(0, handled.getCount(), "watch service should handle the created file");
+  }
+
   private static boolean waitUntilExists(Path file, long timeoutMillis) throws InterruptedException {
     long end = System.currentTimeMillis() + timeoutMillis;
     while (System.currentTimeMillis() < end) {

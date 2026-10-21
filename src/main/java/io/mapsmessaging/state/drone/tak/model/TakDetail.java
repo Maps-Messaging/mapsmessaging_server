@@ -1,12 +1,30 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package io.mapsmessaging.state.drone.tak.model;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -34,6 +52,20 @@ public class TakDetail {
   @Schema(description = "Link health metadata.")
   private TakLinkState mapsLink;
 
+  @Schema(description = "When true, request that the receiving TAK client persists this event locally.")
+  private Boolean archive;
+
+  @Schema(description = "Marker tint as a signed 32-bit ARGB value.", example = "-65536")
+  private Integer colorArgb;
+
+  @Schema(description = "Custom icon override: {iconsetUuid}/{group}/{filename}, resolved against "
+      + "an iconset the receiving TAK client has locally imported. WinTAK/ATAK only - not "
+      + "rendered by WebTAK.", example = "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/exploit_64x64.png")
+  private String usericonIconsetPath;
+
   @ArraySchema(arraySchema = @Schema(description = "Relationship links to other TAK entities."))
   private List<TakLink> links = new ArrayList<>();
+
+  @Schema(description = "Video feeds the client can play from this marker.")
+  private List<TakVideo> videos = new ArrayList<>();
 }

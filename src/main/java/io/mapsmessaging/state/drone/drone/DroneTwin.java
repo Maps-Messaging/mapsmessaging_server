@@ -19,25 +19,40 @@
 
 package io.mapsmessaging.state.drone.drone;
 
+import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.mapsmessaging.state.config.AltitudeMode;
+import io.mapsmessaging.state.config.DataProductConfig;
+import io.mapsmessaging.state.config.StopActionEnum;
+import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
-import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
+import io.mapsmessaging.state.drone.model.Contact;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
+import io.mapsmessaging.state.drone.model.DroneContactManager;
 import io.mapsmessaging.state.drone.model.EnvironmentalState;
 import io.mapsmessaging.state.drone.model.SystemState;
 import io.mapsmessaging.state.drone.model.TimeState;
+import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
+import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.time.Instant;
-
-import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
-
-/**
- * Twin representing an unmanned aircraft or vehicle.
- */
+/** Twin representing an unmanned aircraft or vehicle. */
 @ToString(callSuper = true)
 @Data
 @NoArgsConstructor
@@ -45,186 +60,319 @@ import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateS
 @Schema(description = "Digital state model representing a drone or unmanned vehicle.")
 public class DroneTwin extends EntityTwin {
 
-  @Schema(
-      description = "MAVLink or protocol-specific system identifier.",
-      example = "1",
-      nullable = true
-  )
+  @Schema(description = "MAVLink or protocol-specific system identifier.", example = "1", nullable = true)
   private Integer systemId;
 
-  @Schema(
-      description = "MAVLink or protocol-specific component identifier.",
-      example = "1",
-      nullable = true
-  )
+  @Schema(description = "MAVLink or protocol-specific component identifier.", example = "1", nullable = true)
   private Integer componentId;
 
-  @Schema(
-      description = "Synthetic or assigned MMSI used for external maritime-style identity mapping.",
-      example = "999001234",
-      nullable = true
-  )
+  @Schema(description = "Configured UxV model name used to resolve the command model implementation.", example = "generic-px4-uav", nullable = true)
+  private String modelName;
+
+  @Schema(description = "Configured source used to resolve task altitude.", nullable = true)
+  private AltitudeMode altitudeMode;
+
+  @Schema(description = "Configured home-relative altitude in metres when altitudeMode is FIXED.", nullable = true)
+  private Double altitudeMeters;
+
+  @Schema(description = "Synthetic or assigned MMSI used for external maritime-style identity mapping.", example = "999001234", nullable = true)
   private Long mmsi;
 
-  @Schema(
-      description = "Registration or tail identifier of the vehicle.",
-      example = "VH-DRN-01",
-      nullable = true
-  )
+  @Schema(description = "Registration or tail identifier of the vehicle.", example = "VH-DRN-01", nullable = true)
   private String registrationId;
 
-  @Schema(
-      description = "Human-readable description of the drone or vehicle.",
-      example = "Primary survey drone",
-      nullable = true
-  )
-  private String description;
+  @Schema(description = "Human-readable description of the drone or vehicle.", example = "Primary survey drone", nullable = true)
+  private String descriptionString;
 
-  @Schema(
-      description = "Short 7 char string used for the call sign of the vessel.",
-      example = "drone01",
-      nullable = true
-  )
+  @Schema(description = "Short 7 char string used for the call sign of the vessel.", example = "drone01", nullable = true)
   private String callSign;
 
+  @Schema(description = "Task capabilities supported by this drone or unmanned vehicle.", nullable = true)
+  private TaskCapabilities capabilities = new TaskCapabilities();
 
-  @Schema(
-      description = "Decoded autopilot information for the vehicle.",
-      nullable = true
-  )
+  @JsonIgnore
+  @Schema(hidden = true)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
+  private final DroneContactManager contactManager = new DroneContactManager();
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
+  @Getter(AccessLevel.NONE)
+  private final transient AtomicReference<MavlinkEventListSender> activeMavlinkSender = new AtomicReference<>();
+
+  @Schema(description = "Decoded autopilot information for the vehicle.", nullable = true)
   private AutopilotState autopilotState;
 
-
-  @Schema(
-      description = "Indicates whether the vehicle is armed.",
-      example = "true",
-      nullable = true
-  )
+  @Schema(description = "Indicates whether the vehicle is armed.", example = "true", nullable = true)
   private Boolean armed;
 
-  @Schema(
-      description = "Current flight mode reported by the vehicle.",
-      example = "AUTO",
-      nullable = true
-  )
+  @Schema(description = "Current flight mode reported by the vehicle.", example = "AUTO", nullable = true)
   private String flightMode;
 
-  @Schema(
-      description = "Indicates whether the vehicle is in a failsafe state.",
-      example = "false",
-      nullable = true
-  )
+  @Schema(description = "Indicates whether the vehicle is in a failsafe state.", example = "false", nullable = true)
   private Boolean failsafe;
 
-  @Schema(
-      description = "Indicates whether GPS is currently valid and usable.",
-      example = "true",
-      nullable = true
-  )
+  @Schema(description = "Indicates whether GPS is currently valid and usable.", example = "true", nullable = true)
   private Boolean gpsValid;
 
-  @Schema(
-      description = "Current mission execution state.",
-      example = "ACTIVE",
-      nullable = true
-  )
+  @Schema(description = "Current mission execution state.", example = "ACTIVE", nullable = true)
   private String missionState;
 
-  @Schema(
-      description = "Vehicle heading in degrees.",
-      example = "182.4",
-      nullable = true
-  )
+  @Schema(description = "Latest outbound MAVLink transmission snapshot, retained after completion.")
+  @SuppressWarnings("java:S3077") // MavlinkTransmissionState publishes immutable snapshots; volatile publishes its replacement.
+  private volatile io.mapsmessaging.state.mavlink.sender.MavlinkTransmissionState missionTransmission;
+
+  @Schema(description = "Latest STANAG task upload retry state, retained after completion.")
+  // Extension callers own the map and its values; the server only publishes/replaces the reference.
+  @SuppressWarnings("java:S3077")
+  private volatile Map<String, Object> taskTransmission;
+
+  @Schema(description = "Vehicle heading in degrees.", example = "182.4", nullable = true)
   private Double headingDegrees;
 
-  @Schema(
-      description = "Course over ground in degrees.",
-      example = "180.0",
-      nullable = true
-  )
+  @Schema(description = "Course over ground in degrees.", example = "180.0", nullable = true)
   private Double courseOverGroundDegrees;
 
   @Schema(
-      description = "Ground speed in meters per second.",
-      example = "14.8",
-      nullable = true
-  )
+      description = "Camera or mount pitch in degrees reported by MAVLink MOUNT_STATUS.",
+      example = "-12.34",
+      nullable = true)
+  private Double cameraPitchDegrees;
+
+  @Schema(
+      description = "Camera or mount roll in degrees reported by MAVLink MOUNT_STATUS.",
+      example = "2.5",
+      nullable = true)
+  private Double cameraRollDegrees;
+
+  @Schema(
+      description =
+          "Camera or mount bearing in degrees clockwise from North, derived from MAVLink MOUNT_STATUS pointing_c.",
+      example = "359.5",
+      nullable = true)
+  private Double cameraBearingDegrees;
+
+  @Schema(
+      description = "Raw MAVLink MAV_MOUNT_MODE value reported by MOUNT_STATUS.",
+      example = "2",
+      nullable = true)
+  private Integer cameraMountMode;
+
+  @Schema(
+      description = "Timestamp of the most recent MAVLink MOUNT_STATUS camera orientation update.",
+      example = "2026-09-18T16:30:00Z",
+      nullable = true)
+  private Instant cameraOrientationUpdatedAt;
+
+
+  @Schema(description = "Ground speed in meters per second.", example = "14.8", nullable = true)
   private Double groundSpeedMetersPerSecond;
 
-  @Schema(
-      description = "Vertical speed in meters per second.",
-      example = "-0.6",
-      nullable = true
-  )
+  @Schema(description = "Vertical speed in meters per second.", example = "-0.6", nullable = true)
   private Double verticalSpeedMetersPerSecond;
 
-  @Schema(
-      description = "Climb rate in meters per second.",
-      example = "1.2",
-      nullable = true
-  )
+  @Schema(description = "Climb rate in meters per second.", example = "1.2", nullable = true)
   private Double climbRateMetersPerSecond;
 
-  @Schema(
-      description = "Identifier of the controlling station or operator endpoint.",
-      example = "gcs-01",
-      nullable = true
-  )
+  @Schema(description = "Identifier of the controlling station or operator endpoint.", example = "gcs-01", nullable = true)
   private String controllingStationId;
 
-  @Schema(
-      description = "Indicates whether the command and control link is active.",
-      example = "true",
-      nullable = true
-  )
+  @Schema(description = "Indicates whether the command and control link is active.", example = "true", nullable = true)
   private Boolean commandLinkActive;
 
-  @Schema(
-      description = "Time-related state for the vehicle.",
-      nullable = true
-  )
+  @Schema(description = "Time-related state for the vehicle.", nullable = true)
   private TimeState timeState;
 
-  @Schema(
-      description = "Overall system and health state for the vehicle.",
-      nullable = true
-  )
+  @Schema(description = "Overall system and health state for the vehicle.", nullable = true)
   private SystemState systemState;
 
-  @Schema(
-      description = "Environmental conditions associated with the vehicle.",
-      nullable = true
-  )
+  @Schema(description = "Environmental conditions associated with the vehicle.", nullable = true)
   private EnvironmentalState environmentalState;
 
-  @Schema(
-      description = "Current landed state.",
-      example = "IN_AIR",
-      nullable = true
-  )
+  @Schema(description = "Current landed state.", example = "IN_AIR", nullable = true)
   private String landedState;
 
-  @Schema(
-      description = "Current VTOL state.",
-      example = "FIXED_WING",
-      nullable = true
-  )
+  @Schema(description = "Current VTOL state.", example = "FIXED_WING", nullable = true)
   private String vtolState;
 
-  @Schema(
-      description = "Current mission sequence number.",
-      example = "12",
-      nullable = true
-  )
+  @Schema(description = "Current mission sequence number.", example = "12", nullable = true)
   private Integer currentMissionSequence;
 
-  @Schema(
-      description = "Timestamp of the last operational state update.",
-      example = "2026-04-20T05:42:00Z",
-      nullable = true
-  )
+  @Schema(description = "Total mission item count reported by MAVLink.", example = "20", nullable = true)
+  private Integer currentMissionTotal;
+
+  @Schema(description = "Raw MAVLink MAV_MISSION_STATE value.", example = "3", nullable = true)
+  private Integer currentMissionStateCode;
+
+  @Schema(description = "Raw MAVLink MISSION_CURRENT mission_mode value.", example = "1", nullable = true)
+  private Integer currentMissionModeCode;
+
+  @Schema(description = "Mission identifier or opaque mission id reported by MAVLink.", example = "14523", nullable = true)
+  private Long currentMissionId;
+
+  @Schema(description = "Timestamp of the most recent MISSION_CURRENT observation.", example = "2026-08-17T04:10:00Z", nullable = true)
+  private Instant currentMissionUpdatedAt;
+
+  @Schema(description = "Sequence number of the most recently reached MAVLink mission item.", example = "12", nullable = true)
+  private Integer lastMissionItemReachedSequence;
+
+  @Schema(description = "Timestamp when the most recent MAVLink mission item was reported reached.", example = "2026-07-30T03:05:00Z", nullable = true)
+  private Instant lastMissionItemReachedAt;
+
+  @Schema(description = "Timestamp of the last operational state update.", example = "2026-04-20T05:42:00Z", nullable = true)
   private Instant operationalUpdatedAt;
 
+  @Schema(description = "Last status text message reported by the vehicle.", example = "GPS Glitch", nullable = true)
+  private String lastStatusText;
+
+  @Schema(description = "Last command id acknowledged by the vehicle.", example = "400", nullable = true)
+  private Integer lastAcknowledgedCommand;
+
+  @Schema(description = "Last command acknowledgement result name.", example = "ACCEPTED", nullable = true)
+  private String lastCommandAcknowledgement;
+
+  @Schema(description = "Last command acknowledgement numeric MAVLink result.", example = "0", nullable = true)
+  private Integer lastCommandAcknowledgementResult;
+
+  @Schema(description = "MAVLink target system id from the last command acknowledgement.", example = "255", nullable = true)
+  private Integer lastCommandAcknowledgementTargetSystemId;
+
+  @Schema(description = "MAVLink target component id from the last command acknowledgement.", example = "0", nullable = true)
+  private Integer lastCommandAcknowledgementTargetComponentId;
+
+  @Schema(description = "Timestamp of the last command acknowledgement.", example = "2026-05-26T05:10:00Z", nullable = true)
+  private Instant lastCommandAcknowledgementAt;
+
+  @Schema(description = "Current readiness state of the vehicle twin.", example = "REGISTRATION_READY", nullable = true)
+  private String readinessState;
+
+  @Schema(description = "Indicates whether this twin has enough information to be registered upstream.", example = "true", nullable = true)
+  private Boolean registrationReady;
+
+  @Schema(description = "Indicates whether this twin has enough information to accept command execution.", example = "false", nullable = true)
+  private Boolean commandReady;
+
+  @Schema(description = "Machine-readable missing readiness items.", nullable = true)
+  private List<String> missingReadinessItems;
+
+  @Schema(description = "Machine-readable degraded readiness items.", nullable = true)
+  private List<String> degradedReadinessItems;
+
+  @Schema(description = "Machine-readable blocking readiness items.", nullable = true)
+  private List<String> blockingReadinessItems;
+
+  @Schema(description = "Open map to define description data", nullable = true)
+  private Map<String, Object> description = new HashMap<>();
+
+  @Schema(description = "Open map for protocol-specific node specialization metadata.", nullable = true)
+  private Map<String, Object> specialization = new HashMap<>();
+
+  @Schema(description = "External data products this node offers (a camera page, a stream).", nullable = true)
+  private List<DataProductConfig> dataProducts = new ArrayList<>();
+
+  @Schema(description = "Timestamp of the last readiness evaluation.", example = "2026-05-26T05:50:00Z", nullable = true)
+  private Instant readinessUpdatedAt;
+
+  @Schema(description = "Battery capacity in hours", example = "48", nullable = true)
+  private double batteryCapacityHours;
+
+  @Schema(
+      description =
+          "Survey coverage radius in metres measured from the vehicle centreline. "
+              + "The effective survey width is twice this value.",
+      example = "200.0",
+      nullable = true)
+  private Double surveyRadiusMeters;
+
+  @Schema(
+      description =
+          "Distance in metres from a task destination that is considered an arrival.",
+      example = "100.0",
+      nullable = true)
+  private Double arrivalToleranceMeters;
+
+  private StopActionEnum stopAction;
+
+  public DroneTwin(String twinId) {
+    this(twinId, null);
+  }
+
+  public DroneTwin(String twinId, UUID uuid) {
+    super(twinId, uuid);
+    setTwinType(TwinType.DRONE);
+    setMmsi(generateSyntheticMmsi(twinId));
+  }
+
+  public List<Contact> getContactList() {
+    return contactManager.getContactList();
+  }
+
+  public boolean hasContacts() {
+    return contactManager.size() > 0;
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public DroneContactManager getContactManager() {
+    return contactManager;
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public MavlinkEventListSender getActiveMavlinkSender() {
+    return activeMavlinkSender.get();
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean hasActiveMavlinkSender() {
+    return activeMavlinkSender.get() != null;
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean registerMavlinkSender(MavlinkEventListSender sender) {
+    if (!activeMavlinkSender.compareAndSet(null, Objects.requireNonNull(sender, "sender must not be null"))) {
+      return false;
+    }
+    missionTransmission = sender.getTransmissionState();
+    return true;
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean removeMavlinkSender(MavlinkEventListSender sender) {
+    return activeMavlinkSender.compareAndSet(Objects.requireNonNull(sender, "sender must not be null"), null);
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean cancelActiveMavlinkSender() {
+    MavlinkEventListSender sender = activeMavlinkSender.getAndSet(null);
+    if (sender == null) {
+      return false;
+    }
+
+    sender.cancel();
+    return true;
+  }
+
+  @JsonIgnore
+  @Schema(hidden = true)
+  public boolean closeActiveMavlinkSender() {
+    MavlinkEventListSender sender = activeMavlinkSender.getAndSet(null);
+    if (sender == null) {
+      return false;
+    }
+
+    sender.close();
+    return true;
+  }
+
+  @Schema(description = "Current contacts detected by this drone. Expired contacts are removed before the list is returned.", accessMode = Schema.AccessMode.READ_ONLY)
   public String getProtocolSourceId() {
     if (systemId == null || componentId == null) {
       return null;
@@ -234,11 +382,5 @@ public class DroneTwin extends EntityTwin {
 
   public Long getOperationalUpdatedAtSeconds() {
     return operationalUpdatedAt != null ? operationalUpdatedAt.getEpochSecond() : null;
-  }
-
-  public DroneTwin(String twinId) {
-    super(twinId);
-    setTwinType(TwinType.DRONE);
-    setMmsi(generateSyntheticMmsi(twinId));
   }
 }

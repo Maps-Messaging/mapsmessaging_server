@@ -15,13 +15,16 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
 package io.mapsmessaging.state.drone.tak;
 
+import io.mapsmessaging.state.metrics.FeedActivityRegistry;
+import io.mapsmessaging.state.metrics.MessageOutcomeStats;
 import lombok.Getter;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,6 +37,9 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 @Getter
 public class TakSocketConnection implements Closeable {
+
+  /** Feed name prefix in {@link FeedActivityRegistry}: one feed per TAK server connection. */
+  public static final String FEED_PREFIX = "tak:";
 
   private static final int DEFAULT_CONNECT_TIMEOUT_MS = 5000;
   private static final int DEFAULT_SOCKET_TIMEOUT_MS = 5000;
@@ -49,6 +55,8 @@ public class TakSocketConnection implements Closeable {
 
   private final LinkedBlockingDeque<String> queue;
   private final Thread writerThread;
+  private final SSLSocketFactory sslSocketFactory;
+  private final TakServerStats serverStats;
 
   private volatile boolean running;
 
@@ -56,7 +64,11 @@ public class TakSocketConnection implements Closeable {
   private OutputStream socketOutputStream;
 
   public TakSocketConnection(String host, int port) {
-    this(host, port, DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_SOCKET_TIMEOUT_MS, true, DEFAULT_MAX_QUEUE_SIZE);
+    this(host, port, DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_SOCKET_TIMEOUT_MS, true, DEFAULT_MAX_QUEUE_SIZE, null);
+  }
+
+  public TakSocketConnection(String host, int port, SSLSocketFactory sslSocketFactory) {
+    this(host, port, DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_SOCKET_TIMEOUT_MS, true, DEFAULT_MAX_QUEUE_SIZE, sslSocketFactory);
   }
 
   public TakSocketConnection(String host,
@@ -65,6 +77,16 @@ public class TakSocketConnection implements Closeable {
                              int socketTimeoutMs,
                              boolean appendNewLine,
                              int maxQueueSize) {
+    this(host, port, connectTimeoutMs, socketTimeoutMs, appendNewLine, maxQueueSize, null);
+  }
+
+  public TakSocketConnection(String host,
+                             int port,
+                             int connectTimeoutMs,
+                             int socketTimeoutMs,
+                             boolean appendNewLine,
+                             int maxQueueSize,
+                             SSLSocketFactory sslSocketFactory) {
     this.host = Objects.requireNonNull(host, "host cannot be null");
     this.port = port;
     this.connectTimeoutMs = connectTimeoutMs;
@@ -75,6 +97,8 @@ public class TakSocketConnection implements Closeable {
     this.running = true;
     this.socket = null;
     this.socketOutputStream = null;
+    this.sslSocketFactory = sslSocketFactory;
+    this.serverStats = new TakServerStats();
 
     this.writerThread = new Thread(this::writerLoop, "tak-socket-writer-" + host + "-" + port);
     this.writerThread.setDaemon(true);
@@ -89,6 +113,9 @@ public class TakSocketConnection implements Closeable {
     synchronized (queue) {
       if (queue.remainingCapacity() == 0) {
         queue.pollFirst();
+        TakOutputStats.SOCKET_DROPPED_COUNT.increment();
+        serverStats.recordDrop();
+        MessageOutcomeStats.failure(MessageOutcomeStats.Source.TAK_SOCKET, "queue_full");
       }
       queue.offerLast(xml);
     }
@@ -149,26 +176,49 @@ public class TakSocketConnection implements Closeable {
   private synchronized void write(String xml) throws IOException {
     String t = xml.replace("—", "-");
     socketOutputStream.write(t.getBytes(StandardCharsets.UTF_8));
-    socketOutputStream.write('\n');
+    if (appendNewLine) {
+      socketOutputStream.write('\n');
+    }
     socketOutputStream.flush();
+    TakOutputStats.recordWrite();
+    serverStats.recordWrite();
+    FeedActivityRegistry.recordActivity(feedName());
   }
 
   private synchronized void reconnect() {
     closeQuietly();
-
+    Socket pendingSocket = null;
     try {
-      Socket newSocket = new Socket();
-      newSocket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
-      newSocket.setSoTimeout(socketTimeoutMs);
-      newSocket.setKeepAlive(true);
-      newSocket.setTcpNoDelay(true);
+      pendingSocket = sslSocketFactory != null ? sslSocketFactory.createSocket() : new Socket();
+      pendingSocket.connect(new InetSocketAddress(host, port), connectTimeoutMs);
+      if (pendingSocket instanceof SSLSocket sslSocket) {
+        sslSocket.startHandshake();
+      }
+      pendingSocket.setSoTimeout(socketTimeoutMs);
+      pendingSocket.setKeepAlive(true);
+      pendingSocket.setTcpNoDelay(true);
 
-      socket = newSocket;
-      socketOutputStream = newSocket.getOutputStream();
-    }
-    catch (IOException ignored) {
+      OutputStream output = pendingSocket.getOutputStream();
+      socket = pendingSocket;
+      socketOutputStream = output;
+      pendingSocket = null;
+      TakOutputStats.CONNECT_COUNT.increment();
+      serverStats.recordConnect();
+      FeedActivityRegistry.setConnected(feedName(), true);
+    } catch (IOException ignored) {
       socket = null;
       socketOutputStream = null;
+      TakOutputStats.CONNECT_FAILURE_COUNT.increment();
+      serverStats.recordConnectFailure();
+      FeedActivityRegistry.setConnected(feedName(), false);
+    } finally {
+      if (pendingSocket != null) {
+        try {
+          pendingSocket.close();
+        } catch (IOException ignored) {
+          // Connection failed; the pending socket must not become the active connection.
+        }
+      }
     }
   }
 
@@ -204,6 +254,14 @@ public class TakSocketConnection implements Closeable {
       catch (IOException ignored) {
       }
       socket = null;
+      TakOutputStats.DISCONNECT_COUNT.increment();
+      serverStats.recordDisconnect();
+      FeedActivityRegistry.setConnected(feedName(), false);
     }
+  }
+
+  /** Feed name in {@link FeedActivityRegistry}; matches the server label of {@code TakServerJMX}. */
+  String feedName() {
+    return FEED_PREFIX + host + "_" + port;
   }
 }

@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.state.drone.core;
 
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
+
 /**
  * Observer hooks for twin lifecycle and relationship changes.
  */
@@ -45,6 +48,10 @@ public interface TwinObserver {
                                    TwinLifecycleStatus currentStatus,
                                    EntityTwin twin,
                                    TwinUpdateContext context) {
+    // no-op by default
+  }
+
+  default void onDetectionEvent(DroneTwin source, DetectionEvent event, TwinUpdateContext context) {
     // no-op by default
   }
 

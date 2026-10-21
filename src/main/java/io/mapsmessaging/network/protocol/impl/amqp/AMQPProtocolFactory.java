@@ -25,6 +25,7 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.detection.ByteArrayDetection;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class AMQPProtocolFactory extends io.mapsmessaging.network.protocol.ProtocolImplFactory {
 
@@ -33,7 +34,7 @@ public class AMQPProtocolFactory extends io.mapsmessaging.network.protocol.Proto
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     return null;
 
   }

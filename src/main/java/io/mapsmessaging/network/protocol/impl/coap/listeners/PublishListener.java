@@ -36,7 +36,6 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -51,13 +50,13 @@ public abstract class PublishListener extends  Listener {
       code = Code.DELETED;
     }
     boolean process = canProcess(destination, request);
+    if (isDelete || process) {
+      destination.storeMessage(build(request, protocol));
+    }
     if (request.getType().equals(TYPE.CON)) {
       BasePacket response = request.buildAckResponse(code);
       response.setCode(process ? code : Code.PRECONDITION_FAILED);
       protocol.sendResponse(response);
-    }
-    if (isDelete || process) {
-      destination.storeMessage(build(request, protocol));
     }
   }
 
@@ -189,11 +188,10 @@ public abstract class PublishListener extends  Listener {
   private List<byte[]> extractTags(Message message){
     List<byte[]> etags = new ArrayList<>();
     Map<String, TypedData> map = message.getDataMap();
-    for(Entry<String, TypedData> entry:map.entrySet()){
-      if(entry.getKey().startsWith("etag_")){
-        etags.add((byte[])entry.getValue().getData());
-      }
-    }
+    map.entrySet().stream()
+        .filter(entry -> entry.getKey().startsWith("etag_"))
+        .map(entry -> (byte[])entry.getValue().getData())
+        .forEachOrdered(etags::add);
     return etags;
   }
 

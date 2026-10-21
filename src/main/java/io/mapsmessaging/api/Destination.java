@@ -28,6 +28,9 @@ import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.security.SecurityContext;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.security.authorisation.ProtectedResource;
 import lombok.NonNull;
@@ -40,6 +43,8 @@ import java.io.IOException;
  */
 public class Destination implements BaseDestination {
 
+  private static final Logger logger = LoggerFactory.getLogger(Destination.class);
+
   protected final DestinationImpl destinationImpl;
   protected final SecurityContext securityContext;
   protected final ProtectedResource protectedResource;
@@ -48,6 +53,9 @@ public class Destination implements BaseDestination {
     destinationImpl = impl;
     this.securityContext = context;
     protectedResource = new ProtectedResource(impl.getResourceType().getName(), impl.getFullyQualifiedNamespace(), null);
+  }
+  public boolean isClosed(){
+    return destinationImpl.isClosed();
   }
 
   @Override
@@ -63,7 +71,7 @@ public class Destination implements BaseDestination {
           }
         }
         catch(Throwable t) {
-          t.printStackTrace();
+          logger.log(ServerLogMessages.DESTINATION_ERROR_SETTING_SCHEMA, destinationImpl.getFullyQualifiedNamespace(), t);
         }
       }
       message.setSchemaId(destinationImpl.getSchema().getUniqueId());

@@ -25,39 +25,39 @@ import io.mapsmessaging.devices.serial.devices.sensors.SerialDevice;
 
 public class Serial implements SerialDevice {
 
-  private final SerialPort serial;
+  private final SerialPort serialPort;
 
-  public Serial(SerialPort serial) {
-    this.serial = serial;
+  public Serial(SerialPort serialPort) {
+    this.serialPort = serialPort;
   }
 
   @Override
   public boolean isOpen() {
-    return serial.isOpen();
+    return serialPort.isOpen();
   }
 
   @Override
   public boolean openPort() {
-    return serial.openPort();
+    return serialPort.openPort();
   }
 
   @Override
   public String getSystemPortName() {
-    return serial.getSystemPortName();
+    return serialPort.getSystemPortName();
   }
 
   @Override
   public void closePort() {
-    serial.closePort();
+    serialPort.closePort();
   }
 
   @Override
   public int writeBytes(byte[] request, int length) {
-    return serial.writeBytes(request, length);
+    return serialPort.writeBytes(request, length);
   }
 
   @Override
   public int readBytes(byte[] buffer, int remaining) {
-    return serial.readBytes(buffer, remaining);
+    return serialPort.readBytes(buffer, remaining);
   }
 }

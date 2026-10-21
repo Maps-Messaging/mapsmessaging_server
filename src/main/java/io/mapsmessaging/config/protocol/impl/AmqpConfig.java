@@ -42,9 +42,7 @@ public class AmqpConfig extends AmqpConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof AmqpConfigDTO) {
-      AmqpConfigDTO newConfig = (AmqpConfigDTO) config;
-
+    if (config instanceof AmqpConfigDTO newConfig) {
       // Check each field and update if necessary
       if (this.idleTimeout != newConfig.getIdleTimeout()) {
         this.idleTimeout = newConfig.getIdleTimeout();

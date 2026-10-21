@@ -20,38 +20,48 @@
 package io.mapsmessaging.network.protocol.impl.stomp.listener;
 
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Ack;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
+import io.mapsmessaging.network.protocol.impl.stomp.frames.AcknowledgementToken;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 
 public class AckListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer)
+      throws StompProtocolException {
     Ack ackFrame = (Ack) frame;
-    SubscribedEventManager subscription = engine.findSubscription(ackFrame.getSubscription());
-    if (subscription != null) {
-      try {
-        long messageId = Long.parseLong(ackFrame.getMessageId().trim());
-        subscription.ackReceived(messageId);
-      } catch (NumberFormatException e) {
-        if (ackFrame.getReceipt() != null) {
-          Error error = new Error();
-          error.setReceipt(ackFrame.getReceipt());
-          error.setContent((e.getMessage()).getBytes());
-          error.setContentType("text/plain");
-          ackFrame.setReceipt(null);
-          engine.send(error);
-        }
-      }
-    } else {
-      Error error = new Error();
-      error.setReceipt(ackFrame.getReceipt());
-      error.setContent(("No subscription found that matches : " + ackFrame.getSubscription()).getBytes());
-      error.setContentType("text/plain");
-      ackFrame.setReceipt(null);
-      engine.send(error);
+    Acknowledgement acknowledgement = resolve(ackFrame, engine);
+    SubscribedEventManager subscription = engine.findSubscription(acknowledgement.subscriptionId());
+    if (subscription == null) {
+      throw new StompProtocolException(
+          "No subscription found that matches " + acknowledgement.subscriptionId());
     }
+    subscription.ackReceived(acknowledgement.messageId());
+  }
+
+  private Acknowledgement resolve(Ack frame, SessionState engine)
+      throws StompProtocolException {
+    if (engine.getProtocol().isStomp12()) {
+      AcknowledgementToken.Value value =
+          AcknowledgementToken.parse(frame.getAcknowledgementId());
+      return new Acknowledgement(value.subscriptionId(), value.messageId());
+    }
+
+    String subscriptionId = frame.getSubscription();
+    String messageId = frame.getMessageId();
+    if (subscriptionId == null || messageId == null) {
+      throw new StompProtocolException(
+          "STOMP 1.0/1.1 ACK requires subscription and message-id headers");
+    }
+    try {
+      return new Acknowledgement(subscriptionId, Long.parseLong(messageId.trim()));
+    } catch (NumberFormatException e) {
+      throw new StompProtocolException("Invalid STOMP acknowledgement message-id");
+    }
+  }
+
+  private record Acknowledgement(String subscriptionId, long messageId) {
   }
 }

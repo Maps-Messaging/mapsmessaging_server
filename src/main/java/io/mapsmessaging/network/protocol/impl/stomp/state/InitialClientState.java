@@ -23,6 +23,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connected;
+import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.listener.FrameListener;
 
@@ -31,7 +32,7 @@ import java.io.IOException;
 public class InitialClientState implements State {
 
   public void handleFrame(SessionState engine, Frame frame, boolean endOfBuffer) throws IOException {
-    if (frame instanceof Connected) {
+    if (frame instanceof Connected || frame instanceof Error) {
       FrameListener listener = frame.getFrameListener();
       listener.frameEvent(frame, engine, endOfBuffer);
       listener.postFrameHandling(frame, engine);
@@ -41,7 +42,12 @@ public class InitialClientState implements State {
   }
 
   @Override
-  public boolean sendMessage(SessionState engine, String destinationName, SubscriptionContext info, Message message, Runnable completionTask) {
+  public boolean sendMessage(
+      SessionState engine,
+      String destinationName,
+      SubscriptionContext info,
+      Message message,
+      Runnable completionTask) {
     return false;
   }
 }

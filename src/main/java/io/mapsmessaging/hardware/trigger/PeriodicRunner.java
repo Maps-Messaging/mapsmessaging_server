@@ -46,6 +46,7 @@ public class PeriodicRunner implements Runnable {
 
   @Getter
   @Setter
+  @SuppressWarnings("java:S3077") // ExecutorService returns a thread-safe Future; volatile publishes its replacement.
   private volatile Future<?> submittedFuture;
 
   public PeriodicRunner(Runnable task) {

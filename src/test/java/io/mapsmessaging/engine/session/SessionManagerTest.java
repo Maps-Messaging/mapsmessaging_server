@@ -54,6 +54,23 @@ public class SessionManagerTest {
     return manager.getSessions().size();
   }
 
+  public int nonCanSessionCount() {
+    return (int) manager.getSessions().stream()
+        .filter(session -> !isCanBackedSession(session.getName()))
+        .count();
+  }
+
+  public boolean isCanBackedSession(String sessionId) {
+    if (sessionId == null) {
+      return false;
+    }
+    return sessionId.matches("(?i)^v?can\\d+(?:[-_:].*)?$");
+  }
+
+  public boolean hasActiveSession(String sessionId) {
+    return manager.getSessions().stream().anyMatch(session -> session.getName().equals(sessionId));
+  }
+
   public boolean hasSessions() {
     return manager.hasSessions();
   }
@@ -61,8 +78,7 @@ public class SessionManagerTest {
   public void closeIdleSession(String idleSession) {
     SubscriptionController sub = manager.getIdleSubscriptions(idleSession);
     if(sub != null){
-      manager.closeSubscriptionController(sub);
-      sub.close(false);
+      manager.close(sub.getSessionId(), false);
     }
   }
 }

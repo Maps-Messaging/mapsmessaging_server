@@ -30,11 +30,11 @@ else
     parent_dir="$current_dir"
 fi
 
-if [ -z ${MAPS_HOME+x} ]; then
+if [[ -z ${MAPS_HOME+x} ]]; then
     export MAPS_HOME="$parent_dir"
 fi
 
-if [ -z ${MAPS_DATA+x} ];
+if [[ -z ${MAPS_DATA+x} ]];
   then export MAPS_DATA=$MAPS_HOME/data;
 fi
 
@@ -83,7 +83,7 @@ while true; do
 
     EXIT_CODE=$?
 
-    if [ $EXIT_CODE -eq 8 ]; then
+    if [[ $EXIT_CODE -eq 8 ]]; then
         echo "Restarting server..."
     else
         echo "Exiting with code $EXIT_CODE"

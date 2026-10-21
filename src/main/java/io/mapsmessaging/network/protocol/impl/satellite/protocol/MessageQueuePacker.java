@@ -32,7 +32,28 @@ import java.util.zip.Deflater;
 public final class MessageQueuePacker extends MessageQueue{
   private MessageQueuePacker() {}
 
-  public record Packed(byte[] data, boolean compressed, int transformerNumber) {}
+  public record Packed(byte[] data, boolean compressed, int transformerNumber) {
+    @Override
+    public boolean equals(Object other) {
+      return this == other || other instanceof Packed packed
+          && compressed == packed.compressed
+          && transformerNumber == packed.transformerNumber
+          && Arrays.equals(data, packed.data);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = Arrays.hashCode(data);
+      result = 31 * result + Boolean.hashCode(compressed);
+      return 31 * result + Integer.hashCode(transformerNumber);
+    }
+
+    @Override
+    public String toString() {
+      return "Packed[data=" + Arrays.toString(data) + ", compressed=" + compressed
+          + ", transformerNumber=" + transformerNumber + "]";
+    }
+  }
 
   public static Packed pack(Map<String, List<byte[]>> queuedMessages, int minCompressSize, CipherManager cipherManager, ProtocolMessageTransformation transformer) throws IOException {
     MessageQueuePacker packer = new MessageQueuePacker();

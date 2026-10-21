@@ -60,18 +60,15 @@ public class LoRaStreamHandler implements StreamHandler {
       // Skip any characters before the START character
       //
       try {
-        int val = input.read();
-        while (val != Constants.START_FRAME && val != -1) {
-          val = input.read();
+        int val = readByte(input);
+        while (val != Constants.START_FRAME) {
+          val = readByte(input);
         }
       } catch (SerialPortTimeoutException e) {
         return parseInput(input, packet);
       }
-      byte command = (byte) input.read();
-      if (command == -1) {
-        throw new IOException("End Of Stream reached");
-      }
-      byte len = (byte) (input.read() & 0xff);
+      byte command = (byte) readByte(input);
+      int len = readByte(input);
       //
       // Validate the command is known
       //
@@ -80,11 +77,11 @@ public class LoRaStreamHandler implements StreamHandler {
           command == SUCCESSFUL ||
           command == FAILURE) {
         packet.put(command);
-        packet.put(len);
+        packet.put((byte) len);
         for (int x = 0; x < len; x++) {
-          packet.put((byte) input.read());
+          packet.put((byte) readByte(input));
         }
-        if (input.read() != Constants.END_FRAME) {
+        if (readByte(input) != Constants.END_FRAME) {
           packet.flip();
           logger.log(ServerLogMessages.LORA_GATEWAY_FRAMING_ERROR, packet);
           return parseInput(input, packet);
@@ -95,6 +92,14 @@ public class LoRaStreamHandler implements StreamHandler {
         return parseInput(input, packet);
       }
     }
+  }
+
+  private int readByte(InputStream input) throws IOException {
+    int value = input.read();
+    if (value == -1) {
+      throw new IOException("End Of Stream reached");
+    }
+    return value;
   }
 
   @Override

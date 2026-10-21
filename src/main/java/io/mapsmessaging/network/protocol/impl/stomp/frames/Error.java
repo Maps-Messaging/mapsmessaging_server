@@ -20,6 +20,11 @@
 package io.mapsmessaging.network.protocol.impl.stomp.frames;
 
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.protocol.EndOfBufferException;
+import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /**
  * Implements the STOMP Error frame as per https://stomp.github.io/stomp-specification-1.2.html#ERROR
@@ -27,8 +32,12 @@ import io.mapsmessaging.network.io.Packet;
 public class Error extends ServerFrame {
 
   private static final byte[] COMMAND = "ERROR".getBytes();
+  private static final int MAX_ERROR_BODY_SIZE = 64 * 1024;
 
-  private byte[] payload;
+  private byte[] payload = new byte[0];
+  private int payloadPosition;
+  private ByteArrayOutputStream streamedPayload;
+  private boolean bodyInitialised;
 
   @Override
   public Frame instance() {
@@ -42,16 +51,113 @@ public class Error extends ServerFrame {
   @Override
   public void packBody(Packet packet) {
     packet.put(payload);
-    packet.put((byte) 0x0);
   }
 
-  public void setContentType(String s) {
-    putHeader("Content-Type", s);
+  public void setContentType(String contentType) {
+    putHeader("content-type", contentType);
   }
 
   public void setContent(byte[] bytes) {
-    payload = bytes;
-    putHeader("Content-Length", "" + (payload.length + 1));
+    payload = bytes == null ? new byte[0] : bytes;
+    putHeader("content-length", Integer.toString(payload.length));
+  }
+
+  public byte[] getContent() {
+    return payload;
+  }
+
+  @Override
+  public void scanFrame(Packet packet) throws IOException {
+    if (!endOfHeader) {
+      try {
+        super.scanFrame(packet, false);
+      } catch (EndOfBufferException incompleteHeader) {
+        if (!packet.hasRemaining()) {
+          throw incompleteHeader;
+        }
+      }
+    }
+    if (!endOfHeader) {
+      throw new EndOfBufferException("Need more STOMP ERROR header data");
+    }
+
+    initialiseBody();
+    resume(packet);
+    if (!hasEndOfFrame) {
+      throw new EndOfBufferException("Need more STOMP ERROR body data");
+    }
+  }
+
+  @Override
+  public void resume(Packet packet) throws EndOfBufferException, StompProtocolException {
+    if (streamedPayload != null) {
+      loadNullTerminatedBody(packet);
+    } else {
+      loadLengthBasedBody(packet);
+    }
+  }
+
+  private void initialiseBody() throws IOException {
+    if (bodyInitialised) {
+      return;
+    }
+    bodyInitialised = true;
+    super.parseCompleted();
+    String lengthValue = getHeader("content-length");
+    if (lengthValue == null) {
+      streamedPayload = new ByteArrayOutputStream(256);
+      return;
+    }
+
+    int length;
+    try {
+      length = Integer.parseInt(lengthValue.trim());
+    } catch (NumberFormatException invalidLength) {
+      throw new StompProtocolException("Invalid STOMP ERROR content-length " + lengthValue);
+    }
+    if (length < 0 || length > MAX_ERROR_BODY_SIZE) {
+      throw new StompProtocolException(
+          "STOMP ERROR body exceeds supported maximum of " + MAX_ERROR_BODY_SIZE + " bytes");
+    }
+    payload = new byte[length];
+    payloadPosition = 0;
+  }
+
+  private void loadLengthBasedBody(Packet packet)
+      throws EndOfBufferException, StompProtocolException {
+    int count = Math.min(packet.available(), payload.length - payloadPosition);
+    if (count > 0) {
+      packet.get(payload, payloadPosition, count);
+      payloadPosition += count;
+    }
+    if (payloadPosition != payload.length) {
+      throw new EndOfBufferException("Need more STOMP ERROR body data");
+    }
+    if (!packet.hasRemaining()) {
+      throw new EndOfBufferException("Need STOMP ERROR frame terminator");
+    }
+    if (packet.get() != END_OF_FRAME) {
+      throw new StompProtocolException("STOMP ERROR frame is missing its NUL terminator");
+    }
+    hasEndOfFrame = true;
+  }
+
+  private void loadNullTerminatedBody(Packet packet)
+      throws EndOfBufferException, StompProtocolException {
+    while (packet.hasRemaining()) {
+      byte value = packet.get();
+      if (value == END_OF_FRAME) {
+        payload = streamedPayload.toByteArray();
+        hasEndOfFrame = true;
+        return;
+      }
+      if (streamedPayload.size() >= MAX_ERROR_BODY_SIZE) {
+        throw new StompProtocolException(
+            "STOMP ERROR body exceeds supported maximum of " + MAX_ERROR_BODY_SIZE + " bytes");
+      }
+      streamedPayload.write(value);
+    }
+    throw new EndOfBufferException("Need more STOMP ERROR body data");
   }
 
   @Override

@@ -42,8 +42,7 @@ public class CronTriggerConfig extends CronTriggerConfigDTO implements TriggerCo
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof CronTriggerConfigDTO) {
-      CronTriggerConfigDTO newConfig = (CronTriggerConfigDTO) config;
+    if (config instanceof CronTriggerConfigDTO newConfig) {
       if (this.cron == null || !this.cron.equals(newConfig.getCron())) {
         this.cron = newConfig.getCron();
         hasChanged = true;

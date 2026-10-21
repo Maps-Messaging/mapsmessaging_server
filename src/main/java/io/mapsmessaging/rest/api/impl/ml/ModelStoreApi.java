@@ -44,6 +44,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/server/models")
 public class ModelStoreApi extends BaseRestApi {
 
+  private static final String MODEL_NAME_REQUIRED = "Model name must not be blank";
+  private static final String ML_NOT_SUPPORTED = "Failure, ML not supported";
+
   private static final String RESOURCE = "models";
 
   @POST
@@ -101,7 +104,7 @@ public class ModelStoreApi extends BaseRestApi {
     if (modelName == null || modelName.trim().isEmpty()) {
       return Response.status(Response.Status.BAD_REQUEST)
           .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Model name must not be blank"))
+          .entity(new StatusResponse(MODEL_NAME_REQUIRED))
           .build();
     }
 
@@ -117,7 +120,7 @@ public class ModelStoreApi extends BaseRestApi {
       response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
       return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE)
           .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Failure, ML not supported"))
+          .entity(new StatusResponse(ML_NOT_SUPPORTED))
           .build();
     }
 
@@ -176,7 +179,7 @@ public class ModelStoreApi extends BaseRestApi {
     if (modelName == null || modelName.trim().isEmpty()) {
       return Response.status(Response.Status.BAD_REQUEST)
           .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Model name must not be blank"))
+          .entity(new StatusResponse(MODEL_NAME_REQUIRED))
           .build();
     }
 
@@ -185,7 +188,7 @@ public class ModelStoreApi extends BaseRestApi {
       response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
       return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE)
           .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Failure, ML not supported"))
+          .entity(new StatusResponse(ML_NOT_SUPPORTED))
           .build();
     }
 
@@ -237,7 +240,7 @@ public class ModelStoreApi extends BaseRestApi {
     if (modelName == null || modelName.trim().isEmpty()) {
       return Response.status(Response.Status.BAD_REQUEST)
           .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Model name must not be blank"))
+          .entity(new StatusResponse(MODEL_NAME_REQUIRED))
           .build();
     }
 
@@ -300,7 +303,7 @@ public class ModelStoreApi extends BaseRestApi {
     if (modelName == null || modelName.trim().isEmpty()) {
       return Response.status(Response.Status.BAD_REQUEST)
           .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Model name must not be blank"))
+          .entity(new StatusResponse(MODEL_NAME_REQUIRED))
           .build();
     }
 
@@ -309,7 +312,7 @@ public class ModelStoreApi extends BaseRestApi {
       response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
       return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE)
           .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Failure, ML not supported"))
+          .entity(new StatusResponse(ML_NOT_SUPPORTED))
           .build();
     }
 
@@ -365,7 +368,7 @@ public class ModelStoreApi extends BaseRestApi {
       response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
       return Response.status(HttpServletResponse.SC_NOT_ACCEPTABLE)
           .type(MediaType.APPLICATION_JSON)
-          .entity(new StatusResponse("Failure, ML not supported"))
+          .entity(new StatusResponse(ML_NOT_SUPPORTED))
           .build();
     }
 

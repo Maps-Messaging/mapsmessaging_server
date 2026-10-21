@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.mapsmessaging.network.protocol.impl.satellite.gateway.inmarsat.protocol.model.*;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -46,15 +47,15 @@ public final class MessagesClient extends BaseInmarsatClient {
     }
   }
 
-  public MobileTerminatedSubmitResponse submitMobileTerminated(String bearer, String xMailbox, MobileTerminatedSubmitRequest body) {
+  public MobileTerminatedSubmitResponse submitMobileTerminated(String bearer, String xMailbox, MobileTerminatedSubmitRequest body) throws IOException {
     return postJson("messages/mobileTerminated", body, bearer, xMailbox, MobileTerminatedSubmitResponse.class);
   }
 
-  public MobileTerminatedStatusResponse getMobileTerminatedStatus(String bearer, String xMailbox, String startTimeIso) {
+  public MobileTerminatedStatusResponse getMobileTerminatedStatus(String bearer, String xMailbox, String startTimeIso) throws IOException {
     return get("messages/mobileTerminated/status", Map.of("startTime", startTimeIso), bearer, xMailbox, MobileTerminatedStatusResponse.class);
   }
 
-  public List<MobileTerminatedDetail> getMobileTerminatedDetails(String bearer, String xMailbox, List<String> messageIds) {
+  public List<MobileTerminatedDetail> getMobileTerminatedDetails(String bearer, String xMailbox, List<String> messageIds) throws IOException {
     String idList = String.join(",", messageIds);
     return get("messages/mobileTerminated", Map.of("idList", idList), bearer, xMailbox, MT_DETAIL_LIST);
   }

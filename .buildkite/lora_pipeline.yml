@@ -1,15 +1,9 @@
 steps:
-  - label: "maven: Build and Deploy LoRa device"
+  - label: "maven: Build and Deploy MAPS Server and Applications"
     command:
-      - export JAVA_HOME=/usr/lib/jvm/zulu21
-      - mvn -DskipTests=true clean compile -U
-      - export PATH=$JAVA_HOME/bin:$PATH
-      - cd src/main/cpp
-      - chmod +x build.sh
-      - ./build.sh
-      - buildkite-agent artifact upload libLoRaChipDevice.so
+      - echo "Starting MAPS Release Cycle"
     agents:
-      queue: "raspberrypi_build_agent"
+      queue: "orchestration"
   - wait
 
   - trigger: "090-server-snapshot-build"
@@ -17,8 +11,14 @@ steps:
   - trigger: "090-server-ml-snapshot-build"
 
   - wait
+  - trigger: "095-maps-apps-packaging"
+  - trigger: "095-drone-build-and-package"
   - trigger: "100-server-3rd-party-extensions-snapshot"
   - trigger: "200-build-windows-installer"
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "${BUILDKITE_COMMIT}"
+      branch: "${BUILDKITE_BRANCH}"
 
   - label: "110 Build Halos Maps Pi Image"
     trigger: "110-build-halos-maps-pi-image"

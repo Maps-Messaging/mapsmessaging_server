@@ -22,7 +22,6 @@ package io.mapsmessaging.license.features;
 import lombok.Data;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
 
 @Data
 @Schema(description = "Interconnection feature configuration for the license. All fields are required.")

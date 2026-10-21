@@ -19,34 +19,28 @@
 
 package io.mapsmessaging.network.protocol.impl.stomp.listener;
 
+import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 
-import java.util.ArrayList;
-import java.util.StringTokenizer;
+import java.nio.charset.StandardCharsets;
 
 public abstract class BaseConnectListener implements FrameListener {
-
-  private static final float MIN_VERSION = 1.0f;
-  private static final float MAX_VERSION = 1.2f;
 
   protected static final String CONTENT_TYPE_TEXT = "text/plain";
 
   protected float processVersion(SessionState engine, String versionHeader) {
-    if (versionHeader == null || versionHeader.isEmpty()) {
-      io.mapsmessaging.network.protocol.impl.stomp.frames.Error error = new io.mapsmessaging.network.protocol.impl.stomp.frames.Error();
-      error.setContentType(CONTENT_TYPE_TEXT);
-      error.setContent("No version header supplied".getBytes());
-      engine.send(error);
+    if (versionHeader == null || versionHeader.isBlank()) {
+      sendError(engine, "No version header supplied");
       return Float.NaN;
     }
 
-    // Check to see if we support the version
     float version = calculateVersion(versionHeader);
-    if (version < 0) {
-      io.mapsmessaging.network.protocol.impl.stomp.frames.Error error = new io.mapsmessaging.network.protocol.impl.stomp.frames.Error();
-      error.setContentType(CONTENT_TYPE_TEXT);
-      error.setContent(("No suitable protocol version discovered, received " + versionHeader + " : Supported = 1.1 and 1.2").getBytes());
-      engine.send(error);
+    if (Float.isNaN(version)) {
+      sendError(
+          engine,
+          "No suitable protocol version discovered, received "
+              + versionHeader
+              + " : Supported = 1.0, 1.1 and 1.2");
       return Float.NaN;
     }
     engine.getProtocol().setVersion(version);
@@ -54,24 +48,35 @@ public abstract class BaseConnectListener implements FrameListener {
   }
 
   protected void handleFailedAuth(Exception failedAuth, SessionState engine) {
-    io.mapsmessaging.network.protocol.impl.stomp.frames.Error error = new io.mapsmessaging.network.protocol.impl.stomp.frames.Error();
-    error.setContentType(CONTENT_TYPE_TEXT);
-    error.setContent(("Failed to authenticate: " + failedAuth.getMessage()).getBytes());
-    engine.send(error);
+    sendError(engine, "Failed to authenticate: " + failedAuth.getMessage());
   }
 
   private float calculateVersion(String versionHeader) {
-    ArrayList<Float> versions = new ArrayList<>();
-    StringTokenizer versionList = new StringTokenizer(versionHeader, ",");
-    while (versionList.hasMoreElements()) {
-      versions.add(Float.parseFloat(versionList.nextElement().toString().trim()));
-    }
-    float max = -1.0f;
-    for (Float test : versions) {
-      if ((test >= MIN_VERSION && test <= MAX_VERSION) && max < test) {
-        max = test;
+    float highest = Float.NaN;
+    for (String candidate : versionHeader.split(",", -1)) {
+      String token = candidate.trim();
+      // Unsupported numeric versions can coexist with valid versions,
+      // but malformed tokens invalidate the whole offer.
+      if (!token.matches("\\d+\\.\\d+")) {
+        return Float.NaN;
+      }
+      float supported = switch (token) {
+        case "1.0" -> 1.0f;
+        case "1.1" -> 1.1f;
+        case "1.2" -> 1.2f;
+        default -> Float.NaN;
+      };
+      if (!Float.isNaN(supported) && (Float.isNaN(highest) || supported > highest)) {
+        highest = supported;
       }
     }
-    return max;
+    return highest;
+  }
+
+  private void sendError(SessionState engine, String message) {
+    Error error = new Error();
+    error.setContentType(CONTENT_TYPE_TEXT);
+    error.setContent(message.getBytes(StandardCharsets.UTF_8));
+    engine.send(error);
   }
 }

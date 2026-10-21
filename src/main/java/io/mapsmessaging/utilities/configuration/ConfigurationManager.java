@@ -22,9 +22,8 @@ package io.mapsmessaging.utilities.configuration;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.networknt.schema.Error;
+import com.networknt.schema.InputFormat;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaRegistry;
 import com.networknt.schema.dialect.Dialects;
@@ -43,8 +42,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaGenerator;
 import io.mapsmessaging.tools.config.schema.RuntimeJsonSchemaService;
-import io.mapsmessaging.tools.config.yaml.RenderMode;
-import io.mapsmessaging.tools.config.yaml.YamlWriter;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -52,7 +49,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -130,6 +126,14 @@ public class ConfigurationManager {
     return configSchemas.get(name);
   }
 
+  public List<String> validateConfiguration(String configName, Map<String, Object> config) {
+    String schema = configSchemas.get(configName);
+    if (schema == null || schema.isBlank()) {
+      return List.of("Schema not found for: " + configName);
+    }
+    return validate(schema, config);
+  }
+
   public void initialise(@NonNull @NotNull String serverId) {
     PropertyManager defaultManager = null;
     if (ConsulManagerFactory.getInstance().isStarted()) {
@@ -180,12 +184,13 @@ public class ConfigurationManager {
         ConfigurationProperties props = manager.getProperties(name);
         String schema = configSchemas.get(name);
         Map<String, Object> raw = props.getMap();
-
-        List<String> errors = validate(schema, raw);
-        if(!errors.isEmpty()){
-          hasErrors = true;
-          for(String error:errors){
-            logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
+        if(schema != null) {
+          List<String> errors = validate(schema, raw);
+          if (!errors.isEmpty()) {
+            hasErrors = true;
+            for (String error : errors) {
+              logger.log(PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR, name, error);
+            }
           }
         }
         logger.log(PROPERTY_MANAGER_LOOKUP, name, "Backup");
@@ -249,6 +254,7 @@ public class ConfigurationManager {
 
   private List<String> validate(String stringSchema, Map<String, Object> raw) {
     ObjectMapper mapper = new ObjectMapper();
+
     JsonNode instance = mapper.valueToTree(raw);
     if (instance.isObject()) {
       ((ObjectNode) instance).remove("loaded");
@@ -259,18 +265,22 @@ public class ConfigurationManager {
       jsonSchema = mapper.readTree(stringSchema);
     } catch (Throwable e) {
       logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, e.getMessage());
-      return List.of("Invalid schema loaded:"+e.getMessage());
+      return List.of("Invalid schema loaded:" + e.getMessage());
     }
 
-    JsonNode effectiveSchema = resolveTopLevelRef(jsonSchema);
+    try {
+      JsonNode effectiveSchema = resolveTopLevelRef(jsonSchema);
 
-    Schema schema = schemaRegistry.getSchema(effectiveSchema);
+      Schema schema = schemaRegistry.getSchema(effectiveSchema.toString(), InputFormat.JSON);
+      List<Error> errors = schema.validate(instance.toString(), InputFormat.JSON);
 
-    List<Error> errors = schema.validate(instance);
-
-    return errors.stream()
-        .map(Error::getMessage)
-        .toList();
+      return errors.stream()
+          .map(Error::getMessage)
+          .toList();
+    } catch (Throwable e) {
+      logger.log(PROPERTY_MANAGER_LOOKUP_FAILED, e.getMessage());
+      return List.of("Schema validation failed:" + e.getMessage());
+    }
   }
 
   private JsonNode resolveTopLevelRef(JsonNode schemaRoot) {

@@ -38,19 +38,20 @@ public class DtlsConfig extends DtlsConfigDTO implements Config {
   public DtlsConfig(ConfigurationProperties config) {
     setType("dtls");
     NetworkConfigFactory.unpack(config, this);
-    sslConfig = new SslConfig(config);
+    sslConfig = new SslConfig(config, "dtls");
     if(!sslConfig.getContext().toLowerCase().startsWith("dtls")){
       sslConfig.setContext("DTLSv1.2");
     }
   }
 
   public boolean update(BaseConfigDTO update) {
-    boolean hasChanged = false;
-    if (update instanceof DtlsConfigDTO) {
-      hasChanged = NetworkConfigFactory.update(this, (DtlsConfigDTO) update);
-      if(((SslConfig)sslConfig).update(update)){
-        hasChanged = true;
-      }
+    if (!(update instanceof DtlsConfigDTO newConfig)) {
+      return false;
+    }
+
+    boolean hasChanged = NetworkConfigFactory.update(this, newConfig);
+    if (newConfig.getSslConfig() != null && ((SslConfig) sslConfig).update(newConfig.getSslConfig())) {
+      hasChanged = true;
     }
     return hasChanged;
   }
@@ -62,4 +63,5 @@ public class DtlsConfig extends DtlsConfigDTO implements Config {
     security.put("dtls", ((SslConfig)sslConfig).toConfigurationProperties());
     config.put("security", security);
     return config;
-  }}
+  }
+}

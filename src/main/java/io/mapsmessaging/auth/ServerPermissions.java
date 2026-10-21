@@ -95,17 +95,17 @@ public enum ServerPermissions implements Permission {
     for (ServerPermissions serverPermission : ServerPermissions.values()) {
       String permissionName = serverPermission.getName();
       stringBuilder
-          .append("    define ")
+          .append(ServerPermissions.RELATIONSHIP_DEFINITION_PREFIX)
           .append("allow_")
           .append(permissionName)
           .append(": [user, group#member]\n");
       stringBuilder
-          .append("    define ")
+          .append(ServerPermissions.RELATIONSHIP_DEFINITION_PREFIX)
           .append("deny_")
           .append(permissionName)
           .append(": [user, group#member]\n");
       stringBuilder
-          .append("    define ")
+          .append(ServerPermissions.RELATIONSHIP_DEFINITION_PREFIX)
           .append(permissionName)
           .append(": allow_")
           .append(permissionName)
@@ -118,7 +118,20 @@ public enum ServerPermissions implements Permission {
     return stringBuilder.toString();
   }
 
+  public static ServerPermissions fromName(String name) {
+    for (ServerPermissions permission : values()) {
+      if (permission.name.equals(name)) {
+        return permission;
+      }
+    }
+
+    throw new IllegalArgumentException("Unknown server permission: " + name);
+  }
+
+  @SuppressWarnings("java:S106") // This standalone CLI writes the generated OpenFGA model directly to the terminal.
   public static void main(String[] args) {
     System.err.println(generateOpenFgaModel());
   }
+
+  private static final String RELATIONSHIP_DEFINITION_PREFIX = "    define ";
 }

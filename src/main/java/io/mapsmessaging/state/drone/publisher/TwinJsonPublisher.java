@@ -20,28 +20,26 @@
 package io.mapsmessaging.state.drone.publisher;
 
 import com.google.gson.Gson;
-import io.mapsmessaging.api.Destination;
-import io.mapsmessaging.api.MessageBuilder;
-import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.api.MessageListener;
-import io.mapsmessaging.api.Session;
-import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.api.SessionManager;
+import com.google.gson.JsonObject;
+import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.location.LocationManager;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.state.StateJsonHelper;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
-import io.mapsmessaging.utilities.GsonFactory;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
-
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.Contact;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,19 +47,43 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.utilities.GeoHashUtils;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+
+import static io.mapsmessaging.state.logging.StateLogMessages.*;
+
 public class TwinJsonPublisher implements TwinObserver, ClientConnection, MessageListener, AutoCloseable {
 
+  private static final String PUBLISHER_NAME = "twin_json_publisher";
+
+
+  private final Logger logger = LoggerFactory.getLogger(TwinJsonPublisher.class);
   private final Session session;
   private final Gson gson;
   private final String topicTemplate;
   private final TwinManager twinManager;
+  private final long publishRateMs;
   private final Map<String, Destination> destinationCache;
+  private final Map<String, Long> lastPublishedTimes;
 
   public TwinJsonPublisher(TwinManager twinManager, String topicTemplate) throws ExecutionException, InterruptedException, TimeoutException {
+    this(twinManager, topicTemplate, 0);
+  }
+
+  public TwinJsonPublisher(TwinManager twinManager, String topicTemplate, long publishRateMs)
+      throws ExecutionException, InterruptedException, TimeoutException {
+    if (publishRateMs < 0) {
+      throw new IllegalArgumentException("publishRateMs must be greater than or equal to zero");
+    }
+
     this.topicTemplate = topicTemplate;
     this.twinManager = twinManager;
-    this.gson = GsonFactory.getInstance().getTimeSafeGson();
+    this.publishRateMs = publishRateMs;
+    this.gson = StateJsonHelper.createGson();
     this.destinationCache = new ConcurrentHashMap<>();
+    this.lastPublishedTimes = new ConcurrentHashMap<>();
     this.session = createSession();
     twinManager.addObserver(this);
   }
@@ -69,42 +91,173 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   @Override
   public void close() throws IOException {
     twinManager.removeObserver(this);
+    destinationCache.clear();
+    lastPublishedTimes.clear();
     SessionManager.getInstance().close(session, true);
   }
 
   @Override
   public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
-    if (twinId == null || twinId.isBlank() || current == null) {
+    if (twinId == null || twinId.isBlank() || current == null || !reservePublishSlot(twinId)) {
       return;
     }
 
     try {
       publishTwin(twinId, current);
-    }
-    catch (Exception exception) {
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Failed to publish twin update for twinId=" + twinId, exception);
+    } catch (Exception exception) {
       throw new RuntimeException("Failed to publish twin update for twinId=" + twinId, exception);
     }
   }
 
+  @SuppressWarnings("java:S2445") // Serialization must use the same EntityTwin monitor as TwinManager updates.
   public void publishTwin(String twinId, EntityTwin twin) throws ExecutionException, InterruptedException, TimeoutException, IOException {
     String topic = resolveTopic(twinId, twin);
     Destination destination = resolveDestination(topic);
-    try {
-      String json;
-      synchronized (twin) {
-        json = gson.toJson(twin);
-      }
-      MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
-          .setQoS(QualityOfService.AT_MOST_ONCE)
-          .setContentType("application/json")
-          .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
-          .setRetain(false);
 
-      destination.storeMessage(messageBuilder.build());
+    try {
+      TwinJsonPayload twinJsonPayload;
+      List<Contact> contacts;
+
+      synchronized (twin) {
+        LocationManager locationManager = LocationManager.getInstance();
+        if (locationManager != null) {
+          double lon = locationManager.getLongitude();
+          double lat = locationManager.getLatitude();
+
+          double epsilon = 0.000001;
+          if (Math.abs(lon) > epsilon && Math.abs(lat) > epsilon) {
+            GeoPosition serverLocation = new GeoPosition(lat, lon, null, null);
+            twin.setServerPosition(serverLocation);
+            twin.setServerGeoHash(GeoHashUtils.toGeoHash(lat, lon, 12));
+          }
+        }
+        GeoPosition dronePosition = twin.getGeoPosition();
+        if(dronePosition != null && dronePosition.getLatitude() != null && dronePosition.getLongitude() != null) {
+
+          twin.setGeoHash(GeoHashUtils.toGeoHash(dronePosition.getLatitude(), dronePosition.getLongitude(), 12));
+        }
+        twinJsonPayload = generateTwinJsonPayload(twinId, twin);
+        if (twinJsonPayload == null) {
+          return;
+        }
+
+        if (twin instanceof DroneTwin droneTwin) {
+          contacts = droneTwin.getContactList();
+        } else {
+          contacts = List.of();
+        }
+      }
+
+      storeTwinMessage(destination, twinJsonPayload.json());
+
+      if (!contacts.isEmpty()) {
+        publishContacts(twinId, twin, twinJsonPayload.jsonObject(), contacts);
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw e;
     } catch (Throwable e) {
-      e.printStackTrace();
+      logger.log(TWIN_PUBLISH_FAILED, twinId, topic, e.getMessage());
+      destinationCache.remove(topic);
     }
+  }
+
+  private boolean reservePublishSlot(String twinId) {
+    if (publishRateMs == 0) {
+      return true;
+    }
+
+    long currentTime = System.currentTimeMillis();
+
+    while (true) {
+      Long lastPublishedTime = lastPublishedTimes.get(twinId);
+
+      if (lastPublishedTime != null && currentTime - lastPublishedTime < publishRateMs) {
+        return false;
+      }
+
+      if (lastPublishedTime == null) {
+        if (lastPublishedTimes.putIfAbsent(twinId, currentTime) == null) {
+          return true;
+        }
+      } else if (lastPublishedTimes.replace(twinId, lastPublishedTime, currentTime)) {
+        return true;
+      }
+    }
+  }
+
+  private TwinJsonPayload generateTwinJsonPayload(String twinId, EntityTwin twin) {
+    try {
+      JsonObject jsonObject = gson.toJsonTree(twin).getAsJsonObject();
+      return new TwinJsonPayload(jsonObject, gson.toJson(jsonObject));
+    } catch (Throwable e) {
+      logger.log(TWIN_JSON_SERIALISATION_FAILED, twinId, twin.getClass().getName(), e.getMessage());
+      return null;
+    }
+  }
+
+  private void storeTwinMessage(Destination destination, String json) throws IOException {
+    MessageBuilder messageBuilder = new MessageBuilder();
+
+    messageBuilder
+        .setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
+        .setContentType("application/json")
+        .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
+        .storeOffline(true)
+        .setRetain(false);
+
+    destination.storeMessage(messageBuilder.build());
+  }
+
+  private void publishContacts(String twinId, EntityTwin twin, JsonObject sourceJsonObject, List<Contact> contacts)
+      throws ExecutionException, InterruptedException, TimeoutException, IOException {
+    String contactTopicName = resolveTopic(twinId, twin) + "/contacts";
+    Destination contactDestination = resolveDestination(contactTopicName);
+
+    for (Contact contact : contacts) {
+      String json = generateContactJson(twinId, sourceJsonObject, contact);
+      if (json == null) {
+        continue;
+      }
+
+      try {
+        storeContactMessage(contactDestination, json);
+      } catch (Throwable e) {
+        logger.log(CONTACT_PUBLISH_FAILED, twinId, contactTopicName, e.getMessage());
+        throw e;
+      }
+    }
+  }
+
+  private String generateContactJson(String twinId, JsonObject sourceJsonObject, Contact contact) {
+    try {
+      JsonObject jsonObject = sourceJsonObject.deepCopy();
+
+      jsonObject.remove("contactManager");
+      jsonObject.add("contact", gson.toJsonTree(contact).getAsJsonObject());
+
+      return gson.toJson(jsonObject);
+    } catch (Throwable e) {
+      logger.log(CONTACT_JSON_SERIALISATION_FAILED, twinId, e.getMessage());
+      return null;
+    }
+  }
+
+  private void storeContactMessage(Destination destination, String json) throws IOException {
+    MessageBuilder contactMessageBuilder = new MessageBuilder();
+
+    contactMessageBuilder
+        .setOpaqueData(json.getBytes(StandardCharsets.UTF_8))
+        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setContentType("application/json")
+        .setSchemaId(SchemaManager.DEFAULT_JSON_SCHEMA.toString())
+        .setRetain(false);
+
+    destination.storeMessage(contactMessageBuilder.build());
   }
 
   private Destination resolveDestination(String topic) throws ExecutionException, InterruptedException, TimeoutException {
@@ -121,10 +274,9 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   private String resolveTopic(String twinId, EntityTwin twin) {
     String resolvedTopic = topicTemplate.replace("{twinId}", twinId);
 
-    if (twin != null && twin.getClass().getSimpleName() != null) {
+    if (twin != null) {
       resolvedTopic = resolvedTopic.replace("{twinType}", twin.getClass().getSimpleName());
-    }
-    else {
+    } else {
       resolvedTopic = resolvedTopic.replace("{twinType}", "EntityTwin");
     }
 
@@ -132,8 +284,9 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
   }
 
   private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
-    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder("twin_json_publisher", this);
-    sessionContextBuilder.setResetState(true)
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(PUBLISHER_NAME, this);
+    sessionContextBuilder
+        .setResetState(true)
         .setSessionExpiry(0)
         .isInternal(true)
         .setPersistentSession(false)
@@ -143,6 +296,8 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
     return sessionFuture.get(5, TimeUnit.SECONDS);
   }
 
+  private record TwinJsonPayload(JsonObject jsonObject, String json) {}
+
   @Override
   public long getTimeOut() {
     return 0;
@@ -150,7 +305,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
   @Override
   public String getName() {
-    return "twin_json_publisher";
+    return PUBLISHER_NAME;
   }
 
   @Override
@@ -175,7 +330,7 @@ public class TwinJsonPublisher implements TwinObserver, ClientConnection, Messag
 
   @Override
   public String getUniqueName() {
-    return "twin_json_publisher";
+    return PUBLISHER_NAME;
   }
 
   @Override

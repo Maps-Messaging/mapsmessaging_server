@@ -67,11 +67,29 @@ public class GeoPosition {
   )
   private Double altitudeAglMeters;
 
+  @Schema(
+      description = "Altitude above the vehicle home position in meters.",
+      example = "18.75",
+      nullable = true
+  )
+  private Double altitudeRelativeMeters;
+
+  public GeoPosition(
+      Double latitude,
+      Double longitude,
+      Double altitudeMslMeters,
+      Double altitudeAglMeters) {
+    this(latitude, longitude, altitudeMslMeters, altitudeAglMeters, null);
+  }
+
   public Double getPreferredAltitudeMeters() {
     if (altitudeMslMeters != null) {
       return altitudeMslMeters;
     }
-    return altitudeAglMeters;
+    if (altitudeAglMeters != null) {
+      return altitudeAglMeters;
+    }
+    return altitudeRelativeMeters;
   }
 
   public String getPreferredAltitudeType() {
@@ -80,6 +98,9 @@ public class GeoPosition {
     }
     if (altitudeAglMeters != null) {
       return "AGL";
+    }
+    if (altitudeRelativeMeters != null) {
+      return "RELATIVE";
     }
     return null;
   }

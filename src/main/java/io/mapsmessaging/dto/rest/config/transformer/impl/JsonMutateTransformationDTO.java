@@ -19,7 +19,6 @@
 package io.mapsmessaging.dto.rest.config.transformer.impl;
 
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
-import io.mapsmessaging.dto.rest.config.transformer.TransformationType;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmutate.JsonMutateOpDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;

@@ -20,15 +20,16 @@
 
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
-import io.mapsmessaging.dto.rest.config.protocol.ProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.KeyStoreConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
 @Schema(description = "TAK protocol configuration")
-public class TakProtocolDTO extends ProtocolConfigDTO {
+public class TakProtocolDTO {
 
   @Schema(
       description = "Hostname or IP address of the TAK server.",
@@ -61,10 +62,42 @@ public class TakProtocolDTO extends ProtocolConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  private String topic =null;
+  private String topic = null;
 
+  @Schema(
+      description = "If true, connect to the TAK server over TLS instead of plain TCP.",
+      example = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "false"
+  )
+  private boolean tlsEnabled = false;
 
-  public TakProtocolDTO() {
-    super("tak");
-  }
+  @Schema(
+      description = "TLS protocol used for the connection when tlsEnabled is true.",
+      example = "TLSv1.2",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      defaultValue = "TLSv1.2"
+  )
+  private String tlsContext = "TLSv1.2";
+
+  @Schema(
+      description = "Key store presenting this broker's client certificate to the TAK server (mutual TLS). Required when tlsEnabled is true.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  private KeyStoreConfigDTO keyStore;
+
+  @Schema(
+      description = "Trust store used to validate the TAK server's certificate. Required when tlsEnabled is true.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true
+  )
+  private KeyStoreConfigDTO trustStore;
+
+  @Schema(
+      description = "Further TAK servers that receive the same CoT events as this one, each over its own shared connection.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
+  )
+  private List<TakServerDTO> additionalServers = new ArrayList<>();
+
 }

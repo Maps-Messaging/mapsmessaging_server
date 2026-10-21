@@ -20,7 +20,6 @@
 package io.mapsmessaging.engine.session;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 
 public class EngineManager {
   protected SessionManager manager;
@@ -43,7 +42,7 @@ public class EngineManager {
     return manager.hasSessions();
   }
 
-  public void closeSubscriptionController(SubscriptionController controller) {
-    manager.closeSubscriptionController(controller);
+  public void closeSession(String sessionId) {
+    manager.close(sessionId, false);
   }
 }

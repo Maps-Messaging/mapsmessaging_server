@@ -22,7 +22,6 @@ package io.mapsmessaging.api.transformers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.network.protocol.Protocol;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
@@ -56,6 +55,8 @@ public final class TransformationAssertions {
   public static void assertOpaqueDataChanged(byte[] before, ParsedMessage result) {
     assertNotDropped(result);
     byte[] after = result.getMessage().getOpaqueData();
+    System.err.println("Before: " + utf8String(before));
+    System.err.println("After: " + utf8String(after));
     assertNotNull(after, "opaqueData must not be null");
     assertNotEquals(utf8String(before), utf8String(after), "Expected opaqueData content to change");
   }

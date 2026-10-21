@@ -58,23 +58,34 @@ public class HandShakeState extends State {
     SSLEngineResult.HandshakeStatus hs = stateEngine.getSslEngine().getHandshakeStatus();
     if (hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP ||
         hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN) {
-      ByteBuffer iApp = ByteBuffer.allocate(1024);
-      SSLEngineResult r = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), iApp);
+      ByteBuffer iApp = ByteBuffer.allocate(
+          Math.max(1, stateEngine.getSslEngine().getSession().getApplicationBufferSize()));
+      SSLEngineResult r;
+
+      while (true) {
+        r = stateEngine.getSslEngine().unwrap(packet.getRawBuffer(), iApp);
+        if (r.getStatus() != SSLEngineResult.Status.BUFFER_OVERFLOW) {
+          break;
+        }
+
+        ByteBuffer expanded = ByteBuffer.allocate(Math.max(
+            iApp.capacity() * 2,
+            stateEngine.getSslEngine().getSession().getApplicationBufferSize()));
+        iApp.flip();
+        expanded.put(iApp);
+        iApp = expanded;
+      }
+
       SSLEngineResult.Status rs = r.getStatus();
       hs = r.getHandshakeStatus();
       switch (rs) {
         case OK:
-          // No action required
           break;
-
-        case BUFFER_OVERFLOW:
-          throw new IOException("Buffer overflow: incorrect client maximum fragment size");
 
         case BUFFER_UNDERFLOW:
           if (hs != NOT_HANDSHAKING) {
             throw new IOException("Buffer underflow: incorrect client maximum fragment size");
           }
-          // Ignore this packet if not handshaking
           break;
 
         case CLOSED:
@@ -112,7 +123,7 @@ public class HandShakeState extends State {
 
   // produce handshake packets
   boolean produceHandshakePackets(List<Packet> packets) throws IOException {
-    ByteBuffer oNet = ByteBuffer.allocate(32768);
+    ByteBuffer oNet = ByteBuffer.allocate(Math.max(1, stateEngine.getSslEngine().getSession().getPacketBufferSize()));
     ByteBuffer oApp = ByteBuffer.allocate(0);
     SSLEngineResult r = stateEngine.getSslEngine().wrap(oApp, oNet);
     oNet.flip();

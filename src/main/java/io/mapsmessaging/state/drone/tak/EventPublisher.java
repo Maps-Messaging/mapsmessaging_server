@@ -24,35 +24,114 @@ import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.state.logging.StateLogMessages;
+import io.mapsmessaging.state.metrics.MessageOutcomeStats;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class EventPublisher implements ClientConnection, MessageListener {
 
+  private static final int MAX_QUEUE_SIZE = 1000;
+  private static final long DROP_LOG_INTERVAL = 1000;
+
+  private final Logger logger = LoggerFactory.getLogger(EventPublisher.class);
+  private final AtomicLong droppedEvents = new AtomicLong();
+  private final String topic;
   private final Session session;
-  private final Destination destination;
+  private final LinkedBlockingDeque<String> queue;
+  private final Thread publisherThread;
+  private volatile boolean running;
+  private Destination destination;
 
   public EventPublisher(String topic) throws ExecutionException, InterruptedException, TimeoutException {
+    this.topic = topic;
     session = createSession();
     destination = session.findDestination(topic, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
+    queue = new LinkedBlockingDeque<>(MAX_QUEUE_SIZE);
+    running = true;
+    publisherThread = new Thread(this::publisherLoop, "tak-event-publisher-" + topic);
+    publisherThread.setDaemon(true);
+    publisherThread.start();
   }
 
   public void close() throws IOException {
+    running = false;
+    publisherThread.interrupt();
     SessionManager.getInstance().close(session, true);
   }
 
+  /**
+   * Queues the event for asynchronous publishing. Must never block the calling thread: callers
+   * include destination delivery/task-scheduler threads, and a synchronous store here can starve
+   * their shared task pool if the destination is backed up.
+   */
   public void publish(String xml) throws IOException {
+    boolean dropped = false;
+    synchronized (queue) {
+      if (queue.remainingCapacity() == 0) {
+        queue.pollFirst();
+        dropped = true;
+      }
+      queue.offerLast(xml);
+    }
+    if (dropped) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.TAK_PUBLISHER, "queue_full");
+      long total = droppedEvents.incrementAndGet();
+      // Rate-limited: a stuck destination at replay rates would otherwise flood the log.
+      if (total == 1 || total % DROP_LOG_INTERVAL == 0) {
+        logger.log(StateLogMessages.STATE_MANAGER_TAK_EVENT_QUEUE_FULL, topic, total);
+      }
+    }
+  }
+
+  long getDroppedEventCount() {
+    return droppedEvents.get();
+  }
+
+  private void publisherLoop() {
+    while (running) {
+      String xml;
+      try {
+        xml = queue.takeFirst();
+      } catch (InterruptedException interruptedException) {
+        Thread.currentThread().interrupt();
+        if (!running) {
+          break;
+        }
+        continue;
+      }
+      storeEvent(xml);
+    }
+  }
+
+  private void storeEvent(String xml) {
     MessageBuilder messageBuilder = new MessageBuilder();
     messageBuilder.setOpaqueData(xml.getBytes())
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(QualityOfService.AT_LEAST_ONCE)
         .setContentType("text/xml")
+        .storeOffline(true)
         .setSchemaId(SchemaManager.DEFAULT_XML_SCHEMA.toString())
         .setRetain(false);
-    destination.storeMessage(messageBuilder.build());
+    try {
+      destination.storeMessage(messageBuilder.build());
+    } catch (IOException e) {
+      try {
+        destination = locateDestination(destination.getFullyQualifiedNamespace());
+      } catch (IOException relocateException) {
+        logger.log(StateLogMessages.STATE_MANAGER_TAK_EVENT_PUBLISH_FAILED, topic, relocateException.getMessage());
+      }
+    }
   }
 
   private Session createSession() throws ExecutionException, InterruptedException, TimeoutException {
@@ -65,6 +144,18 @@ public class EventPublisher implements ClientConnection, MessageListener {
 
     CompletableFuture<Session> sessionFuture = SessionManager.getInstance().createAsync(sessionContextBuilder.build(), this);
     return sessionFuture.get(5, TimeUnit.SECONDS);
+  }
+
+  private Destination locateDestination(String name) throws IOException{
+    try {
+      destination = session.findDestination(name, DestinationType.TOPIC).get(1, TimeUnit.SECONDS);
+      return destination;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException(e);
+    } catch (ExecutionException | TimeoutException e) {
+      throw new IOException(e);
+    }
   }
 
   @Override
@@ -84,7 +175,7 @@ public class EventPublisher implements ClientConnection, MessageListener {
 
   @Override
   public void sendKeepAlive() {
-
+    // The publisher uses an internal session and has no network keep-alive to send.
   }
 
   @Override
@@ -114,6 +205,6 @@ public class EventPublisher implements ClientConnection, MessageListener {
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
-
+    // The publisher only sends events; inbound messages require no handling.
   }
 }

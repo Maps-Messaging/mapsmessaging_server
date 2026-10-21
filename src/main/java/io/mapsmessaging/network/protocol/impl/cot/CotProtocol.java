@@ -1,0 +1,535 @@
+/*
+ *
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.network.protocol.impl.cot;
+
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.cot.CotStreamDecoder;
+import io.mapsmessaging.cot.CotStreamEncoder;
+import io.mapsmessaging.cot.CotValidator;
+import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.api.transformers.InterServerTransformation;
+import io.mapsmessaging.api.transformers.ParsedMessage;
+import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
+import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.config.protocol.impl.CotProtocolConfigDTO;
+import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.network.ProtocolClientConnection;
+import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.selector.operators.ParserExecutor;
+import io.mapsmessaging.utilities.filtering.NamespaceFilters;
+import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
+import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Queue;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/**
+ * Accepts a raw, unframed stream of Cursor-on-Target (CoT) XML &lt;event&gt; documents (the wire
+ * format used by TAK clients/servers), republishes each complete document byte for byte and with
+ * no parsing onto a fixed archive topic, and separately maps it into a {@code DroneTwin}
+ * ({@link CotToTwinMapper}) that gets registered/updated in the shared {@code TwinManager} - the
+ * same twin store mavlink and N2K feed. From there {@code TakTwinObserver} ->
+ * {@code TakEventMapper} -> {@code CotEventPolicy} (MTI-aware) renders it back out to TAK, so an
+ * inbound CoT track gets the same MTI status lookup, affiliation/colour handling and stale/expiry
+ * behaviour as every other twin, instead of passing straight through unmodified as before. There
+ * is no application level login on this connection - the session authenticates as the built in
+ * anonymous identity, the same identity the existing anonymous Stomp interface uses. Transport
+ * security is provided by binding this protocol to an ssl:// listener in NetworkManager.yaml.
+ *
+ * <p>Discovered via the standard ProtocolImplFactory ServiceLoader registration. Logging uses
+ * SLF4J for now (this protocol carries no {@code ServerLogMessages} constants of its own).
+ */
+public class CotProtocol extends Protocol implements Selectable {
+
+  private static final String DESTINATION_NAME = "/tak/cot/inbound";
+  private static final int MAX_BUFFER_SIZE = 1_048_576; // 1MB safety cap against a malformed/never-terminated stream
+  // A TLS record is indivisible and decrypts to up to 16 KB, so every read must have room for a
+  // whole record. The packet handed over by protocol detection is only 1 KB and must not be reused
+  // for reads: over ssl:// any record carrying more than 1 KB of CoT would never decode.
+  private static final int MIN_READ_BUFFER_SIZE = 32 * 1024;
+  private static final String READER_THREAD_PREFIX = "CoT Protocol Reader::";
+  private static final String UPDATE_SOURCE = "cot-ingest";
+
+  private static final byte[] EVENT_START = "<event".getBytes(StandardCharsets.US_ASCII);
+  private static final byte[] EVENT_END = "</event>".getBytes(StandardCharsets.US_ASCII);
+  private static final byte[] XML_DECL_START = "<?xml".getBytes(StandardCharsets.US_ASCII);
+  private static final byte[] XML_DECL_END = "?>".getBytes(StandardCharsets.US_ASCII);
+
+  private static final ExecutorService READER_POOL = Executors.newCachedThreadPool(runnable -> {
+    Thread thread = new Thread(runnable, "cot-protocol-reader");
+    thread.setDaemon(true);
+    return thread;
+  });
+
+  private final Logger logger = LoggerFactory.getLogger(CotProtocol.class);
+  private final CotToTwinMapper cotToTwinMapper = new CotToTwinMapper();
+  private final Packet packet;
+  private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+  private final CotStreamDecoder streamDecoder = new CotStreamDecoder(MAX_BUFFER_SIZE);
+  private final CotStreamEncoder streamEncoder = new CotStreamEncoder();
+  private final CotValidator cotValidator = new CotValidator();
+  private final String sessionId;
+  private volatile String inboundDestinationName = DESTINATION_NAME;
+  private final Queue<Packet> outboundPackets = new ConcurrentLinkedQueue<>();
+
+  private Session session;
+  private boolean closed;
+
+  public CotProtocol(EndPoint endPoint, Packet initialPacket, CotProtocolConfigDTO config) throws IOException {
+    super(endPoint, config != null ? config : new CotProtocolConfigDTO());
+    this.packet = new Packet(readBufferSize(endPoint), false);
+    this.sessionId = "cot-" + UUID.randomUUID();
+    createSession();
+    logger.debug("CoT passthrough connection created on {}", endPoint.getConfig().getUrl());
+    if (initialPacket != null && initialPacket.available() > 0) {
+      appendAndProcess(initialPacket);
+    }
+    endPoint.register(SelectionKey.OP_READ, this);
+  }
+
+  /** The configured server read buffer size, never smaller than one TLS record and never above the 1 MB cap. */
+  static int readBufferSize(EndPoint endPoint) {
+    long configured = 0;
+    if (endPoint.getConfig() != null && endPoint.getConfig().getEndPointConfig() != null) {
+      configured = endPoint.getConfig().getEndPointConfig().getServerReadBufferSize();
+    }
+    if (configured < MIN_READ_BUFFER_SIZE) {
+      return MIN_READ_BUFFER_SIZE;
+    }
+    return (int) Math.min(configured, MAX_BUFFER_SIZE);
+  }
+
+  private void createSession() throws IOException {
+    try {
+      SessionContextBuilder scb = new SessionContextBuilder(sessionId, new ProtocolClientConnection(this));
+      scb.setUsername("anonymous")
+          .setPassword("".toCharArray())
+          .setPersistentSession(false)
+          .setSessionExpiry(0)
+          .setReceiveMaximum(1);
+      session = SessionManager.getInstance().create(scb.build(), this);
+    } catch (LoginException e) {
+      logger.error("CoT passthrough session creation failed", e);
+      throw new IOException("Unable to create CoT passthrough session", e);
+    }
+  }
+
+  @Override
+  public void selected(Selectable selectable, Selector selector, int selection) {
+    if ((selection & SelectionKey.OP_WRITE) != 0) {
+      try {
+        flushOutbound();
+      } catch (IOException e) {
+        logger.warn("Exception writing CoT XML stream", e);
+        closeQuietly();
+        return;
+      }
+    }
+    if ((selection & SelectionKey.OP_READ) == 0) {
+      return;
+    }
+    try {
+      endPoint.deregister(SelectionKey.OP_READ);
+    } catch (ClosedChannelException e) {
+      logger.warn("Exception reading from CoT passthrough connection", e);
+      return;
+    }
+    READER_POOL.execute(new ReadTask());
+  }
+
+  private final class ReadTask implements Runnable {
+    @Override
+    public void run() {
+      // The pool reuses threads, so prefix for this run only - prefixing the current name every
+      // time grew it without bound over the life of the server.
+      Thread current = Thread.currentThread();
+      String poolName = current.getName();
+      current.setName(READER_THREAD_PREFIX + poolName);
+      try {
+        readAvailable();
+      } finally {
+        current.setName(poolName);
+      }
+    }
+
+    private void readAvailable() {
+      try {
+        int read;
+        boolean first = true;
+        do {
+          packet.clear();
+          read = endPoint.readPacket(packet);
+          int applicationBytes = packet.position();
+          if (read > 0 && applicationBytes > 0) {
+            EndPoint.totalReceived.increment();
+            packet.flip();
+            appendAndProcess(packet);
+          } else if (first && read <= 0) {
+            // Nothing readable on the first pass: the peer has gone away.
+            closeQuietly();
+            return;
+          } else {
+            // read > 0 but no application data was produced - e.g. an SSL read
+            // consumed encrypted bytes for a partial record and decoded nothing
+            // yet (readPacket then reports the encrypted count, not application
+            // payload). Stop draining and wait for the selector to signal fresh
+            // data instead of busy-spinning on a count that carries no payload.
+            break;
+          }
+          first = false;
+        } while (read > 0);
+        endPoint.register(SelectionKey.OP_READ, CotProtocol.this);
+      } catch (Exception e) {
+        logger.warn("Exception reading from CoT passthrough connection", e);
+        closeQuietly();
+      }
+    }
+  }
+
+  private void appendAndProcess(Packet packet) throws IOException {
+    byte[] chunk = new byte[packet.available()];
+    packet.get(chunk);
+    for (byte[] document : streamDecoder.accept(chunk)) {
+      publish(document);
+    }
+  }
+
+  private void processBuffer() {
+    byte[] data = buffer.toByteArray();
+    int scanFrom = 0;
+    int consumedUpTo = 0;
+    while (true) {
+      int eventStart = indexOf(data, EVENT_START, scanFrom);
+      if (eventStart < 0) {
+        break;
+      }
+      int endTagIdx = indexOf(data, EVENT_END, eventStart + EVENT_START.length);
+      if (endTagIdx < 0) {
+        break; // Incomplete document, wait for more data
+      }
+      int docEnd = endTagIdx + EVENT_END.length;
+      int docStart = findPrecedingXmlDeclaration(data, eventStart, consumedUpTo);
+      byte[] document = Arrays.copyOfRange(data, docStart, docEnd);
+      publish(document);
+      consumedUpTo = docEnd;
+      scanFrom = docEnd;
+    }
+
+    buffer.reset();
+    if (consumedUpTo < data.length) {
+      buffer.write(data, consumedUpTo, data.length - consumedUpTo);
+    }
+    if (buffer.size() > MAX_BUFFER_SIZE) {
+      logger.warn("CoT passthrough buffer exceeded {} bytes without a complete event, discarding buffered data", MAX_BUFFER_SIZE);
+      buffer.reset();
+    }
+  }
+
+  private int findPrecedingXmlDeclaration(byte[] data, int eventStart, int lowerBound) {
+    int declStart = lastIndexOf(data, XML_DECL_START, lowerBound, eventStart);
+    if (declStart < 0) {
+      return eventStart;
+    }
+    int declEnd = indexOf(data, XML_DECL_END, declStart);
+    if (declEnd < 0 || declEnd + XML_DECL_END.length > eventStart) {
+      return eventStart;
+    }
+    int afterDecl = declEnd + XML_DECL_END.length;
+    if (!isWhitespaceOnly(data, afterDecl, eventStart)) {
+      return eventStart;
+    }
+    return declStart;
+  }
+
+  private void publish(byte[] xml) {
+    if (!publishThroughCotIngestAdapter(xml)) {
+      publishArchiveWithProtocolSession(xml);
+    }
+    routeToTwinManager(xml);
+  }
+
+  private boolean publishThroughCotIngestAdapter(byte[] xml) {
+    try {
+      return MessageDaemon.getInstance()
+          .getSubSystemManager()
+          .getStateManager()
+          .getStateMessageAdapter(CotIngestAdapter.class)
+          .map(adapter -> adapter.publishLocal(xml))
+          .orElse(false);
+    } catch (RuntimeException e) {
+      logger.debug("CoT ingest adapter unavailable for archive publishing", e);
+      return false;
+    }
+  }
+
+  private void publishArchiveWithProtocolSession(byte[] xml) {
+    Message message = new MessageBuilder()
+        .setOpaqueData(xml)
+        .setContentType("text/xml")
+        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setRetain(false)
+        .build();
+
+    String destinationName = inboundDestinationName;
+    session.findDestination(destinationName, DestinationType.TOPIC).whenComplete((destination, throwable) -> {
+      if (throwable != null) {
+        logger.error("Failed to publish CoT event to {}", destinationName, throwable);
+        return;
+      }
+      if (destination != null) {
+        try {
+          destination.storeMessage(message);
+        } catch (IOException e) {
+          logger.error("Failed to publish CoT event to {}", destinationName, e);
+        }
+      }
+    });
+  }
+
+  private void routeToTwinManager(byte[] xml) {
+    TwinManager twinManager = resolveTwinManager();
+    if (twinManager == null) {
+      logger.warn("TwinManager not available yet, CoT event not routed");
+      return;
+    }
+
+    if (!cotToTwinMapper.routeToTwinManager(twinManager, xml, UPDATE_SOURCE)) {
+      logger.warn("CoT event had no usable uid, not routed to TwinManager (still archived to {})", DESTINATION_NAME);
+    }
+  }
+
+  private TwinManager resolveTwinManager() {
+    try {
+      return MessageDaemon.getInstance().getSubSystemManager().getStateManager().getTwinManager();
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static int indexOf(byte[] data, byte[] pattern, int from) {
+    int max = data.length - pattern.length;
+    outer:
+    for (int i = Math.max(from, 0); i <= max; i++) {
+      for (int j = 0; j < pattern.length; j++) {
+        if (data[i + j] != pattern[j]) {
+          continue outer;
+        }
+      }
+      return i;
+    }
+    return -1;
+  }
+
+  private static int lastIndexOf(byte[] data, byte[] pattern, int from, int to) {
+    int max = Math.min(to, data.length) - pattern.length;
+    outer:
+    for (int i = max; i >= from; i--) {
+      for (int j = 0; j < pattern.length; j++) {
+        if (data[i + j] != pattern[j]) {
+          continue outer;
+        }
+      }
+      return i;
+    }
+    return -1;
+  }
+
+  private static boolean isWhitespaceOnly(byte[] data, int from, int to) {
+    for (int i = from; i < to; i++) {
+      if (!Character.isWhitespace(data[i] & 0xff)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private void closeQuietly() {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    try {
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
+    } catch (IOException e) {
+      logger.warn("Exception reading from CoT passthrough connection", e);
+    }
+    try {
+      super.close();
+    } catch (IOException e) {
+      logger.warn("Exception reading from CoT passthrough connection", e);
+    }
+    logger.debug("CoT passthrough connection closed");
+  }
+
+  @Override
+  public void close() throws IOException {
+    closeQuietly();
+  }
+
+  @Override
+  public Subject getSubject() {
+    return session != null ? session.getSecurityContext().getSubject() : null;
+  }
+
+  @Override
+  public void sendMessage(MessageEvent messageEvent) {
+    try {
+      ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
+      if (parsedMessage == null) {
+        return;
+      }
+      byte[] xml = parsedMessage.getMessage().getOpaqueData();
+      cotValidator.validate(xml);
+      byte[] encoded = hasXmlDeclaration(xml) ? xml : streamEncoder.encode(xml);
+      Packet outboundPacket = new Packet(encoded.length, false);
+      outboundPacket.put(encoded);
+      outboundPacket.flip();
+      outboundPackets.offer(outboundPacket);
+      endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+    } catch (IOException | RuntimeException e) {
+      logger.warn("Failed to send CoT XML event", e);
+    } finally {
+      if (messageEvent.getCompletionTask() != null) {
+        messageEvent.getCompletionTask().run();
+      }
+    }
+  }
+
+  private void flushOutbound() throws IOException {
+    Packet outboundPacket = outboundPackets.peek();
+    while (outboundPacket != null) {
+      int before = outboundPacket.position();
+      endPoint.sendPacket(outboundPacket);
+      if (outboundPacket.hasRemaining()) {
+        if (outboundPacket.position() == before) {
+          endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+          return;
+        }
+        endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+        return;
+      }
+      outboundPackets.poll();
+      sentMessage();
+      outboundPacket = outboundPackets.peek();
+    }
+    endPoint.register(SelectionKey.OP_READ, this);
+  }
+
+  @Override
+  public void subscribeLocal(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qualityOfService,
+      @Nullable String selector,
+      @Nullable InterServerTransformation transformer,
+      @Nullable NamespaceFilters namespaceFilters,
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties) throws IOException {
+    super.subscribeLocal(resource, mappedResource, qualityOfService, selector, transformer, namespaceFilters, statistics, linkProperties);
+    session.addSubscription(
+        createSubscriptionContextBuilder(resource, selector, qualityOfService, 10).build());
+  }
+
+  @Override
+  public void subscribeRemote(
+      @NonNull @NotNull String resource,
+      @NonNull @NotNull String mappedResource,
+      @NonNull @NotNull QualityOfService qualityOfService,
+      @Nullable ParserExecutor parser,
+      @Nullable InterServerTransformation transformer,
+      @Nullable StatisticsConfigDTO statistics,
+      @Nullable Map<String, Object> linkProperties) throws IOException {
+    super.subscribeRemote(resource, mappedResource, qualityOfService, parser, transformer, statistics, linkProperties);
+    inboundDestinationName = mappedResource;
+  }
+
+  private boolean hasXmlDeclaration(byte[] xml) {
+    int index = 0;
+    while (index < xml.length && Character.isWhitespace(xml[index] & 0xff)) {
+      index++;
+    }
+    return index + XML_DECL_START.length <= xml.length
+        && Arrays.equals(
+            Arrays.copyOfRange(xml, index, index + XML_DECL_START.length),
+            XML_DECL_START);
+  }
+
+  @Override
+  public void sendKeepAlive() {
+    // No keep alive required for this passthrough listener
+  }
+
+  @Override
+  public boolean processPacket(Packet packet) throws IOException {
+    return false; // Reading is handled directly via the selector callback + ReadTask
+  }
+
+  @Override
+  public String getName() {
+    return "CoT";
+  }
+
+  @Override
+  public String getSessionId() {
+    return sessionId;
+  }
+
+  @Override
+  public String getVersion() {
+    return "CoT 2.0 XML Streaming";
+  }
+
+  @Override
+  public ProtocolInformationDTO getInformation() {
+    ProtocolInformationDTO dto = new ProtocolInformationDTO();
+    updateInformation(dto);
+    return dto;
+  }
+}

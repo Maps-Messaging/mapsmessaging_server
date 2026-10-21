@@ -38,6 +38,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.WillDelayI
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 
 public class MQTT5ProtocolFactory extends ProtocolImplFactory {
 
@@ -57,49 +58,49 @@ public class MQTT5ProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     MQTT5Protocol protocol = new MQTT5Protocol(endPoint);
     EndPointServerConfigDTO dto = endPoint.getServer().getConfig();
     Publish5 willMsg = null;
-    if(dto instanceof EndPointConnectionServerConfigDTO connectionServerConfigDTO) {
-      if(connectionServerConfigDTO.getWillConfig() != null) {
-        MqttWillConfigDTO will =  connectionServerConfigDTO.getWillConfig();
-        QualityOfService qos = QualityOfService.getInstance(will.getQos());
-        byte[] payload;
-        if(will.getPayloadEncoding().equals("base64")) {
-          payload = Base64.getDecoder().decode(will.getPayload());
-        }
-        else{
-          payload = will.getPayload().getBytes(StandardCharsets.UTF_8);
-        }
-        willMsg = new Publish5(
-            payload,
-            qos,
-            0,
-            will.getTopic(),
-            will.isRetain()
-            );
-        MessageProperties properties = willMsg.getProperties();
-        if(properties == null) {
-          properties = new MessageProperties();
-          willMsg.setProperties(properties);
-        }
-        if(will.getDelayInterval() > 0){
-          WillDelayInterval willDelayInterval = new WillDelayInterval();
-          willDelayInterval.setWillDelayInterval(will.getDelayInterval());
-          properties.add(willDelayInterval);
-        }
-        if(will.getContentType() != null && !will.getContentType().isEmpty()){
-          String contentType = will.getContentType();
-          ContentType contentTypeObj = new ContentType(contentType);
-          properties.add(contentTypeObj);
-        }
-        if(will.getMessageExpiryInterval() > 0){
-          MessageExpiryInterval messageExpiryInterval = new MessageExpiryInterval(will.getMessageExpiryInterval());
-          properties.add(messageExpiryInterval);
-        }
+    if (dto instanceof EndPointConnectionServerConfigDTO connectionServerConfigDTO
+        && connectionServerConfigDTO.getWillConfig() != null) {
+      MqttWillConfigDTO will =  connectionServerConfigDTO.getWillConfig();
+      QualityOfService qos = QualityOfService.getInstance(will.getQos());
+      byte[] payload;
+      if(will.getPayloadEncoding().equals("base64")) {
+        payload = Base64.getDecoder().decode(will.getPayload());
+      }
+      else{
+        payload = will.getPayload().getBytes(StandardCharsets.UTF_8);
+      }
+      willMsg = new Publish5(
+          payload,
+          qos,
+          0,
+          will.getTopic(),
+          will.isRetain()
+          );
+      MessageProperties properties = willMsg.getProperties();
+      if(properties == null) {
+        properties = new MessageProperties();
+        willMsg.setProperties(properties);
+      }
+      if(will.getDelayInterval() > 0){
+        WillDelayInterval willDelayInterval = new WillDelayInterval();
+        willDelayInterval.setWillDelayInterval(will.getDelayInterval());
+        properties.add(willDelayInterval);
+      }
+      if(will.getContentType() != null && !will.getContentType().isEmpty()){
+        String contentType = will.getContentType();
+        ContentType contentTypeObj = new ContentType(contentType);
+        properties.add(contentTypeObj);
+      }
+      if(will.getMessageExpiryInterval() > 0){
+        MessageExpiryInterval messageExpiryInterval = new MessageExpiryInterval(will.getMessageExpiryInterval());
+        properties.add(messageExpiryInterval);
       }
     }
+    protocol.getTopicNameMapping().putAll(topicMap);
     protocol.connect(sessionId, username, password, willMsg);
     return protocol;
   }

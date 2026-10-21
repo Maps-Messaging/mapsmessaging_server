@@ -17,17 +17,18 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.rest.destination;
+package io.mapsmessaging.rest.api.impl.destination;
 
 import io.mapsmessaging.rest.ApiTestBase;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class DestinationListManagementApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/destination/list";
+  private static final String BASE_PATH = URI_PATH+"/server/destination/list";
 
   @Test
   void getDestinationPage_defaultRequest_returns200_andHasExpectedShape() {

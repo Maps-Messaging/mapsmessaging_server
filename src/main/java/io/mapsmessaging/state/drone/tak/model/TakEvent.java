@@ -15,7 +15,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
- *
  */
 
 package io.mapsmessaging.state.drone.tak.model;
@@ -35,7 +34,7 @@ public class TakEvent {
   @Schema(description = "Unique TAK event identifier.", example = "drone-1")
   private String uid;
 
-  @Schema(description = "Cursor on Target type.", example = "a-f-A-M-F-U")
+  @Schema(description = "Cursor on Target type.", example = "a-f-A-M-F-Q")
   private String type;
 
   @Schema(description = "How the event position was determined.", example = "h-g-i-g-o")

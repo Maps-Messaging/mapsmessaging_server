@@ -24,6 +24,7 @@ import io.mapsmessaging.engine.session.security.SecurityContext;
 
 public class FakeSecurityManager extends SecurityManager{
 
+  @Override
   public SecurityContext getSecurityContext(SessionContext sessionContext) {
     return new AnonymousSecurityContext(null);
   }

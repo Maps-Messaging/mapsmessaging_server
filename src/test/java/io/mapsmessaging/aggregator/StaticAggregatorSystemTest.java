@@ -29,6 +29,7 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -277,13 +278,10 @@ class StaticAggregatorSystemTest extends BaseAggreagtorTest {
     String json = toUtf8(outputMessage.getOpaqueData());
 
     Map<String, Object> root = gson.fromJson(json, mapType);
-    Object inputsObj = root.get("inputs");
+    Object inputsObj = root.get("envelopes");
     assertNotNull(inputsObj, "Envelope missing 'inputs'");
 
-    @SuppressWarnings("unchecked")
-    Map<String, Object> inputs = (Map<String, Object>) inputsObj;
-
-    return new Envelope(inputs);
+    return new Envelope(inputsObj);
   }
 
   private static String toUtf8(byte[] bytes) {

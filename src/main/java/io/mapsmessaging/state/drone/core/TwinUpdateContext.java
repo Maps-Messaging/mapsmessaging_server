@@ -40,6 +40,9 @@ public class TwinUpdateContext {
   /** Optional unique source instance/node id. */
   private String sourceInstanceId;
 
+  /** Optional source namespace or topic used to route context-aware adapters. */
+  private String sourceNamespace;
+
   /** Event timestamp from upstream payload if present. */
   private Instant eventTime;
 
@@ -54,4 +57,31 @@ public class TwinUpdateContext {
 
   /** True when update represents a full snapshot, false for partial patch. */
   private boolean fullSnapshot;
+
+  private String responseTopic;
+
+  private String uniqueOutboundIdentifier;
+
+  public TwinUpdateContext(
+      String updateSource,
+      String sourceInstanceId,
+      Instant eventTime,
+      Instant receivedTime,
+      Long sequenceNumber,
+      String reason,
+      boolean fullSnapshot,
+      String responseTopic,
+      String uniqueOutboundIdentifier) {
+    this(
+        updateSource,
+        sourceInstanceId,
+        null,
+        eventTime,
+        receivedTime,
+        sequenceNumber,
+        reason,
+        fullSnapshot,
+        responseTopic,
+        uniqueOutboundIdentifier);
+  }
 }

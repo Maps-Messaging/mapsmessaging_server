@@ -40,14 +40,12 @@ public class StreamMessageTranslator extends BaseMessageTranslator {
   public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
-    if (body instanceof AmqpSequence) {
-      AmqpSequence sequence = (AmqpSequence) body;
+    if (body instanceof AmqpSequence sequence) {
       List<?> list = sequence.getValue();
       Map<String, TypedData> dataMap = messageBuilder.getDataMap();
       for (int x = 0; x < list.size(); x++) {
         Object val = list.get(x);
-        if (val instanceof Binary) {
-          Binary binary = (Binary) val;
+        if (val instanceof Binary binary) {
           dataMap.put("" + x, new TypedData(binary.getArray()));
         } else {
           dataMap.put("" + x, new TypedData(list.get(x)));

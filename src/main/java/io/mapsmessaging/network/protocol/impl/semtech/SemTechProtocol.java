@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.semtech;
 
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
@@ -49,6 +51,9 @@ import java.util.concurrent.ExecutionException;
 
 public class SemTechProtocol extends Protocol {
 
+  private static final String PROTOCOL_NAME = "semtech";
+
+
   @Getter
   private final Logger logger;
   private final SelectorTask selectorTask;
@@ -63,7 +68,7 @@ public class SemTechProtocol extends Protocol {
   }
 
   protected SemTechProtocol(@NonNull @NotNull EndPoint endPoint, String sessionId) throws IOException {
-    super(endPoint, endPoint.getConfig().getProtocolConfig("semtech"));
+    super(endPoint, endPoint.getConfig().getProtocolConfig(PROTOCOL_NAME));
     logger = LoggerFactory.getLogger("SemTech Protocol on " + endPoint.getName());
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
     selectorTask.register(SelectionKey.OP_READ);
@@ -71,7 +76,7 @@ public class SemTechProtocol extends Protocol {
     protocolMessageTransformation = TransformationManager.getInstance().getTransformation(
         endPoint.getProtocol(),
         endPoint.getName(),
-        "semtech",
+        PROTOCOL_NAME,
         "anonymous"
     );
 
@@ -80,6 +85,7 @@ public class SemTechProtocol extends Protocol {
     SessionContext sessionContext = new SessionContext("SemTech-Gateway:" + endPoint.getName(), new ProtocolClientConnection(this));
     sessionContext.setPersistentSession(false);
     sessionContext.setResetState(true);
+    sessionContext.setInternal(true);
     sessionContext.setReceiveMaximum(maxQueued);
     try {
       session = SessionManager.getInstance().createAsync(sessionContext, this).get();
@@ -120,8 +126,18 @@ public class SemTechProtocol extends Protocol {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     logger.log(ServerLogMessages.SEMTECH_QUEUE_MESSAGE, messageEvent.getMessage());
-    String alias = messageEvent.getSubscription().getContext().getAlias();
+    SubscriptionContext context = messageEvent.getSubscription().getContext();
+    if (context == null) {
+      messageEvent.getCompletionTask().run();
+      return;
+    }
+    String alias = context.getAlias();
     GatewayInfo info = gatewayManager.getInfo(alias);
+    if (info == null) {
+      logger.log(ServerLogMessages.SEMTECH_DROP_UNKNOWN_GATEWAY, alias);
+      messageEvent.getCompletionTask().run();
+      return;
+    }
     info.getWaitingMessages().offer(messageEvent);
   }
 
@@ -144,7 +160,7 @@ public class SemTechProtocol extends Protocol {
 
   @Override
   public String getName() {
-    return "semtech";
+    return PROTOCOL_NAME;
   }
 
   @Override

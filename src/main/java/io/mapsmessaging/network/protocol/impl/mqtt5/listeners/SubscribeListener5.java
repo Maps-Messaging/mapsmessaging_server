@@ -69,11 +69,9 @@ public class SubscribeListener5 extends PacketListener5 {
     String selector = null;
     if (mqttPacket.getProperties() != null) {
       for (MessageProperty property : mqttPacket.getProperties().values()) {
-        if (property instanceof UserProperty) {
-          UserProperty userProperty = (UserProperty) property;
-          if (userProperty.getUserPropertyName().equalsIgnoreCase("selector")) {
-            selector = userProperty.getUserPropertyValue();
-          }
+        if (property instanceof UserProperty userProperty
+            && userProperty.getUserPropertyName().equalsIgnoreCase("selector")) {
+          selector = userProperty.getUserPropertyValue();
         }
       }
     }

@@ -29,11 +29,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class IntegrationInstanceManagementApiTest extends ApiTestBase {
 
-  private static final String LIST_BASE_PATH = "/api/v1/server/integrations";
-  private static final String INSTANCE_BASE_PATH = "/api/v1/server/integration";
+  private static final String LIST_BASE_PATH = URI_PATH+"/server/integrations";
+  private static final String INSTANCE_BASE_PATH = URI_PATH+"/server/integration";
 
   @Test
   void getIntegrationByName_returns200_forNameFromList() {

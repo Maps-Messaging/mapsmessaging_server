@@ -73,6 +73,16 @@ public class ProxyMessageStateManager implements MessageStateManager {
   }
 
   @Override
+  public void registerRetainedReplay(long messageId) {
+    actualStateManager.registerRetainedReplay(messageId);
+  }
+
+  @Override
+  public boolean isRetainedReplay(long messageId) {
+    return actualStateManager.isRetainedReplay(messageId);
+  }
+
+  @Override
   public void allocate(Message message) {
     boundedStateManager.allocate(message);
   }

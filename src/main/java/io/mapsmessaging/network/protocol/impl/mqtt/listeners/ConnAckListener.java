@@ -21,16 +21,19 @@ package io.mapsmessaging.network.protocol.impl.mqtt.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
-import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.dto.rest.config.auth.AuthConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointConnectionServerConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
+import io.mapsmessaging.network.io.connection.ConnectionSessionId;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.ConnAck;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class ConnAckListener extends BaseConnectionListener {
 
@@ -39,39 +42,68 @@ public class ConnAckListener extends BaseConnectionListener {
 
     MQTTProtocol  mqttProtocol = (MQTTProtocol)protocol;
     if(mqttProtocol.getSession() != null){
-      mqttProtocol.getSession().resumeState();
-      protocol.setConnected(true);
+      Session activeSession = mqttProtocol.getSession();
+      mqttProtocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (mqttProtocol.isDeliverySessionActive(activeSession)) {
+          activeSession.resumeState();
+          protocol.setConnected(true);
+        }
+      });
       return null; // already connected
     }
-    AuthConfigDTO config =  ((EndPointConnectionServerConfig)endPoint.getConfig()).getAuthConfig();
+    EndPointConnectionServerConfigDTO connectionConfig = (EndPointConnectionServerConfigDTO) endPoint.getConfig();
+    AuthConfigDTO config = connectionConfig.getAuthConfig();
 
-    String sess = config.getSessionId();
+    String sess = mqttProtocol.getConnectionSessionId();
+    if (sess == null && config.getSessionId() != null) {
+      sess = ConnectionSessionId.derive(config.getSessionId(), ConnectionSessionId.namespaces(connectionConfig.getLinkConfigs()));
+    }
     String user = config.getUsername();
     String pass = config.getPassword();
 
-    SessionContextBuilder scb = getBuilder(protocol, sess, false, 30000, user, pass.toCharArray());
-    protocol.setKeepAlive(30000);
+    ConnAck connAck = (ConnAck) mqttPacket;
+    if (connAck.getResponseCode() != ConnAck.SUCCESS) {
+      closeEndPoint(endPoint);
+      protocol.setConnected(false);
+      return null;
+    }
+
+    char[] password = pass == null ? null : pass.toCharArray();
+    SessionContextBuilder scb = getBuilder(protocol, sess, false, (int) protocol.getKeepAlive(), user, password);
+    // Session Present describes state held by the remote broker. It must not delete the
+    // local engine subscription and its queued messages when the peer loses that state.
+    scb.setResetState(false);
     CompletableFuture<Session> sessionFuture = createSession(endPoint, protocol, scb, sess);
     sessionFuture.thenApply(session1 -> {
-      session1.resumeState();
-      protocol.setConnected(true);
+      mqttProtocol.setSession(session1);
+      mqttProtocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (mqttProtocol.isDeliverySessionActive(session1)) {
+          session1.resumeState();
+          protocol.setConnected(true);
+        }
+      });
       return session1;
     });
 
     try {
       sessionFuture.get();
-    } catch (Exception ioException) {
+    } catch (InterruptedException interruptedException) {
       Thread.currentThread().interrupt();
-      try {
-        endPoint.close();
-        protocol.setConnected(false);
-      } catch (IOException e) {
-        MalformedException malformedException = new MalformedException();
-        malformedException.initCause(e);
-        throw malformedException;
-      }
+      closeEndPoint(endPoint);
+      protocol.setConnected(false);
+    } catch (ExecutionException executionException) {
+      closeEndPoint(endPoint);
+      protocol.setConnected(false);
     }
 
     return null;
+  }
+
+  private void closeEndPoint(EndPoint endPoint) throws MalformedException {
+    try {
+      endPoint.close();
+    } catch (IOException e) {
+      throw new MalformedException("Unable to close the rejected MQTT connection", e);
+    }
   }
 }

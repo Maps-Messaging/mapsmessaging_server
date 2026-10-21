@@ -48,7 +48,7 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     return null;
   }
 
@@ -67,14 +67,18 @@ public class MQTT_SNProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
-    int datagramSize = NetworkInfoHelper.getMTU(info);
+    MqttSnConfig config = (MqttSnConfig) endPoint.getConfig().getProtocolConfig("mqtt-sn");
+    if (config == null) {
+      throw new IOException("MQTT-SN protocol configuration is required");
+    }
+    int datagramSize = NetworkInfoHelper.getMTU(info, 20480);
     if (datagramSize > 0) {
       endPoint.getConfig().getEndPointConfig().setServerReadBufferSize(datagramSize * 2L);
       endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(datagramSize * 2L);
     }
 
     byte gatewayId;
-    String gatewayConfig = ((MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn")).getGatewayId();
+    String gatewayConfig = config.getGatewayId();
     try {
       gatewayId = (byte) Integer.parseInt(gatewayConfig);
     } catch (Exception ex) {

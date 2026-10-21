@@ -19,21 +19,13 @@
 
 package io.mapsmessaging.state.drone.core;
 
-import io.mapsmessaging.dto.rest.config.protocol.impl.VehicleClass;
-import io.mapsmessaging.security.uuid.NamedVersions;
-import io.mapsmessaging.security.uuid.UuidGenerator;
-import io.mapsmessaging.state.drone.model.BatteryState;
-import io.mapsmessaging.state.drone.model.FixInfo;
-import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.drone.model.LinkState;
-import io.mapsmessaging.state.drone.model.Orientation;
-import io.mapsmessaging.state.drone.model.VelocityVector;
+import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.state.drone.model.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Map;
@@ -57,6 +49,8 @@ public abstract class EntityTwin {
       nullable = true
   )
   private String twinId;
+
+
 
   @Schema(
       description = "Hierarchical path of the twin within the model namespace.",
@@ -92,10 +86,29 @@ public abstract class EntityTwin {
   private GeoPosition geoPosition;
 
   @Schema(
+      description = "drone geohash",
+      nullable = true
+
+  )
+  private String geoHash;
+
+  @Schema(
       description = "Home or launch position of the twin.",
       nullable = true
   )
   private GeoPosition homePosition;
+
+  @Schema(
+      description = "Current server position.",
+      nullable = true
+  )
+  private GeoPosition serverPosition;
+
+  @Schema(
+      description = "Server geohash.",
+      nullable = true
+  )
+  private String serverGeoHash;
 
   @Schema(
       description = "Current velocity vector of the twin.",
@@ -134,6 +147,12 @@ public abstract class EntityTwin {
   private TwinLifecycleStatus lifecycleStatus = TwinLifecycleStatus.ACTIVE;
 
   @Schema(
+      description = "Retention policy controlling scheduled removal after the global retention timeout.",
+      defaultValue = "DEFAULT",
+      nullable = false)
+  private TwinRetentionPolicy retentionPolicy = TwinRetentionPolicy.DEFAULT;
+
+  @Schema(
       description = "Relationship edges owned by this twin.",
       nullable = false
   )
@@ -158,6 +177,11 @@ public abstract class EntityTwin {
       nullable = true
   )
   private Instant lastSeenAt;
+
+  @Schema(
+      description = "time that the data is valid till"
+  )
+  private Instant validTill;
 
   @Schema(
       description = "Timestamp when identity-related fields were last updated.",
@@ -208,6 +232,19 @@ public abstract class EntityTwin {
   )
   private Instant relationshipsUpdatedAt;
 
+  @Schema(
+      description =
+          "Resolved response topic used to send outbound protocol messages to this twin. "
+              + "For MAVLink twins this is populated from the configured MAVLink outbound topic name, "
+              + "with placeholders such as {interfaceName} already resolved. Messages published to this "
+              + "topic are consumed by the MAVLink protocol implementation and sent onwards to the vehicle.",
+      example = "/protocol/mavlink/mavlink-interface-1/outbound",
+      nullable = true
+  )
+  private String responseTopicName;
+
+  private String uniqueOutboundIdentifier;
+
 
   public Long getCreatedAtSeconds() {
     return createdAt != null ? createdAt.getEpochSecond() : null;
@@ -242,17 +279,14 @@ public abstract class EntityTwin {
   }
 
 
-  protected EntityTwin(String twinId) {
-    setTwinId(twinId);
-    try {
-      setUuid(UuidGenerator.getInstance().generate(NamedVersions.SHA1, null, twinId));
-    } catch (NoSuchAlgorithmException e) {
-      try {
-        setUuid(UuidGenerator.getInstance().generate(NamedVersions.MD5, null, twinId));
-      } catch (NoSuchAlgorithmException ex) {
-        setUuid(UUID.nameUUIDFromBytes(twinId.getBytes()));
-      }
-    }
 
+  protected EntityTwin(String twinId, UUID uuid) {
+    setTwinId(twinId);
+    if (uuid != null) {
+      setUuid(uuid);
+    }
+    else {
+      setUuid(UuidFactory.getInstance().getUuidGenerator().generateUuid(twinId));
+    }
   }
 }

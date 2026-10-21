@@ -23,6 +23,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 
 public class PingResponseListener extends PacketListener {
@@ -30,6 +31,7 @@ public class PingResponseListener extends PacketListener {
   @Override
   public MQTTPacket handlePacket(MQTTPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     logger.log(ServerLogMessages.MQTT_PING);
+    ((MQTTProtocol) protocol).pingResponseReceived();
     return null;
   }
 }

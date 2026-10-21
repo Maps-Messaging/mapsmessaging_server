@@ -23,6 +23,9 @@ import java.util.Objects;
 
 public class AggregatorWorkScheduler {
 
+  private static final String WORK_ITEM_REQUIRED = "workItem must not be null";
+
+
   private final AggregatorStripe[] stripes;
   private final AggregatorStripeWorker[] workers;
   private final Thread[] threads;
@@ -67,17 +70,17 @@ public class AggregatorWorkScheduler {
   }
 
   public void register(AggregatorWorkItem workItem) {
-    Objects.requireNonNull(workItem, "workItem must not be null");
+    Objects.requireNonNull(workItem, WORK_ITEM_REQUIRED);
     stripes[computeStripe(workItem.getName())].add(workItem);
   }
 
   public void unregister(AggregatorWorkItem workItem) {
-    Objects.requireNonNull(workItem, "workItem must not be null");
+    Objects.requireNonNull(workItem, WORK_ITEM_REQUIRED);
     stripes[computeStripe(workItem.getName())].remove(workItem);
   }
 
   public void signal(AggregatorWorkItem workItem) {
-    Objects.requireNonNull(workItem, "workItem must not be null");
+    Objects.requireNonNull(workItem, WORK_ITEM_REQUIRED);
     stripes[computeStripe(workItem.getName())].signal(workItem);
   }
 
@@ -93,7 +96,6 @@ public class AggregatorWorkScheduler {
     }
 
     int cpu = Runtime.getRuntime().availableProcessors();
-    int resolved = Math.max(1, cpu / 2);
-    return resolved;
+    return Math.max(1, cpu / 2);
   }
 }

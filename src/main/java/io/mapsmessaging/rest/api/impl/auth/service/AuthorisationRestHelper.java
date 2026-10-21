@@ -130,7 +130,7 @@ public class AuthorisationRestHelper {
 
           if (currentEffect == null || currentEffect != desiredEffect) {
             Grantee grantee = toGrantee(principalKey);
-            Permission permission = ServerPermissions.valueOf(permissionName);
+            Permission permission = ServerPermissions.fromName(permissionName);
             if (desiredEffect == AclEffect.ALLOW) {
               provider.grantAccess(grantee, permission, protectedResource);
             } else {
@@ -148,14 +148,14 @@ public class AuthorisationRestHelper {
         if (desiredPermissions == null) {
           for (String permissionName : currentPermissions.keySet()) {
             Grantee grantee = toGrantee(principalKey);
-            Permission permission = ServerPermissions.valueOf(permissionName);
+            Permission permission = ServerPermissions.fromName(permissionName);
             provider.revokeAccess(grantee, permission, protectedResource);
           }
         } else {
           for (String permissionName : currentPermissions.keySet()) {
             if (!desiredPermissions.containsKey(permissionName)) {
               Grantee grantee = toGrantee(principalKey);
-              Permission permission = ServerPermissions.valueOf(permissionName);
+              Permission permission = ServerPermissions.fromName(permissionName);
               provider.revokeAccess(grantee, permission, protectedResource);
             }
           }
@@ -247,7 +247,7 @@ public class AuthorisationRestHelper {
     UUID uuid = UUID.fromString(request.getIdentityId());
     Identity identity = AuthManager.getInstance().getUserIdentity(uuid);
     ProtectedResource protectedResource = new ProtectedResource(request.getResourceType(), request.getResourceKey(), null);
-    Permission permission = ServerPermissions.valueOf(request.getPermission());
+    Permission permission = ServerPermissions.fromName(request.getPermission());
 
 
     boolean explain = request.isExplain();

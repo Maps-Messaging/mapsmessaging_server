@@ -25,7 +25,11 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -40,9 +44,6 @@ public class DestinationSet implements Set<DestinationImpl> {
     matching = new LinkedHashMap<>(destinationMap);
   }
 
-  // The wildcard loop has 3 break statements, but it is clearer to leave it here
-  // than to try and break up the code to reduce the breaks
-  @java.lang.SuppressWarnings("squid:S135")
   public static boolean matches(String wildcard, String destinationName) {
     if (wildcard == null || destinationName == null) {
       return false;
@@ -50,36 +51,22 @@ public class DestinationSet implements Set<DestinationImpl> {
     if (!wildcard.startsWith("$") && destinationName.startsWith("$")) {
       return false; // Can not match $ topics with a wildcard
     }
-    String[] nameList = destinationName.split("/");
-    String[] subList = wildcard.split("/");
-    boolean found = true;
-    String lastLevel = "";
+    String[] nameList = destinationName.split("/", -1);
+    String[] subList = wildcard.split("/", -1);
 
-    for (int x = 0; x < subList.length; x++) {
-      String level = subList[x];
-      if (nameList.length == x) {
-        // We are at the end of the topic name list, so simply skip any further tests
-        break;
+    for (int levelIndex = 0; levelIndex < subList.length; levelIndex++) {
+      String level = subList[levelIndex];
+      if (level.equals("#")) {
+        return levelIndex == subList.length - 1;
       }
-
-      String check = nameList[x];
-      lastLevel = level;
-      if (!level.equals("+")) {
-        if (level.contains("#")) {
-          // This level contains a global inclusive wildcard so jump to the next level
-          break;
-        } else if (!level.equals(check)) {
-          found = false;
-          // The wildcard list doesn't match so break fast and exit
-          break;
-        }
+      if (levelIndex >= nameList.length || level.contains("#")) {
+        return false;
+      }
+      if (!level.equals("+") && !level.equals(nameList[levelIndex])) {
+        return false;
       }
     }
-
-    if (lastLevel.equals("+") && nameList.length != subList.length) {
-      found = false;
-    }
-    return found;
+    return nameList.length == subList.length;
   }
 
   @Override

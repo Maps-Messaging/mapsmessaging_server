@@ -54,7 +54,7 @@ public class OneWireBusConfig extends OneWireBusConfigDTO implements DeviceBusCo
   }
 
   public boolean update(BaseConfigDTO config) {
-    if (!(config instanceof OneWireBusConfig)) {
+    if (!(config instanceof OneWireBusConfigDTO)) {
       return false;
     }
 

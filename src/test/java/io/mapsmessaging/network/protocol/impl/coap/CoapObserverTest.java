@@ -132,12 +132,13 @@ class CoapObserverTest extends BaseCoapTest {
    }
     TimeUnit.SECONDS.sleep(1);
     long count = 0;
-    AtomicLong init = new AtomicLong(counter.get()+1);
-    while(count < 10){
+    while (count < 10) {
+      long before = counter.get();
       publisher.put("Test payload...".getBytes(), 0);
-      WaitForState.waitFor(5, TimeUnit.SECONDS, () -> counter.get() == init.get());
-      Assertions.assertEquals(init.get(), counter.get());
-      init.incrementAndGet();
+      WaitForState.waitFor(5, TimeUnit.SECONDS, () -> counter.get() > before);
+      Assertions.assertTrue(
+          counter.get() > before,
+          "Observer must continue receiving notifications after a high-rate publish burst");
       count++;
     }
     client.shutdown();

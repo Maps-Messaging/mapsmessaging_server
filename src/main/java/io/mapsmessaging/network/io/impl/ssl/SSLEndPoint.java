@@ -19,10 +19,12 @@
 
 package io.mapsmessaging.network.io.impl.ssl;
 
+import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
+import io.mapsmessaging.network.io.BufferedReadEndPoint;
 import io.mapsmessaging.network.io.EndPointConnectedCallback;
 import io.mapsmessaging.network.io.EndPointServer;
 import io.mapsmessaging.network.io.EndPointServerStatus;
@@ -43,7 +45,7 @@ import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.util.List;
 
-public class SSLEndPoint extends TCPEndPoint {
+public class SSLEndPoint extends TCPEndPoint implements BufferedReadEndPoint {
 
   private final ByteBuffer encryptedOut;
   private final ByteBuffer encryptedIn;
@@ -64,7 +66,7 @@ public class SSLEndPoint extends TCPEndPoint {
     encryptedIn = ByteBuffer.allocateDirect(sessionSize);
     init(engine, callback);
     sendBuffer(ByteBuffer.allocate(0)); // Kick off the SSL handshake
-    select.register(accepted, SelectionKey.OP_READ, handshakeManager);
+    registerHandshakeSelection();
   }
 
 
@@ -87,10 +89,23 @@ public class SSLEndPoint extends TCPEndPoint {
     sslEngine.setUseClientMode(callback != null);
 
     logger.log(ServerLogMessages.SSL_HANDSHAKE_START);
-    handshakeManager = new SSLHandShakeManagerImpl(this, callback);
-
     logger.log(ServerLogMessages.SSL_HANDSHAKE_READY);
     sslEngine.beginHandshake();
+
+    long timeout = 0;
+    if (callback != null && getConfig().getEndPointConfig() instanceof TcpConfigDTO tcpConfig) {
+      timeout = tcpConfig.getTimeout();
+    }
+    handshakeManager = new SSLHandShakeManagerImpl(this, callback, timeout);
+  }
+
+  @Override
+  public void close() {
+    SSLHandshakeManager currentManager = handshakeManager;
+    if (currentManager instanceof SSLHandShakeManagerImpl pendingHandshake) {
+      pendingHandshake.cancel();
+    }
+    super.close();
   }
 
   @Override
@@ -119,6 +134,42 @@ public class SSLEndPoint extends TCPEndPoint {
       return len;
     }
     return 0;
+  }
+
+  @Override
+  public boolean hasBufferedReadData() {
+    ByteBuffer handshakeBuffer = handshakeManager.getHandshakeBufferIn();
+    boolean handshakeData = handshakeManager instanceof SSLHandshakeManagerFinished
+        ? handshakeBuffer.hasRemaining()
+        : handshakeBuffer.position() > 0;
+    return handshakeData || encryptedIn.position() > 0;
+  }
+
+  boolean hasPendingEncryptedOutput() {
+    return encryptedOut.position() != 0;
+  }
+
+  int flushPendingEncryptedOutput() throws IOException {
+    return flushEncryptedOut();
+  }
+
+  void registerHandshakeSelection() {
+    int selection = SelectionKey.OP_READ;
+    if (hasPendingEncryptedOutput()) {
+      selection |= SelectionKey.OP_WRITE;
+    }
+    selector.register(socketChannel, selection, handshakeManager);
+  }
+
+  SSLEngineResult unwrapPendingHandshakeData(ByteBuffer applicationIn) throws IOException {
+    encryptedIn.flip();
+    SSLEngineResult result = handleSSLEngineResult(sslEngine.unwrap(encryptedIn, applicationIn));
+    if (encryptedIn.hasRemaining()) {
+      encryptedIn.compact();
+    } else {
+      encryptedIn.clear();
+    }
+    return result;
   }
 
   @Override
@@ -194,13 +245,41 @@ public class SSLEndPoint extends TCPEndPoint {
 
         if (result.getStatus() == Status.BUFFER_UNDERFLOW) {
           encryptedIn.compact();
+          if (!encryptedIn.hasRemaining()) {
+            // The inbound buffer is full yet the engine still needs more bytes to
+            // decode a record: we can neither read more (no space) nor make
+            // progress. Left alone this spins the reader at 100% CPU and the
+            // socket never drains. Tear the endpoint down instead - a reconnect
+            // re-handshakes with a fresh buffer.
+            throw new IOException("SSL inbound buffer full on BUFFER_UNDERFLOW; record exceeds "
+                + encryptedIn.capacity() + " byte buffer, closing endpoint");
+          }
           return response;
         }
 
+        if (result.getStatus() == Status.BUFFER_OVERFLOW) {
+          if (applicationIn.position() > 0) {
+            break; // hand back what has been decoded; the caller drains it and reads again
+          }
+          // Not even one record fits in an empty buffer, so it can never be decoded: nothing
+          // leaves encryptedIn, the socket stops draining and the peer stalls. Fail loudly.
+          throw new IOException("SSL read buffer of " + applicationIn.capacity()
+              + " bytes cannot hold a TLS record of up to "
+              + sslEngine.getSession().getApplicationBufferSize() + " bytes, closing endpoint");
+        }
+
         SSLEngineResult.HandshakeStatus hs = result.getHandshakeStatus();
-        if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK
-            || hs == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-          break; // let handshake manager drive next step
+        if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+          // After the handshake the manager is SSLHandshakeManagerFinished, which drives
+          // nothing, so a task requested later (e.g. by a TLS 1.3 key update) would never
+          // run. Run it here and retry the unwrap.
+          if (!runDelegatedTasks()) {
+            break; // nothing to run, do not spin on an unchanged status
+          }
+          continue;
+        }
+        if (hs == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+          break; // needs an outbound record, driven by the write path
         }
 
         boolean noProgress = encryptedIn.position() == beforeIn && applicationIn.position() == beforeOut;
@@ -218,6 +297,21 @@ public class SSLEndPoint extends TCPEndPoint {
     return response;
   }
 
+  /**
+   * Runs any tasks the engine has delegated, as the handshake manager does during negotiation.
+   *
+   * @return true if at least one task was run, false if the engine had none pending
+   */
+  private boolean runDelegatedTasks() {
+    Runnable runnable;
+    boolean ranTask = false;
+    while ((runnable = sslEngine.getDelegatedTask()) != null) {
+      runnable.run();
+      ranTask = true;
+    }
+    return ranTask;
+  }
+
   private SSLEngineResult handleSSLEngineResult(SSLEngineResult result) throws IOException {
     if (result.getStatus() == Status.CLOSED) {
       throw new IOException("Session closed");
@@ -231,7 +325,7 @@ public class SSLEndPoint extends TCPEndPoint {
 
   @Override
   public Principal getEndPointPrincipal() {
-    if (sslEngine.getNeedClientAuth()) {
+    if (sslEngine.getNeedClientAuth() || sslEngine.getWantClientAuth()) {
       try {
         return sslEngine.getSession().getPeerPrincipal();
       } catch (SSLPeerUnverifiedException e) {

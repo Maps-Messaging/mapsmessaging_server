@@ -42,8 +42,8 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
       for (ConfigurationProperties entry : (List<ConfigurationProperties>) configEntry) {
         this.data.add(new DestinationConfig(entry, featureManager));
       }
-    } else if (configEntry instanceof ConfigurationProperties) {
-      this.data.add(new DestinationConfig((ConfigurationProperties) configEntry, featureManager));
+    } else if (configEntry instanceof ConfigurationProperties matchedConfigurationProperties) {
+      this.data.add(new DestinationConfig(matchedConfigurationProperties, featureManager));
     }
   }
 
@@ -55,9 +55,9 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     List<ConfigurationProperties> dataProperties = new ArrayList<>();
-    for (DestinationConfigDTO destinationConfig : this.data) {
-      dataProperties.add(((Config)destinationConfig).toConfigurationProperties());
-    }
+    this.data.stream()
+        .map(destinationConfig -> DestinationConfig.toConfigurationProperties(destinationConfig))
+        .forEachOrdered(dataProperties::add);
     properties.put("data", dataProperties);
     return properties;
   }
@@ -77,8 +77,15 @@ public class DestinationManagerConfig extends DestinationManagerConfigDTO implem
       hasChanged = true;
     } else {
       for (int i = 0; i < this.data.size(); i++) {
-        if (!this.data.get(i).equals(newConfig.getData().get(i))) {
-          this.data.set(i, newConfig.getData().get(i));
+        DestinationConfigDTO currentDestination = this.data.get(i);
+        DestinationConfigDTO updatedDestination = newConfig.getData().get(i);
+        if (currentDestination instanceof DestinationConfig destinationConfig) {
+          if (destinationConfig.update(updatedDestination)) {
+            hasChanged = true;
+          }
+        }
+        else if (!currentDestination.equals(updatedDestination)) {
+          this.data.set(i, updatedDestination);
           hasChanged = true;
         }
       }

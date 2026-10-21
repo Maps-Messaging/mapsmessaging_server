@@ -60,6 +60,14 @@ public class ProtonEngine {
   @Getter
   private final Connection connection;
   private TaskScheduler engineScheduler;
+  @Getter
+  private final AmqpInboundFrameValidator inboundFrameValidator = new AmqpInboundFrameValidator();
+  @Getter
+  private boolean closeAfterOutput;
+
+  public void requestCloseAfterOutput() {
+    closeAfterOutput = true;
+  }
 
   public ProtonEngine(AMQPProtocol protocol) throws IOException {
     engineScheduler = new SingleConcurrentTaskScheduler(PROTON_ENGINE_KEY);
@@ -76,11 +84,15 @@ public class ProtonEngine {
     }
   }
 
-  public void close() {
-    transport.close();
-    connection.close();
-    subscriptions.close();
-    engineScheduler = null;
+  public void close() throws IOException {
+    try {
+      saslManager.close();
+    } finally {
+      transport.close();
+      connection.close();
+      subscriptions.close();
+      engineScheduler = null;
+    }
   }
 
   public void processPacket(Packet packet) throws IOException {

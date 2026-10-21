@@ -37,11 +37,11 @@ fi
 export CONSUL_URL
 echo $CONSUL_URL
 
-if [ -z ${MAPS_HOME+x} ];
+if [[ -z ${MAPS_HOME+x} ]];
   then export MAPS_HOME=/opt/maps;
 fi
 
-if [ -z ${MAPS_DATA+x} ];
+if [[ -z ${MAPS_DATA+x} ]];
   then export MAPS_DATA=/opt/maps_data
 fi
 

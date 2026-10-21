@@ -40,6 +40,20 @@ class TimeWindowMovingAverageTest {
   }
 
   @Test
+  void add_ignoresNullAndNonFiniteValues() {
+    TimeWindowMovingAverage avg = new TimeWindowMovingAverage(1, TimeUnit.SECONDS);
+
+    avg.add(10);
+    avg.add(null);
+    avg.add(Double.NaN);
+    avg.add(Double.POSITIVE_INFINITY);
+    avg.add(Double.NEGATIVE_INFINITY);
+    avg.add(20);
+
+    assertEquals(15.0, avg.getAverage(), 1e-12);
+  }
+
+  @Test
   void add_includesValuesInAverageUntilExpired() throws Exception {
     TimeWindowMovingAverage avg = new TimeWindowMovingAverage(5, TimeUnit.MILLISECONDS);
 

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -47,6 +48,15 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
       nullable = true
   )
   protected boolean authorisationEnabled = false;
+
+  @Schema(
+      description = "Allow a missing or empty username to be treated as the anonymous identity.",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected boolean allowAnonymous = false;
 
   @Schema(
       description = "Configuration properties for authentication",
@@ -251,6 +261,7 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
     super("AuthManagerConfigDTO");
     this.authenticationEnabled = source.authenticationEnabled;
     this.authorisationEnabled = source.authorisationEnabled;
+    this.allowAnonymous = source.allowAnonymous;
     this.authConfig = source.authConfig == null ? null : Map.copyOf(source.authConfig);
 
     this.minimumPasswordLength = source.minimumPasswordLength;
@@ -276,6 +287,7 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
     this.maxSoftDelayMillis = source.maxSoftDelayMillis;
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Auth";

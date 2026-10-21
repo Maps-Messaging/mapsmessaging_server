@@ -252,6 +252,44 @@ class RetainManagerTest {
   }
 
   @Test
+  void clearingRetainResetsCachedIdentifierAndAllowsSubsequentReplacement() throws IOException {
+    RetainManager manager = new RetainManager(false, null);
+    try {
+      Assertions.assertEquals(-1L, manager.replace(42L));
+      Assertions.assertEquals(42L, manager.current());
+      Assertions.assertEquals(42L, manager.replace(-1L));
+      Assertions.assertEquals(-1L, manager.current());
+      Assertions.assertEquals(-1L, manager.replace(-1L));
+      Assertions.assertEquals(-1L, manager.current());
+      Assertions.assertEquals(-1L, manager.replace(43L));
+      Assertions.assertEquals(43L, manager.current());
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
+  void clearingPersistentRetainSurvivesRestart() throws IOException {
+    Path path = tempDirectory.resolve("cleared-persistent");
+    RetainManager original = new RetainManager(true, path.toString());
+    try {
+      original.replace(77L);
+      Assertions.assertEquals(77L, original.current());
+      Assertions.assertEquals(77L, original.replace(-1L));
+      Assertions.assertEquals(-1L, original.current());
+    } finally {
+      original.close();
+    }
+
+    RetainManager reopened = new RetainManager(true, path.toString());
+    try {
+      Assertions.assertEquals(-1L, reopened.current());
+    } finally {
+      reopened.close();
+    }
+  }
+
+  @Test
   void close_canBeCalledAfterUse() throws IOException {
     RetainManager retainManager = new RetainManager(false, tempDirectory.toString());
     retainManager.replace(1L);

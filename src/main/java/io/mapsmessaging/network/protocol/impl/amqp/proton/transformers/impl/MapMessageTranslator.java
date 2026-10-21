@@ -39,20 +39,18 @@ public class MapMessageTranslator extends BaseMessageTranslator {
   public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
-    if (body instanceof AmqpValue) {
-      AmqpValue amqpBody = (AmqpValue) body;
+    if (body instanceof AmqpValue amqpBody) {
       Object data = amqpBody.getValue();
       Map<String, TypedData> dataMap = messageBuilder.getDataMap();
       if (dataMap == null) {
         dataMap = new LinkedHashMap<>();
         messageBuilder.setDataMap(dataMap);
       }
-      if (data instanceof LinkedHashMap) {
-        LinkedHashMap<String, Object> map = (LinkedHashMap) data;
+      if (data instanceof LinkedHashMap matchedLinkedHashMap) {
+        LinkedHashMap<String, Object> map = matchedLinkedHashMap;
         for (Map.Entry<String, Object> entry : map.entrySet()) {
           Object val = entry.getValue();
-          if (val instanceof Binary) {
-            Binary binary = (Binary) val;
+          if (val instanceof Binary binary) {
             dataMap.put(entry.getKey(), new TypedData(binary.getArray()));
           } else {
             dataMap.put(entry.getKey(), new TypedData(val));

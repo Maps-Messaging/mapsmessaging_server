@@ -24,6 +24,8 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.nio.charset.StandardCharsets;
+
 @ToString
 public class Unsubscribe extends MQTT_SNPacket {
 
@@ -43,7 +45,11 @@ public class Unsubscribe extends MQTT_SNPacket {
     if (topicIdType() == TOPIC_NAME) {
       byte[] tmp = new byte[packet.available()];
       packet.get(tmp, 0, tmp.length);
-      topicName = new String(tmp);
+      topicName = new String(tmp, StandardCharsets.UTF_8);
+    } else if (topicIdType() == TOPIC_SHORT_NAME) {
+      byte[] tmp = new byte[2];
+      packet.get(tmp, 0, tmp.length);
+      topicName = new String(tmp, StandardCharsets.US_ASCII);
     } else {
       topicId = MQTTPacket.readShort(packet);
     }
@@ -54,7 +60,7 @@ public class Unsubscribe extends MQTT_SNPacket {
   }
 
   public void setTopicIdType(int type) {
-    flags = (byte) (flags | (type & 0b11));
+    flags = (byte) ((flags & ~0b11) | (type & 0b11));
   }
 
 }

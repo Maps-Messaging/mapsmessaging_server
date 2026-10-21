@@ -48,6 +48,8 @@ public class TransformationConfigDtoTypeAdapterFactory implements TypeAdapterFac
     mapping.put(TransformationType.CLOUD_EVENT_ENVELOPE.getWireName().toLowerCase(), CloudEventEnvelopeTransformationDTO.class);
     mapping.put(TransformationType.CLOUD_EVENT_NATIVE.getWireName().toLowerCase(), CloudEventNativeTransformationDTO.class);
     mapping.put(TransformationType.CLOUD_EVENT_JSON.getWireName().toLowerCase(), CloudEventJsonTransformationDTO.class);
+    mapping.put(TransformationType.JSON_MAPPER.getWireName().toLowerCase(), JsonMapperTransformationDTO.class);
+    mapping.put(TransformationType.JSON_TO_SCHEMA.getWireName().toLowerCase(), JsonToSchemaTransformationDTO.class);
 
     this.discriminatorMap = Map.copyOf(mapping);
   }

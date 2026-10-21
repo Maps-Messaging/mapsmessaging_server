@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.api;
 
-import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.EngineManager;
 import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.engine.session.SecurityManager;
@@ -53,7 +52,7 @@ public class MessageAPITest extends BaseTestConfig {
     return engineManager.hasSessions();
   }
 
-  protected void closeSubscriptionController(SubscriptionController controller) {
-    engineManager.closeSubscriptionController(controller);
+  protected void closeSession(String sessionId) {
+    engineManager.closeSession(sessionId);
   }
 }

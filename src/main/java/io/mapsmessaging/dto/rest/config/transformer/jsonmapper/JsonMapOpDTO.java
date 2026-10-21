@@ -32,8 +32,7 @@ public class JsonMapOpDTO {
 
   @Schema(
       description = "Default value used when the source path is missing.",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      defaultValue = "null"
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED
   )
   private JsonElement defaultValue;
 

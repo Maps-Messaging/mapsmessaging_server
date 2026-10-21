@@ -49,8 +49,10 @@ public class ServerApi {
   }
 
   public Subject getSubject(){
-    sessions.values().stream().findFirst().ifPresent(session -> session.getSubject());
-    return null;
+    return sessions.values().stream()
+        .findFirst()
+        .map(SessionContext::getSubject)
+        .orElse(null);
   }
 
   public void closeSession(@NonNull @NotNull SessionContext session) throws IOException {

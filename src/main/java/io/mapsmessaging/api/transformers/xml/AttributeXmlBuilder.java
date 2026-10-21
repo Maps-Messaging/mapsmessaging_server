@@ -141,6 +141,8 @@ public final class AttributeXmlBuilder {
     return jsonPrimitive.getAsString();
   }
 
+  // The identity transformer only serializes our locally constructed DOM; no external XML or stylesheet is parsed.
+  @SuppressWarnings("java:S2755")
   private static byte[] toBytes(Document document) throws TransformerException {
     TransformerFactory transformerFactory = TransformerFactory.newInstance();
     Transformer transformer = transformerFactory.newTransformer();

@@ -115,11 +115,11 @@ public class OgxModemProtocol extends BaseModemProtocol {
     if (request.startsWith("%MTMG:")) {
       request = request.substring("%MTMG:".length());
     }
+    request = request.trim();
     CompletableFuture<byte[]> future = new CompletableFuture<>();
     if (request.equalsIgnoreCase("ok")) {
       future.complete(null);
     } else {
-      request = request.trim();
       String[] parts = request.split(",");
       int length = Integer.parseInt(parts[2]);
       long crc = Long.parseLong(parts[4], 16);

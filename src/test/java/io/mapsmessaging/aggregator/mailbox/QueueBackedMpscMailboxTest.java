@@ -31,6 +31,27 @@ import static org.junit.jupiter.api.Assertions.*;
 class QueueBackedMpscMailboxTest {
 
   @Test
+  void constructor_nonPositiveCapacity_throwsIllegalArgumentException() {
+    assertThrows(IllegalArgumentException.class, () -> new QueueBackedMpscMailbox<>(0));
+    assertThrows(IllegalArgumentException.class, () -> new QueueBackedMpscMailbox<>(-1));
+  }
+
+  @Test
+  void offer_nullItem_throwsNullPointerExceptionWithoutIncrementingCount() {
+    QueueBackedMpscMailbox<Integer> mailbox = new QueueBackedMpscMailbox<>(1);
+
+    assertThrows(NullPointerException.class, () -> mailbox.offer(null));
+    assertEquals(0, mailbox.getOfferedCount());
+  }
+
+  @Test
+  void drainTo_nullConsumer_throwsNullPointerException() {
+    QueueBackedMpscMailbox<Integer> mailbox = new QueueBackedMpscMailbox<>(1);
+
+    assertThrows(NullPointerException.class, () -> mailbox.drainTo(null, 1));
+  }
+
+  @Test
   void offerHonoursCapacity() {
     QueueBackedMpscMailbox<Integer> mailbox = new QueueBackedMpscMailbox<>(3);
 

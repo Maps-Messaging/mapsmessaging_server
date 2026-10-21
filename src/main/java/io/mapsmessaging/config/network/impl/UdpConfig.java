@@ -36,8 +36,7 @@ public class UdpConfig extends UdpConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof UdpConfigDTO) {
-      UdpConfigDTO newConfig = ((UdpConfigDTO) config);
+    if (config instanceof UdpConfigDTO newConfig) {
       hasChanged = NetworkConfigFactory.update(this, newConfig);
     }
     return hasChanged;

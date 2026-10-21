@@ -22,8 +22,6 @@ package io.mapsmessaging.network.io.connection.state;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.route.link.LinkState;
 
-import java.io.IOException;
-
 public class Connecting extends State {
 
   public Connecting(EndPointConnection connection) {

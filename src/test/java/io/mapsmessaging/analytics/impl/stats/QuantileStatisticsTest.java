@@ -61,6 +61,23 @@ class QuantileStatisticsTest {
   }
 
   @Test
+  void reset_clearsBaseStatisticsAndQuantileEstimators() {
+    QuantileStatistics stats = new QuantileStatistics();
+    for (int value = 1; value <= 10; value++) {
+      stats.update(value);
+    }
+
+    stats.reset();
+
+    JsonObject json = stats.toJson();
+    assertEquals(0, json.get("count").getAsInt());
+    assertTrue(Double.isNaN(stats.getMedian()));
+    assertTrue(Double.isNaN(stats.getP90()));
+    assertTrue(Double.isNaN(stats.getP95()));
+    assertTrue(Double.isNaN(stats.getP99()));
+  }
+
+  @Test
   void create_returnsNewQuantileStatisticsWithCleanState() {
     QuantileStatistics stats = new QuantileStatistics();
     for (int i = 1; i <= 10; i++) {

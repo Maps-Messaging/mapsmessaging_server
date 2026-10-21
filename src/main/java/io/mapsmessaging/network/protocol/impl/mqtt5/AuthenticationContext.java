@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AuthenticationContext {
+public class AuthenticationContext implements AutoCloseable {
 
   @Getter
   @Setter
@@ -64,5 +64,10 @@ public class AuthenticationContext {
 
   public String getUsername() {
     return mechanism.getUsername();
+  }
+
+  @Override
+  public void close() throws IOException {
+    mechanism.close();
   }
 }

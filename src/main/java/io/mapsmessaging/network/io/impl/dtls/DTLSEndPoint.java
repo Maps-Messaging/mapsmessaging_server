@@ -21,6 +21,7 @@ package io.mapsmessaging.network.io.impl.dtls;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.admin.EndPointJMX;
 import io.mapsmessaging.network.admin.EndPointManagerJMX;
 import io.mapsmessaging.network.io.*;
@@ -33,7 +34,10 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import java.security.Principal;
 import java.util.concurrent.FutureTask;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeoutable {
 
@@ -126,6 +130,24 @@ public class DTLSEndPoint extends EndPoint implements StateChangeListener, Timeo
     } catch (IOException e) {
       close();
     }
+  }
+
+  @Override
+  public Principal getEndPointPrincipal() {
+    SSLEngine sslEngine = stateEngine.getSslEngine();
+    if (sslEngine.getNeedClientAuth() || sslEngine.getWantClientAuth()) {
+      try {
+        return sslEngine.getSession().getPeerPrincipal();
+      } catch (SSLPeerUnverifiedException e) {
+        logger.log(ServerLogMessages.SSL_ENGINE_CLIENT_AUTH);
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public boolean isSSL() {
+    return true;
   }
 
   @Override

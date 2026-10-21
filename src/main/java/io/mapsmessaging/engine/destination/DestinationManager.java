@@ -223,6 +223,9 @@ public class DestinationManager implements DestinationFactory, Agent {
   public void start() {
     initialise();
     logger.log(ServerLogMessages.DESTINATION_MANAGER_STARTING);
+  }
+
+  public void cleanup(){
     for (DestinationManagerPipeline pipeline : creatorPipelines) {
       pipeline.start();
     }
@@ -303,15 +306,15 @@ public class DestinationManager implements DestinationFactory, Agent {
     DestinationImpl response;
     if (name.toLowerCase().startsWith(TEMPORARY_TOPIC)) {
       destinationType = DestinationType.TEMPORARY_TOPIC;
-      response = new TemporaryDestination(name, directoryPath, resource, destinationType, pathManager.getMessageOverride());
+      response = new TemporaryDestination(name, directoryPath, resource, destinationType, MessageOverrides.resolve(name, properties));
     } else if (name.toLowerCase().startsWith(TEMPORARY_QUEUE)) {
       destinationType = DestinationType.TEMPORARY_QUEUE;
-      response = new TemporaryDestination(name, directoryPath, resource, destinationType, pathManager.getMessageOverride());
+      response = new TemporaryDestination(name, directoryPath, resource, destinationType, MessageOverrides.resolve(name, properties));
     } else {
       if (name.toLowerCase().startsWith(QUEUE[0]) || name.toLowerCase().startsWith(QUEUE[1])) {
         destinationType = DestinationType.QUEUE;
       }
-      response = new DestinationImpl(name, directoryPath, resource, destinationType, pathManager.getMessageOverride());
+      response = new DestinationImpl(name, directoryPath, resource, destinationType, MessageOverrides.resolve(name, properties));
     }
     messageExpiryHandler.setDestination(response);
     return response;
@@ -333,16 +336,10 @@ public class DestinationManager implements DestinationFactory, Agent {
     }
 
     List<DestinationInfo> result = new ArrayList<>(destinations.size());
-    for (DestinationImpl destination : destinations.values()) {
-      if(!destination.getFullyQualifiedNamespace().startsWith("$")) {
-        result.add(
-            new DestinationInfo(
-                destination.getFullyQualifiedNamespace(),
-                destination.getResourceType()
-            )
-        );
-      }
-    }
+    destinations.values().stream()
+        .filter(destination -> !destination.getFullyQualifiedNamespace().startsWith("$"))
+        .map(destination -> new DestinationInfo( destination.getFullyQualifiedNamespace(), destination.getResourceType() ))
+        .forEachOrdered(result::add);
 
     return result;
   }
@@ -426,12 +423,16 @@ public class DestinationManager implements DestinationFactory, Agent {
 
     @Override
     public void run() {
-      File file = fileList.poll();
-      while (file != null) {
-        parseDirectoryPath(file, pathManager);
-        file = fileList.poll();
+      try {
+        File file = fileList.poll();
+        while (file != null) {
+          parseDirectoryPath(file, pathManager);
+          file = fileList.poll();
+        }
       }
-      complete.set(true);
+      finally {
+        complete.set(true);
+      }
     }
   }
 }

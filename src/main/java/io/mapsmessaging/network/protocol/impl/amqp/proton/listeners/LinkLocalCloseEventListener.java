@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
@@ -42,8 +43,9 @@ public class LinkLocalCloseEventListener extends BaseEventListener {
       Link link = event.getLink();
       SubscribedEventManager eventManager = (SubscribedEventManager) link.getContext();
       if (eventManager != null) {
-        if (!eventManager.getContexts().isEmpty()) {
-          String alias = eventManager.getContext().getAlias();
+        SubscriptionContext context = eventManager.getContext();
+        if (context != null) {
+          String alias = context.getAlias();
           session.removeSubscription(alias);
           engine.getSubscriptions().remove(alias);
           protocol.getLogger().log(ServerLogMessages.AMQP_DELETED_SUBSCRIPTION, alias);

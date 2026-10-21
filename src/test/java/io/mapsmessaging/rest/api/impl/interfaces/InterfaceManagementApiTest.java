@@ -26,10 +26,11 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class InterfaceManagementApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/interfaces";
+  private static final String BASE_PATH = URI_PATH+"/server/interfaces";
 
   @Disabled("Not yet implemented")
   @Test

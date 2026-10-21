@@ -62,7 +62,7 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
     servers = {
         @io.swagger.v3.oas.annotations.servers.Server(
             description = "Default Server",
-            url = "http://localhost:8080"
+            url = "http://localhost:8080/api"
         )
     },
     tags = {

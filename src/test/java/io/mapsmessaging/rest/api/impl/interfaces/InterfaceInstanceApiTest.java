@@ -31,10 +31,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.UUID;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 class InterfaceInstanceApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/server/interface";
+  private static final String BASE_PATH = URI_PATH+"/server/interface";
 
   @Test
   @Disabled("Not yet implemented")

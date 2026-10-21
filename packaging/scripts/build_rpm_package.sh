@@ -136,10 +136,13 @@ upload_new_package() {
 # Main script
 echo "Starting package replacement process..."
 
-# Delete the old package if it exists
-delete_old_package
+if [[ "$POM_VERSION" == *-SNAPSHOT ]]; then
+  echo "Snapshot build detected, deleting previous ${PACKAGE_NAME}${ML} packages with base version ${BASE_VERSION}..."
+  delete_old_package
+else
+  echo "Release build detected, not deleting any existing package."
+fi
 
-# Upload the new package
 upload_new_package
 
 echo "Package replacement process completed."

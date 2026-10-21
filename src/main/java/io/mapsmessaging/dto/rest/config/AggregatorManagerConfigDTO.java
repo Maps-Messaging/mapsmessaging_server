@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.dto.rest.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -92,6 +93,7 @@ public class AggregatorManagerConfigDTO extends BaseManagerConfigDTO {
     super("AggregatorManagerConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Aggregations";

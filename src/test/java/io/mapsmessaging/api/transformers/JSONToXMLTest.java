@@ -36,15 +36,13 @@ class JSONToXMLTest extends AbstractInPlaceTransformationTest {
 
   @Override
   protected byte[] validInputBytes() {
-    return utf8Bytes(TransformationTestVectors.VALID_JSON_OBJECT);
+    return utf8Bytes(TransformationTestVectors.VALID_JSON_OBJECT_FOR_XML);
   }
 
   @Test
   void transform_validJsonObject_producesXml() {
     byte[] before = validInputBytes();
-
     ParsedMessage result = transform(before);
-
     assertNotDropped(result);
     assertOpaqueDataChanged(before, result);
     assertOpaqueDataIsXml(result);

@@ -35,10 +35,7 @@ public class SubListener implements FrameListener {
     SubFrame subscribe = (SubFrame) frame;
     if (subscribe.getSubject().startsWith("_INBOX.") && subscribe.getSubscriptionId() != null) {
       engine.getJetStreamRequestManager().setJetSubject(subscribe.getSubject());
-      String reply = engine.getJetStreamRequestManager().getJetSubject();
-
-      String key = reply.substring(0, reply.indexOf(".*"));
-      engine.getJetStreamRequestManager().registerSid(key, subscribe.getSubscriptionId());
+      engine.getJetStreamRequestManager().registerSid(subscribe.getSubject(), subscribe.getSubscriptionId());
       if (engine.isVerbose()) engine.send(new OkFrame());
       return;
     }

@@ -40,6 +40,9 @@ import java.util.Map;
 
 public class AdapterManager {
 
+  private static final String DISCOVERY_VERSION = "version 1.0";
+
+
   private final Logger logger;
   private final String domainName;
   private final String serverName;
@@ -87,20 +90,20 @@ public class AdapterManager {
             map.put("version 5.0", "true");
             break;
           case "amqp":
-            map.put("version 1.0", "true");
+            map.put(DISCOVERY_VERSION, "true");
             break;
           case "stomp":
             map.put("version 1.2", "true");
             break;
 
           case "nats":
-            map.put("version 1.0", "true");
+            map.put(DISCOVERY_VERSION, "true");
             break;
           case "coap":
             map.put("RFC7252, RFC7641, RFC7959", "true");
             break;
           case "mqtt-sn":
-            map.put("version 1.0", "true");
+            map.put(DISCOVERY_VERSION, "true");
             map.put("version 2.0", "true");
             break;
 

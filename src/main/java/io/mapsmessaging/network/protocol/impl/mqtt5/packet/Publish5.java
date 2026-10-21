@@ -27,10 +27,10 @@ import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.DefaultConstants;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
-import lombok.Getter;
-
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifier;
 import java.nio.ByteBuffer;
 import java.util.Collection;
+import lombok.Getter;
 
 /**
  * https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901100
@@ -52,10 +52,14 @@ public class Publish5 extends MQTTPacket5 implements ServerPublishPacket {
   private final byte[] payload;
 
   public Publish5(byte[] payload, QualityOfService qos, int packetId, String destination, boolean retain) {
+    this(payload, qos, packetId, destination, retain, false);
+  }
+
+  public Publish5(byte[] payload, QualityOfService qos, int packetId, String destination, boolean retain, boolean duplicate) {
     super(PUBLISH);
     this.payload = payload != null ? payload : new byte[0];
     this.retain = retain;
-    isDup = false;
+    isDup = duplicate && qos.isSendPacketId();
     this.qos = qos;
     this.packetId = packetId;
     destinationName = destination;
@@ -96,6 +100,15 @@ public class Publish5 extends MQTTPacket5 implements ServerPublishPacket {
     if (destinationName.contains("#") || destinationName.contains("+")) {
       throw new MalformedException("Destination name must not contain wildcards Reference: [MQTT-3.3.2-2]");
     }
+  }
+
+  @Override
+  public MessageProperties add(MessageProperty property) {
+    if (property instanceof SubscriptionIdentifier subscriptionIdentifier
+        && subscriptionIdentifier.getSubscriptionIdentifier() <= 0) {
+      return getProperties();
+    }
+    return super.add(property);
   }
 
   public boolean isDuplicate() {

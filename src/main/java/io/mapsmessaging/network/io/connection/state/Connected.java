@@ -30,7 +30,11 @@ public class Connected extends State {
 
   @Override
   public void execute() {
-    endPointConnection.scheduleState(endPointConnection.getEstablishingState());
+    State establishing = endPointConnection.getEstablishingState();
+    if (establishing instanceof Establishing) {
+      establishing = new Establishing(endPointConnection);
+    }
+    endPointConnection.scheduleState(establishing);
   }
 
   @Override

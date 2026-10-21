@@ -51,7 +51,7 @@ public class InitialConnectionState implements State {
       SessionContextBuilder scb = new SessionContextBuilder(connect.getClientId(), new ProtocolClientConnection(protocol));
       scb.setResetState(connect.clean());
       protocol.setKeepAlive(TimeUnit.SECONDS.toMillis(connect.getDuration()));
-      MqttSnConfig config = (MqttSnConfig)endPoint.getConfig().getProtocolConfig("mqtt-sn");
+      MqttSnConfig config = (MqttSnConfig) protocol.getProtocolConfig();
 
       scb.setReceiveMaximum(config.getReceiveMaximum());
       scb.setSessionExpiry(config.getMaximumSessionExpiry());
@@ -67,7 +67,7 @@ public class InitialConnectionState implements State {
         sessionFuture.thenApply(session -> {
           protocol.setSession(session);
           ConnAck response = new ConnAck(ReasonCodes.SUCCESS);
-          response.setCallback(session::resumeState);
+          response.setCallback(() -> protocol.resumeSession(session));
           ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
               endPoint.getProtocol(),
               endPoint.getName(),

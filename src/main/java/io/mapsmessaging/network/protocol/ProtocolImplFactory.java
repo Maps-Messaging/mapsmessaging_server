@@ -28,6 +28,7 @@ import io.mapsmessaging.utilities.service.Service;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Getter
 public abstract class ProtocolImplFactory implements Service {
@@ -46,7 +47,12 @@ public abstract class ProtocolImplFactory implements Service {
     return null;
   }
 
-  public abstract Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException;
+  @SuppressWarnings("java:S1172") // The endpoint-aware SPI hook is overridden by protocol factories that need endpoint context.
+  public ServerPacket getInitialPacket(EndPoint endPoint) {
+    return getInitialPacket();
+  }
+
+  public abstract Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException;
 
   public abstract void create(EndPoint endPoint, Packet packet) throws IOException;
 

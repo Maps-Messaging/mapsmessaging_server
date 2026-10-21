@@ -21,7 +21,6 @@ package io.mapsmessaging.api.transformers;
 
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.network.protocol.Protocol;
 
 import java.nio.charset.StandardCharsets;
 

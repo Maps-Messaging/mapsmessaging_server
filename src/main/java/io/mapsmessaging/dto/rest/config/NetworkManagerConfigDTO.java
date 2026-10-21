@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -73,6 +74,7 @@ public class NetworkManagerConfigDTO extends BaseManagerConfigDTO {
     super("NetworkManagerConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Networks";

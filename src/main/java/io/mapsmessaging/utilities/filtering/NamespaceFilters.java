@@ -35,6 +35,9 @@ public class NamespaceFilters {
   }
 
   public NamespaceFilters(List<NamespaceFilterDTO> props) {
+    if (props == null) {
+      return;
+    }
     for(NamespaceFilterDTO filter: props){
       addFilter(filter);
     }

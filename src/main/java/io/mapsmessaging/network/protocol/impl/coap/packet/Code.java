@@ -103,7 +103,7 @@ public enum Code {
   }
 
   public static Code valueOf(byte val){
-    Clazz clazz1 = Clazz.valueOf(val >> 5);
+    Clazz clazz1 = Clazz.valueOf((val & 0xFF) >> 5);
     if(clazz1 != null) {
       switch (clazz1) {
         case SUCCESS:
@@ -133,6 +133,8 @@ public enum Code {
         return CHANGED;
       case 5:
         return CONTENT;
+      case 31:
+        return CONTINUE;
 
       default:
         return CREATED;

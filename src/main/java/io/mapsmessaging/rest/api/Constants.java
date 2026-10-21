@@ -26,7 +26,7 @@ import lombok.Setter;
 
 public class Constants {
 
-  public static final String URI_PATH = "/api/v1";
+  public static final String URI_PATH = "/v1";
 
   @Getter
   @Setter

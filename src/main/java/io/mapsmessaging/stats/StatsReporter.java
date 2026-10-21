@@ -19,6 +19,10 @@
 
 package io.mapsmessaging.stats;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import com.google.gson.Gson;
 import io.mapsmessaging.BuildInfo;
 import io.mapsmessaging.MessageDaemon;
@@ -44,6 +48,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class StatsReporter {
+
+  private static final Logger logger = LoggerFactory.getLogger(StatsReporter.class);
 
   private static final String REPORTING_URL =  "https://stats.mapsmessaging.io/api/v1/report";
 
@@ -124,7 +130,7 @@ public class StatsReporter {
         }
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.log(ServerLogMessages.STATS_REPORT_FAILED, e);
     }
     queueTask();
   }

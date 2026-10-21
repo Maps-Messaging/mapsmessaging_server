@@ -23,6 +23,7 @@ import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.UnsubAck5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.Unsubscribe5;
 
@@ -34,9 +35,13 @@ public class UnsubscribeListener5 extends PacketListener5 {
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     Unsubscribe5 unsubscribe = (Unsubscribe5) mqttPacket;
     List<String> unsubscribeList = unsubscribe.getUnsubscribeList();
-    for (String info : unsubscribeList) {
-      session.removeSubscription(info);
+    StatusCode[] results = new StatusCode[unsubscribeList.size()];
+    for (int i = 0; i < unsubscribeList.size(); i++) {
+      session.removeSubscription(unsubscribeList.get(i));
+      // Session.removeSubscription is void. Success is valid even if no prior
+      // matching subscription existed; the API cannot distinguish that case.
+      results[i] = StatusCode.SUCCESS;
     }
-    return new UnsubAck5(unsubscribe.getMessageId());
+    return new UnsubAck5(unsubscribe.getMessageId(), results);
   }
 }

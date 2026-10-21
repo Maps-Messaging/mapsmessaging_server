@@ -37,13 +37,13 @@ public interface SatelliteClient {
   List<RemoteDeviceInfo> getTerminals(String deviceId) throws IOException, InterruptedException;
 
   // Receive
-  Queue<MessageData> scanForIncoming();
+  Queue<MessageData> scanForIncoming() throws IOException;
 
   // Process any pending messages
-  void processPendingMessages(List<MessageData> queue);
+  void processPendingMessages(List<MessageData> queue) throws IOException;
 
-  void unmute(String deviceId);
+  void unmute(String deviceId) throws IOException;
 
-  void mute(String deviceId);
+  void mute(String deviceId) throws IOException;
 
 }

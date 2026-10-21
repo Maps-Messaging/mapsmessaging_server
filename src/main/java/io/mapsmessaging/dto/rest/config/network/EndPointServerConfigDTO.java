@@ -143,10 +143,9 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
     if (protocolConfig instanceof ExtensionConfigDTO extensionConfig) {
       return extensionConfig.getProtocol();
     }
-    if(protocolConfig instanceof MqttConfigDTO mqttConfig) {
-      if(mqttConfig.getVersion() != MqttVersion.AUTO){
-        return mqttConfig.getVersion().name();
-      }
+    if (protocolConfig instanceof MqttConfigDTO mqttConfig
+        && mqttConfig.getVersion() != MqttVersion.AUTO) {
+      return mqttConfig.getVersion().name();
     }
     return protocolConfig.getType();
   }

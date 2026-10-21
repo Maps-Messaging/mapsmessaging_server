@@ -67,7 +67,7 @@ public enum DestinationMode {
         return SCHEMA;
 
       default:
-        throw new IllegalArgumentException("Invalid handestination  mode value supplied:" + id);
+        throw new IllegalArgumentException("Invalid Destination mode value supplied:" + id);
     }
   }
 }

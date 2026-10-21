@@ -83,14 +83,15 @@ public class EndPointConnection extends EndPointServerStatus {
   private Future<?> futureTask;
 
   @Getter
+  @SuppressWarnings("java:S3077") // stateLock guards transitions; volatile publishes the selected state, whose lifecycle has its own synchronization.
   private volatile State state;
 
   @Getter
-  @Setter
+  @SuppressWarnings("java:S3077") // stateLock guards endpoint ownership; volatile publishes the current transport reference to callbacks.
   private volatile EndPoint endPoint;
 
   @Getter
-  @Setter
+  @SuppressWarnings("java:S3077") // stateLock guards protocol ownership; volatile publishes the reference, not mutable protocol internals.
   private volatile Protocol protocol;
 
   @Getter
@@ -127,6 +128,7 @@ public class EndPointConnection extends EndPointServerStatus {
   public void close() {
     stateMonitor.close();
 
+    State stateToCancel;
     synchronized (stateLock) {
       transitionSequence.incrementAndGet();
 
@@ -137,6 +139,11 @@ public class EndPointConnection extends EndPointServerStatus {
       futureTask = null;
       running.set(false);
       paused.set(false);
+      stateToCancel = state;
+    }
+
+    if (stateToCancel != null) {
+      stateToCancel.cancel();
     }
 
     if (manager != null) {
@@ -144,6 +151,10 @@ public class EndPointConnection extends EndPointServerStatus {
     }
 
     EndPoint currentEndPoint = endPoint;
+    Protocol currentProtocol = protocol;
+    if (currentEndPoint == null && currentProtocol != null) {
+      currentEndPoint = currentProtocol.getEndPoint();
+    }
     if (currentEndPoint != null) {
       try {
         currentEndPoint.close();
@@ -166,23 +177,46 @@ public class EndPointConnection extends EndPointServerStatus {
 
   @Override
   public void handleNewEndPoint(EndPoint newEndPoint) throws IOException {
-    State currentState = state;
-    State stateChange;
-
-    if (running.get() && currentState instanceof Connecting) {
-      stateChange = new Connected(this);
-    } else {
-      newEndPoint.close();
-      stateChange = new Disconnected(this);
+    synchronized (stateLock) {
+      if (running.get() && !paused.get() && state instanceof Connecting
+          && (protocol == null || protocol.getEndPoint() == newEndPoint)) {
+        endPoint = newEndPoint;
+        scheduleState(new Connected(this));
+        return;
+      }
     }
-
-    scheduleState(stateChange);
+    // A rejected completion must not replace the current generation's state.
+    newEndPoint.close();
   }
 
   @Override
   public void handleCloseEndPoint(EndPoint closedEndPoint) {
-    if (running.get() && !paused.get()) {
-      scheduleState(new Delayed(this));
+    synchronized (stateLock) {
+      EndPoint currentEndPoint = endPoint;
+      if (currentEndPoint == null && state instanceof Connecting && protocol != null) {
+        currentEndPoint = protocol.getEndPoint();
+      } else if (currentEndPoint == null && state instanceof Disconnected disconnected) {
+        currentEndPoint = disconnected.getActiveEndPoint();
+      }
+      if (currentEndPoint != closedEndPoint) {
+        return;
+      }
+      endPoint = null;
+      if (running.get() && !paused.get()) {
+        scheduleState(new Delayed(this));
+      }
+    }
+  }
+
+  public void setEndPoint(EndPoint newEndPoint) {
+    synchronized (stateLock) {
+      endPoint = newEndPoint;
+    }
+  }
+
+  public void setProtocol(Protocol newProtocol) {
+    synchronized (stateLock) {
+      protocol = newProtocol;
     }
   }
 
@@ -210,6 +244,7 @@ public class EndPointConnection extends EndPointServerStatus {
   public void stop() {
     if (running.compareAndSet(true, false)) {
       stateMonitor.stop();
+      cancelCurrentState();
       scheduleState(new Shutdown(this));
       logger.log(ServerLogMessages.END_POINT_CONNECTION_STOPPING);
     }
@@ -218,15 +253,15 @@ public class EndPointConnection extends EndPointServerStatus {
   public void pause() {
     if (paused.compareAndSet(false, true)) {
       stateMonitor.stop();
+      cancelCurrentState();
     }
   }
 
   public void resume() {
-    if (paused.compareAndSet(true, false)) {
-      if (running.get()) {
-        stateMonitor.start();
-        scheduleState(new Delayed(this));
-      }
+    if (paused.compareAndSet(true, false)
+        && running.get()) {
+      stateMonitor.start();
+      scheduleState(new Delayed(this));
     }
   }
 
@@ -298,6 +333,13 @@ public class EndPointConnection extends EndPointServerStatus {
 
       newState.execute();
     };
+  }
+
+  private void cancelCurrentState() {
+    State currentState = state;
+    if (currentState != null) {
+      currentState.cancel();
+    }
   }
 
   private boolean isCurrentTransition(long scheduledSequence) {

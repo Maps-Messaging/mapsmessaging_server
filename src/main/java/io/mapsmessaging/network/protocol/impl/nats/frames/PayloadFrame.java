@@ -60,6 +60,7 @@ public abstract class PayloadFrame extends NatsFrame {
     return frame;
   }
 
+  @Override
   public void parseFrame(Packet packet) throws IOException {
     super.parseFrame(packet);
 
@@ -87,6 +88,7 @@ public abstract class PayloadFrame extends NatsFrame {
     }
 
     subject = parts[0];
+    validatePublishSubject(subject);
 
     if (parts.length == 2) {
       // No reply-to
@@ -102,6 +104,17 @@ public abstract class PayloadFrame extends NatsFrame {
 
     if (payloadSize > maxBufferSize) {
       throw new NatsProtocolException("Payload size exceeds max buffer size");
+    }
+  }
+
+  private void validatePublishSubject(String value) throws NatsProtocolException {
+    if (value.isEmpty()
+        || value.startsWith(".")
+        || value.endsWith(".")
+        || value.contains("..")
+        || value.indexOf('*') >= 0
+        || value.indexOf('>') >= 0) {
+      throw new NatsProtocolException("Invalid Subject");
     }
   }
 

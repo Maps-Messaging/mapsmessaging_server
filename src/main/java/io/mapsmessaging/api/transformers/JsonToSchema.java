@@ -90,8 +90,15 @@ public class JsonToSchema implements InterServerTransformation {
   }
 
   private void loadMessageFormatter() {
+    if (schemaConfig == null) {
+      messageFormatter = null;
+      return;
+    }
     try {
       messageFormatter = SchemaManager.getInstance().getMessageFormatter(schemaConfig);
+      if (messageFormatter == null) {
+        return;
+      }
       Map<String, Object> expected = messageFormatter.getFormat();
       String json = gson.toJson(expected);
       if (!json.isEmpty()) {

@@ -26,4 +26,5 @@ public final class RxState {
   int expectedBlock = 1;
   int totalBlocks = 0;
   int totalRetries = 0;
+  boolean complete = false;
 }

@@ -26,6 +26,8 @@ public class NetworkHelper {
   public static boolean isInCidr(String cidr, String ip) {
     try {
       String[] parts = cidr.split("/");
+      if (parts.length != 2) return false;
+
       InetAddress cidrAddress = InetAddress.getByName(parts[0]);
       InetAddress targetAddress = InetAddress.getByName(ip);
       int prefixLength = Integer.parseInt(parts[1]);
@@ -34,6 +36,7 @@ public class NetworkHelper {
       byte[] ipBytes = targetAddress.getAddress();
 
       if (cidrBytes.length != ipBytes.length) return false; // IPv4 vs IPv6 mismatch
+      if (prefixLength < 0 || prefixLength > cidrBytes.length * Byte.SIZE) return false;
 
       int byteCount = prefixLength / 8;
       int bitRemainder = prefixLength % 8;

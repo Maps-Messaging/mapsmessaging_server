@@ -28,10 +28,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 class UserManagementApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/auth/users";
+  private static final String BASE_PATH = URI_PATH+"/auth/users";
 
   @Test
   void create_get_changePassword_delete_happyPath() {

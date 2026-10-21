@@ -29,6 +29,8 @@ import io.mapsmessaging.engine.transformers.TransformerManager;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.route.link.LinkState;
+import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.RemoteSubscriptionProtocol;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
@@ -37,6 +39,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class Establishing extends State {
 
@@ -44,18 +48,66 @@ public class Establishing extends State {
     super(connection);
   }
 
+  @SuppressWarnings("java:S3077") // CompletableFuture is thread-safe; volatile publishes the current acknowledgement future.
+  private volatile CompletableFuture<Void> acknowledgements;
+  private volatile boolean cancelled;
+
   @Override
   public void execute() {
-    if (processLinkRequests(endPointConnection.getProperties().getLinkConfigs())) {
-      endPointConnection.scheduleState(new Established(endPointConnection));
-    } else {
-      try {
-        endPointConnection.getProtocol().close();
-      } catch (IOException ioException) {
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
-      }
-      endPointConnection.scheduleState(new Disconnected(endPointConnection));
+    if (cancelled) {
+      return;
     }
+    Protocol protocol = endPointConnection.getProtocol();
+    if (!processLinkRequests(endPointConnection.getProperties().getLinkConfigs())) {
+      fail(protocol);
+      return;
+    }
+    if (protocol instanceof RemoteSubscriptionProtocol remote) {
+      acknowledgements = remote.getRemoteSubscriptionTracker().awaitAcknowledgements();
+      if (cancelled) {
+        acknowledgements.cancel(false);
+        return;
+      }
+      acknowledgements.orTimeout(20, TimeUnit.SECONDS).whenComplete((ignored, failure) -> {
+        if (cancelled || acknowledgements.isCancelled() || endPointConnection.isPaused() || endPointConnection.getState() != this
+            || endPointConnection.getProtocol() != protocol) {
+          return;
+        }
+        if (failure == null) {
+          established();
+        } else {
+          endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ACK_FAILED, failure);
+          fail(protocol);
+        }
+      });
+    } else {
+      established();
+    }
+  }
+
+  @Override
+  public void cancel() {
+    cancelled = true;
+    if (acknowledgements != null) {
+      acknowledgements.cancel(false);
+    }
+  }
+
+  private void established() {
+    for (LinkConfigDTO property : endPointConnection.getProperties().getLinkConfigs()) {
+      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED,
+          property.getDirection(), property.getLocalNamespace(), property.getRemoteNamespace());
+    }
+    endPointConnection.scheduleState(new Established(endPointConnection));
+  }
+
+  private void fail(Protocol protocol) {
+    try {
+      protocol.close();
+    } catch (IOException ioException) {
+      endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_CLOSE_EXCEPTION, ioException);
+    }
+    endPointConnection.scheduleState(new Disconnected(endPointConnection));
   }
 
   private boolean processLinkRequests(List<LinkConfigDTO> linkConfigs) {
@@ -72,7 +124,6 @@ public class Establishing extends State {
           }
           subscribeLocal( property, remote);
         }
-        endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED, direction, property.getLocalNamespace(), remote);
       } catch (IOException ioException) {
         success = false;
         endPointConnection.getLogger().log(ServerLogMessages.END_POINT_CONNECTION_SUBSCRIPTION_FAILED, direction, property.getLocalNamespace(), remote, ioException);
@@ -132,7 +183,7 @@ public class Establishing extends State {
 
   @Override
   public LinkState getLinkState() {
-    return LinkState.CONNECTED;
+    return LinkState.CONNECTING;
   }
 
   private InterServerPipelineTransformation buildPipeLine(LinkConfigDTO property){

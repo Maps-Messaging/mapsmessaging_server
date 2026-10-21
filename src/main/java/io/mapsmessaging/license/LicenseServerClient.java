@@ -79,6 +79,10 @@ public class LicenseServerClient {
       }
 
       return parseResponse(response.body());
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      logger.log(ServerLogMessages.LICENSE_FAILED_CONTACTING_SERVER, e);
+      return List.of();
     } catch (Exception e) {
       logger.log(ServerLogMessages.LICENSE_FAILED_CONTACTING_SERVER, e);
       return List.of();

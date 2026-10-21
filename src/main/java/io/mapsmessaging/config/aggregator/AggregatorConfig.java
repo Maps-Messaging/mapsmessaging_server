@@ -85,6 +85,7 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
     configurationProperties.put("enabled", enabled);
     configurationProperties.put("outputTopic", outputTopic);
     configurationProperties.put("windowCloseMode", windowCloseMode.name());
+    configurationProperties.put("emitFirstEventImmediately", emitFirstEventImmediately);
 
     configurationProperties.put("windowDurationMs", windowDurationMs);
     configurationProperties.put("timeoutMs", timeoutMs);
@@ -128,6 +129,11 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
 
       if (!Objects.equals(this.windowCloseMode, config.getWindowCloseMode())) {
         this.windowCloseMode = config.getWindowCloseMode();
+        hasChanged = true;
+      }
+
+      if (this.emitFirstEventImmediately != config.isEmitFirstEventImmediately()) {
+        this.emitFirstEventImmediately = config.isEmitFirstEventImmediately();
         hasChanged = true;
       }
 

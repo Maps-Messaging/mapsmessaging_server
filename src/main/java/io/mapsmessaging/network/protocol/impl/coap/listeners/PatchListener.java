@@ -31,9 +31,7 @@ public class PatchListener extends Listener {
       case CON:
         return request.buildAckResponse(Code.METHOD_NOT_ALLOWED);
 
-      case NON:
-      case ACK:
-      case RST:
+      case NON, ACK, RST:
     }
     return null;
   }

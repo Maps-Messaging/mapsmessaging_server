@@ -25,8 +25,10 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
+import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.engine.session.ProtocolMessageListener;
 import io.mapsmessaging.engine.session.SessionManagerTest;
+import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
 import java.util.Map;
 import java.util.Queue;
@@ -50,8 +52,9 @@ class SessionTest extends MessageAPITest implements ProtocolMessageListener {
   @Test
   @DisplayName("Simple session construction tests")
   void sessionConstructionTest(TestInfo testInfo) throws Exception {
-    int initialCount = SessionManagerTest.getInstance().sessionCount();
-    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 2, false, this);
+    int initialCount = SessionManagerTest.getInstance().nonCanSessionCount();
+    String sessionName = testInfo.getTestMethod().get().getName();
+    Session session = createSession(sessionName, 5, 2, false, this);
     Assertions.assertTrue(SessionManagerTest.getInstance().hasSessions());
     Destination destinationImpl = session.findDestination("topic1", DestinationType.TOPIC).get();
     Assertions.assertNotNull(destinationImpl);
@@ -74,16 +77,22 @@ class SessionTest extends MessageAPITest implements ProtocolMessageListener {
     Assertions.assertFalse(messageList.isEmpty());
 
     close(session);
-    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());
+    Assertions.assertFalse(SessionManagerTest.getInstance().hasActiveSession(sessionName));
+    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().nonCanSessionCount());
     TimeUnit.SECONDS.sleep(4);
     if(SessionManagerTest.getInstance().hasIdleSessions()){
-      for(String sessionName:SessionManagerTest.getInstance().getIdleSessions()){
-        SubscriptionController controller = SessionManagerTest.getInstance().getIdleSubscriptions(sessionName);
-        System.err.println("Left over controller::"+controller.getSessionId()+" Timeout::"+controller.getTimeout());
-        super.closeSubscriptionController(controller);
+      for(String idleSessionName:SessionManagerTest.getInstance().getIdleSessions()){
+        if (SessionManagerTest.getInstance().isCanBackedSession(idleSessionName)) {
+          continue;
+        }
+        SubscriptionController controller = SessionManagerTest.getInstance().getIdleSubscriptions(idleSessionName);
+        if (controller != null) {
+          System.err.println("Left over controller::"+controller.getSessionId()+" Timeout::"+controller.getTimeout());
+          super.closeSession(controller.getSessionId());
+        }
       }
     }
-    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());
+    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().nonCanSessionCount());
   }
 
   @Test
@@ -131,19 +140,45 @@ class SessionTest extends MessageAPITest implements ProtocolMessageListener {
   @Test
   @DisplayName("Simple session keep alive state")
   void sessionKeepAlive(TestInfo testInfo) throws Exception {
-    int initialCount = SessionManagerTest.getInstance().sessionCount();
+    String sessionName = testInfo.getTestMethod().get().getName();
     receivedKeepAlive.set(0);
-    Session session = createSession(testInfo.getTestMethod().get().getName(), 5, 12, true, this);
-    Assertions.assertEquals(initialCount+1, SessionManagerTest.getInstance().sessionCount());
-    WaitForState.waitFor(10, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
-    Assertions.assertTrue(receivedKeepAlive.get() != 0);
-    receivedKeepAlive.set(0);
-    close(session);
-    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());
-    Assertions.assertTrue(SessionManagerTest.getInstance().hasIdleSessions());
-    WaitForState.waitFor(12, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
-    Assertions.assertEquals(receivedKeepAlive.get(), 0);
-    Assertions.assertEquals(initialCount, SessionManagerTest.getInstance().sessionCount());
+    FakeProtocol fakeProtocol = new FakeProtocol(this) {
+      @Override
+      public long getKeepAliveTaskInterval() {
+        return 500;
+      }
+    };
+    SessionContextBuilder sessionContextBuilder = new SessionContextBuilder(sessionName, new ProtocolClientConnection(fakeProtocol));
+    sessionContextBuilder.setPersistentSession(true)
+        .setResetState(true)
+        .setReceiveMaximum(100)
+        .setSessionExpiry(2);
+    Session session = createSession(sessionContextBuilder, this);
+
+    try {
+      Assertions.assertTrue(SessionManagerTest.getInstance().hasActiveSession(sessionName));
+      WaitForState.waitFor(2, TimeUnit.SECONDS, () -> receivedKeepAlive.get() != 0);
+      Assertions.assertTrue(receivedKeepAlive.get() != 0);
+
+      close(session);
+      Assertions.assertTrue(session.isClosed());
+      Assertions.assertFalse(SessionManagerTest.getInstance().hasActiveSession(sessionName));
+      Assertions.assertNotNull(SessionManagerTest.getInstance().getIdleSubscriptions(sessionName));
+
+      int keepAliveCountAtClose = receivedKeepAlive.get();
+      WaitForState.waitFor(3, TimeUnit.SECONDS,
+          () -> receivedKeepAlive.get() != keepAliveCountAtClose || SessionManagerTest.getInstance().getIdleSubscriptions(sessionName) == null);
+
+      Assertions.assertEquals(keepAliveCountAtClose, receivedKeepAlive.get());
+      Assertions.assertNull(SessionManagerTest.getInstance().getIdleSubscriptions(sessionName));
+    } finally {
+      if (!session.isClosed()) {
+        close(session);
+      }
+      if (SessionManagerTest.getInstance().getIdleSubscriptions(sessionName) != null) {
+        SessionManagerTest.getInstance().closeIdleSession(sessionName);
+      }
+    }
   }
 
   @Test

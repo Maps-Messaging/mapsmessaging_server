@@ -28,9 +28,11 @@ public class SubscriptionState {
 
 
   private final Map<String, Context> state;
+  private final Map<Integer, String> messageIdToPath;
 
   public SubscriptionState() {
     state = new LinkedHashMap<>();
+    messageIdToPath = new LinkedHashMap<>();
   }
 
   public Context create(String path, BasePacket request) {
@@ -45,7 +47,17 @@ public class SubscriptionState {
 
 
   public Context remove(String path) {
+    messageIdToPath.values().removeIf(path::equals);
     return state.remove(path);
+  }
+
+  public void notificationSent(String path, int messageId) {
+    messageIdToPath.put(messageId, path);
+  }
+
+  public Context removeByMessageId(int messageId) {
+    String path = messageIdToPath.remove(messageId);
+    return path == null ? null : remove(path);
   }
 
   public boolean exists(String path) {

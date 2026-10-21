@@ -89,7 +89,7 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
   @ValueSource(strings = {"memory", "file"})
   void testPriorityOverride(String type) throws Exception {
     testOverride("/messageOverrides/" + type + "/all", false, msg ->
-        Assertions.assertEquals(Priority.NORMAL, msg.getPriority()));
+        Assertions.assertEquals(Priority.ONE_BELOW_NORMAL, msg.getPriority()));
   }
 
   @ParameterizedTest
@@ -104,10 +104,21 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
       Assertions.assertEquals("/override/response", msg.getResponseTopic());
       Assertions.assertEquals("application/xml", msg.getContentType());
       Assertions.assertEquals("test-schema", msg.getSchemaId());
-      Assertions.assertEquals(Priority.NORMAL, msg.getPriority());
+      Assertions.assertEquals(Priority.ONE_BELOW_NORMAL, msg.getPriority());
       Assertions.assertTrue(msg.isRetain());
+      Assertions.assertTrue(msg.isStoreOffline());
       Assertions.assertEquals("mval", msg.getMeta().get("mkey"));
       Assertions.assertEquals("dval", msg.getDataMap().get("dkey").getData());
+    });
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"memory", "file"})
+  void testExpiryOverrideTransactional(String type) throws Exception {
+    testOverride("/messageOverrides/" + type + "/expiry", false, true, msg -> {
+      long remaining = msg.getExpiry() - System.currentTimeMillis();
+      Assertions.assertTrue(remaining > 0 && remaining <= 5000,
+          "Expected up to 5000 ms remaining but got " + remaining);
     });
   }
 
@@ -130,6 +141,10 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
 
 
   private void testOverride(String namespace, boolean useInverseMessage, Consumer<Message> validator) throws Exception {
+    testOverride(namespace, useInverseMessage, false, validator);
+  }
+
+  private void testOverride(String namespace, boolean useInverseMessage, boolean transactional, Consumer<Message> validator) throws Exception {
     Session session = SessionManager.getInstance().create(
         new SessionContextBuilder("test_" + namespace, new ProtocolClientConnection(new FakeProtocol(this)))
             .setPersistentSession(true).build(), this);
@@ -162,7 +177,15 @@ class BaseOverridesTest extends MessageAPITest implements MessageListener {
       messageBuilder.setPriority(Priority.ONE_BELOW_NORMAL);
       messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
     }
-    destination.storeMessage(messageBuilder.build());
+    if(transactional) {
+      Transaction transaction = session.startTransaction("override-transaction");
+      transaction.add(destination, messageBuilder.build());
+      transaction.commit();
+      session.closeTransaction(transaction);
+    }
+    else {
+      destination.storeMessage(messageBuilder.build());
+    }
 
     WaitForState.waitFor(1, TimeUnit.SECONDS, () -> counter.get() > 0);
     Assertions.assertEquals(1, counter.get());

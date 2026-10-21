@@ -30,10 +30,15 @@ public class SchemaLocationHelper {
   private SchemaLocationHelper() {}
 
   public static int compareVersionStrings(String v1, String v2) {
-    if (v1 == null && v2 == null) return 0;
-    if (v1 == null) return -1;
-    if (v2 == null) return 1;
-
+    if (v1 == null && v2 == null) {
+      return 0;
+    }
+    if (v1 == null) {
+      return -1;
+    }
+    if (v2 == null) {
+      return 1;
+    }
     String s1 = v1.trim().toLowerCase(Locale.ROOT).replaceFirst("^v", "");
     String s2 = v2.trim().toLowerCase(Locale.ROOT).replaceFirst("^v", "");
 
@@ -55,12 +60,16 @@ public class SchemaLocationHelper {
 
       if (aNum && bNum) {
         int diff = Integer.compare(Integer.parseInt(a), Integer.parseInt(b));
-        if (diff != 0) return diff;
+        if (diff != 0) {
+          return diff;
+        }
       } else if (aNum != bNum) {
         return aNum ? 1 : -1; // numeric beats non-numeric
       } else {
         int diff = a.compareTo(b);
-        if (diff != 0) return diff;
+        if (diff != 0) {
+          return diff;
+        }
       }
     }
 
@@ -74,7 +83,7 @@ public class SchemaLocationHelper {
 
 
   public static SchemaConfig locateSchema(List<SchemaResource> resources, String destinationName) {
-    OffsetDateTime now = OffsetDateTime.now();
+    OffsetDateTime now = OffsetDateTime.now(java.time.ZoneId.systemDefault());
     Map<String, SchemaConfig> bestVersionPerId = new HashMap<>();
 
     for (SchemaResource resource : resources) {
@@ -113,9 +122,13 @@ public class SchemaLocationHelper {
 
   // Example scoring: higher if exact match, otherwise use regex specificity
   private static int scoreMatch(SchemaConfig schema, String target) {
-    if (target.equals(schema.getName())) return Integer.MAX_VALUE;
+    if (target.equals(schema.getName())) {
+      return Integer.MAX_VALUE;
+    }
     String expr = schema.getMatchExpression();
-    if (expr == null) return 0;
+    if (expr == null) {
+      return 0;
+    }
     return expr.length(); // crude proxy: longer regex = more specific
   }
 

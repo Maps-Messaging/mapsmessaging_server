@@ -167,8 +167,7 @@ public class BasePacket implements ServerPacket {
       Option option = options.getOption((int) optionId);
       currentDelta = (int) optionId - currentOptionId;
       currentOptionId = (int) optionId;
-      if(option instanceof PathOption){
-        PathOption pathOption = (PathOption) option;
+      if(option instanceof PathOption pathOption){
         for(String path:pathOption.getPath()){
           byte[] packed = path.getBytes();
           packOption(packet, currentDelta, packed);
@@ -176,8 +175,7 @@ public class BasePacket implements ServerPacket {
           currentOptionId = (int) optionId;
         }
       }
-      else if(option instanceof ListOption){
-        ListOption listOption = (ListOption)option;
+      else if(option instanceof ListOption listOption){
         for(byte[] opt:listOption.getList()){
           packOption(packet, currentDelta, opt);
           currentDelta = (int) optionId - currentOptionId;
@@ -209,8 +207,8 @@ public class BasePacket implements ServerPacket {
     int optionSize = computeVariableValue(data.length);
     byte optionHeader = (byte) ((optionIdSize << 4) | (optionSize & 0xf));
     packet.put(optionHeader);
-    writeVariableInt(packet, optionIdSize, optionId); // Write the option ID, if any to send
-    writeVariableInt(packet, optionHeader, optionSize);      // Write the option size, if any to send
+    writeVariableInt(packet, optionIdSize, optionId);
+    writeVariableInt(packet, optionSize, data.length);
     packet.put(data);
   }
 
@@ -230,7 +228,12 @@ public class BasePacket implements ServerPacket {
     int optionNumber = 0;
     while(packet.hasData()){
       int val = packet.get() & 0xff;
-      if(val == 0xFF) return; // Found payload flag
+      if (val == 0xFF) {
+        if (!packet.hasData()) {
+          throw new IOException("Payload marker without payload");
+        }
+        return;
+      }
       optionNumber += readVariableInt(packet, val >> 4);
       int optionLength = readVariableInt(packet, val & 0xf);
       byte[] data = new byte[optionLength];
@@ -244,7 +247,7 @@ public class BasePacket implements ServerPacket {
     if(totalSize <= 12){
       return totalSize;
     }
-    else if (totalSize > (256+13)){
+    else if (totalSize <= 268){
       return 13;
     }
     else return 14;
@@ -258,8 +261,9 @@ public class BasePacket implements ServerPacket {
       packet.put((byte)((val -13) & 0xff));
     }
     else if(nibble == 14){
-      packet.put((byte)( (val -13)&0xff));
-      packet.put((byte)(val>>8 & 0xff));
+      long encoded = val - 269;
+      packet.put((byte)((encoded >> 8) & 0xff));
+      packet.put((byte)(encoded & 0xff));
     }
   }
 

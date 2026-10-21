@@ -45,8 +45,8 @@ public class SaslConfigDTO extends BaseConfigDTO {
   protected String realmName;
 
   @Schema(
-      description = "The SASL mechanism, such as PLAIN or SCRAM-SHA-256",
-      example = "PLAIN",
+      description = "The SASL mechanism: SCRAM-SHA-256, or PLAIN on SSL, DTLS, or WSS endpoints",
+      example = "SCRAM-SHA-256",
       requiredMode = Schema.RequiredMode.REQUIRED,
       nullable = false
 

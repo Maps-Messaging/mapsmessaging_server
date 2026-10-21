@@ -25,7 +25,7 @@
   <groupId>io.mapsmessaging</groupId>
   <artifactId>maps</artifactId>
   <modelVersion>4.0.0</modelVersion>
-  <version>4.4.6</version>
+  <version>4.5.0</version>
   <packaging>jar</packaging>
 
   <name>Maps Messaging Server</name>
@@ -45,7 +45,8 @@
       <timezone>Europe/Amsterdam</timezone>
       <properties>
         <location>Eindhoven, Netherlands</location>
-      </properties>
+        <gpg.keyname>admin@mapsmessaging.io</gpg.keyname>
+  </properties>
     </developer>
   </developers>
 
@@ -84,10 +85,11 @@
 
 
   <properties>
-    <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
+    <dependency.check.autoUpdate>true</dependency.check.autoUpdate>
+    <dependency.check.dataDirectory>${user.home}/.m2/repository/org/owasp/dependency-check-data/</dependency.check.dataDirectory>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <logback.version>1.5.32</logback.version>
+    <logback.version>1.6.5</logback.version>
     <pi4j.version>2.8.0</pi4j.version>
     <jersey.version>4.0.2</jersey.version>
     <swagger-ui.version>3.17.0</swagger-ui.version>
@@ -108,10 +110,10 @@
     </sonar.exclusions>
 
 
-    <sonar.jacoco.reportPaths>target/jacoco.exec</sonar.jacoco.reportPaths>
     <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.java.test.binaries>target/test-classes</sonar.java.test.binaries>
 
-    <sonar.issue.ignore.multicriteria>IgnoreVar</sonar.issue.ignore.multicriteria>
+    <sonar.issue.ignore.multicriteria>IgnoreVar,AmqpDateBoundary,ResourceDateContract,ResourceDateFactory</sonar.issue.ignore.multicriteria>
     <sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>java:S6212</sonar.issue.ignore.multicriteria.IgnoreVar.ruleKey>
     <sonar.issue.ignore.multicriteria.IgnoreVar.resourceKey>
       **/*.java
@@ -121,6 +123,15 @@
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.language>java</sonar.language>
 
+    <!-- Qpid AMQP Properties uses Date; preserve its timestamp API boundary. -->
+    <sonar.issue.ignore.multicriteria.AmqpDateBoundary.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.AmqpDateBoundary.ruleKey>
+    <sonar.issue.ignore.multicriteria.AmqpDateBoundary.resourceKey>src/main/java/io/mapsmessaging/network/protocol/impl/amqp/proton/transformers/impl/encoders/PropertiesEncoder.java</sonar.issue.ignore.multicriteria.AmqpDateBoundary.resourceKey>
+    <!-- ResourceProperties is a public, persisted YAML contract consumed by ResourceFactory. -->
+    <sonar.issue.ignore.multicriteria.ResourceDateContract.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.ResourceDateContract.ruleKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateContract.resourceKey>src/main/java/io/mapsmessaging/engine/resources/ResourceProperties.java</sonar.issue.ignore.multicriteria.ResourceDateContract.resourceKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateFactory.ruleKey>java:S2143</sonar.issue.ignore.multicriteria.ResourceDateFactory.ruleKey>
+    <sonar.issue.ignore.multicriteria.ResourceDateFactory.resourceKey>src/main/java/io/mapsmessaging/engine/resources/ResourceFactory.java</sonar.issue.ignore.multicriteria.ResourceDateFactory.resourceKey>
+
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.organization>maps-messaging</sonar.organization>
     <sonar.projectKey>Maps-Messaging_mapsmessaging_server</sonar.projectKey>
@@ -128,29 +139,28 @@
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
-    <sonar.branch.name>main</sonar.branch.name>
-    <branchName>main</branchName>
     <java.version>21</java.version>
 
     <!-- Base -->
-    <maps.canbus.version>1.0.0</maps.canbus.version>
-    <maps.logging.version>2.1.2</maps.logging.version>
-    <maps.jms_selector.version>2.1.1</maps.jms_selector.version>
-    <maps.ml-jms_selector.version>ml-2.1.1</maps.ml-jms_selector.version>
-    <maps.nolc.version>1.2.2</maps.nolc.version>
-    <maps.mavlink.version>2.0.0</maps.mavlink.version>
+    <maps.canbus.version>1.0.1</maps.canbus.version>
+    <maps.cot.version>1.0.0</maps.cot.version>
+    <maps.logging.version>2.2.0</maps.logging.version>
+    <maps.jms_selector.version>2.1.2</maps.jms_selector.version>
+    <maps.ml-jms_selector.version>ml-2.1.2</maps.ml-jms_selector.version>
+    <maps.nolc.version>1.2.3</maps.nolc.version>
+    <maps.mavlink.version>3.0.0</maps.mavlink.version>
+    <maps.jsonquery.version>1.1.1</maps.jsonquery.version>
+    <mqttSn2ClientVersion>0.2.1</mqttSn2ClientVersion>
 
     <!-- first level dependencies -->
-    <maps.jsonquery.version>1.1.0</maps.jsonquery.version> <!-- Requires JMS Selectors -->
-    <maps.nbts.version>2.2.2</maps.nbts.version> <!-- Requires Simple Logging -->
-    <maps.schema.version>3.0.1</maps.schema.version>
-    <maps.config.version>1.1.5</maps.config.version>
+    <maps.nbts.version>2.2.3</maps.nbts.version> <!-- Requires Simple Logging -->
+    <maps.schema.version>3.1.0</maps.schema.version> <!-- Requires canbus, Logging, JMS and Mavlink-->
+    <maps.config.version>1.1.6</maps.config.version> <!-- Requires Logging, and NBTS -->
 
     <!-- Second level dependencies -->
-    <maps.storage.version>2.5.2</maps.storage.version>
-    <maps.device.version>3.1.1</maps.device.version>
-    <maps.auth.version>3.0.2</maps.auth.version>
-
+    <maps.storage.version>2.5.3</maps.storage.version>
+    <maps.device.version>3.1.2</maps.device.version>
+    <maps.auth.version>3.0.3</maps.auth.version>
 
     <license.fetch.skip>false</license.fetch.skip>
     <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
@@ -164,13 +174,27 @@
   -->
   <profiles>
     <profile>
+      <id>buildkite-dependency-check-cache</id>
+      <activation>
+        <property>
+          <name>env.BUILDKITE</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <properties>
+        <dependency.check.autoUpdate>false</dependency.check.autoUpdate>
+        <dependency.check.dataDirectory>/var/cache/dependency-check/13</dependency.check.dataDirectory>
+      </properties>
+    </profile>
+
+    <profile>
       <id>native</id>
       <build>
         <plugins>
           <plugin>
             <groupId>org.graalvm.buildtools</groupId>
             <artifactId>native-maven-plugin</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.14</version>
             <extensions>true</extensions>
             <executions>
               <execution>
@@ -218,7 +242,7 @@
         <dependency>
           <groupId>org.graalvm.buildtools</groupId>
           <artifactId>graalvm-reachability-metadata</artifactId>
-          <version>1.1.0</version>
+          <version>1.1.14</version>
           <classifier>repository</classifier>
           <type>zip</type>
         </dependency>
@@ -252,7 +276,7 @@
         <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.3</version>
+        <version>3.6.4</version>
           <executions>
             <execution>
               <id>config-self-signed-certs</id>
@@ -278,7 +302,7 @@
       <id>ml</id>
       <properties>
         <!-- Base -->
-        <maps.jms_selector.version>ml-2.0.0</maps.jms_selector.version>
+        <maps.jms_selector.version>ml-2.1.2-SNAPSHOT</maps.jms_selector.version>
       </properties>
       <build>
         <plugins>
@@ -326,7 +350,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.3</version>
+        <version>3.6.4</version>
         <executions>
           <execution>
             <id>fetch-community-license</id>
@@ -345,6 +369,13 @@
           </execution>
         </executions>
       </plugin>
+      <!-- SonarCloud scanner used by Jenkins -->
+      <plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>5.7.0.6970</version>
+      </plugin>
+
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -380,7 +411,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.14</version>
+        <version>0.8.15</version>
         <configuration>
           <excludes>
             <!-- test code, lets not track the testing -->
@@ -415,10 +446,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.5</version>
+        <version>3.6.0</version>
         <configuration>
           <argLine>
-            @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Dpaho.interop.directory=${basedir}/paho.mqtt.testing/interoperability -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
+            @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
           </argLine>
           <includes>
             <include>**/*Test.java</include>
@@ -511,7 +542,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.3</version>
+        <version>3.6.4</version>
         <executions>
           <execution>
             <id>self-signed-certs</id>
@@ -559,14 +590,18 @@
       <plugin>
         <groupId>org.owasp</groupId>
         <artifactId>dependency-check-maven</artifactId>
-        <version>12.2.2</version>
+        <version>13.0.0</version>
         <configuration>
-          <skip>true</skip>
-          <nvdApiKey>${nvd.api.key}</nvdApiKey>
+          <autoUpdate>${dependency.check.autoUpdate}</autoUpdate>
+          <dataDirectory>${dependency.check.dataDirectory}</dataDirectory>
           <failBuildOnCVSS>10</failBuildOnCVSS>
           <failOnError>false</failOnError>
           <skipArtifactType>test-jar</skipArtifactType>
           <skipTestScope>true</skipTestScope>
+          <excludes>
+            <exclude>com.hivemq:hivemq-mqtt-client</exclude>
+            <exclude>org.apache.qpid:qpid-jms-client</exclude>
+          </excludes>
         </configuration>
         <executions>
           <execution>
@@ -579,7 +614,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.3</version>
+        <version>3.6.4</version>
         <executions>
           <execution>
             <id>config-lint</id>
@@ -595,10 +630,39 @@
         </executions>
       </plugin>
 
-    </plugins>
+    
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>3.2.8</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+            <configuration>
+              <keyname>${gpg.keyname}</keyname>
+              <passphraseEnvName>MAVEN_GPG_PASSPHRASE</passphraseEnvName>
+              <gpgArguments>
+                <arg>--pinentry-mode</arg>
+                <arg>loopback</arg>
+              </gpgArguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+</plugins>
   </build>
 
   <repositories>
+    <repository>
+      <id>maps_releases</id>
+      <name>maps_release_repository</name>
+      <url>https://repository.mapsmessaging.io/repository/maps_releases/</url>
+    </repository>
+
     <repository>
       <id>maps_test_libs</id>
       <name>artifactory-releases</name>
@@ -626,7 +690,7 @@
       <dependency>
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
-        <version>2.44.9</version>
+        <version>2.46.15</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -669,6 +733,11 @@
       <groupId>io.mapsmessaging</groupId>
       <artifactId>simple_logging</artifactId>
       <version>${maps.logging.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>cot</artifactId>
+      <version>${maps.cot.version}</version>
     </dependency>
     <dependency>
       <groupId>io.mapsmessaging</groupId>
@@ -729,6 +798,13 @@
       <version>${maps.auth.version}</version>
     </dependency>
 
+    <!-- MQTT-SN 2.0 AES-CCM provider (explicit dependency, not transitive Auth leakage) -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>1.86</version>
+    </dependency>
+
     <!-- Consul client API -->
     <dependency>
       <groupId>com.ecwid.consul</groupId>
@@ -756,7 +832,7 @@
     <dependency>
       <groupId>ch.qos.logback.access</groupId>
       <artifactId>logback-access-common</artifactId>
-      <version>2.0.12</version>
+      <version>2.0.15</version>
     </dependency>
 
     <dependency>
@@ -849,13 +925,13 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-jakarta</artifactId>
-      <version>2.2.42</version>
+      <version>2.2.55</version>
     </dependency>
 
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-jaxrs2-servlet-initializer-v2-jakarta</artifactId>
-      <version>2.2.42</version>
+      <version>2.2.52</version>
     </dependency>
 
     <dependency>
@@ -879,14 +955,14 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.22.0</version>
+      <version>2.22.3</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.21</version>
+      <version>2.22</version>
     </dependency>
 
     <!-- End RestAPI Support Dependencies -->
@@ -933,7 +1009,7 @@
     <dependency>
       <groupId>org.jmdns</groupId>
       <artifactId>jmdns</artifactId>
-      <version>3.6.3</version>
+      <version>3.6.4</version>
     </dependency>
 
     <dependency>
@@ -949,33 +1025,33 @@
     <dependency>
       <groupId>org.jolokia</groupId>
       <artifactId>jolokia-jvm</artifactId>
-      <version>1.7.2</version>
+      <version>1.7.3</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.jolokia/jolokia-core -->
     <dependency>
       <groupId>org.jolokia</groupId>
       <artifactId>jolokia-core</artifactId>
-      <version>2.6.0</version>
+      <version>2.6.3</version>
     </dependency>
 
     <!-- Authentication via Amazon Cognito -->
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentity</artifactId>
-      <version>2.44.9</version>
+      <version>2.46.15</version>
     </dependency>
 
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>cognitoidentityprovider</artifactId>
-      <version>2.44.9</version>
+      <version>2.46.15</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.networknt/json-schema-validator -->
     <dependency>
       <groupId>com.networknt</groupId>
       <artifactId>json-schema-validator</artifactId>
-      <version>2.0.0</version>
+      <version>3.0.2</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-cognitoidp -->
@@ -998,13 +1074,6 @@
       <groupId>org.mapdb</groupId>
       <artifactId>mapdb</artifactId>
       <version>3.1.0</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.googlecode.lanterna/lanterna -->
-    <dependency>
-      <groupId>com.googlecode.lanterna</groupId>
-      <artifactId>lanterna</artifactId>
-      <version>3.1.5</version>
     </dependency>
 
     <dependency>
@@ -1047,7 +1116,7 @@
     <dependency>
       <groupId>org.apache.activemq</groupId>
       <artifactId>activemq-stomp</artifactId>
-      <version>6.2.5</version>
+      <version>6.3.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -1080,7 +1149,7 @@
     <dependency>
       <groupId>com.hivemq</groupId>
       <artifactId>hivemq-mqtt-client</artifactId>
-      <version>1.3.14</version>
+      <version>1.3.17</version>
       <scope>test</scope>
     </dependency>
 
@@ -1105,7 +1174,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-websocket</artifactId>
-      <version>6.2.14</version>
+      <version>6.2.19</version>
       <scope>test</scope>
     </dependency>
 
@@ -1154,6 +1223,21 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- CSD01 client with AUTH/sleep renewal used as the MQTT-SN 2.0 test peer. -->
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>mqtt-sn-2-client</artifactId>
+      <version>${mqttSn2ClientVersion}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.mapsmessaging</groupId>
+      <artifactId>mqtt-sn-2-client-protection-bc</artifactId>
+      <version>${mqttSn2ClientVersion}</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.slj</groupId>
       <artifactId>mqtt-sn-client</artifactId>
@@ -1185,7 +1269,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-params</artifactId>
-      <version>6.1.0</version>
+      <version>6.1.3</version>
       <scope>test</scope>
     </dependency>
 
@@ -1229,7 +1313,7 @@
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
-      <version>5.5.7</version>
+      <version>6.0.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -1238,10 +1322,11 @@
       <version>1.6.0</version>
     </dependency>
 
+    <!-- Source: https://mvnrepository.com/artifact/com.squareup.okhttp3/mockwebserver -->
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
-      <version>4.12.0</version>
+      <version>5.5.0</version>
       <scope>test</scope>
     </dependency>
 

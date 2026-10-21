@@ -41,6 +41,7 @@ import io.mapsmessaging.logging.LogMonitor;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.stats.StatsReporter;
 import io.mapsmessaging.utilities.SystemProperties;
@@ -73,6 +74,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_
  * The main method is used to start the daemon.
  */
 public class MessageDaemon {
+
+  private static final String SERVER_ID_PROPERTY = "SERVER_ID";
+
 
   @Getter
   private static FileLockManager lockManager;
@@ -154,7 +158,7 @@ public class MessageDaemon {
     if (serverId != null) {
       uniqueId = serverId;
     } else {
-      uniqueId = SystemProperties.getInstance().getProperty("SERVER_ID", generateUniqueId());
+      uniqueId = SystemProperties.getInstance().getProperty(SERVER_ID_PROPERTY, generateUniqueId());
       instanceConfig.setServerName(uniqueId);
       instanceConfig.saveState();
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
@@ -249,6 +253,7 @@ public class MessageDaemon {
    * @return null
    * @throws IOException if an I/O error occurs during the initialization steps
    */
+  @SuppressWarnings("java:S106") // Startup configuration failures must reach stderr even if logging configuration or file output is unavailable.
   public Integer start() throws IOException {
 
     ConfigurationManager.getInstance().initialise(uniqueId);
@@ -272,13 +277,16 @@ public class MessageDaemon {
     subSystemManager.start();
     logger.log(ServerLogMessages.MESSAGE_DAEMON_STARTUP, BuildInfo.getBuildVersion(), BuildInfo.getBuildDate());
     if (ConsulManagerFactory.getInstance().isStarted()) {
-      ConsulManagerFactory.getInstance().getManager().register(buildMetaData());
+      Map<String, String> meta = buildMetaData();
+      if (meta.containsKey("rest")) {
+        ConsulManagerFactory.getInstance().getManager().register(meta);
+      }
     }
     statsReporter = new StatsReporter();
     return null;
   }
 
-  private Map<String, String> buildMetaData(){
+  private Map<String, String> buildMetaData() throws IOException {
     NetworkManagerConfig networkManagerConfig = NetworkManagerConfig.getInstance();
     Map<String, String> meta =new LinkedHashMap<>();
     for(EndPointServerConfigDTO serverConfig: networkManagerConfig.getEndPointServerConfigList()){
@@ -292,7 +300,38 @@ public class MessageDaemon {
       }
       meta.put(protocols, url);
     }
+    RestApiServerManager restApiServerManager = subSystemManager.getRestApiServerManager();
+    if (restApiServerManager != null && restApiServerManager.isEnabled()) {
+      InetAddress consulRouteAddress = ConsulManagerFactory.getInstance().getManager().getLocalAddress();
+      meta.put("rest", buildRestEndpoint(restApiServerManager.getHost(), restApiServerManager.getPort(), consulRouteAddress));
+    }
     return meta;
+  }
+
+  static String buildRestEndpoint(String configuredHosts, int port, InetAddress localAddress) throws UnknownHostException {
+    if (port < 1 || port > 65535) {
+      throw new IllegalArgumentException("Invalid REST API port: " + port);
+    }
+
+    InetAddress serviceAddress = null;
+    if (configuredHosts != null) {
+      for (String configuredHost : configuredHosts.split(",")) {
+        String host = configuredHost.trim();
+        if (!host.isEmpty()) {
+          InetAddress candidate = InetAddress.getByName(host);
+          if (!candidate.isAnyLocalAddress()) {
+            serviceAddress = candidate;
+            break;
+          }
+        }
+      }
+    }
+    if (serviceAddress == null) {
+      serviceAddress = localAddress;
+    }
+
+    String host = serviceAddress.getHostAddress();
+    return host.contains(":") ? "[" + host + "]:" + port : host + ":" + port;
   }
 
   /**
@@ -333,7 +372,7 @@ public class MessageDaemon {
    * @return The unique identifier for the MessageDaemon instance.
    */
   private String generateUniqueId() {
-    String env = SystemProperties.getInstance().getProperty("SERVER_ID", SystemProperties.getInstance().getEnvProperty("SERVER_ID"));
+    String env = SystemProperties.getInstance().getProperty(SERVER_ID_PROPERTY, SystemProperties.getInstance().getEnvProperty(SERVER_ID_PROPERTY));
     if (env != null) {
       return env;
     }
@@ -354,7 +393,7 @@ public class MessageDaemon {
     return subSystemManager.getSubSystemStatus();
   }
 
-  @SuppressWarnings("java:S106") // we use system.err here since we have not actually been able to start up yet
+  @SuppressWarnings("java:S106") // Environment and lock-acquisition failures must reach stderr before daemon logging configuration is loaded.
   public static void main(String[] args) throws IOException, InterruptedException {
     String directoryPath = MapsEnvironment.getMapsData();
     if (directoryPath.isEmpty()) {
@@ -386,14 +425,15 @@ public class MessageDaemon {
       lockManager.setOnShutdown(instance::stop);
       instance.start();
     } catch (Exception e) {
-      e.printStackTrace();
-      System.err.println("Unexpected error: " + e.getMessage());
+      System.err.println("Unexpected error starting the messaging daemon: " + e.getMessage());
+      LoggerFactory.getLogger(MessageDaemon.class).log(ServerLogMessages.MESSAGE_DAEMON_START_FAILED, e);
       lockManager.shutdown();
       lockManager.close();
     }
   }
 
   public String getRestServerUrl() {
-    return subSystemManager.getRestApiServerManager().getBaseUri();
+    RestApiServerManager restApiServerManager = subSystemManager.getRestApiServerManager();
+    return restApiServerManager != null ? restApiServerManager.getBaseUri() : null;
   }
 }

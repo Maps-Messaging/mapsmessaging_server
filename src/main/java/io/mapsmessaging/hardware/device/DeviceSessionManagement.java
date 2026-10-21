@@ -125,8 +125,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
       }
     }
     switch(device.getType()){
-      case SENSOR:
-      case CLOCK:
+      case SENSOR, CLOCK:
         device.getTrigger().addTask(this);
         break;
 

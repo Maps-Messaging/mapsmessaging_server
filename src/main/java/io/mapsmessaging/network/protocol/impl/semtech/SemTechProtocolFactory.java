@@ -26,6 +26,7 @@ import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class SemTechProtocolFactory extends ProtocolImplFactory {
 
@@ -38,7 +39,7 @@ public class SemTechProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     return new SemTechProtocol(endPoint, sessionId);
   }
 

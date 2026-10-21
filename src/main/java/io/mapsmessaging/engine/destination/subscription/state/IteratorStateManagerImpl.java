@@ -39,7 +39,8 @@ public class IteratorStateManagerImpl extends BaseMessageStateManager implements
     super(name, uniqueSessionId,  new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE), new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     parent = parentState;
     if (deepCopy) {
-      parent.getAllAtRest(messagesAtRest);
+      messagesAtRest.addAll(parentState.messagesAtRest);
+      messagesAtRest.addAll(parentState.messagesInFlight);
     }
     parent.add(this);
   }

@@ -31,10 +31,9 @@ public final class RootDtoResolver {
     Class<?> current = managerClass;
 
     while (current != null && current != Object.class) {
-      if (BaseConfigDTO.class.isAssignableFrom(current)) {
-        if (current != BaseConfigDTO.class) {
-          return (Class<? extends BaseConfigDTO>) current;
-        }
+      if (BaseConfigDTO.class.isAssignableFrom(current)
+          && current != BaseConfigDTO.class) {
+        return (Class<? extends BaseConfigDTO>) current;
       }
       current = current.getSuperclass();
     }

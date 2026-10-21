@@ -51,6 +51,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/server/integrations")
 public class IntegrationManagementApi extends IntegrationBaseRestApi {
 
+  private static final String CONNECTION_MANAGER_UNAVAILABLE = "Unable to resolve network connection manager";
+
+
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
@@ -138,7 +141,7 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
           .getSubSystemManager()
           .getNetworkConnectionManager();
     } catch (RuntimeException ex) {
-      return internalServerError("Unable to resolve network connection manager");
+      return internalServerError(CONNECTION_MANAGER_UNAVAILABLE);
     }
 
     List<EndPointConnection> endPointConnections;
@@ -249,7 +252,7 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
           .getSubSystemManager()
           .getNetworkConnectionManager();
     } catch (RuntimeException ex) {
-      return internalServerError("Unable to resolve network connection manager");
+      return internalServerError(CONNECTION_MANAGER_UNAVAILABLE);
     }
 
     boolean processed = false;
@@ -367,7 +370,7 @@ public class IntegrationManagementApi extends IntegrationBaseRestApi {
           .getSubSystemManager()
           .getNetworkConnectionManager();
     } catch (RuntimeException ex) {
-      return internalServerError("Unable to resolve network connection manager");
+      return internalServerError(CONNECTION_MANAGER_UNAVAILABLE);
     }
 
     List<EndPointConnection> endPointConnections;

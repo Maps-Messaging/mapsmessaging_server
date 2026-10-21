@@ -1,6 +1,7 @@
 package io.mapsmessaging.network.protocol.impl.semtech;
 
 import com.google.gson.*;
+import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
@@ -10,8 +11,6 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.network.protocol.impl.semtech.json.PushDataJSON;
 import io.mapsmessaging.network.protocol.impl.semtech.json.ReceivePacket;
-import io.mapsmessaging.network.protocol.impl.semtech.json.StatPacket;
-import io.mapsmessaging.network.protocol.impl.semtech.json.TxPackAck;
 import io.mapsmessaging.test.BaseTestConfig;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -367,14 +366,16 @@ class SemtechViaUdpRigidTest extends BaseTestConfig {
   private PushDataJSON sendPushDataAndGetPublished(PushDataJSON expectedPublished, JsonObject incomingSemtechJson)
       throws LoginException, IOException, InterruptedException {
 
-    AtomicInteger receivedCount = new AtomicInteger(0);
-    CountDownLatch firstMessageLatch = new CountDownLatch(1);
-    List<Message> messages = new CopyOnWriteArrayList<>();
+    byte[] gatewayEui = hexToBytes("0102030405060708");
+    String inboundTopic = "/semtech/inbound/" + GatewayManager.dumpIdentifier(gatewayEui);
+    CountDownLatch inboundMessageLatch = new CountDownLatch(1);
+    List<MessageEvent> events = new CopyOnWriteArrayList<>();
 
     MessageListener listener = messageEvent -> {
-      receivedCount.incrementAndGet();
-      messages.add(messageEvent.getMessage());
-      firstMessageLatch.countDown();
+      events.add(messageEvent);
+      if (inboundTopic.equals(messageEvent.getDestinationName())) {
+        inboundMessageLatch.countDown();
+      }
       messageEvent.getCompletionTask().run();
     };
 
@@ -392,7 +393,6 @@ class SemtechViaUdpRigidTest extends BaseTestConfig {
 
       session.addSubscription(context);
 
-      byte[] gatewayEui = hexToBytes("0102030405060708");
       int token = ThreadLocalRandom.current().nextInt(0, 0x10000);
 
       byte[] pushPacket = buildPushDataPacket(token, gatewayEui, incomingSemtechJson.toString().getBytes(StandardCharsets.UTF_8));
@@ -408,21 +408,15 @@ class SemtechViaUdpRigidTest extends BaseTestConfig {
         validatePushAck(ackBytes, token);
       }
 
-      boolean received = firstMessageLatch.await(5, TimeUnit.SECONDS);
-      Assertions.assertTrue(received, "No Semtech messages were published after UDP injection to port " + UDP_PORT);
-      Assertions.assertTrue(receivedCount.get() > 0, "Expected at least one message after UDP injection");
-
-      int attempts = 0;
-      do {
-        delay(100);
-        attempts++;
-      } while (messages.isEmpty() && attempts < 20);
+      boolean received = inboundMessageLatch.await(5, TimeUnit.SECONDS);
+      Assertions.assertTrue(received, "No inbound Semtech message was published; received destinations: " + events.stream().map(MessageEvent::getDestinationName).toList());
 
       session.removeSubscription(context.getKey());
 
-      Assertions.assertEquals(1, messages.size(), "Expected exactly one published message for one PUSH_DATA");
+      List<MessageEvent> inboundEvents = events.stream().filter(event -> inboundTopic.equals(event.getDestinationName())).toList();
+      Assertions.assertEquals(1, inboundEvents.size(), "Expected exactly one inbound message for one PUSH_DATA");
 
-      PushDataJSON parsed = parsePublishedPushData(messages.getFirst());
+      PushDataJSON parsed = parsePublishedPushData(inboundEvents.getFirst().getMessage());
       Assertions.assertNotNull(parsed, "Parsed PushDataJSON must not be null");
 
       // Basic strictness: presence of expected major section(s)

@@ -21,6 +21,7 @@ package io.mapsmessaging.network.protocol.impl.stomp.listener;
 
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.network.protocol.impl.stomp.StompProtocolException;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
@@ -31,7 +32,7 @@ import java.io.IOException;
 public class SubscribeListener implements FrameListener {
 
   @Override
-  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) {
+  public void frameEvent(Frame frame, SessionState engine, boolean endOfBuffer) throws IOException {
     ClientAcknowledgement ackManger;
     Subscribe subscribe = (Subscribe) frame;
     switch (subscribe.getAck()) {
@@ -60,6 +61,8 @@ public class SubscribeListener implements FrameListener {
     builder.setReceiveMaximum(inFlight);
     try {
       engine.createSubscription(builder.build());
+    } catch (StompProtocolException protocolError) {
+      throw protocolError;
     } catch (IOException ioe) {
       Error error = new Error();
       error.setContent("Unable to find topic".getBytes());

@@ -31,7 +31,7 @@ public class JMSTypeInterceptor implements Interceptor {
     String id = message.getSchemaId();
     if(id != null && !id.isEmpty()) {
       SchemaConfig schema = SchemaManager.getInstance().getSchema(id);
-      return schema.getSource();
+      return schema != null ? schema.getSource() : null;
     }
     return null;
   }

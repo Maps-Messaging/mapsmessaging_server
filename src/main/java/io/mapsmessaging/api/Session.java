@@ -28,6 +28,7 @@ import io.mapsmessaging.engine.closure.TemporaryDestinationDeletionTask;
 import io.mapsmessaging.engine.destination.DestinationImpl;
 import io.mapsmessaging.engine.destination.TemporaryDestination;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.engine.session.MessageCallback;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.security.SecurityContext;
@@ -60,6 +61,25 @@ public class Session {
     clientTransactions = new LinkedHashMap<>();
     session.setMessageCallback(new MessageCallbackImpl());
     destinations = new ConcurrentHashMap<>();
+  }
+
+  /** Returns this session's existing alias registry, creating it only once. */
+  public io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(
+      int maximum) throws IOException {
+    return sessionImpl.getOrCreateTopicAliasRegistry(maximum);
+  }
+
+  /** Returns the session-owned delivery store. Protocols must flush persistent changes before sending. */
+  public io.mapsmessaging.storage.delivery.PacketIdStore getOrCreatePacketIdStore(int maximum) throws IOException {
+    return sessionImpl.getOrCreatePacketIdStore(maximum);
+  }
+
+  public io.mapsmessaging.storage.delivery.PacketIdStore getPacketIdStore() {
+    return sessionImpl.getPacketIdStore();
+  }
+
+  public CompletableFuture<Void> ackRecoveredDelivery(io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
+    return sessionImpl.ackRecoveredDelivery(delivery);
   }
 
   public void login() throws IOException {
@@ -110,6 +130,10 @@ public class Session {
       destinationName = SCHEMA + destinationName.substring(SCHEMA.length());
     }
     Destination result = destinations.get(destinationName);
+    if(result != null && result.isClosed()){
+      result = null;
+      destinations.remove(destinationName);
+    }
     if (result == null) {
       String tmp = destinationName;
       DestinationType tmpMeta = type;
@@ -280,7 +304,14 @@ public class Session {
         normalisedName = normalisedName.replace("//", "/");
       }
       MessageEvent event = new MessageEvent(normalisedName, subscription, message, completionTask);
-      listener.sendMessage(event);
+      ClientConnection clientConnection = sessionImpl.getClientConnection();
+      try {
+        listener.sendMessage(event);
+      } finally {
+        if (clientConnection != null) {
+          clientConnection.releaseUnusedSendSlot(subscription);
+        }
+      }
     }
   }
   //</editor-fold>

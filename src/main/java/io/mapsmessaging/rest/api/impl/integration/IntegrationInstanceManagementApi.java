@@ -47,6 +47,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/server/integration/{name}")
 public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
 
+  private static final String NAME_REQUIRED = "Name is required";
+  private static final String INTEGRATION_NOT_FOUND = "Integration not found";
+
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
@@ -107,7 +110,7 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
     hasAccess(RESOURCE);
 
     if (name == null || name.isBlank()) {
-      return badRequest("Name is required");
+      return badRequest(NAME_REQUIRED);
     }
 
     CacheKey cacheKey = new CacheKey(uriInfo.getPath(), name);
@@ -119,7 +122,7 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
 
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
-      return notFound("Integration not found");
+      return notFound(INTEGRATION_NOT_FOUND);
     }
 
     IntegrationInfoDTO response;
@@ -194,7 +197,7 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
     hasAccess(RESOURCE);
 
     if (name == null || name.isBlank()) {
-      return badRequest("Name is required");
+      return badRequest(NAME_REQUIRED);
     }
 
     CacheKey cacheKey = new CacheKey(uriInfo.getPath(), name);
@@ -206,7 +209,7 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
 
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
-      return notFound("Integration not found");
+      return notFound(INTEGRATION_NOT_FOUND);
     }
 
     EndPointSummaryDTO response;
@@ -296,7 +299,7 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
     hasAccess(RESOURCE);
 
     if (name == null || name.isBlank()) {
-      return badRequest("Name is required");
+      return badRequest(NAME_REQUIRED);
     }
 
     if (requestedAction == null) {
@@ -310,7 +313,7 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
 
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
-      return notFound("Integration not found");
+      return notFound(INTEGRATION_NOT_FOUND);
     }
 
     boolean processed = false;
@@ -401,7 +404,7 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
     hasAccess(RESOURCE);
 
     if (name == null || name.isBlank()) {
-      return badRequest("Name is required");
+      return badRequest(NAME_REQUIRED);
     }
 
     CacheKey cacheKey = new CacheKey(uriInfo.getPath(), name);
@@ -413,7 +416,7 @@ public class IntegrationInstanceManagementApi extends IntegrationBaseRestApi {
 
     EndPointConnection endPointConnection = locateInstance(name);
     if (endPointConnection == null) {
-      return notFound("Integration not found");
+      return notFound(INTEGRATION_NOT_FOUND);
     }
 
     IntegrationStatusDTO response;

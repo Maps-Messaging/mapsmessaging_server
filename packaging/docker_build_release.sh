@@ -25,8 +25,6 @@ echo "$2" | docker login --username "$1" --password-stdin
 POM_VERSION=$(grep -m1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
 export LOWERCASE_VERSION="${POM_VERSION,,}"
 
-DOCKER_HUB_REPOSITORY="mapsmessaging/server_daemon"
-
 # ensure a buildx builder with emulation
 docker buildx create --name mapsbuilder --driver docker-container --use >/dev/null 2>&1 || true
 docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64 >/dev/null
@@ -42,7 +40,7 @@ sed "s/%%MAPS_VERSION%%/$POM_VERSION/g" Dockerfile.orig > Dockerfile
 docker buildx build \
   --platform linux/amd64 \
   --no-cache \
-  -t "${DOCKER_HUB_REPOSITORY}:${LOWERCASE_VERSION}-amd64" \
+  -t "mapsmessaging/server_daemon_${LOWERCASE_VERSION}" \
   --label "version=${LOWERCASE_VERSION}" \
   . --push
 
@@ -56,7 +54,7 @@ sed "s/%%MAPS_VERSION%%/$POM_VERSION/g" Dockerfile.orig > Dockerfile
 docker buildx build \
   --platform linux/arm64 \
   --no-cache \
-  -t "${DOCKER_HUB_REPOSITORY}:${LOWERCASE_VERSION}-arm64" \
+  -t "mapsmessaging/server_daemon_arm_${LOWERCASE_VERSION}" \
   --label "version=${LOWERCASE_VERSION}" \
   . --push
 

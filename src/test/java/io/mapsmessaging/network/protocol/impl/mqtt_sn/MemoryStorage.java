@@ -128,11 +128,12 @@ public class MemoryStorage extends AbstractMqttsnService implements IMqttsnStora
 
   @Override
   public void updateRuntimeOptionsFromStorage(MqttsnOptions mqttsnOptions) throws MqttsnException {
+    // Runtime options are supplied by the test rather than restored from persistent storage.
   }
 
   @Override
   public void writeRuntimeOptions(MqttsnOptions mqttsnOptions) throws MqttsnException {
-
+    // This in-memory test storage does not persist runtime options.
   }
 
   @Override

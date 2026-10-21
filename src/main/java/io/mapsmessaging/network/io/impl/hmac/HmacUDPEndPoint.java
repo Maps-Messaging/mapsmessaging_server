@@ -79,23 +79,33 @@ public class HmacUDPEndPoint extends UDPEndPoint {
   @Override
   public int readPacket(Packet packet) throws IOException {
     int res = super.readPacket(packet);
+    if (res <= 0) {
+      if (res == 0) {
+        packet.clear();
+      }
+      return res;
+    }
+
     packet.flip();
     PacketIntegrity packetIntegrity = lookup((InetSocketAddress) packet.getFromAddress());
     if (packetIntegrity == null) {
       packet.clear();
-      res = 0;
-    } else {
-      if (packet.hasRemaining()) {
-        VerificationResult result = packetIntegrity.verify(packet);
-        if (!result.isValid()) {
-          logger.log(PACKET_SECURITY_VERIFICATION_FAILED, ((InetSocketAddress) packet.getFromAddress()).getAddress().getHostAddress(), result.getAlgorithm(), result.getReason(), result.getPacketLength(), result.getSignatureSize());
-          packet.clear();
-          res =0;
-        }
-      }
-
+      return 0;
     }
-    return res;
+
+    if (packet.hasRemaining()) {
+      VerificationResult result = packetIntegrity.verify(packet);
+      if (!result.isValid()) {
+        logger.log(PACKET_SECURITY_VERIFICATION_FAILED, ((InetSocketAddress) packet.getFromAddress()).getAddress().getHostAddress(), result.getAlgorithm(), result.getReason(), result.getPacketLength(), result.getSignatureSize());
+        packet.clear();
+        return 0;
+      }
+    }
+
+    int payloadLength = packet.limit();
+    packet.limit(packet.capacity());
+    packet.position(payloadLength);
+    return payloadLength;
   }
 
   @Override

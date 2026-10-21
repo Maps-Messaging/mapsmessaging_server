@@ -34,6 +34,11 @@ import java.util.Locale;
 
 public class EndPointConfigFactory {
 
+  private static final String PROTOCOL_KEY = "protocol";
+  private static final String PROTOCOLS_KEY = "protocols";
+  private static final String SATELLITE_KEY = "satellite";
+
+
   public static boolean update(EndPointServerConfigDTO orig, EndPointServerConfigDTO upd) {
     boolean hasChanged = false;
 
@@ -70,9 +75,9 @@ public class EndPointConfigFactory {
     config.put("backlog", server.getBacklog());
     config.put("selectorTaskWait", server.getSelectorTaskWait());
     config.put("auth", server.getAuthenticationRealm());
-    config.put("protocols", packProtocolConfig(server)); // ToDo - Convert to Configuration props
-    if (server.getEndPointConfig() instanceof Config) {
-      config.put("endPoint", ((Config) server.getEndPointConfig()).toConfigurationProperties());
+    config.put(PROTOCOLS_KEY, packProtocolConfig(server)); // ToDo - Convert to Configuration props
+    if (server.getEndPointConfig() instanceof Config endpointConfig) {
+      config.put("endPoint", endpointConfig.toConfigurationProperties());
     }
     if(server.getSaslConfig() != null) {
       config.put("saslConfig", ((Config)server.getSaslConfig()).toConfigurationProperties());
@@ -83,12 +88,12 @@ public class EndPointConfigFactory {
     server.setName(config.getProperty("name"));
     server.setUrl(config.getProperty("url"));
     if(server.getUrl() == null){
-      String url = config.getProperty("protocol")+"://localhost:0";
+      String url = config.getProperty(PROTOCOL_KEY)+"://localhost:0";
       server.setUrl(url);
     }
 
     server.setBacklog(config.getIntProperty("backlog", server.getBacklog()));
-    server.setSelectorTaskWait(config.getIntProperty("taskWait", server.getSelectorTaskWait()));
+    server.setSelectorTaskWait(config.getIntProperty("selectorTaskWait", config.getIntProperty("taskWait", server.getSelectorTaskWait())));
     server.setAuthenticationRealm(config.getProperty("auth", ""));
 
     server.setEndPointConfig( server.getUrl() != null ? createEndPointConfig(server.getUrl(), config) : null);
@@ -98,13 +103,13 @@ public class EndPointConfigFactory {
       server.setSaslConfig(new SaslConfig(saslConfiguration));
     }
 
-    if(config.containsKey("protocol")) {
-      loadDefaultProtocols(config, server, config.getProperty("protocol"));
+    if(config.containsKey(PROTOCOL_KEY)) {
+      loadDefaultProtocols(config, server, config.getProperty(PROTOCOL_KEY));
     }
-    else if(config.containsKey("protocols")) {
-      Object obj =  config.get("protocols");
+    else if(config.containsKey(PROTOCOLS_KEY)) {
+      Object obj =  config.get(PROTOCOLS_KEY);
       if(obj instanceof List){
-        List<ConfigurationProperties> protocolConfig = (List<ConfigurationProperties>) config.get("protocols");
+        List<ConfigurationProperties> protocolConfig = (List<ConfigurationProperties>) config.get(PROTOCOLS_KEY);
         loadSpecificProtocols(server, protocolConfig);
       }
       else{
@@ -165,22 +170,32 @@ public class EndPointConfigFactory {
 
   private static List<ConfigurationProperties> packProtocolConfig(EndPointServerConfigDTO server) {
     List<ConfigurationProperties> protocolConfigs = new ArrayList<>();
-    for(ProtocolConfigDTO protocolConfigDTO : server.getProtocolConfigs()){
-      if (protocolConfigDTO instanceof Config protocolConfig) {
-        protocolConfigs.add(protocolConfig.toConfigurationProperties());
-      }
-    }
+    server.getProtocolConfigs().stream().filter(Config.class::isInstance).map(Config.class::cast)
+        .map(Config::toConfigurationProperties)
+        .forEachOrdered(protocolConfigs::add);
     return protocolConfigs;
   }
   private static EndPointConfigDTO createEndPointConfig(String url, ConfigurationProperties properties) {
     String u = url.toLowerCase();
-    if (u.startsWith("tcp") || u.startsWith("ws")) return new TcpConfig(properties);
-    if (u.startsWith("ssl") || u.startsWith("wss")) return new TlsConfig(properties);
-    if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) return new UdpConfig(properties);
-    if (u.startsWith("dtls")) return new DtlsConfig(properties);
-    if (u.startsWith("serial")) return new SerialConfig(properties);
-    if(u.startsWith("canbus")) return new CanbusConfig(properties);
-    if (u.startsWith("satellite")) return new EndPointConfigDTO("satellite"); // placeholder
+    if (u.startsWith("tcp") || u.startsWith("ws")) {
+      return new TcpConfig(properties);
+    }
+    if (u.startsWith("ssl") || u.startsWith("wss")) {
+      return new TlsConfig(properties);
+    }
+    if (u.startsWith("udp") || u.startsWith("hmac") || u.startsWith("lora")) {
+      return new UdpConfig(properties);
+    }
+    if (u.startsWith("dtls")) {
+      return new DtlsConfig(properties);
+    }
+    if (u.startsWith("serial")) {
+      return new SerialConfig(properties);
+    }
+    if (u.startsWith("canbus")) {
+      return new CanbusConfig(properties);
+    }
+    if (u.startsWith(SATELLITE_KEY)) return new EndPointConfigDTO(SATELLITE_KEY); // placeholder
     return null;
   }
 
@@ -199,8 +214,9 @@ public class EndPointConfigFactory {
       case "nmea-0183" -> new NmeaConfig(config);
       case "lora" -> new LoRaProtocolConfig(config);
       case "echo" -> new EchoProtocolConfig(config);
+      case "cot" -> new CotProtocolConfig(config);
       case "stogi" -> new StoGiConfig(config);
-      case "satellite" -> new SatelliteConfig(config);
+      case SATELLITE_KEY -> new SatelliteConfig(config);
       case "mavlink" -> new MavlinkConfig(config);
       case "n2k" -> new N2kProtocolConfig(config);
       case "canaerospace" -> new CanAerospaceProtocolConfig(config);

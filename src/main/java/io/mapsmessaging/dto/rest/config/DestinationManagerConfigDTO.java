@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.destination.DestinationConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -43,6 +44,7 @@ public class DestinationManagerConfigDTO extends BaseManagerConfigDTO {
     super("DestinationManagerConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "Destinations";

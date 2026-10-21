@@ -41,13 +41,11 @@ public class GsonDateTimeSerialiser implements JsonSerializer<Object> {
     }
 
     // Handle LocalDateTime specifically
-    if (src instanceof LocalDateTime) {
-      LocalDateTime localDateTime = (LocalDateTime) src;
+    if (src instanceof LocalDateTime localDateTime) {
       return context.serialize(localDateTime.format(FORMATTER));
     }
 
-    if (src instanceof LocalDate) {
-      LocalDate localDate = (LocalDate) src;
+    if (src instanceof LocalDate localDate) {
       return context.serialize(localDate.format(DATE_FORMATTER));
     }
 

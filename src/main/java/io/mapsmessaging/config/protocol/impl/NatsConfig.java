@@ -43,9 +43,7 @@ public class NatsConfig extends NatsConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof NatsConfigDTO) {
-      NatsConfigDTO newConfig = (NatsConfigDTO) config;
-
+    if (config instanceof NatsConfigDTO newConfig) {
       if (this.keepAlive != newConfig.getKeepAlive()) {
         this.keepAlive = newConfig.getKeepAlive();
         hasChanged = true;

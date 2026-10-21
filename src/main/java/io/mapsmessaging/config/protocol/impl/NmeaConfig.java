@@ -24,32 +24,76 @@ import io.mapsmessaging.config.network.impl.SerialConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.NmeaConfigDTO;
+import java.util.Objects;
 
 public class NmeaConfig extends NmeaConfigDTO implements Config {
 
   public NmeaConfig(ConfigurationProperties config) {
     setType("NMEA-0183");
 
+    ProtocolConfigFactory.unpack(config, this);
+
     format = config.getProperty("format", format);
     topicNameTemplate = config.getProperty("topicNameTemplate", topicNameTemplate);
     publish = config.getBooleanProperty("publish", publish);
     useForServerLocation = config.getBooleanProperty("useForServerLocation", useForServerLocation);
     sentenceForServerLocation = config.getProperty("sentenceForServerLocation", sentenceForServerLocation);
+    qualityOfService = config.getIntProperty("qualityOfService", qualityOfService);
+    storeOffline = config.getBooleanProperty("storeOffline", storeOffline);
 
-    ProtocolConfigFactory.unpack(config, this);
     serial = new SerialConfig(config);
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
-    boolean result = false;
+    boolean hasChanged = false;
 
-    if (config instanceof NmeaConfigDTO nmeaConfigDTO) {
-      result = ProtocolConfigFactory.update(this, nmeaConfigDTO);
-      result = ((SerialConfig) serial).update(config) || result;
+    if (config instanceof NmeaConfigDTO newConfig) {
+      if (!Objects.equals(format, newConfig.getFormat())) {
+        format = newConfig.getFormat();
+        hasChanged = true;
+      }
+
+      if (!Objects.equals(topicNameTemplate, newConfig.getTopicNameTemplate())) {
+        topicNameTemplate = newConfig.getTopicNameTemplate();
+        hasChanged = true;
+      }
+
+      if (publish != newConfig.isPublish()) {
+        publish = newConfig.isPublish();
+        hasChanged = true;
+      }
+
+      if (useForServerLocation != newConfig.isUseForServerLocation()) {
+        useForServerLocation = newConfig.isUseForServerLocation();
+        hasChanged = true;
+      }
+
+      if (!Objects.equals(sentenceForServerLocation, newConfig.getSentenceForServerLocation())) {
+        sentenceForServerLocation = newConfig.getSentenceForServerLocation();
+        hasChanged = true;
+      }
+
+      if (qualityOfService != newConfig.getQualityOfService()) {
+        qualityOfService = newConfig.getQualityOfService();
+        hasChanged = true;
+      }
+
+      if (storeOffline != newConfig.isStoreOffline()) {
+        storeOffline = newConfig.isStoreOffline();
+        hasChanged = true;
+      }
+
+      if (ProtocolConfigFactory.update(this, newConfig)) {
+        hasChanged = true;
+      }
+
+      if (serial instanceof SerialConfig serialConfig && serialConfig.update(config)) {
+        hasChanged = true;
+      }
     }
 
-    return result;
+    return hasChanged;
   }
 
   @Override
@@ -57,6 +101,14 @@ public class NmeaConfig extends NmeaConfigDTO implements Config {
     ConfigurationProperties properties = new ConfigurationProperties();
 
     ProtocolConfigFactory.pack(properties, this);
+
+    properties.put("format", format);
+    properties.put("topicNameTemplate", topicNameTemplate);
+    properties.put("publish", publish);
+    properties.put("useForServerLocation", useForServerLocation);
+    properties.put("sentenceForServerLocation", sentenceForServerLocation);
+    properties.put("qualityOfService", qualityOfService);
+    properties.put("storeOffline", storeOffline);
 
     if (serial instanceof SerialConfig serialConfig) {
       properties.put("serial", serialConfig.toConfigurationProperties());

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5;
 
+import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import org.eclipse.paho.mqttv5.client.*;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
@@ -31,9 +32,57 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class ComplianceTests extends MQTTBaseTest{
+
+  @Test
+  void testDefaultSessionExpiryIsNonPersistentAcrossRepeatedCleanStarts() throws Exception {
+    String clientId = "default-expiry-" + UuidGenerator.getInstance().generate();
+    String topic = "test/default-expiry/" + UuidGenerator.getInstance().generate();
+
+    for (int run = 0; run < 2; run++) {
+      CountDownLatch messagesReceived = new CountDownLatch(3);
+      List<Integer> receivedQos = new ArrayList<>();
+      MqttClient client = new MqttClient(getUrl("tcp", false), clientId, new MemoryPersistence());
+      client.setCallback(new DefaultExpiryCallback(messagesReceived, receivedQos));
+
+      try {
+        MqttConnectionOptions options = new MqttConnectionOptionsBuilder()
+            .cleanStart(true)
+            .build();
+        client.connect(options);
+
+        SessionImpl serverSession = md.getSubSystemManager().getSessionManager().getSessions().stream()
+            .filter(session -> session.getName().equals(clientId))
+            .findFirst()
+            .orElseThrow();
+        Assertions.assertEquals(0L, serverSession.getContext().getExpiry());
+        Assertions.assertFalse(serverSession.getContext().isPersistentSession());
+
+        client.subscribe(topic, 2);
+        for (int qos = 0; qos <= 2; qos++) {
+          client.publish(topic, ("run-" + run + "-qos-" + qos).getBytes(StandardCharsets.UTF_8), qos, false);
+        }
+
+        Assertions.assertTrue(messagesReceived.await(10, TimeUnit.SECONDS), "Expected all QoS messages on run " + run);
+        receivedQos.sort(Integer::compareTo);
+        Assertions.assertEquals(List.of(0, 1, 2), receivedQos);
+      } finally {
+        if (client.isConnected()) {
+          client.disconnect();
+        }
+        client.close();
+      }
+
+      Assertions.assertFalse(md.getSubSystemManager().getSessionManager().getSessions().stream()
+          .anyMatch(session -> session.getName().equals(clientId)));
+    }
+  }
 
 
   @Test
@@ -134,40 +183,46 @@ class ComplianceTests extends MQTTBaseTest{
 
     aclient.connect(options);
 
-    MqttSubscription[] subscriptions = new MqttSubscription[1];
-    TestListener[] listeners = new TestListener[1];
-    subscriptions[0] = new MqttSubscription("TopicA", 2);
-    subscriptions[0].setNoLocal(false);
-    listeners[0] = new TestListener();
-    aclient.subscribe(subscriptions, listeners);
+    try {
+      String topic = "test/payload-format/" + UuidGenerator.getInstance().generate();
+      MqttSubscription subscription = new MqttSubscription(topic, 2);
+      subscription.setNoLocal(false);
+      aclient.subscribe(new MqttSubscription[]{subscription});
 
+      MqttProperties properties = new MqttProperties();
+      properties.setPayloadFormat(true);
+      properties.setContentType("My name");
 
-    MqttProperties properties = new MqttProperties();
-    properties.setPayloadFormat(true);
-    properties.setContentType("My name");
+      for (int qos = 0; qos <= 2; qos++) {
+        MqttMessage message = new MqttMessage(new byte[0]);
+        message.setQos(qos);
+        message.setRetained(false);
+        message.setProperties(properties);
+        aclient.publish(topic, message);
+      }
 
-    for (int qos = 0; qos <= 2; qos++) {
-      MqttMessage message = new MqttMessage("".getBytes(StandardCharsets.UTF_8));
-      message.setQos(qos);
-      message.setRetained(false);
-      message.setProperties(properties);
-      aclient.publish("TopicA", message);
-    }
+      int retries = 0;
+      while (callback.counter.get() < 3 && retries++ < 30) {
+        Thread.sleep(100);
+      }
 
-    int retries = 0;
-    while (callback.counter.get() < 3 && retries++ < 30) {
-      Thread.sleep(100);
-    }
-
-    aclient.disconnect();
-
-    Assertions.assertEquals(3, callback.counter.get(), "Expected 3 messages");
-
-    for (int i = 0; i < callback.messages.length && callback.messages[i] != null; i++) {
-      MqttMessage msg = callback.messages[i];
-      MqttProperties props = msg.getProperties();
-      Assertions.assertEquals("My name", props.getContentType());
-      Assertions.assertEquals(true, props.getPayloadFormat());
+      aclient.disconnect();
+      Assertions.assertEquals(3, callback.counter.get(), "Expected 3 messages");
+      for (int index = 0; index < 3; index++) {
+        MqttMessage message = callback.messages[index];
+        Assertions.assertNotNull(message, "Missing received message " + index);
+        Assertions.assertEquals(0, message.getPayload().length);
+        Assertions.assertEquals("My name", message.getProperties().getContentType());
+        Assertions.assertEquals(true, message.getProperties().getPayloadFormat());
+      }
+    } finally {
+      try {
+        if (aclient.isConnected()) {
+          aclient.disconnect();
+        }
+      } finally {
+        aclient.close();
+      }
     }
   }
 
@@ -269,10 +324,14 @@ class ComplianceTests extends MQTTBaseTest{
     public final MqttMessage[] messages = new MqttMessage[10]; // up to 10 messages for inspection
 
     @Override
-    public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {}
+    public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
+      // This callback records received messages; disconnect completion is checked by the test.
+    }
 
     @Override
-    public void mqttErrorOccurred(MqttException e) {}
+    public void mqttErrorOccurred(MqttException e) {
+      // Connection and publish failures are checked through the client operations in the test.
+    }
 
     @Override
     public void messageArrived(String topic, MqttMessage message) {
@@ -281,13 +340,61 @@ class ComplianceTests extends MQTTBaseTest{
     }
 
     @Override
-    public void deliveryComplete(IMqttToken token) {}
+    public void deliveryComplete(IMqttToken token) {
+      // Delivery callbacks are not used to count received subscription messages.
+    }
 
     @Override
-    public void connectComplete(boolean reconnect, String serverURI) {}
+    public void connectComplete(boolean reconnect, String serverURI) {
+      // The test waits for the client connection before inspecting received messages.
+    }
 
     @Override
-    public void authPacketArrived(int reasonCode, MqttProperties mqttProperties) {}
+    public void authPacketArrived(int reasonCode, MqttProperties mqttProperties) {
+      // These message-delivery tests do not inspect enhanced authentication packets.
+    }
+  }
+
+  private static class DefaultExpiryCallback implements MqttCallback {
+
+    private final CountDownLatch messagesReceived;
+    private final List<Integer> receivedQos;
+
+    private DefaultExpiryCallback(CountDownLatch messagesReceived, List<Integer> receivedQos) {
+      this.messagesReceived = messagesReceived;
+      this.receivedQos = receivedQos;
+    }
+
+    @Override
+    public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
+      // This callback records received messages; disconnect completion is checked by the test.
+    }
+
+    @Override
+    public void mqttErrorOccurred(MqttException exception) {
+      // Connection and publish failures are checked through the client operations in the test.
+    }
+
+    @Override
+    public synchronized void messageArrived(String topic, MqttMessage message) {
+      receivedQos.add(message.getQos());
+      messagesReceived.countDown();
+    }
+
+    @Override
+    public void deliveryComplete(IMqttToken token) {
+      // Delivery callbacks are not used to count received subscription messages.
+    }
+
+    @Override
+    public void connectComplete(boolean reconnect, String serverURI) {
+      // The test waits for the client connection before inspecting received messages.
+    }
+
+    @Override
+    public void authPacketArrived(int reasonCode, MqttProperties mqttProperties) {
+      // These message-delivery tests do not inspect enhanced authentication packets.
+    }
   }
 
 }

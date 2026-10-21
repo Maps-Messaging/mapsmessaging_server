@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.rest.api.impl.messaging.impl;
 
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -111,7 +113,12 @@ public class RestMessageListener implements MessageListener {
       messageEvent.getSubscription().ackReceived(messageEvent.getMessage().getIdentifier());
       return;
     }
-    String namespacePath = messageEvent.getSubscription().getContext().getDestinationName();
+    SubscriptionContext context = messageEvent.getSubscription().getContext();
+    if (context == null) {
+      messageEvent.getCompletionTask().run();
+      return;
+    }
+    String namespacePath = context.getDestinationName();
     if (eventSinkMap.containsKey(namespacePath)) {
       handleAsyncDelivery(namespacePath, messageEvent);
     } else {
@@ -153,22 +160,22 @@ public class RestMessageListener implements MessageListener {
 
   public boolean ackReceived(String destination, List<Long> messageId) {
     SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
-    if (subscribedEventManager != null) {
+    if (subscribedEventManager != null && !messageId.isEmpty()) {
       for (long id : messageId) {
         subscribedEventManager.getSubscribedEventManager().ackReceived(id);
-        return true;
       }
+      return true;
     }
     return false;
   }
 
   public boolean nakReceived(String destination, List<Long> messageId) {
     SessionSubscriptionMap subscribedEventManager = sessionSubscriptionsMap.get(destination);
-    if (subscribedEventManager != null) {
+    if (subscribedEventManager != null && !messageId.isEmpty()) {
       for (long id : messageId) {
         subscribedEventManager.getSubscribedEventManager().rollbackReceived(id);
-        return true;
       }
+      return true;
     }
     return false;
   }
@@ -203,6 +210,9 @@ public class RestMessageListener implements MessageListener {
     while (hasEvents && count != 0 && destinationMessages != null) {
       hasEvents = false;
       for (Map.Entry<String, List<MessageEvent>> entry : destinationMessages.entrySet()) {
+        if (count == 0) {
+          break;
+        }
         if (!entry.getValue().isEmpty()) {
           List<MessageDTO> returnEvents = response.computeIfAbsent(entry.getKey(), key -> new ArrayList<>());
           MessageEvent msg = entry.getValue().remove(0);
@@ -277,7 +287,7 @@ public class RestMessageListener implements MessageListener {
     for (String key : sessionSubscriptionsMap.keySet()) {
       deregisterEventManager(key);
     }
-    closed = false;
+    closed = true;
     messages.clear();
     eventSinkMap.clear();
     sessionSubscriptionsMap.clear();

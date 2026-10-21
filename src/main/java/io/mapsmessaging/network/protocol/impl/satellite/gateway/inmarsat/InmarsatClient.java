@@ -37,6 +37,10 @@ import java.util.stream.Collectors;
 
 public class InmarsatClient implements SatelliteClient {
 
+  private static final String PAYLOAD_JSON_KEY = "payloadJson";
+  private static final String PAYLOAD_RAW_KEY = "payloadRaw";
+
+
   private final InmarsatSession inmarsatSession;
   private InmarsatSession.MailboxSession mailboxSession;
   private String lastMoTimeUTC;
@@ -45,8 +49,7 @@ public class InmarsatClient implements SatelliteClient {
     inmarsatSession = new InmarsatSession(satelliteConfigDTO);
     lastMoTimeUTC  = StateManager.loadLastMessageUtc(inmarsatSession.getClientId());
     if(lastMoTimeUTC == null) {
-      lastMoTimeUTC = java.time.ZonedDateTime.now()
-          .withZoneSameInstant(java.time.ZoneOffset.UTC)
+      lastMoTimeUTC = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
           .minusDays(7)
           .toInstant()
           .truncatedTo(java.time.temporal.ChronoUnit.SECONDS)
@@ -65,26 +68,26 @@ public class InmarsatClient implements SatelliteClient {
   }
 
   @Override
-  public List<RemoteDeviceInfo> getTerminals(String deviceId) {
+  public List<RemoteDeviceInfo> getTerminals(String deviceId) throws IOException {
     return new ArrayList<>(mailboxSession.listDevices(deviceId));
   }
 
-  public void unmute(String deviceId) {
+  public void unmute(String deviceId) throws IOException {
     setDeviceMuteState(deviceId, false);
   }
 
-  public void mute(String deviceId) {
+  public void mute(String deviceId) throws IOException {
     setDeviceMuteState(deviceId, true);
   }
 
-  private void setDeviceMuteState(String deviceId, boolean mute) {
+  private void setDeviceMuteState(String deviceId, boolean mute) throws IOException {
     MuteCommand command = new MuteCommand(deviceId, "mute_cmd"+deviceId, mute);
     List<MuteCommand> list = List.of(command);
     mailboxSession.mute(list, true);
   }
 
   @Override
-  public Queue<MessageData> scanForIncoming() {
+  public Queue<MessageData> scanForIncoming() throws IOException {
     Queue<MessageData> queue = new LinkedList<>();
     MobileOriginatedResponse moResponse = mailboxSession.pollMO(lastMoTimeUTC);
     if(moResponse != null){
@@ -95,8 +98,8 @@ public class InmarsatClient implements SatelliteClient {
       List<JsonObject> msgs = moResponse.getMessages();
       for (JsonObject msg : msgs) {
         MessageData data = new MessageData();
-        if(msg.has("payloadJson") && !msg.get("payloadJson").isJsonNull()) {
-          JsonObject payloadJson = msg.get("payloadJson").getAsJsonObject();
+        if(msg.has(PAYLOAD_JSON_KEY) && !msg.get(PAYLOAD_JSON_KEY).isJsonNull()) {
+          JsonObject payloadJson = msg.get(PAYLOAD_JSON_KEY).getAsJsonObject();
           data.setPayload(payloadJson.toString().getBytes());
           if(payloadJson.has("SIN")){
             data.setSin(payloadJson.get("SIN").getAsInt());
@@ -105,8 +108,8 @@ public class InmarsatClient implements SatelliteClient {
             data.setMin(payloadJson.get("MIN").getAsInt());
           }
           data.setCommon(true);
-        } else if (msg.has("payloadRaw") && !msg.get("payloadRaw").isJsonNull()) {
-          String rawBase64 = msg.get("payloadRaw").getAsString();
+        } else if (msg.has(PAYLOAD_RAW_KEY) && !msg.get(PAYLOAD_RAW_KEY).isJsonNull()) {
+          String rawBase64 = msg.get(PAYLOAD_RAW_KEY).getAsString();
           byte[] payload = Base64.getDecoder().decode(rawBase64);
           if (payload != null && payload.length > 2) {
             data.setSin(payload[0]);
@@ -114,7 +117,7 @@ public class InmarsatClient implements SatelliteClient {
           }
           data.setPayload(payload);
           Map<String, JsonElement> map = msg.asMap();
-          map.remove("payloadRaw");
+          map.remove(PAYLOAD_RAW_KEY);
           Map<String, String> stringMap =
               map.entrySet()
                   .stream()
@@ -135,7 +138,7 @@ public class InmarsatClient implements SatelliteClient {
   }
 
   @Override
-  public void processPendingMessages(List<MessageData> pendingMessages) {
+  public void processPendingMessages(List<MessageData> pendingMessages) throws IOException {
     List<Item> messageList = new ArrayList<>();
     for(MessageData msg : pendingMessages){
       String payload = Base64.getEncoder().encodeToString(msg.getPayload());

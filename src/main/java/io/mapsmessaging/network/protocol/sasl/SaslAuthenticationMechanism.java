@@ -30,16 +30,27 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.io.IOException;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
-public class SaslAuthenticationMechanism implements AuthenticationMechanism {
+public class SaslAuthenticationMechanism implements AuthenticationMechanism, AutoCloseable {
+
+  static final String SCRAM_SHA_256 = "SCRAM-SHA-256";
+  static final String PLAIN = "PLAIN";
+  private static final int MAX_CHALLENGES = 4;
 
   private final SaslServer saslServer;
+  private int challengeCount;
+  private String username;
+  private boolean closed;
 
   @Getter
   private final String mechanism;
 
   public SaslAuthenticationMechanism(String mechanism, String serverName, String protocol, Map<String, String> props, EndPointServerConfigDTO properties) throws IOException {
+    validateMechanism(mechanism, properties);
     SaslConfigDTO saslConfig = properties.getSaslConfig();
     IdentityLookup identityLookup;
     ServerCallbackHandler serverCallbackHandler;
@@ -52,16 +63,32 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
       throw new SaslException("Unable to locate identity look up mechanism for " + saslConfig.getSaslEntries());
     }
     serverCallbackHandler = new ServerCallbackHandler(serverName, identityLookup);
-    saslServer = Sasl.createSaslServer(mechanism, protocol, serverName, props, serverCallbackHandler);
+    Map<String, String> effectiveProperties = props == null ? new HashMap<>() : new HashMap<>(props);
+    if (!PLAIN.equals(mechanism)) {
+      effectiveProperties.put(Sasl.POLICY_NOPLAINTEXT, Boolean.TRUE.toString());
+    }
+    saslServer = Sasl.createSaslServer(mechanism, protocol, serverName, effectiveProperties, serverCallbackHandler);
     if (saslServer == null) {
       throw new IOException("Unsupported Sasl Mechanism : " + mechanism);
     }
     this.mechanism = mechanism;
+    challengeCount = 0;
+    closed = false;
   }
 
   @Override
   public byte[] challenge(byte[] challenge) throws IOException {
-    return saslServer.evaluateResponse(challenge);
+    if (closed) {
+      throw new SaslException("SASL authentication is closed");
+    }
+    if (++challengeCount > MAX_CHALLENGES) {
+      throw new SaslException("SASL authentication exceeded the permitted number of exchanges");
+    }
+    byte[] response = saslServer.evaluateResponse(challenge == null ? new byte[0] : challenge);
+    if (saslServer.isComplete()) {
+      username = saslServer.getAuthorizationID();
+    }
+    return response;
   }
 
   @Override
@@ -77,9 +104,46 @@ public class SaslAuthenticationMechanism implements AuthenticationMechanism {
   }
 
   public String getUsername() {
-    if(saslServer.isComplete()) {
-      return saslServer.getAuthorizationID();
+    return username;
+  }
+
+  @Override
+  public void close() throws SaslException {
+    if (!closed) {
+      saslServer.dispose();
+      closed = true;
     }
-    return null;
+  }
+
+  static boolean isSupportedMechanism(String mechanism) {
+    return SCRAM_SHA_256.equals(mechanism) || PLAIN.equals(mechanism);
+  }
+
+  static boolean isProtectedTransport(String url) {
+    if (url == null) {
+      return false;
+    }
+    String scheme;
+    try {
+      scheme = URI.create(url).getScheme();
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+    if (scheme == null) {
+      return false;
+    }
+    return switch (scheme.toLowerCase(Locale.ROOT)) {
+      case "ssl", "dtls", "wss" -> true;
+      default -> false;
+    };
+  }
+
+  private void validateMechanism(String mechanism, EndPointServerConfigDTO properties) throws SaslException {
+    if (!isSupportedMechanism(mechanism)) {
+      throw new SaslException("Unsupported SASL mechanism: " + mechanism);
+    }
+    if (PLAIN.equals(mechanism) && !isProtectedTransport(properties.getUrl())) {
+      throw new SaslException("PLAIN SASL requires SSL, DTLS, or WSS transport");
+    }
   }
 }

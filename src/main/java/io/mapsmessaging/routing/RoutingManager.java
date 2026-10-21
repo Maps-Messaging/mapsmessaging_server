@@ -131,8 +131,7 @@ public class RoutingManager implements Agent, ServiceListener {
 
   private boolean isNotLocal(ServiceEvent serviceEvent){
     Object source = serviceEvent.getSource();
-    if(source instanceof JmDNSImpl){
-      JmDNSImpl impl = (JmDNSImpl) source;
+    if(source instanceof JmDNSImpl impl){
       return !(impl.getLocalHost().getName().toLowerCase().startsWith(serviceEvent.getInfo().getName().toLowerCase()));
     }
     return true;

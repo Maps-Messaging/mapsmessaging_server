@@ -30,7 +30,9 @@ import org.junit.jupiter.params.provider.Arguments;
 public class BaseMqttSnConfig extends BaseTestConfig {
 
   public static final int[] QOS_LIST = {0, 1, 2};
-  public static final int[] VERSIONS = {1, 2};
+  // The legacy third-party test peer is deliberately kept to MQTT-SN 1.2.
+  // MQTT-SN 2.0 coverage uses the released CSD01 client in the v2_0 package.
+  public static final int[] VERSIONS = {1};
 
   public static Stream<Arguments> createQoSVersionStream() {
     List<Arguments> args = new ArrayList<>();

@@ -30,6 +30,8 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MqttVersion;
 
 public class ProtocolConfigFactory {
 
+  private static final String MESSAGE_DEFAULTS = "messageDefaults";
+
   private static final String REMOTE_AUTH_CONFIG = "remoteAuthConfig";
 
   public static void pack(ConfigurationProperties config, ProtocolConfigDTO protocolConfig) {
@@ -38,7 +40,7 @@ public class ProtocolConfigFactory {
       config.put(REMOTE_AUTH_CONFIG, ((Config) protocolConfig.getRemoteAuthConfig()).toConfigurationProperties());
     }
     if(protocolConfig.getMessageDefaults() != null) {
-      config.put("messageDefaults", protocolConfig.getMessageDefaults());
+      config.put(MESSAGE_DEFAULTS, MessageOverrideConfig.toConfigurationProperties(protocolConfig.getMessageDefaults()));
     }
     if(protocolConfig instanceof MqttConfigDTO mqttConfig){
       config.put("maximumSessionExpiry", mqttConfig.getMaximumSessionExpiry());
@@ -56,8 +58,8 @@ public class ProtocolConfigFactory {
     if (config.getProperty(REMOTE_AUTH_CONFIG) != null) {
       protocolConfigDTO.setRemoteAuthConfig(new ConnectionAuthConfig((ConfigurationProperties) config.get(REMOTE_AUTH_CONFIG)));
     }
-    if(config.getProperty("messageDefaults") != null) {
-      protocolConfigDTO.setMessageDefaults(new MessageOverrideConfig((ConfigurationProperties) config.get("messageDefaults")));
+    if(config.getProperty(MESSAGE_DEFAULTS) != null) {
+      protocolConfigDTO.setMessageDefaults(new MessageOverrideConfig((ConfigurationProperties) config.get(MESSAGE_DEFAULTS)));
     }
     if (protocolConfigDTO instanceof MqttConfigDTO) {
       MqttConfig mqttConfig = (MqttConfig) protocolConfigDTO;
@@ -78,8 +80,14 @@ public class ProtocolConfigFactory {
     if (original.getRemoteAuthConfig() != null && updated.getRemoteAuthConfig() != null) {
       hasChanged = ((Config) original.getRemoteAuthConfig()).update(updated.getRemoteAuthConfig());
     }
-    if(original.getMessageDefaults() != null && updated.getMessageDefaults() != null) {
-      hasChanged = ((Config) original.getMessageDefaults()).update(updated.getMessageDefaults());
+    if(original.getMessageDefaults() instanceof Config messageDefaults && updated.getMessageDefaults() != null) {
+      hasChanged |= messageDefaults.update(updated.getMessageDefaults());
+    }
+    else if(original.getMessageDefaults() != updated.getMessageDefaults()) {
+      original.setMessageDefaults(updated.getMessageDefaults() == null
+          ? null
+          : new MessageOverrideConfig(MessageOverrideConfig.toConfigurationProperties(updated.getMessageDefaults())));
+      hasChanged = true;
     }
     if(original instanceof MqttConfig mqttConfigOriginal && updated instanceof MqttConfigDTO mqttConfigUpdated){
       if (mqttConfigOriginal.getMaximumSessionExpiry() != mqttConfigUpdated.getMaximumSessionExpiry()) {

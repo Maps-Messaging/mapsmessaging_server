@@ -58,10 +58,8 @@ public class CanbusConfig extends CanbusConfigDTO implements Config {
         hasChanged = true;
       }
 
-      if (serialConfig == null && canbusConfig.getSerialConfig() != null) {
-        serialConfig = canbusConfig.getSerialConfig();
-        hasChanged = true;
-      } else if (serialConfig != null && !serialConfig.equals(canbusConfig.getSerialConfig())) {
+      if ((serialConfig == null && canbusConfig.getSerialConfig() != null)
+          || (serialConfig != null && !serialConfig.equals(canbusConfig.getSerialConfig()))) {
         serialConfig = canbusConfig.getSerialConfig();
         hasChanged = true;
       }

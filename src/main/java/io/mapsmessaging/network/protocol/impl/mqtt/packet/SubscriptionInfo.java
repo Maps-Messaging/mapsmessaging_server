@@ -24,9 +24,10 @@ import io.mapsmessaging.api.features.RetainHandler;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.SubscriptionIdentifier;
 import lombok.Getter;
 
-import java.util.StringTokenizer;
 
 public class SubscriptionInfo {
+
+  private static final String SHARED_SUBSCRIPTION_PREFIX = "$share/";
 
   @Getter
   private final String topicName;
@@ -55,12 +56,11 @@ public class SubscriptionInfo {
     this.noLocal = noLocal;
     this.retainAsPublished = retainAsPublished;
     this.subscriptionIdentifier = subscriptionIdentifier;
-    if (topicName.toLowerCase().startsWith("$share")) {
+    if (MqttTopicFilterValidator.isShared(topicName)) {
       sharedSubscription = true;
-      StringTokenizer st = new StringTokenizer(topicName, "/");
-      st.nextElement(); // Should be $share
-      sharedSubscriptionName = st.nextElement().toString();
-      this.topicName = topicName.substring(sharedSubscriptionName.length() + 8);
+      int groupEnd = topicName.indexOf('/', SHARED_SUBSCRIPTION_PREFIX.length());
+      sharedSubscriptionName = topicName.substring(SHARED_SUBSCRIPTION_PREFIX.length(), groupEnd);
+      this.topicName = topicName.substring(groupEnd + 1);
     } else {
       this.topicName = topicName;
       sharedSubscription = false;
@@ -72,8 +72,12 @@ public class SubscriptionInfo {
     return noLocal;
   }
 
+  public String getTopicFilter() {
+    return sharedSubscription ? SHARED_SUBSCRIPTION_PREFIX + sharedSubscriptionName + "/" + topicName : topicName;
+  }
+
   public int length() {
-    return topicName.length() + 1; // Include QoS
+    return getTopicFilter().getBytes(java.nio.charset.StandardCharsets.UTF_8).length + 1;
   }
 
   @Override

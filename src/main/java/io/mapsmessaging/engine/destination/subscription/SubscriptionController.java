@@ -36,9 +36,12 @@ import io.mapsmessaging.engine.destination.DestinationManagerListener;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.modes.SubscriptionModeManager;
 import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
+import io.mapsmessaging.engine.destination.subscription.tasks.SubscriptionTask;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
+import io.mapsmessaging.engine.tasks.Response;
+import io.mapsmessaging.engine.tasks.SubscriptionResponse;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
@@ -54,7 +57,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This class simply manages the subscription to destination mapping. It also manages the wildcard subscriptions, the overlap between wildcard subscriptions and simple
@@ -89,6 +94,9 @@ public class SubscriptionController implements DestinationManagerListener {
   // Session represents the remote client
   //
   private SessionImpl sessionImpl;
+  @Getter
+  private final io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator =
+      new io.mapsmessaging.engine.session.DeliveryStateCoordinator();
 
   private Identity identity;
 
@@ -130,6 +138,25 @@ public class SubscriptionController implements DestinationManagerListener {
       }
     }
     subscriptionControllerJMX = new SubscriptionControllerJMX(this);
+  }
+
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    deliveryStateCoordinator.setPath(path);
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      manager.setDeliveryStateCoordinator(deliveryStateCoordinator);
+    }
+  }
+
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(
+      io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      CompletableFuture<Void> completion = manager.acknowledgeRecoveredDelivery(delivery);
+      if (completion != null) {
+        return completion;
+      }
+    }
+    // Permanently removed subscriptions no longer hold interest in the delivery.
+    return java.util.concurrent.CompletableFuture.completedFuture(null);
   }
 
   private Map<DestinationMode, SubscriptionModeManager> constructModeManagers(){
@@ -187,11 +214,34 @@ public class SubscriptionController implements DestinationManagerListener {
    * @return true if there was such a subscription to start with else false if unable to locate the subscription
    */
   public boolean delSubscription(String id) {
+    // The destination namespace remains the primary subscription identity.
+    if (removeSubscriptionByNamespace(id)) {
+      return true;
+    }
+
+    // Preserve historical alias removal without changing how subscriptions are indexed.
+    // Resolve an alias to the already-registered namespace, then use the usual removal.
+    String namespace = null;
+    for (SubscriptionContext context : contextMap.values()) {
+      if (id.equals(context.getAlias())) {
+        String candidate = context.getKey();
+        if (namespace != null && !namespace.equals(candidate)) {
+          return false; // Ambiguous alias: never remove an arbitrary destination.
+        }
+        namespace = candidate;
+      }
+    }
+    return namespace != null && removeSubscriptionByNamespace(namespace);
+  }
+
+  private boolean removeSubscriptionByNamespace(String namespace) {
     boolean found = false;
-    for(SubscriptionModeManager managers: subscriptionModeManager.values()){
-      if(managers.delSubscription(id, subscriptions, this)){
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      if (manager.delSubscription(namespace, subscriptions, this)) {
         found = true;
-        contextMap.remove(managers.getMode().getNamespace()+id);
+        String prefix = manager.getMode().getNamespace();
+        String key = namespace.startsWith(prefix) ? namespace : prefix + namespace;
+        contextMap.remove(key);
       }
     }
     return found;
@@ -285,12 +335,11 @@ public class SubscriptionController implements DestinationManagerListener {
 
   public Subscription createBrowserSubscription(@NonNull @NotNull SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent, @NonNull @NotNull DestinationImpl destinationImpl) throws IOException {
     SubscriptionBuilder builder = SubscriptionFactory.getInstance().getBrowserBuilder(destinationImpl, context, parent);
-    Subscription subscription = builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getAllocatedId());
-    updateSubscriptionManager(context, destinationImpl, subscription);
-    return subscription;
+    return builder.construct(sessionImpl, sessionId, uniqueSessionId, context.getAllocatedId());
   }
 
   protected void updateSubscriptionManager(@NonNull @NotNull SubscriptionContext context, DestinationImpl destinationImpl,  Subscription subscription){
+    subscription.setDeliveryStateCoordinator(deliveryStateCoordinator);
     subscriptionModeManager.get(context.getDestinationMode()).add(subscription, destinationImpl);
   }
 
@@ -359,6 +408,9 @@ public class SubscriptionController implements DestinationManagerListener {
       }
       destinationSet.clear();
       destinationSet.addAll(authorisedSet);
+      if (isQueueBrowser(context, destinationSet)) {
+        return createTransientBrowser(context, destinationSet);
+      }
       subscriptions.put(context.getKey(), destinationSet);
       //
       // Now compare the active subscription destinations with the ones in this new subscriptionSet
@@ -368,20 +420,53 @@ public class SubscriptionController implements DestinationManagerListener {
         try {
           subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
         } catch (IOException e) {
-          e.printStackTrace();
-          //ToDo, log this and report error
+          logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
         }
       }
     } else {
-      // We have received a subscription for an already registered subscription!!!
-      delSubscription(context.getKey());
-      context.setReplaced(true);
-      return addSubscription(context);
+      isReload = true;
+      DestinationSet destinationSet = subscriptions.get(context.getKey());
+      if (destinationSet != null && !destinationSet.isEmpty()) {
+        if (isQueueBrowser(context, destinationSet)) {
+          return createTransientBrowser(context, destinationSet);
+        }
+        SubscriptionModeManager modeManager = subscriptionModeManager.get(context.getDestinationMode());
+        try {
+          subscription = modeManager.processSubscriptions(this, context, destinationSet, isReload);
+        } catch (IOException e) {
+          logger.log(ServerLogMessages.SUBSCRIPTION_MGR_FAILED, sessionId, context.getFilter(), e);
+        }
+      }
     }
     if (!isReload) {
       contextMap.put(context.getKey(), context);
     }
     return subscription;
+  }
+
+  private boolean isQueueBrowser(SubscriptionContext context, DestinationSet destinationSet) {
+    return context.isBrowser() && destinationSet.size() == 1 && destinationSet.iterator().next().getResourceType().isQueue();
+  }
+
+  private SubscribedEventManager createTransientBrowser(SubscriptionContext context, DestinationSet destinationSet) throws IOException {
+    DestinationImpl destination = destinationSet.iterator().next();
+    DestinationSubscription parent = destination.getSubscription(destination.getFullyQualifiedNamespace());
+    if (parent == null) {
+      throw new IOException("Unable to locate the base queue subscription for " + destination.getFullyQualifiedNamespace());
+    }
+    Future<Response> future = destination.submit(new SubscriptionTask(this, context, destination, new AtomicLong(1)));
+    try {
+      Response response = future.get();
+      if (response instanceof SubscriptionResponse subscriptionResponse) {
+        return subscriptionResponse.getSubscription();
+      }
+      throw new IOException("Browser subscription returned an invalid response for " + destination.getFullyQualifiedNamespace());
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted while creating browser subscription for " + destination.getFullyQualifiedNamespace(), e);
+    } catch (ExecutionException e) {
+      throw new IOException("Unable to create browser subscription for " + destination.getFullyQualifiedNamespace(), e.getCause());
+    }
   }
 
   public SubscriptionInformationDTO getSubscriptionInformation() {

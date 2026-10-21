@@ -76,7 +76,10 @@ public class StreamHandler {
   public void stop(Session session) {
     transformation.clear();
     if (subscriptionManager != null) {
-      session.removeSubscription(subscriptionManager.getContext().getKey());
+      SubscriptionContext context = subscriptionManager.getContext();
+      if (context != null) {
+        session.removeSubscription(context.getKey());
+      }
     }
   }
 

@@ -25,6 +25,7 @@ import com.google.gson.JsonPrimitive;
 import io.mapsmessaging.dto.rest.config.transformer.jsonmapper.JsonMapFunction;
 
 import java.nio.charset.StandardCharsets;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.time.Instant;
 
@@ -51,6 +52,7 @@ public class JsonMapFunctions {
       case TO_BOOLEAN -> new JsonPrimitive(asBoolean(value));
       case TO_EPOCH_SECONDS -> new JsonPrimitive(asLong(value) / 1000);
       case DATE_TO_EPOCH_SECONDS -> new JsonPrimitive(Instant.parse(asString(value)).getEpochSecond());
+      case DATE_TO_ISO_8601 -> new JsonPrimitive(asIso8601(value));
       case BASE64_ENCODE -> new JsonPrimitive(
           Base64.getEncoder().encodeToString(asString(value).getBytes(StandardCharsets.UTF_8))
       );
@@ -59,6 +61,18 @@ public class JsonMapFunctions {
       );
     };
   }
+
+  private static String asIso8601(JsonElement value) {
+    if(value.isJsonPrimitive()) {
+      if (value.getAsJsonPrimitive().isNumber()) {
+        return Instant.ofEpochMilli(value.getAsLong()).toString();
+      } else if (value.getAsJsonPrimitive().isString()) {
+        return Instant.parse(value.getAsString()).truncatedTo(ChronoUnit.MILLIS).toString();
+      }
+    }
+    return value.toString();
+  }
+
 
   private static String asString(JsonElement value) {
     if (value.isJsonPrimitive()) {

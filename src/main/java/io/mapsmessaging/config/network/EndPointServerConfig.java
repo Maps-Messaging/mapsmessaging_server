@@ -31,8 +31,8 @@ public class EndPointServerConfig extends EndPointServerConfigDTO implements Con
   }
 
   public boolean update(BaseConfigDTO config) {
-    if (config instanceof EndPointServerConfigDTO) {
-      return EndPointConfigFactory.update(this, (EndPointServerConfigDTO)config);
+    if (config instanceof EndPointServerConfigDTO matchedEndPointServerConfigDTO) {
+      return EndPointConfigFactory.update(this, matchedEndPointServerConfigDTO);
     }
     return false;
   }

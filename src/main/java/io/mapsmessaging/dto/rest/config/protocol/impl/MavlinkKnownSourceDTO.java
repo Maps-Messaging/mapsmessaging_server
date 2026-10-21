@@ -1,12 +1,9 @@
 package io.mapsmessaging.dto.rest.config.protocol.impl;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.mapsmessaging.state.config.VehicleClass;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -36,13 +33,16 @@ public class MavlinkKnownSourceDTO {
   )
   protected VehicleClass vehicleClass;
 
-  @ArraySchema(
-      schema = @Schema(description = "Per-source allow-list of message IDs.")
+  @Schema(
+      description = "Overrides the CoT type's classification segment (everything after "
+          + "\"a-<affiliation>-\") for this specific asset, instead of the generic "
+          + "vehicleClass-derived default - for when this asset isn't really representative of "
+          + "its configured vehicleClass (e.g. an unmanned platform sharing vehicleClass: USV "
+          + "with a real manned boat that should render differently). Example: \"S-C-U\" "
+          + "(Sea Surface, Combatant, Unmanned).",
+      example = "S-C-U",
+      nullable = true
   )
-  protected List<Integer> acceptedMessageIds = new ArrayList<>();
+  protected String cotClassification;
 
-  @ArraySchema(
-      schema = @Schema(description = "Per-source reject-list of message IDs.")
-  )
-  protected List<Integer> rejectedMessageIds = new ArrayList<>();
 }

@@ -20,6 +20,7 @@
 package io.mapsmessaging.dto.rest.config.ml;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -108,6 +109,7 @@ public class MLModelManagerDTO extends BaseManagerConfigDTO {
     super("MLModelManagerConfigDTO");
   }
 
+  @JsonIgnore
   @Override
   public String getSimpleName() {
     return "ML Models";

@@ -27,10 +27,11 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class LoRaDeviceApiTest extends ApiTestBase {
 
-  private static final String BASE_PATH = "/api/v1/device/lora";
+  private static final String BASE_PATH = URI_PATH+"/device/lora";
 
   @Test
   void getAllLoRaDevices_returns200_andJson() {

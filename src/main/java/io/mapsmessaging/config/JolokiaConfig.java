@@ -49,9 +49,7 @@ public class JolokiaConfig extends JolokiaConfigDTO implements Config, ConfigMan
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof JolokiaConfigDTO) {
-      JolokiaConfigDTO newConfig = (JolokiaConfigDTO) config;
-
+    if (config instanceof JolokiaConfigDTO newConfig) {
       if (this.isEnable() != newConfig.isEnable()) {
         this.setEnable(newConfig.isEnable());
         hasChanged = true;

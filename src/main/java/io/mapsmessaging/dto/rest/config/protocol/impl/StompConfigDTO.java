@@ -39,6 +39,15 @@ public class StompConfigDTO extends ProtocolConfigDTO {
   @Schema(description = "Maximum receive limit for STOMP", example = "1000")
   protected int maxReceive = 1000;
 
-  @Schema(description = "Encode the outgoing buffer as bas64 if binary", example = "true")
+  @Schema(description = "Encode outgoing binary buffers as Base64", example = "true")
   protected boolean base64EncodeBinary = true;
+
+  @Schema(description = "Minimum interval at which the server can send STOMP heartbeats, in milliseconds", example = "10000")
+  protected int heartbeatCanSendMillis = 10000;
+
+  @Schema(description = "Maximum desired interval between client heartbeats, in milliseconds", example = "10000")
+  protected int heartbeatWantsReceiveMillis = 10000;
+
+  @Schema(description = "Additional tolerance before a missing client heartbeat closes the connection, in milliseconds", example = "5000")
+  protected int heartbeatToleranceMillis = 5000;
 }

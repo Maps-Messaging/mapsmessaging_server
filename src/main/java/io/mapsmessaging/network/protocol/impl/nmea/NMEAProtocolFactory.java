@@ -19,7 +19,10 @@
 
 package io.mapsmessaging.network.protocol.impl.nmea;
 
-import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.InterfaceInformation;
 import io.mapsmessaging.network.io.Packet;
@@ -39,6 +42,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NMEAProtocolFactory extends ProtocolImplFactory {
 
+  private static final Logger logger = LoggerFactory.getLogger(NMEAProtocolFactory.class);
+
   private final Map<EndPoint, NMEAProtocol> mappedInterfaces = new ConcurrentHashMap<>();
 
   public NMEAProtocolFactory() {
@@ -46,7 +51,7 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
   }
 
   @Override
-  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password) throws IOException {
+  public Protocol connect(EndPoint endPoint, String sessionId, String username, String password, Map<String, String> topicMap) throws IOException {
     if (endPoint instanceof TCPEndPoint) {
       Packet packet = new Packet(ByteBuffer.allocate(1024));
       packet.put("?WATCH={\"enable\":true,\"nmea\":true}".getBytes(StandardCharsets.UTF_8));
@@ -72,16 +77,17 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
 
   @Override
   public void create(EndPoint endPoint, InterfaceInformation info) throws IOException {
-    int datagramSize = NetworkInfoHelper.getMTU(info);
+    int datagramSize = NetworkInfoHelper.getMTU(info, 20480);
     if (datagramSize > 0) {
-      endPoint.getConfig().getEndPointConfig().setServerReadBufferSize(datagramSize * 2L);
-      endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(datagramSize * 2L);
+      int size = datagramSize *2;
+      endPoint.getConfig().getEndPointConfig().setServerReadBufferSize(size);
+      endPoint.getConfig().getEndPointConfig().setServerWriteBufferSize(size);
     }
     try {
       NMEAProtocol manager = new NMEAProtocol( endPoint, null);
       mappedInterfaces.put(endPoint, manager);
     } catch (LoginException e) {
-      e.printStackTrace();
+      logger.log(ServerLogMessages.NMEA_PROTOCOL_CREATE_FAILED, e);
     }
   }
 
@@ -90,7 +96,7 @@ public class NMEAProtocolFactory extends ProtocolImplFactory {
       try {
         managers.close();
       } catch (IOException e) {
-        e.printStackTrace();
+        logger.log(ServerLogMessages.NMEA_PROTOCOL_CLOSE_FAILED, e);
       }
     }
     mappedInterfaces.clear();

@@ -61,7 +61,7 @@ public abstract class Event extends Frame {
   private String encodedString;
 
   protected Event(int maxBufferSize, boolean base64Encode) {
-    this.maxBufferSize = maxBufferSize;
+    this.maxBufferSize = Math.max(0, maxBufferSize);
     this.base64Encode = base64Encode;
     buffer = null;
     byteArrayOutputStream = null;
@@ -72,45 +72,34 @@ public abstract class Event extends Frame {
   }
 
   public void packMessage(String destination, Message internalMessage) {
-
-    //
-    // Map the data map to the header
-    //
     Map<String, TypedData> dataMap = internalMessage.getDataMap();
     for (Map.Entry<String, TypedData> entry : dataMap.entrySet()) {
       putHeader(entry.getKey(), entry.getValue().getData().toString());
     }
 
-    //
-    // Map the meta-data to the header
-    //
     Map<String, String> metaMap = internalMessage.getMeta();
     if (metaMap != null) {
       for (Map.Entry<String, String> entry : metaMap.entrySet()) {
         putHeader(entry.getKey(), entry.getValue());
       }
     }
-    //
-    // Ensure the destination is the last one added in case of overwrite
     putHeader("destination", destination);
 
-    //
-    // Now lets deal with the buffer
     buffer = internalMessage.getOpaqueData();
-    if(base64Encode) {
+    if (buffer == null) {
+      buffer = new byte[0];
+    }
+    if (base64Encode) {
       putHeader(ENCODED, "base64");
       buffer = Base64.getEncoder().encode(buffer);
     }
-    //
-    // Ensure the defined header messages are correct and not driven by the entries in the map
-    //
-    if (buffer != null && buffer.length > 0) {
-      putHeader(CONTENT_LENGTH, "" + buffer.length);
+    if (buffer.length > 0) {
+      putHeader(CONTENT_LENGTH, Integer.toString(buffer.length));
     }
   }
 
   public byte[] getData() {
-    if(encodedString != null && encodedString.equalsIgnoreCase("base64")){
+    if (encodedString != null && encodedString.equalsIgnoreCase("base64")) {
       return Base64.getDecoder().decode(buffer);
     }
     return buffer;
@@ -125,9 +114,9 @@ public abstract class Event extends Frame {
 
   @Override
   public boolean isValid() {
-    destination = getHeader().remove("destination");
-    transaction = getHeader().remove("transaction");
-    getHeader().remove(CONTENT_LENGTH);
+    destination = removeHeader("destination");
+    transaction = removeHeader("transaction");
+    removeHeader(CONTENT_LENGTH);
     priority = parseHeaderInt("priority", Priority.NORMAL.getValue());
     expiry = parseHeaderLong("expiry", 0);
     delay = parseHeaderLong("delay", 0);
@@ -139,25 +128,34 @@ public abstract class Event extends Frame {
     super.parseCompleted();
     String lengthString = getHeader(CONTENT_LENGTH);
     encodedString = getHeader(ENCODED);
-    if (lengthString != null) {
-      lengthString = lengthString.trim();
-      int length = Integer.parseInt(lengthString);
-      if (length > maxBufferSize) {
-        throw new IOException("Send frame body larger than configured size, sending " + length + ", configured for " + maxBufferSize);
-      }
-      if (buffer == null) {
-        buffer = new byte[length];
-        bufferPos = 0;
-        byteArrayOutputStream = null;
-      }
-    } else {
-      byteArrayOutputStream = new ByteArrayOutputStream();
+    if (lengthString == null) {
+      byteArrayOutputStream = new ByteArrayOutputStream(Math.min(maxBufferSize, 1024));
+      return;
     }
+
+    int length;
+    try {
+      length = Integer.parseInt(lengthString.trim());
+    } catch (NumberFormatException e) {
+      throw new StompProtocolException("Invalid STOMP content-length " + lengthString);
+    }
+    if (length < 0) {
+      throw new StompProtocolException("STOMP content-length must not be negative");
+    }
+    if (length > maxBufferSize) {
+      throw new StompProtocolException(
+          "STOMP frame body exceeds configured maximum, received "
+              + length
+              + ", configured for "
+              + maxBufferSize);
+    }
+    buffer = new byte[length];
+    bufferPos = 0;
+    byteArrayOutputStream = null;
   }
 
   @Override
   public void scanFrame(Packet packet) throws IOException {
-
     if (!endOfHeader) {
       try {
         super.scanFrame(packet, false);
@@ -168,25 +166,21 @@ public abstract class Event extends Frame {
       }
     }
 
-    if (endOfHeader) {
-      readBuffer(packet);
-      resume(packet);
-
-      if (!hasEndOfFrame && packet.hasRemaining()) {
-        if (packet.get() != END_OF_FRAME) {
-          throw new EndOfBufferException(END_OF_FRAME_MSG);
-        }
-        hasEndOfFrame = true;
-      }
-      return;
+    if (!endOfHeader) {
+      throw new EndOfBufferException(MORE_DATA);
     }
-    throw new EndOfBufferException(MORE_DATA);
+
+    initialiseBodyReader(packet);
+    resume(packet);
+    if (!hasEndOfFrame) {
+      throw new EndOfBufferException(MORE_DATA);
+    }
   }
 
-  private void readBuffer(Packet packet) throws IOException {
+  private void initialiseBodyReader(Packet packet) throws IOException {
     if (buffer == null && byteArrayOutputStream == null) {
       parseCompleted();
-      if (packet.position() == packet.limit()) {
+      if (!packet.hasRemaining()) {
         throw new EndOfBufferException();
       }
     }
@@ -195,56 +189,51 @@ public abstract class Event extends Frame {
   @Override
   public void resume(Packet packet) throws EndOfBufferException, StompProtocolException {
     if (byteArrayOutputStream != null) {
-      loadBuffer(packet);
+      loadNullTerminatedBuffer(packet);
     } else {
       loadLengthBasedBuffer(packet);
     }
   }
 
-  private void loadLengthBasedBuffer(Packet packet) throws EndOfBufferException, StompProtocolException {
-    int len = Math.min(packet.limit() - packet.position(), buffer.length - bufferPos);
-    if (len != 0) {
+  private void loadLengthBasedBuffer(Packet packet)
+      throws EndOfBufferException, StompProtocolException {
+    int len = Math.min(packet.available(), buffer.length - bufferPos);
+    if (len > 0) {
       packet.get(buffer, bufferPos, len);
       bufferPos += len;
-
-      //
-      // Check to see if we need more data
-      //
-      if (bufferPos != buffer.length) {
-        throw new EndOfBufferException();
-      }
     }
-
-    if (packet.position() != packet.limit()) {
-      int eof = packet.get();
-      if (eof != END_OF_FRAME) {
-        throw new StompProtocolException(END_OF_FRAME_MSG);
-      }
-      hasEndOfFrame = true;
-    } else {
+    if (bufferPos != buffer.length) {
       throw new EndOfBufferException(MORE_DATA);
     }
+    if (!packet.hasRemaining()) {
+      throw new EndOfBufferException(MORE_DATA);
+    }
+    if (packet.get() != END_OF_FRAME) {
+      throw new StompProtocolException(END_OF_FRAME_MSG);
+    }
+    hasEndOfFrame = true;
   }
 
-  private void loadBuffer(Packet packet) throws EndOfBufferException {
-    byte t = packet.get();
-    int pos = packet.position();
-    while (t != 0) {
-      byteArrayOutputStream.write(t);
-      if (pos >= packet.limit()) {
-        packet.position(pos);
-        throw new EndOfBufferException(MORE_DATA);
+  private void loadNullTerminatedBuffer(Packet packet)
+      throws EndOfBufferException, StompProtocolException {
+    while (packet.hasRemaining()) {
+      byte value = packet.get();
+      if (value == END_OF_FRAME) {
+        buffer = byteArrayOutputStream.toByteArray();
+        hasEndOfFrame = true;
+        return;
       }
-      t = packet.get(pos);
-      pos++;
+      if (byteArrayOutputStream.size() >= maxBufferSize) {
+        throw new StompProtocolException(
+            "STOMP frame body exceeds configured maximum of " + maxBufferSize + " bytes");
+      }
+      byteArrayOutputStream.write(value);
     }
-    packet.position(pos - 1);
-    buffer = byteArrayOutputStream.toByteArray();
+    throw new EndOfBufferException(MORE_DATA);
   }
 
   @Override
   public Frame instance() {
     return new Send(maxBufferSize, base64Encode);
   }
-
 }
