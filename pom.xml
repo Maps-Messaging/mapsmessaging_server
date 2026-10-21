@@ -143,7 +143,7 @@
 
     <!-- Base -->
     <maps.canbus.version>1.0.1</maps.canbus.version>
-    <maps.cot.version>1.0.0-SNAPSHOT</maps.cot.version>
+    <maps.cot.version>1.0.0</maps.cot.version>
     <maps.logging.version>2.2.0</maps.logging.version>
     <maps.jms_selector.version>2.1.2</maps.jms_selector.version>
     <maps.ml-jms_selector.version>ml-2.1.2</maps.ml-jms_selector.version>
