@@ -30,6 +30,8 @@ import io.mapsmessaging.network.io.impl.NetworkInfoHelper;
 import io.mapsmessaging.network.io.impl.tcp.TCPEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.ProtocolImplFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkInterfaceManager;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.MQTTSNInterfaceManager;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;

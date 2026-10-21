@@ -87,6 +87,8 @@ public class N2kProtocol extends Protocol {
 
   private ScheduledFuture<?> scheduledFuture;
 
+  private ScheduledFuture<?> scheduledFuture;
+
   public N2kProtocol(CanbusEndPoint endPoint, @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {
     super(endPoint, protocolConfig );
     CanbusSchemaConfig canbusSchema = new CanbusSchemaConfig();

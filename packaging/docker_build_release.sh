@@ -17,6 +17,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
+
+set -e
+
 echo "$2" | docker login --username "$1" --password-stdin
 
 POM_VERSION=$(grep -m1 "<version>.*</version>$" pom.xml | awk -F'[><]' '{print $3}')
