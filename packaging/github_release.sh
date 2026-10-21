@@ -41,5 +41,4 @@ sleep 5
 echo "Uploading the artifacts to GitHub"
 gh release upload ${VERSION_NAME} target/${PROJECT_NAME}-${VERSION_NAME}-install.zip --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --clobber
 gh release upload ${VERSION_NAME} target/${PROJECT_NAME}-${VERSION_NAME}-install.tar.gz --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --clobber
-gh release upload ${VERSION_NAME} target/${PROJECT_NAME}-${VERSION_NAME}-jar-with-dependencies.jar --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --clobber
 gh release edit ${VERSION_NAME} --repo ${GITHUB_ORGANIZATION}/${GITHUB_REPO} --draft=false

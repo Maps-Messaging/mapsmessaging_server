@@ -8,36 +8,16 @@ $PushRepo = "maps_windows_installer"
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
-    if ($env:BUILDKITE_BRANCH -eq "development") {
-        $PomPath = Join-Path $RepoRoot "pom.xml"
-        [xml]$Pom = Get-Content -Path $PomPath -Raw
-        $NamespaceManager = New-Object System.Xml.XmlNamespaceManager($Pom.NameTable)
-        $NamespaceManager.AddNamespace("m", "http://maven.apache.org/POM/4.0.0")
-        $VersionNode = $Pom.SelectSingleNode("/m:project/m:version", $NamespaceManager)
-        if ($null -eq $VersionNode -or [string]::IsNullOrWhiteSpace($VersionNode.InnerText)) {
-            throw "Unable to determine project version from $PomPath"
-        }
-        $Version = $VersionNode.InnerText.Trim()
-        if (-not $Version.EndsWith("-SNAPSHOT")) {
-            throw "Development branch must package a snapshot version, found '$Version'"
-        }
-        Write-Host "Development build: packaging snapshot $Version"
+    $PomPath = Join-Path $RepoRoot "pom.xml"
+    [xml]$Pom = Get-Content -Path $PomPath -Raw
+    $NamespaceManager = New-Object System.Xml.XmlNamespaceManager($Pom.NameTable)
+    $NamespaceManager.AddNamespace("m", "http://maven.apache.org/POM/4.0.0")
+    $VersionNode = $Pom.SelectSingleNode("/m:project/m:version", $NamespaceManager)
+    if ($null -eq $VersionNode -or [string]::IsNullOrWhiteSpace($VersionNode.InnerText)) {
+        throw "Unable to determine project version from $PomPath"
     }
-    else {
-        $MetadataUrl = "https://repository.mapsmessaging.io/repository/maps_releases/io/mapsmessaging/maps/maven-metadata.xml"
-        $EncodedCreds = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$Username`:$Password"))
-        [xml]$Metadata = (Invoke-WebRequest -Uri $MetadataUrl -Headers @{ Authorization = "Basic $EncodedCreds" } -UseBasicParsing).Content
-
-        $ReleaseNode = $Metadata.SelectSingleNode("/metadata/versioning/release")
-        if ($null -eq $ReleaseNode -or [string]::IsNullOrWhiteSpace($ReleaseNode.InnerText)) {
-            $ReleaseNode = $Metadata.SelectSingleNode("/metadata/versioning/latest")
-        }
-        if ($null -eq $ReleaseNode -or [string]::IsNullOrWhiteSpace($ReleaseNode.InnerText)) {
-            throw "Unable to determine latest MAPS release from Maven metadata at $MetadataUrl"
-        }
-        $Version = $ReleaseNode.InnerText.Trim()
-        Write-Host "Non-development build: packaging latest Maven release $Version"
-    }
+    $Version = $VersionNode.InnerText.Trim()
+    Write-Host "Packaging project version $Version from $PomPath"
 }
 else {
     Write-Host "Packaging explicitly requested version $Version"
