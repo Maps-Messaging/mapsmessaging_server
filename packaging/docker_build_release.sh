@@ -27,7 +27,7 @@ export LOWERCASE_VERSION="${POM_VERSION,,}"
 
 # ensure a buildx builder with emulation
 docker buildx create --name mapsbuilder --driver docker-container --use >/dev/null 2>&1 || true
-docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64 >/dev/null
+docker run --privileged --userns=host --rm tonistiigi/binfmt --install amd64,arm64 >/dev/null
 docker buildx inspect --bootstrap >/dev/null
 
 # -------------------------
