@@ -13,12 +13,12 @@ FROM alpine:3.22.1
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8 \
-    JAVA_HOME=/usr/lib/jvm/zulu-21 \
-    PATH=/usr/lib/jvm/zulu-21/bin:$PATH
+    JAVA_HOME=/usr/lib/jvm/zulu-25 \
+    PATH=/usr/lib/jvm/zulu-25/bin:$PATH
 
 # Install required tools and JDK
 RUN apk add --no-cache ca-certificates curl dos2unix shadow && \
-    ZULU_ARCH=zulu21.44.17-ca-jdk21.0.8-linux_musl_x64.tar.gz && \
+    ZULU_ARCH=zulu25.36.205-ca-jdk25.0.4.1-linux_musl_x64.tar.gz && \
     INSTALL_DIR=$(dirname "$JAVA_HOME") && \
     ZULU_DIR=$(basename ${ZULU_ARCH} .tar.gz) && \
     curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-redirs 5 --output "${ZULU_ARCH}" "https://cdn.azul.com/zulu/bin/${ZULU_ARCH}" && \

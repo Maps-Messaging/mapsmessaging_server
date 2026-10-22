@@ -20,7 +20,7 @@
 #
 # Configure the java command on the path
 #
-export JAVA_HOME=/usr/lib/jvm/zulu-21
+export JAVA_HOME=/usr/lib/jvm/zulu-25
 export PATH=$JAVA_HOME/bin:$PATH
 
 echo $PATH

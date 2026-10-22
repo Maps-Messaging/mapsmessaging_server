@@ -27,7 +27,7 @@ URL:            https://www.mapsmessaging.io
 Source0:        %%SOURCE_FILE%%
 
 BuildArch:      noarch
-Requires:       java-21-openjdk-headless
+Requires:       java-25-openjdk-headless
 Recommends:     protobuf-compiler
 
 %description

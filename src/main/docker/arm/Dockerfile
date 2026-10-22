@@ -13,14 +13,14 @@ FROM alpine:3.22.1
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8 \
-    JAVA_HOME=/usr/lib/jvm/zulu-21 \
-    PATH=/usr/lib/jvm/zulu-21/bin:$PATH
+    JAVA_HOME=/usr/lib/jvm/zulu-25 \
+    PATH=/usr/lib/jvm/zulu-25/bin:$PATH
 
 #----------------------------------------------------------------------------------------------
 # Single-layer build: install Zulu JDK 21, server payload, and configure everything
 #----------------------------------------------------------------------------------------------
 RUN set -eux; \
-    ZULU_ARCH=zulu21.44.17-ca-jdk21.0.8-linux_musl_aarch64.tar.gz; \
+    ZULU_ARCH=zulu25.36.205-ca-crac-jdk25.0.4.1-linux_musl_aarch64.tar.gz; \
     ZULU_DIR="${ZULU_ARCH%.tar.gz}"; \
     INSTALL_DIR="$(dirname "$JAVA_HOME")"; \
     apk add --no-cache ca-certificates coreutils curl dos2unix gzip tar; \
