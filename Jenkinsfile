@@ -11,6 +11,7 @@
  */
 
 def nodeLabel = "ec2-fleet"
+def buildJdkHome = "/usr/lib/jvm/java-25-openjdk-amd64"
 
 def mavenCommon = [
     "-Dmaven.test.failure.ignore=true",
@@ -142,7 +143,7 @@ def runBlock = { String stageName ->
             // Start each block with fresh authentication and data state.
             // Keep MAPS_DATA inside this workspace even if the agent defines it globally.
             def testDataDirectory = "${pwd()}/target/data"
-            withEnv(["MAPS_DATA=${testDataDirectory}"]) {
+            withEnv(["MAPS_DATA=${testDataDirectory}", "JAVA_HOME=${buildJdkHome}", "PATH+JDK=${buildJdkHome}/bin"]) {
                 sh """#!/bin/bash
                     set -euo pipefail
                     rm -rf -- target/data
@@ -214,59 +215,61 @@ timeout(time: 2, unit: "HOURS") {
 }
 
 node(nodeLabel) {
-    stage("Coverage") {
-        deleteDir()
-        checkout scm
+    withEnv(["JAVA_HOME=${buildJdkHome}", "PATH+JDK=${buildJdkHome}/bin"]) {
+        stage("Coverage") {
+            deleteDir()
+            checkout scm
 
-        def coverageStageNames = blockNames
+            def coverageStageNames = blockNames
 
-        coverageStageNames.each { String coverageStageName ->
-            def coverageId = coverageStageName.replaceAll("[^A-Za-z0-9_.-]", "_")
-            unstash "jacoco-${coverageId}"
-        }
+            coverageStageNames.each { String coverageStageName ->
+                def coverageId = coverageStageName.replaceAll("[^A-Za-z0-9_.-]", "_")
+                unstash "jacoco-${coverageId}"
+            }
 
-        sh '''#!/bin/bash
-            set -euo pipefail
-
-            mvn -q -Dtransitive=false dependency:get \
-              -Dartifact=org.jacoco:org.jacoco.cli:0.8.15:jar:nodeps
-
-            mkdir -p target
-            java -jar "$HOME/.m2/repository/org/jacoco/org.jacoco.cli/0.8.15/org.jacoco.cli-0.8.15-nodeps.jar" \
-              merge coverage/*.exec \
-              --destfile target/jacoco.exec
-
-            mvn -DskipTests test-compile jacoco:report \
-              -Djacoco.dataFile=target/jacoco.exec
-        '''
-
-        recordCoverage(
-            tools: [[
-                parser: "JACOCO",
-                pattern: "target/site/jacoco/jacoco.xml"
-            ]],
-            id: "jacoco",
-            name: "JaCoCo Coverage",
-            sourceCodeRetention: "EVERY_BUILD"
-        )
-
-        archiveArtifacts(
-            artifacts: "target/site/jacoco/jacoco.xml",
-            fingerprint: true
-        )
-    }
-
-    stage("SonarCloud") {
-        withCredentials([
-            string(credentialsId: "sonarcloud-token", variable: "SONAR_TOKEN")
-        ]) {
             sh '''#!/bin/bash
                 set -euo pipefail
 
-                mvn -DskipTests sonar:sonar \
-                  -Dsonar.branch.name=development \
-                  -Dsonar.token="$SONAR_TOKEN"
+                mvn -q -Dtransitive=false dependency:get \
+                  -Dartifact=org.jacoco:org.jacoco.cli:0.8.15:jar:nodeps
+
+                mkdir -p target
+                java -jar "$HOME/.m2/repository/org/jacoco/org.jacoco.cli/0.8.15/org.jacoco.cli-0.8.15-nodeps.jar" \
+                  merge coverage/*.exec \
+                  --destfile target/jacoco.exec
+
+                mvn -DskipTests test-compile jacoco:report \
+                  -Djacoco.dataFile=target/jacoco.exec
             '''
+
+            recordCoverage(
+                tools: [[
+                    parser: "JACOCO",
+                    pattern: "target/site/jacoco/jacoco.xml"
+                ]],
+                id: "jacoco",
+                name: "JaCoCo Coverage",
+                sourceCodeRetention: "EVERY_BUILD"
+            )
+
+            archiveArtifacts(
+                artifacts: "target/site/jacoco/jacoco.xml",
+                fingerprint: true
+            )
+        }
+
+        stage("SonarCloud") {
+            withCredentials([
+                string(credentialsId: "sonarcloud-token", variable: "SONAR_TOKEN")
+            ]) {
+                sh '''#!/bin/bash
+                    set -euo pipefail
+
+                    mvn -DskipTests sonar:sonar \
+                      -Dsonar.branch.name=development \
+                      -Dsonar.token="$SONAR_TOKEN"
+                '''
+            }
         }
     }
 }
@@ -274,3 +277,4 @@ node(nodeLabel) {
 stage("Summary") {
     echo "JUnit cloud run complete"
 }
+

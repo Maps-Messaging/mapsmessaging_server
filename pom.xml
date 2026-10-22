@@ -19,8 +19,8 @@
   -->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <groupId>io.mapsmessaging</groupId>
   <artifactId>maps</artifactId>
@@ -46,7 +46,7 @@
       <properties>
         <location>Eindhoven, Netherlands</location>
         <gpg.keyname>admin@mapsmessaging.io</gpg.keyname>
-  </properties>
+      </properties>
     </developer>
   </developers>
 
@@ -139,28 +139,28 @@
     <sonar.c.file.suffixes>-</sonar.c.file.suffixes>
     <sonar.cpp.file.suffixes>-</sonar.cpp.file.suffixes>
     <sonar.objc.file.suffixes>-</sonar.objc.file.suffixes>
-    <java.version>21</java.version>
+    <java.version>25</java.version>
 
     <!-- Base -->
-    <maps.canbus.version>1.0.1</maps.canbus.version>
-    <maps.cot.version>1.0.0</maps.cot.version>
-    <maps.logging.version>2.2.0</maps.logging.version>
-    <maps.jms_selector.version>2.1.2</maps.jms_selector.version>
-    <maps.ml-jms_selector.version>ml-2.1.2</maps.ml-jms_selector.version>
-    <maps.nolc.version>1.2.3</maps.nolc.version>
-    <maps.mavlink.version>3.0.0</maps.mavlink.version>
-    <maps.jsonquery.version>1.1.1</maps.jsonquery.version>
-    <mqttSn2ClientVersion>0.2.1</mqttSn2ClientVersion>
+    <maps.canbus.version>1.1.0-SNAPSHOT</maps.canbus.version>
+    <maps.cot.version>1.1.0-SNAPSHOT</maps.cot.version>
+    <maps.logging.version>2.3.0-SNAPSHOT</maps.logging.version>
+    <maps.jms_selector.version>2.2.0-SNAPSHOT</maps.jms_selector.version>
+    <maps.ml-jms_selector.version>ml-2.2.0-SNAPSHOT</maps.ml-jms_selector.version>
+    <maps.nolc.version>2.0.0-SNAPSHOT</maps.nolc.version>
+    <maps.mavlink.version>3.1.0-SNAPSHOT</maps.mavlink.version>
+    <maps.jsonquery.version>1.2.0-SNAPSHOT</maps.jsonquery.version>
+    <mqttSn2ClientVersion>0.3.0-SNAPSHOT</mqttSn2ClientVersion>
 
     <!-- first level dependencies -->
-    <maps.nbts.version>2.2.3</maps.nbts.version> <!-- Requires Simple Logging -->
-    <maps.schema.version>3.1.0</maps.schema.version> <!-- Requires canbus, Logging, JMS and Mavlink-->
-    <maps.config.version>1.1.6</maps.config.version> <!-- Requires Logging, and NBTS -->
+    <maps.nbts.version>2.3.0-SNAPSHOT</maps.nbts.version> <!-- Requires Simple Logging -->
+    <maps.schema.version>3.2.0-SNAPSHOT</maps.schema.version> <!-- Requires canbus, Logging, JMS and Mavlink-->
+    <maps.config.version>1.2.0-SNAPSHOT</maps.config.version> <!-- Requires Logging, and NBTS -->
 
     <!-- Second level dependencies -->
-    <maps.storage.version>2.5.3</maps.storage.version>
-    <maps.device.version>3.1.2</maps.device.version>
-    <maps.auth.version>3.0.3</maps.auth.version>
+    <maps.storage.version>2.6.0-SNAPSHOT</maps.storage.version>
+    <maps.device.version>3.2.0-SNAPSHOT</maps.device.version>
+    <maps.auth.version>3.1.0-SNAPSHOT</maps.auth.version>
 
     <license.fetch.skip>false</license.fetch.skip>
     <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
@@ -214,10 +214,10 @@
             </executions>
             <configuration>
               <!-- ... -->
-                <imageName>maps_daemon</imageName>
-                <mainClass>io.mapsmessaging.MessageDaemon</mainClass>
-                <fallback>false</fallback>
-                <verbose>true</verbose>
+              <imageName>maps_daemon</imageName>
+              <mainClass>io.mapsmessaging.MessageDaemon</mainClass>
+              <fallback>false</fallback>
+              <verbose>true</verbose>
               <metadataRepository>
                 <enabled>true</enabled>
               </metadataRepository>
@@ -272,29 +272,29 @@
         <chmodCommand>chmod</chmodCommand>
       </properties>
       <build>
-      <plugins>
-        <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.4</version>
-          <executions>
-            <execution>
-              <id>config-self-signed-certs</id>
-              <phase>validate</phase>
-              <goals>
-                <goal>exec</goal>
-              </goals>
-              <configuration>
-                <executable>/bin/chmod</executable>
-                <arguments>
-                  <argument>+x</argument>
-                  <argument>./src/main/scripts/generate${script.extension}</argument>
-                </arguments>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
-      </plugins>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.6.4</version>
+            <executions>
+              <execution>
+                <id>config-self-signed-certs</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>/bin/chmod</executable>
+                  <arguments>
+                    <argument>+x</argument>
+                    <argument>./src/main/scripts/generate${script.extension}</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
       </build>
     </profile>
 
@@ -302,7 +302,7 @@
       <id>ml</id>
       <properties>
         <!-- Base -->
-        <maps.jms_selector.version>ml-2.1.2-SNAPSHOT</maps.jms_selector.version>
+        <maps.jms_selector.version>ml-2.2.0-SNAPSHOT</maps.jms_selector.version>
       </properties>
       <build>
         <plugins>
@@ -367,6 +367,30 @@
               </arguments>
             </configuration>
           </execution>
+          <!-- Build a self signed cert keystore for use in testing -->
+          <execution>
+            <id>self-signed-certs</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>
+                ./src/main/scripts/generate${script.extension}
+              </executable>
+            </configuration>
+          </execution>
+          <execution>
+            <id>config-lint</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>io.mapsmessaging.tools.config.lint.ConfigLintMain</mainClass>
+              <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <!-- SonarCloud scanner used by Jenkins -->
@@ -385,6 +409,13 @@
           <encoding>UTF-8</encoding>
           <source>${java.version}</source>
           <target>${java.version}</target>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>1.18.46</version>
+            </path>
+          </annotationProcessorPaths>
           <compilerArgs>
             <arg>-h</arg>
             <arg>src/main/cpp/</arg>
@@ -496,7 +527,7 @@
         </executions>
       </plugin>
 
-      <!-- POM: maven-javadoc-plugin — set output to match your assembly fileSet -->
+      <!-- POM: maven-javadoc-plugin â€” set output to match your assembly fileSet -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -519,45 +550,25 @@
 
       <!-- Create a directory with all the dependencies in and move it into the lib directory -->
       <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.10.0</version>
-          <executions>
-              <execution>
-                  <phase>package</phase>
-                  <goals>
-                      <goal>copy-dependencies</goal>
-                  </goals>
-                  <configuration>
-                      <outputDirectory>${project.build.directory}/site/lib</outputDirectory>
-                      <includeScope>compile</includeScope>
-                      <!-- only used during testing of MQTT-SN -->
-                      <excludeArtifactIds>mqttsn</excludeArtifactIds>
-                  </configuration>
-              </execution>
-          </executions>
-      </plugin>
-
-       <!-- Build a self signed cert keystore for use in testing -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.4</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.10.0</version>
         <executions>
           <execution>
-            <id>self-signed-certs</id>
-            <phase>generate-test-resources</phase>
+            <phase>package</phase>
             <goals>
-              <goal>exec</goal>
+              <goal>copy-dependencies</goal>
             </goals>
             <configuration>
-              <executable>
-                ./src/main/scripts/generate${script.extension}
-              </executable>
+              <outputDirectory>${project.build.directory}/site/lib</outputDirectory>
+              <includeScope>compile</includeScope>
+              <!-- only used during testing of MQTT-SN -->
+              <excludeArtifactIds>mqttsn</excludeArtifactIds>
             </configuration>
           </execution>
         </executions>
       </plugin>
+
 
       <!-- replace the data directory in the test to move it into the target directory -->
       <plugin>
@@ -611,26 +622,8 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>3.6.4</version>
-        <executions>
-          <execution>
-            <id>config-lint</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <configuration>
-              <mainClass>io.mapsmessaging.tools.config.lint.ConfigLintMain</mainClass>
-              <classpathScope>compile</classpathScope>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
 
-    
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
@@ -653,7 +646,7 @@
           </execution>
         </executions>
       </plugin>
-</plugins>
+    </plugins>
   </build>
 
   <repositories>
