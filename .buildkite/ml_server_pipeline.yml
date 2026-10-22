@@ -1,6 +1,8 @@
 steps:
   - label: ":maven: Build and release to github"
     command:
+      - export JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64
+      - export PATH="$$JAVA_HOME/bin:$$PATH"
       - wget https://github.com/Maps-Messaging/web-admin-client/releases/download/maps_web_client_dev/webAdminClient.tgz
       - tar -xvzf ./webAdminClient.tgz
       - if [ ! -d "dist" ]; then echo "'dist' directory missing after extraction"; exit 1; fi

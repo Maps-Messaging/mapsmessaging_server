@@ -1,6 +1,8 @@
 steps:
   - label: ":maven: Build and release to github"
     command:
+      - export JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64
+      - export PATH="$$JAVA_HOME/bin:$$PATH"
       - SONAR_TOKEN=$(buildkite-agent secret get SONAR_TOKEN) || exit 1
       - BUILDKITE_ANALYTICS_TOKEN=$(buildkite-agent secret get serverBuildKiteAnaylytics) || exit 1
       - export SONAR_TOKEN BUILDKITE_ANALYTICS_TOKEN
