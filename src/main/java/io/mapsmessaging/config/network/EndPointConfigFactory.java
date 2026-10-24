@@ -177,6 +177,12 @@ public class EndPointConfigFactory {
   }
   private static EndPointConfigDTO createEndPointConfig(String url, ConfigurationProperties properties) {
     String u = url.toLowerCase();
+    if (u.startsWith("shm:")) {
+      return new ShmConfig(properties);
+    }
+    if (u.startsWith("rdma:")) {
+      return new RdmaConfig(properties);
+    }
     if (u.startsWith("tcp") || u.startsWith("ws")) {
       return new TcpConfig(properties);
     }
