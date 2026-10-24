@@ -76,10 +76,16 @@ class PahoOverShmIntegrationTest extends BaseTestConfig {
             new org.eclipse.paho.mqttv5.client.MqttConnectionOptions();
         options.setConnectionTimeout(10);
         client.connect(options);
-        client.subscribe(topic, 1, (receivedTopic, message) -> {
-          received.set(message.getPayload());
-          arrived.countDown();
-        });
+        org.eclipse.paho.mqttv5.common.MqttSubscription[] subscriptions = {
+            new org.eclipse.paho.mqttv5.common.MqttSubscription(topic, 1)
+        };
+        org.eclipse.paho.mqttv5.client.IMqttMessageListener[] listeners = {
+            (receivedTopic, message) -> {
+              received.set(message.getPayload());
+              arrived.countDown();
+            }
+        };
+        client.subscribe(subscriptions, listeners);
         client.publish(topic, payload, 1, false);
         assertTrue(arrived.await(10, TimeUnit.SECONDS), "MQTT 5 message not delivered over SHM");
         assertArrayEquals(payload, received.get());
