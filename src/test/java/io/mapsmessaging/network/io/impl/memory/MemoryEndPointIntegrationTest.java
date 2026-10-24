@@ -87,6 +87,7 @@ import static org.mockito.Mockito.*;
 
 class MemoryEndPointIntegrationTest {
   private Path directory;
+  private Path nativeSocketDirectory;
 
   @BeforeEach
   void prepare_directory() throws Exception {
@@ -94,14 +95,27 @@ class MemoryEndPointIntegrationTest {
     directory = Files.createTempDirectory(Path.of("target/data"), "memory-");
     if (!System.getProperty("os.name").startsWith("Windows")) {
       Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("rwx------"));
+      nativeSocketDirectory = Files.createTempDirectory(
+          Path.of("/tmp"), "mm-", PosixFilePermissions.asFileAttribute(
+              PosixFilePermissions.fromString("rwx------")));
     }
   }
 
   @AfterEach
   void remove_directory() throws Exception {
-    try (Stream<Path> paths = Files.walk(directory)) {
-      for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
-        Files.deleteIfExists(path);
+    try {
+      try (Stream<Path> paths = Files.walk(directory)) {
+        for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
+          Files.deleteIfExists(path);
+        }
+      }
+    } finally {
+      if (nativeSocketDirectory != null) {
+        try (Stream<Path> paths = Files.walk(nativeSocketDirectory)) {
+          for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
+            Files.deleteIfExists(path);
+          }
+        }
       }
     }
   }
@@ -388,7 +402,9 @@ class MemoryEndPointIntegrationTest {
 
   private ShmConfigDTO configuration() {
     ShmConfigDTO config = new ShmConfigDTO();
-    config.setLocalAddress(System.getProperty("os.name").startsWith("Windows") ? "maps-" + UUID.randomUUID() : directory.resolve("control.sock").toString());
+    config.setLocalAddress(System.getProperty("os.name").startsWith("Windows")
+        ? "maps-" + UUID.randomUUID()
+        : nativeSocketDirectory.resolve("s").toString());
     config.setSlotSize(256);
     config.setSlotCount(4);
     config.setServerReadBufferSize(512);
