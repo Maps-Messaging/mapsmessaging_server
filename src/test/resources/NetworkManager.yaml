@@ -145,6 +145,12 @@ NetworkManager:
         protocol: mqtt, ws
         auth: anon
 
+      - name: "MQTT SHM Test Interface"
+        url: "shm://127.0.0.1:1889/"
+        protocol: mqtt
+        auth: anon
+        nativeSharedMemory: false
+
       - name: "MQTT TCP Test anon Interface"
         url: "tcp://0.0.0.0:1883/"
         protocol: mqtt, ws
