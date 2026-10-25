@@ -122,8 +122,10 @@ public class GetListener extends Listener {
       Context subscriptionContext = protocol.getSubscriptionState().create(path, request);
       subscriptionContext.setSubscribedEventManager(session.addSubscription(context));
       return null;
-    } catch (Exception exception) {
+    } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
+      return request.buildAckResponse(Code.INTERNAL_SERVER_ERROR);
+    } catch (Exception exception) {
       return request.buildAckResponse(Code.INTERNAL_SERVER_ERROR);
     }
   }

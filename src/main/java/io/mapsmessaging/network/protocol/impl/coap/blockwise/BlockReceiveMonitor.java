@@ -40,7 +40,7 @@ public class BlockReceiveMonitor {
     blockBasedPackets.remove(path);
   }
 
-  public void scanForIdle() {
+  public synchronized void scanForIdle() {
     long expired = System.currentTimeMillis() - 30_000;
     List<String> expiredList = new ArrayList<>();
     blockBasedPackets.entrySet().stream()
