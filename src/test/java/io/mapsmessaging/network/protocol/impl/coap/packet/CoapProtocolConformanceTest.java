@@ -7,7 +7,6 @@ import io.mapsmessaging.network.protocol.conformance.common.ProtocolRequirement;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Block;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -102,7 +101,6 @@ class CoapProtocolConformanceTest {
   }
 
   @Test
-  @Disabled("Known CoAP empty-message validation gap: MSG-369")
   @ProtocolRequirement(
       specification = RFC7252,
       value = "RFC 7252 §4.1: an Empty message has Code 0.00, TKL 0, and no payload",
@@ -112,7 +110,6 @@ class CoapProtocolConformanceTest {
   }
 
   @Test
-  @Disabled("Known CoAP Observe option-length validation gap: MSG-369")
   @ProtocolRequirement(
       specification = RFC7641,
       value = "RFC 7641 §2: Observe Option format is uint with length 0..3 bytes",
@@ -122,6 +119,15 @@ class CoapProtocolConformanceTest {
         0x40, 0x01, 0, 1,
         0x64, 0, 0, 0, 1
     }));
+  }
+
+  @Test
+  @ProtocolRequirement(
+      specification = RFC7959,
+      value = "RFC 7959 §2.9: code 4.08 identifies an incomplete block-wise upload",
+      source = ProtocolRequirement.COAP_RFC7959_SOURCE)
+  void incompleteBlockResponseCodeRoundTrips() {
+    assertEquals(Code.REQUEST_ENTITY_INCOMPLETE, Code.valueOf((byte) 0x88));
   }
 
   @ParameterizedTest

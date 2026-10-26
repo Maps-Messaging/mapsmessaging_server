@@ -68,6 +68,7 @@ public enum Code {
   NOT_FOUND(ERROR, 4, "Not Found"),
   METHOD_NOT_ALLOWED(ERROR, 5, "Method Not Allowed"),
   NOT_ACCEPTABLE(ERROR, 6, "Not Acceptable"),
+  REQUEST_ENTITY_INCOMPLETE(ERROR, 8, "Request Entity Incomplete"),
   PRECONDITION_FAILED(ERROR, 12, "Precondition Failed"),
   REQUEST_ENTITY_TOO_LARGE(ERROR, 13, "Request Entity Too Large"),
   UNSUPPORTED_CONTENT_FORMAT(ERROR, 15, "Unsupported Content-Format"),
@@ -159,6 +160,8 @@ public enum Code {
       case 6:
         return NOT_ACCEPTABLE;
 
+      case 8:
+        return REQUEST_ENTITY_INCOMPLETE;
       case 12:
         return PRECONDITION_FAILED;
       case 13:
