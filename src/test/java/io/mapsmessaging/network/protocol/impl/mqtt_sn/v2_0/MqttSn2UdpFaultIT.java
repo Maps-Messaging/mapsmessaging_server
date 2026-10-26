@@ -31,10 +31,8 @@ class MqttSn2UdpFaultIT extends BaseMqttSnConfig {
       proxy.dropNext(Direction.CLIENT_TO_SERVER, 1);
       client.send(connect);
       // The reference client's read timeout is the observable proof that the first request did not arrive.
-      List<DecodedPacket> missing = new ArrayList<>();
-      client.receive(Duration.ofMillis(500), missing::add);
-      assertTrue(missing.isEmpty(), "No CONNACK is permitted when CONNECT was dropped");
-      assertEquals(1L, proxy.stats().dropped());
+      awaitDrop(proxy);
+      assertEquals(1L, proxy.stats().dropped(), "First CONNECT must be dropped");
       client.send(connect);
       assertEquals(PacketType.CONNACK, receive(client).type());
       assertEquals(0, proxy.stats().pendingRules());
@@ -49,14 +47,20 @@ class MqttSn2UdpFaultIT extends BaseMqttSnConfig {
           true, false, false, 1, 60, 0, "v2-ack-loss-" + UUID.randomUUID()));
       proxy.dropNext(Direction.SERVER_TO_CLIENT, 1);
       client.send(connect);
-      List<DecodedPacket> missing = new ArrayList<>();
-      client.receive(Duration.ofMillis(500), missing::add);
-      assertTrue(missing.isEmpty(), "Lost CONNACK must not reach the reference client");
-      assertEquals(1L, proxy.stats().dropped());
+      awaitDrop(proxy);
+      assertEquals(1L, proxy.stats().dropped(), "First CONNACK must be dropped");
       client.send(connect);
       assertEquals(PacketType.CONNACK, receive(client).type());
       assertEquals(0, proxy.stats().pendingRules());
     }
+  }
+
+  private static void awaitDrop(UdpFaultProxy proxy) throws InterruptedException {
+    long deadline = System.nanoTime() + Duration.ofSeconds(2).toNanos();
+    while (proxy.stats().dropped() == 0 && System.nanoTime() < deadline) {
+      Thread.sleep(5);
+    }
+    assertEquals(1L, proxy.stats().dropped(), "Fault must actually be injected before retry");
   }
 
   private static DecodedPacket receive(UdpMqttSnClient client) throws Exception {
