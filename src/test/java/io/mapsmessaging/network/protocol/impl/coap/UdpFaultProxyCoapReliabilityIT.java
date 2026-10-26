@@ -143,6 +143,7 @@ class UdpFaultProxyCoapReliabilityIT extends BaseCoapTest {
       CoapClient publisher = pub.client;
       CountDownLatch initial = new CountDownLatch(1);
       AtomicInteger notifications = new AtomicInteger();
+      java.util.concurrent.atomic.AtomicBoolean observeError = new java.util.concurrent.atomic.AtomicBoolean();
       CoapObserveRelation relation = subscriber.observe(new CoapHandler() {
         @Override
         public void onLoad(CoapResponse response) {
@@ -151,11 +152,15 @@ class UdpFaultProxyCoapReliabilityIT extends BaseCoapTest {
         }
         @Override
         public void onError() {
+          observeError.set(true);
           initial.countDown();
         }
       });
       assertNotNull(relation);
-      assertTrue(initial.await(10, TimeUnit.SECONDS), "Observe must establish before fault injection");
+      successfulPut(publisher.put(payload(31, 0), 0));
+      assertTrue(initial.await(10, TimeUnit.SECONDS), "Observe must receive the initial PUT notification before fault injection");
+      assertFalse(observeError.get(), "Observe reported an error during establishment");
+      assertTrue(notifications.get() > 0, "Observe must deliver a notification before fault injection");
       Stats before = proxy.stats();
       proxy.dropNext(Direction.SERVER_TO_CLIENT, 1);
       successfulPut(publisher.put(payload(31, 1), 0));
