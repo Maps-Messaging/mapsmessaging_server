@@ -8,14 +8,15 @@ import io.mapsmessaging.mqttsn.ConnectOptions;
 import io.mapsmessaging.mqttsn.DecodedPacket;
 import io.mapsmessaging.mqttsn.MqttSnCodec;
 import io.mapsmessaging.mqttsn.PacketType;
-import io.mapsmessaging.mqttsn.udp.UdpMqttSnClient;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.BaseMqttSnConfig;
 import io.mapsmessaging.test.network.UdpFaultProxy;
 import io.mapsmessaging.test.network.UdpFaultProxy.Direction;
 import java.net.InetSocketAddress;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,16 +26,18 @@ class MqttSn2UdpFaultIT extends BaseMqttSnConfig {
   @Test
   void droppedConnectCanBeRetriedByIndependentClient() throws Exception {
     try (UdpFaultProxy proxy = new UdpFaultProxy(0, new InetSocketAddress("127.0.0.1", 1884));
-         UdpMqttSnClient client = new UdpMqttSnClient(proxy.getListenAddress())) {
+         DatagramSocket client = new DatagramSocket()) {
       byte[] connect = MqttSnCodec.encodeConnect(new ConnectOptions(
           true, false, false, 1, 60, 0, "v2-loss-" + UUID.randomUUID()));
       proxy.dropNext(Direction.CLIENT_TO_SERVER, 1);
-      client.send(connect);
+      send(client, proxy, connect);
       // The reference client's read timeout is the observable proof that the first request did not arrive.
       awaitDrop(proxy);
       assertEquals(1L, proxy.stats().dropped(), "First CONNECT must be dropped");
-      client.send(connect);
-      assertEquals(PacketType.CONNACK, receive(client).type());
+      send(client, proxy, connect);
+      DecodedPacket reply = receive(client);
+      assertEquals(PacketType.CONNACK, reply.type());
+      assertEquals(0, MqttSnCodec.decodeConnAck(reply).reasonCode());
       assertEquals(0, proxy.stats().pendingRules());
     }
   }
@@ -42,15 +45,17 @@ class MqttSn2UdpFaultIT extends BaseMqttSnConfig {
   @Test
   void lostConnackCanBeRecoveredByResendingSameConnect() throws Exception {
     try (UdpFaultProxy proxy = new UdpFaultProxy(0, new InetSocketAddress("127.0.0.1", 1884));
-         UdpMqttSnClient client = new UdpMqttSnClient(proxy.getListenAddress())) {
+         DatagramSocket client = new DatagramSocket()) {
       byte[] connect = MqttSnCodec.encodeConnect(new ConnectOptions(
           true, false, false, 1, 60, 0, "v2-ack-loss-" + UUID.randomUUID()));
       proxy.dropNext(Direction.SERVER_TO_CLIENT, 1);
-      client.send(connect);
+      send(client, proxy, connect);
       awaitDrop(proxy);
       assertEquals(1L, proxy.stats().dropped(), "First CONNACK must be dropped");
-      client.send(connect);
-      assertEquals(PacketType.CONNACK, receive(client).type());
+      send(client, proxy, connect);
+      DecodedPacket reply = receive(client);
+      assertEquals(PacketType.CONNACK, reply.type());
+      assertEquals(0, MqttSnCodec.decodeConnAck(reply).reasonCode());
       assertEquals(0, proxy.stats().pendingRules());
     }
   }
@@ -63,10 +68,15 @@ class MqttSn2UdpFaultIT extends BaseMqttSnConfig {
     assertEquals(1L, proxy.stats().dropped(), "Fault must actually be injected before retry");
   }
 
-  private static DecodedPacket receive(UdpMqttSnClient client) throws Exception {
-    List<DecodedPacket> packets = new ArrayList<>();
-    client.receive(Duration.ofSeconds(5), packets::add);
-    assertEquals(1, packets.size(), "Expected a complete MQTT-SN v2 datagram");
-    return packets.getFirst();
+  private static void send(DatagramSocket client, UdpFaultProxy proxy, byte[] packet) throws Exception {
+    client.send(new DatagramPacket(packet, packet.length, proxy.getListenAddress()));
+  }
+
+  private static DecodedPacket receive(DatagramSocket client) throws Exception {
+    client.setSoTimeout(5_000);
+    byte[] bytes = new byte[2_048];
+    DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
+    client.receive(packet);
+    return MqttSnCodec.decode(ByteBuffer.wrap(Arrays.copyOf(bytes, packet.getLength())));
   }
 }
