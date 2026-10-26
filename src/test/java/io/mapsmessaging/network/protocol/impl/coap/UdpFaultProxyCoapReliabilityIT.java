@@ -58,6 +58,17 @@ class UdpFaultProxyCoapReliabilityIT extends BaseCoapTest {
     return client;
   }
 
+  private static final class ManagedClient implements AutoCloseable {
+    private final CoapClient client;
+    private ManagedClient(String uri) {
+      client = UdpFaultProxyCoapReliabilityIT.client(uri);
+    }
+    @Override
+    public void close() {
+      client.shutdown();
+    }
+  }
+
   private static byte[] payload(int size, int seed) {
     byte[] data = new byte[size];
     for (int index = 0; index < size; index++) {
@@ -74,7 +85,8 @@ class UdpFaultProxyCoapReliabilityIT extends BaseCoapTest {
 
   @Test
   void intermediateBlock1ResponseLossDoesNotCorruptReassembly() throws Exception {
-    try (CoapClient client = client(getUri())) {
+    try (ManagedClient managed = new ManagedClient(getUri())) {
+      CoapClient client = managed.client;
       byte[] content = payload(1024, 17);
       int blockSize = 256;
       Stats before = proxy.stats();
@@ -106,7 +118,8 @@ class UdpFaultProxyCoapReliabilityIT extends BaseCoapTest {
 
   @Test
   void repeatedConfirmablePutIsIdempotentAtResourceState() throws Exception {
-    try (CoapClient client = client(getUri())) {
+    try (ManagedClient managed = new ManagedClient(getUri())) {
+      CoapClient client = managed.client;
       byte[] value = payload(111, 29);
       Stats before = proxy.stats();
       proxy.dropNext(Direction.SERVER_TO_CLIENT, 1);
@@ -125,7 +138,9 @@ class UdpFaultProxyCoapReliabilityIT extends BaseCoapTest {
   @Test
   void observeRecoversAfterLostNotificationAndCancels() throws Exception {
     String uri = getUri();
-    try (CoapClient subscriber = client(uri); CoapClient publisher = client(uri)) {
+    try (ManagedClient sub = new ManagedClient(uri); ManagedClient pub = new ManagedClient(uri)) {
+      CoapClient subscriber = sub.client;
+      CoapClient publisher = pub.client;
       CountDownLatch initial = new CountDownLatch(1);
       AtomicInteger notifications = new AtomicInteger();
       CoapObserveRelation relation = subscriber.observe(new CoapHandler() {
@@ -161,7 +176,9 @@ class UdpFaultProxyCoapReliabilityIT extends BaseCoapTest {
   void concurrentClientsKeepPayloadsSeparateDuringReordering() throws Exception {
     String firstUri = getUri();
     String secondUri = getUri();
-    try (CoapClient first = client(firstUri); CoapClient second = client(secondUri)) {
+    try (ManagedClient one = new ManagedClient(firstUri); ManagedClient two = new ManagedClient(secondUri)) {
+      CoapClient first = one.client;
+      CoapClient second = two.client;
       byte[] firstPayload = payload(127, 3);
       byte[] secondPayload = payload(129, 79);
       Stats before = proxy.stats();
