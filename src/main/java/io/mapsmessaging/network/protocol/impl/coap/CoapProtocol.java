@@ -240,7 +240,7 @@ public class CoapProtocol extends Protocol {
       optionSet.add(eTag);
     }
     if (context.isObserve()) {
-      Observe option = new Observe((int) (context.getObserveId().incrementAndGet() & 0xffff));
+      Observe option = new Observe((int) (context.getObserveId().incrementAndGet() & 0xffffff));
       optionSet.putOption(option);
     }
     List<SchemaResource> schemas = SchemaManager.getInstance().getSchemaByContext(messageEvent.getDestinationName());

@@ -2,12 +2,15 @@ package io.mapsmessaging.network.protocol.impl.coap;
 
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.BlockReceiveMonitor;
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.BlockReceiveState;
+import io.mapsmessaging.network.protocol.impl.coap.blockwise.ReceivePacket;
 import io.mapsmessaging.network.protocol.impl.coap.blockwise.SendPacket;
 import io.mapsmessaging.network.protocol.impl.coap.listeners.EmptyListener;
+import io.mapsmessaging.network.protocol.impl.coap.listeners.PutListener;
 import io.mapsmessaging.network.protocol.impl.coap.packet.BasePacket;
 import io.mapsmessaging.network.protocol.impl.coap.packet.Code;
 import io.mapsmessaging.network.protocol.impl.coap.packet.TYPE;
 import io.mapsmessaging.network.protocol.impl.coap.packet.options.Block;
+import io.mapsmessaging.network.protocol.impl.coap.packet.options.Constants;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -168,6 +171,64 @@ class CoapExchangeAndBlockwiseComplianceTest {
     BlockReceiveState second = monitor.registerOrGet(block, "/upload");
 
     assertNotSame(first, second);
+  }
+
+  @Test
+  void nonFinalBlockGetsExactlyOneContinueResponse() throws Exception {
+    CoapProtocol protocol = mock(CoapProtocol.class);
+    when(protocol.getBlockReceiveMonitor()).thenReturn(new BlockReceiveMonitor());
+    BasePacket request = new BasePacket(3, TYPE.CON, Code.EMPTY, 1, 100, new byte[0]);
+    request.getOptions().add(new Block(Constants.BLOCK1, 0, true, 0));
+    request.setPayload(new byte[16]);
+
+    new PutListener().handle(request, protocol);
+
+    ArgumentCaptor<BasePacket> response = ArgumentCaptor.forClass(BasePacket.class);
+    verify(protocol, times(1)).sendResponse(response.capture());
+    assertEquals(TYPE.ACK, response.getValue().getType());
+    assertEquals(Code.CONTINUE, response.getValue().getCode());
+  }
+
+  @Test
+  void missingBlockGetsRequestEntityIncompleteResponse() throws Exception {
+    CoapProtocol protocol = mock(CoapProtocol.class);
+    when(protocol.getBlockReceiveMonitor()).thenReturn(new BlockReceiveMonitor());
+    BasePacket request = new BasePacket(3, TYPE.CON, Code.EMPTY, 1, 101, new byte[0]);
+    request.getOptions().add(new Block(Constants.BLOCK1, 2, false, 0));
+    request.setPayload(new byte[]{1});
+
+    new PutListener().handle(request, protocol);
+
+    ArgumentCaptor<BasePacket> response = ArgumentCaptor.forClass(BasePacket.class);
+    verify(protocol, times(1)).sendResponse(response.capture());
+    assertEquals(Code.REQUEST_ENTITY_INCOMPLETE, response.getValue().getCode());
+  }
+
+  @Test
+  void retransmittedBlockDoesNotDuplicateRepresentation() {
+    ReceivePacket upload = new ReceivePacket(0);
+    byte[] first = sequence(16);
+    byte[] last = new byte[]{42};
+
+    assertTrue(upload.add(0, first));
+    assertTrue(upload.add(0, first));
+    assertTrue(upload.add(1, last));
+    byte[] expected = new byte[first.length + last.length];
+    System.arraycopy(first, 0, expected, 0, first.length);
+    expected[first.length] = last[0];
+    assertArrayEquals(expected, upload.getFull());
+  }
+
+  @Test
+  void incompleteAndConflictingBlocksAreRejectedWithoutCorruptingUpload() {
+    ReceivePacket upload = new ReceivePacket(0);
+    byte[] first = sequence(16);
+
+    assertFalse(upload.add(1, first), "Missing block zero must not become a zero-length placeholder");
+    assertTrue(upload.add(0, first));
+    assertFalse(upload.add(0, new byte[]{42}), "Conflicting retransmission must not insert a duplicate");
+    assertFalse(upload.add(2, new byte[]{42}), "Block gap must be rejected");
+    assertArrayEquals(first, upload.getFull());
   }
 
   @ParameterizedTest

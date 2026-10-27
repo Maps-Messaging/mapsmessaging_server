@@ -32,6 +32,7 @@ import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -86,14 +87,14 @@ public class CoapInterfaceManager implements SelectorCallback {
 
   @Override
   public void close() {
-    for (CoapProtocol protocol : currentSessions.values()) {
+    for (CoapProtocol protocol : new ArrayList<>(currentSessions.values())) {
       try {
         protocol.close();
       } catch (IOException e) {
         // Ignore we are closing
       }
-      currentSessions.clear();
     }
+    currentSessions.clear();
   }
 
   @Override

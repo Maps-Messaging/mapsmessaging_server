@@ -50,6 +50,9 @@ public class PacketFactory {
     }
 
     int rawCode = packet.get(packet.position() + 1) & 0xff;
+    if (rawCode == EMPTY && (tokenLength != 0 || packet.available() != 4)) {
+      throw new IOException("CoAP Empty message must not contain token, options or payload");
+    }
     int codeClass = (rawCode >>> 5) & 0b111;
     int code = rawCode & 0b11111;
     BasePacket basePacket;
