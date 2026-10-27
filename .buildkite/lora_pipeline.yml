@@ -4,11 +4,11 @@ steps:
       - echo "Starting MAPS Release Cycle"
     agents:
       queue: "orchestration"
+
   - wait
-
   - trigger: "090-server-snapshot-build"
-
   - trigger: "090-server-ml-snapshot-build"
+    async: true
 
   - wait
   - trigger: "095-maps-apps-packaging"
