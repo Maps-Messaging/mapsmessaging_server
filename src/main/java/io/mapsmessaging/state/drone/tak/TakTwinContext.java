@@ -27,7 +27,6 @@ import lombok.Setter;
 @Setter
 public class TakTwinContext {
   private long lastUpdate;
-  private TakSocketConnection socketConnection;
   private CotConfigDTO cotConfig;
   // True while an MTI cyber-icon marker for this twin is on the map, so it can be taken off
   // again when MTI clears the status or the twin goes away.
@@ -35,7 +34,6 @@ public class TakTwinContext {
 
   public TakTwinContext(){
     lastUpdate = 0;
-    socketConnection = null;
     cotConfig = null;
   }
 }

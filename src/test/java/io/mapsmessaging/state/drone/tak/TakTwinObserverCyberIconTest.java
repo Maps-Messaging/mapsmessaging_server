@@ -32,9 +32,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -46,45 +46,45 @@ class TakTwinObserverCyberIconTest {
 
   @Test
   void hold_publishes_asset_then_cyber_marker_and_clearing_takes_the_marker_off_once() throws Exception {
-    withObserver(socket -> observer -> {
+    withObserver(publisher -> observer -> {
       DroneTwin twin = uavTwin();
 
       MtiStatusRegistry.setDelegate(
           twinId -> new MtiLookupResult(null, -65536, "MTI: hold", false, "exploit_64x64.png"));
       observer.onTwinAdded(twin, context());
-      List<String> held = sent(socket, 2);
+      List<String> held = sent(publisher, 2);
       assertTrue(held.get(0).contains(ASSET_UID));
       assertFalse(held.get(0).contains("usericon"));
       assertTrue(held.get(1).contains(CYBER_UID));
       assertTrue(held.get(1).contains("cyber_icons/exploit_64x64.png"));
 
       MtiStatusRegistry.setDelegate(null);
-      clearInvocations(socket);
+      clearInvocations(publisher);
       statusChanged(observer, twin);
-      List<String> cleared = sent(socket, 2);
+      List<String> cleared = sent(publisher, 2);
       assertTrue(cleared.get(0).contains(ASSET_UID));
       assertTrue(cleared.get(1).contains(CYBER_UID));
       assertFalse(cleared.get(1).contains("usericon"));
 
-      clearInvocations(socket);
+      clearInvocations(publisher);
       statusChanged(observer, twin);
-      List<String> afterwards = sent(socket, 1);
+      List<String> afterwards = sent(publisher, 1);
       assertTrue(afterwards.get(0).contains(ASSET_UID));
     });
   }
 
   @Test
   void removing_a_twin_with_a_cyber_marker_also_takes_the_marker_off() throws Exception {
-    withObserver(socket -> observer -> {
+    withObserver(publisher -> observer -> {
       DroneTwin twin = uavTwin();
       MtiStatusRegistry.setDelegate(
           twinId -> new MtiLookupResult(null, -65536, "MTI: hold", false, "exploit_64x64.png"));
       observer.onTwinAdded(twin, context());
 
-      clearInvocations(socket);
+      clearInvocations(publisher);
       observer.onTwinRemoved(twin, context());
 
-      List<String> removed = sent(socket, 2);
+      List<String> removed = sent(publisher, 2);
       assertTrue(removed.get(0).contains(ASSET_UID));
       assertTrue(removed.get(1).contains(CYBER_UID));
       assertFalse(removed.get(1).contains("usericon"));
@@ -93,20 +93,46 @@ class TakTwinObserverCyberIconTest {
 
   @Test
   void removing_a_twin_without_a_cyber_marker_sends_only_the_asset_removal() throws Exception {
-    withObserver(socket -> observer -> {
+    withObserver(publisher -> observer -> {
       DroneTwin twin = uavTwin();
       observer.onTwinAdded(twin, context());
 
-      clearInvocations(socket);
+      clearInvocations(publisher);
       observer.onTwinRemoved(twin, context());
 
-      assertTrue(sent(socket, 1).get(0).contains(ASSET_UID));
+      assertTrue(sent(publisher, 1).get(0).contains(ASSET_UID));
     });
   }
 
-  private List<String> sent(TakSocketConnection socket, int expected) {
+  @Test
+  void asset_removal_failure_still_attempts_cyber_removal_and_clears_the_context() throws Exception {
+    withObserver(publisher -> observer -> {
+      DroneTwin twin = uavTwin();
+      MtiStatusRegistry.setDelegate(twinId -> new MtiLookupResult(null, -65536, "MTI: hold", false, "exploit_64x64.png"));
+      observer.onTwinAdded(twin, context());
+      clearInvocations(publisher);
+      doAnswer(invocation -> {
+        String xml = invocation.getArgument(0);
+        if (xml.contains(ASSET_UID)) {
+          throw new IOException("expected asset removal failure");
+        }
+        return null;
+      }).when(publisher).publish(anyString());
+
+      assertDoesNotThrow(() -> observer.onTwinRemoved(twin, context()));
+      List<String> removed = sent(publisher, 2);
+      assertTrue(removed.get(0).contains(ASSET_UID));
+      assertTrue(removed.get(1).contains(CYBER_UID));
+      assertFalse(removed.get(1).contains("usericon"));
+
+      observer.onTwinRemoved(twin, context());
+      sent(publisher, 2);
+    });
+  }
+
+  private List<String> sent(EventPublisher publisher, int expected) throws Exception {
     ArgumentCaptor<String> xml = ArgumentCaptor.forClass(String.class);
-    verify(socket, times(expected)).accept(xml.capture());
+    verify(publisher, times(expected)).publish(xml.capture());
     return xml.getAllValues();
   }
 
@@ -123,15 +149,9 @@ class TakTwinObserverCyberIconTest {
       mocked.when(ConfigurationManager::getInstance).thenReturn(config);
       TakTwinObserver observer = new TakTwinObserver(new TwinManager());
       try {
-        TakSocketConnection socket = mock(TakSocketConnection.class);
-        setField(observer, "takHost", "test-host");
-        setField(observer, "takPort", 1234);
-        TakTwinContext twinContext = new TakTwinContext();
-        twinContext.setSocketConnection(socket);
-        @SuppressWarnings("unchecked")
-        Map<String, TakTwinContext> contexts = (Map<String, TakTwinContext>) field(observer, "takContexts");
-        contexts.put("asset", twinContext);
-        action.with(socket).run(observer);
+        EventPublisher publisher = mock(EventPublisher.class);
+        setField(observer, "eventPublisher", publisher);
+        action.with(publisher).run(observer);
       } finally {
         observer.shutdown();
       }
@@ -155,12 +175,6 @@ class TakTwinObserverCyberIconTest {
     return context;
   }
 
-  private Object field(Object target, String name) throws Exception {
-    Field field = target.getClass().getDeclaredField(name);
-    field.setAccessible(true);
-    return field.get(target);
-  }
-
   private void setField(Object target, String name, Object value) throws Exception {
     Field field = target.getClass().getDeclaredField(name);
     field.setAccessible(true);
@@ -168,7 +182,7 @@ class TakTwinObserverCyberIconTest {
   }
 
   private interface ObserverAction {
-    ObserverStep with(TakSocketConnection socket);
+    ObserverStep with(EventPublisher publisher);
   }
 
   private interface ObserverStep {

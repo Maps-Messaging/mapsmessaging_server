@@ -95,22 +95,18 @@ class TakTwinObserverMetricsTest {
   }
 
   @Test
-  void socket_handoff_completes_picture_without_an_internal_publisher() throws Exception {
+  void publisher_handoff_completes_picture_while_waiting_for_mti_status() throws Exception {
     withObserver(observer -> {
-      setField(observer, "takHost", "test-host");
-      setField(observer, "takPort", 1234);
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(mock(TakSocketConnection.class));
-      @SuppressWarnings("unchecked")
-      Map<String, TakTwinContext> contexts = (Map<String, TakTwinContext>) field(observer, "takContexts");
-      contexts.put("asset", twinContext);
+      EventPublisher publisher = mock(EventPublisher.class);
+      setField(observer, "eventPublisher", publisher);
+
       observer.onTwinAdded(positionedTwin(), context());
-      assertEquals(1, tracker(observer).stats(PictureRecoveryTracker.FailureType.RESTART,
-          PictureRecoveryTracker.Stage.PICTURE).getCount());
+
+      verify(publisher).publish(anyString());
+      assertEquals(1, tracker(observer).stats(PictureRecoveryTracker.FailureType.RESTART, PictureRecoveryTracker.Stage.PICTURE).getCount());
       assertEquals(1, tracker(observer).getOpenCount(PictureRecoveryTracker.FailureType.RESTART));
     });
   }
-
 
   @Test
   void null_and_unidentified_updates_are_ignored_without_creating_contexts() throws Exception {

@@ -31,7 +31,7 @@ import java.util.List;
  * Latency buckets are cumulative (Prometheus histogram style); the exporter rule maps the number
  * in the attribute name onto the {@code le} label.
  */
-@JMXBean(description = "TAK output connection, drop and latency metrics")
+@JMXBean(description = "TAK topic publisher drop and composition latency metrics")
 public class TakOutputJMX {
 
   private final EventPublisher eventPublisher;
@@ -44,36 +44,6 @@ public class TakOutputJMX {
 
   void close() {
     JMXManager.getInstance().unregister(mbean);
-  }
-
-  @JMXBeanAttribute(name = "Socket Connect Count", description = "Successful TAK server connections established")
-  public long getSocketConnectCount() {
-    return TakOutputStats.CONNECT_COUNT.sum();
-  }
-
-  @JMXBeanAttribute(name = "Socket Connect Failure Count", description = "Failed TAK server connection attempts")
-  public long getSocketConnectFailureCount() {
-    return TakOutputStats.CONNECT_FAILURE_COUNT.sum();
-  }
-
-  @JMXBeanAttribute(name = "Socket Disconnect Count", description = "Established TAK server connections that were torn down")
-  public long getSocketDisconnectCount() {
-    return TakOutputStats.DISCONNECT_COUNT.sum();
-  }
-
-  @JMXBeanAttribute(name = "Socket Connected Count", description = "TAK server connections currently open")
-  public long getSocketConnectedCount() {
-    return TakOutputStats.CONNECT_COUNT.sum() - TakOutputStats.DISCONNECT_COUNT.sum();
-  }
-
-  @JMXBeanAttribute(name = "Socket Last Write Age Millis", description = "Milliseconds since CoT was last written to a TAK server, -1 if never")
-  public long getSocketLastWriteAgeMillis() {
-    return TakOutputStats.getLastWriteAgeMillis();
-  }
-
-  @JMXBeanAttribute(name = "Socket Dropped Count", description = "CoT events dropped because the TAK socket send queue was full")
-  public long getSocketDroppedCount() {
-    return TakOutputStats.SOCKET_DROPPED_COUNT.sum();
   }
 
   @JMXBeanAttribute(name = "Publisher Dropped Count", description = "CoT events dropped because the internal CoT topic publish queue was full")
