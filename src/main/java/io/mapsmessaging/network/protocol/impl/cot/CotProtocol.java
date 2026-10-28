@@ -20,9 +20,6 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.cot.CotStreamDecoder;
-import io.mapsmessaging.cot.CotStreamEncoder;
-import io.mapsmessaging.cot.CotValidator;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -55,13 +52,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -95,11 +90,6 @@ public class CotProtocol extends Protocol implements Selectable {
   private static final String READER_THREAD_PREFIX = "CoT Protocol Reader::";
   private static final String UPDATE_SOURCE = "cot-ingest";
 
-  private static final byte[] EVENT_START = "<event".getBytes(StandardCharsets.US_ASCII);
-  private static final byte[] EVENT_END = "</event>".getBytes(StandardCharsets.US_ASCII);
-  private static final byte[] XML_DECL_START = "<?xml".getBytes(StandardCharsets.US_ASCII);
-  private static final byte[] XML_DECL_END = "?>".getBytes(StandardCharsets.US_ASCII);
-
   private static final ExecutorService READER_POOL = Executors.newCachedThreadPool(runnable -> {
     Thread thread = new Thread(runnable, "cot-protocol-reader");
     thread.setDaemon(true);
@@ -109,10 +99,7 @@ public class CotProtocol extends Protocol implements Selectable {
   private final Logger logger = LoggerFactory.getLogger(CotProtocol.class);
   private final CotToTwinMapper cotToTwinMapper = new CotToTwinMapper();
   private final Packet packet;
-  private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-  private final CotStreamDecoder streamDecoder = new CotStreamDecoder(MAX_BUFFER_SIZE);
-  private final CotStreamEncoder streamEncoder = new CotStreamEncoder();
-  private final CotValidator cotValidator = new CotValidator();
+  private final CotStreamCodec streamCodec;
   private final String sessionId;
   private volatile String inboundDestinationName = DESTINATION_NAME;
   private final Queue<Packet> outboundPackets = new ConcurrentLinkedQueue<>();
@@ -121,7 +108,12 @@ public class CotProtocol extends Protocol implements Selectable {
   private boolean closed;
 
   public CotProtocol(EndPoint endPoint, Packet initialPacket, CotProtocolConfigDTO config) throws IOException {
+    this(endPoint, initialPacket, config, new CotXmlStreamCodec(MAX_BUFFER_SIZE));
+  }
+
+  CotProtocol(EndPoint endPoint, Packet initialPacket, CotProtocolConfigDTO config, CotStreamCodec streamCodec) throws IOException {
     super(endPoint, config != null ? config : new CotProtocolConfigDTO());
+    this.streamCodec = Objects.requireNonNull(streamCodec, "streamCodec");
     this.packet = new Packet(readBufferSize(endPoint), false);
     this.sessionId = "cot-" + UUID.randomUUID();
     createSession();
@@ -234,56 +226,9 @@ public class CotProtocol extends Protocol implements Selectable {
   private void appendAndProcess(Packet packet) throws IOException {
     byte[] chunk = new byte[packet.available()];
     packet.get(chunk);
-    for (byte[] document : streamDecoder.accept(chunk)) {
+    for (byte[] document : streamCodec.decode(chunk)) {
       publish(document);
     }
-  }
-
-  private void processBuffer() {
-    byte[] data = buffer.toByteArray();
-    int scanFrom = 0;
-    int consumedUpTo = 0;
-    while (true) {
-      int eventStart = indexOf(data, EVENT_START, scanFrom);
-      if (eventStart < 0) {
-        break;
-      }
-      int endTagIdx = indexOf(data, EVENT_END, eventStart + EVENT_START.length);
-      if (endTagIdx < 0) {
-        break; // Incomplete document, wait for more data
-      }
-      int docEnd = endTagIdx + EVENT_END.length;
-      int docStart = findPrecedingXmlDeclaration(data, eventStart, consumedUpTo);
-      byte[] document = Arrays.copyOfRange(data, docStart, docEnd);
-      publish(document);
-      consumedUpTo = docEnd;
-      scanFrom = docEnd;
-    }
-
-    buffer.reset();
-    if (consumedUpTo < data.length) {
-      buffer.write(data, consumedUpTo, data.length - consumedUpTo);
-    }
-    if (buffer.size() > MAX_BUFFER_SIZE) {
-      logger.warn("CoT passthrough buffer exceeded {} bytes without a complete event, discarding buffered data", MAX_BUFFER_SIZE);
-      buffer.reset();
-    }
-  }
-
-  private int findPrecedingXmlDeclaration(byte[] data, int eventStart, int lowerBound) {
-    int declStart = lastIndexOf(data, XML_DECL_START, lowerBound, eventStart);
-    if (declStart < 0) {
-      return eventStart;
-    }
-    int declEnd = indexOf(data, XML_DECL_END, declStart);
-    if (declEnd < 0 || declEnd + XML_DECL_END.length > eventStart) {
-      return eventStart;
-    }
-    int afterDecl = declEnd + XML_DECL_END.length;
-    if (!isWhitespaceOnly(data, afterDecl, eventStart)) {
-      return eventStart;
-    }
-    return declStart;
   }
 
   private void publish(byte[] xml) {
@@ -351,43 +296,6 @@ public class CotProtocol extends Protocol implements Selectable {
     }
   }
 
-  private static int indexOf(byte[] data, byte[] pattern, int from) {
-    int max = data.length - pattern.length;
-    outer:
-    for (int i = Math.max(from, 0); i <= max; i++) {
-      for (int j = 0; j < pattern.length; j++) {
-        if (data[i + j] != pattern[j]) {
-          continue outer;
-        }
-      }
-      return i;
-    }
-    return -1;
-  }
-
-  private static int lastIndexOf(byte[] data, byte[] pattern, int from, int to) {
-    int max = Math.min(to, data.length) - pattern.length;
-    outer:
-    for (int i = max; i >= from; i--) {
-      for (int j = 0; j < pattern.length; j++) {
-        if (data[i + j] != pattern[j]) {
-          continue outer;
-        }
-      }
-      return i;
-    }
-    return -1;
-  }
-
-  private static boolean isWhitespaceOnly(byte[] data, int from, int to) {
-    for (int i = from; i < to; i++) {
-      if (!Character.isWhitespace(data[i] & 0xff)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   private void closeQuietly() {
     if (closed) {
       return;
@@ -425,9 +333,7 @@ public class CotProtocol extends Protocol implements Selectable {
       if (parsedMessage == null) {
         return;
       }
-      byte[] xml = parsedMessage.getMessage().getOpaqueData();
-      cotValidator.validate(xml);
-      byte[] encoded = hasXmlDeclaration(xml) ? xml : streamEncoder.encode(xml);
+      byte[] encoded = streamCodec.encode(parsedMessage.getMessage().getOpaqueData());
       Packet outboundPacket = new Packet(encoded.length, false);
       outboundPacket.put(encoded);
       outboundPacket.flip();
@@ -490,17 +396,6 @@ public class CotProtocol extends Protocol implements Selectable {
     inboundDestinationName = mappedResource;
   }
 
-  private boolean hasXmlDeclaration(byte[] xml) {
-    int index = 0;
-    while (index < xml.length && Character.isWhitespace(xml[index] & 0xff)) {
-      index++;
-    }
-    return index + XML_DECL_START.length <= xml.length
-        && Arrays.equals(
-            Arrays.copyOfRange(xml, index, index + XML_DECL_START.length),
-            XML_DECL_START);
-  }
-
   @Override
   public void sendKeepAlive() {
     // No keep alive required for this passthrough listener
@@ -523,7 +418,7 @@ public class CotProtocol extends Protocol implements Selectable {
 
   @Override
   public String getVersion() {
-    return "CoT 2.0 XML Streaming";
+    return streamCodec.getVersion();
   }
 
   @Override

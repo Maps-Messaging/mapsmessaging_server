@@ -9,9 +9,6 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.cot.CotStreamDecoder;
-import io.mapsmessaging.cot.CotStreamEncoder;
-import io.mapsmessaging.cot.CotValidator;
 import io.mapsmessaging.SubSystemManager;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
@@ -32,10 +29,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.slf4j.Logger;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.StandardCharsets;
@@ -49,14 +46,17 @@ import static org.mockito.Mockito.*;
 class CotProtocolPublishingCoverageTest {
 
   @Test
-  void oversizedIncompleteDocumentIsDiscarded() throws Exception {
+  void oversizedIncompleteDocumentIsRejectedBeforePublishing() throws Exception {
     try (Fixture fixture = new Fixture()) {
-      fixture.buffer.write(bytes("<event" + "x".repeat(1_048_576)));
+      byte[] data = bytes("<event>" + "x".repeat(1_048_576));
+      Packet packet = new Packet(data.length, false);
+      packet.put(data);
+      packet.flip();
 
-      invoke(fixture.protocol, "processBuffer", new Class<?>[0]);
+      InvocationTargetException failure = assertThrows(InvocationTargetException.class,
+          () -> invoke(fixture.protocol, "appendAndProcess", new Class<?>[]{Packet.class}, packet));
 
-      assertEquals(0, fixture.buffer.size());
-      verify(fixture.logger).warn(anyString(), eq(1_048_576));
+      assertInstanceOf(IOException.class, failure.getCause());
       verifyNoInteractions(fixture.adapter);
       verifyNoInteractions(fixture.mapper);
     }
@@ -302,7 +302,6 @@ class CotProtocolPublishingCoverageTest {
     private final EndPointStatus endpointStatus = mock(EndPointStatus.class);
     private final Logger logger = mock(Logger.class);
     private final CotProtocol protocol = mock(CotProtocol.class, CALLS_REAL_METHODS);
-    private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private final MockedStatic<MessageDaemon> daemonStatic;
 
     private Fixture() throws Exception {
@@ -320,10 +319,7 @@ class CotProtocolPublishingCoverageTest {
       daemonStatic = mockStatic(MessageDaemon.class);
       daemonStatic.when(MessageDaemon::getInstance).thenReturn(daemon);
 
-      setField(protocol, CotProtocol.class, "buffer", buffer);
-      setField(protocol, CotProtocol.class, "streamDecoder", new CotStreamDecoder(1_048_576));
-      setField(protocol, CotProtocol.class, "streamEncoder", new CotStreamEncoder());
-      setField(protocol, CotProtocol.class, "cotValidator", new CotValidator());
+      setField(protocol, CotProtocol.class, "streamCodec", new CotXmlStreamCodec(1_048_576));
       setField(protocol, CotProtocol.class, "inboundDestinationName", "/tak/cot/inbound");
       setField(protocol, CotProtocol.class, "outboundPackets", new java.util.concurrent.ConcurrentLinkedQueue<Packet>());
       setField(protocol, CotProtocol.class, "cotToTwinMapper", mapper);

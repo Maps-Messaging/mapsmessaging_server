@@ -9,7 +9,6 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.cot.CotStreamDecoder;
 import io.mapsmessaging.SubSystemManager;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.Packet;
@@ -23,7 +22,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
-import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -158,8 +156,7 @@ class CotProtocolStreamCoverageTest {
       daemonStatic = mockStatic(MessageDaemon.class);
       daemonStatic.when(MessageDaemon::getInstance).thenReturn(daemon);
 
-      setField(protocol, "buffer", new ByteArrayOutputStream());
-      setField(protocol, "streamDecoder", new CotStreamDecoder(1_048_576));
+      setField(protocol, "streamCodec", new CotXmlStreamCodec(1_048_576));
       setField(protocol, "cotToTwinMapper", mapper);
       setField(protocol, "session", session);
     }
@@ -170,12 +167,6 @@ class CotProtocolStreamCoverageTest {
       packet.put(data);
       packet.flip();
       invoke(protocol, "appendAndProcess", new Class<?>[]{Packet.class}, packet);
-    }
-
-    private String bufferContents() throws Exception {
-      Field field = CotProtocol.class.getDeclaredField("buffer");
-      field.setAccessible(true);
-      return ((ByteArrayOutputStream) field.get(protocol)).toString(StandardCharsets.UTF_8);
     }
 
     @Override

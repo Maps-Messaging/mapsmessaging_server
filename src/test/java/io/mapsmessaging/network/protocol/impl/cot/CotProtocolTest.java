@@ -227,23 +227,14 @@ class CotProtocolTest {
   }
 
   @Test
-  void staticFrameSearchHelpersHandleBoundsAndWhitespace() throws Exception {
-    byte[] data = "xx<?xml?>  <event>1</event>tail".getBytes();
+  void xml_codec_retains_an_incomplete_event_between_reads() throws Exception {
+    CotStreamCodec codec = new CotXmlStreamCodec(1_048_576);
+    assertTrue(codec.decode("noise<?xml?><event uid='split'>".getBytes(StandardCharsets.UTF_8)).isEmpty());
 
-    java.lang.reflect.Method index = CotProtocol.class.getDeclaredMethod(
-        "indexOf", byte[].class, byte[].class, int.class);
-    java.lang.reflect.Method last = CotProtocol.class.getDeclaredMethod(
-        "lastIndexOf", byte[].class, byte[].class, int.class, int.class);
-    java.lang.reflect.Method whitespace = CotProtocol.class.getDeclaredMethod(
-        "isWhitespaceOnly", byte[].class, int.class, int.class);
-    index.setAccessible(true);
-    last.setAccessible(true);
-    whitespace.setAccessible(true);
+    List<byte[]> events = codec.decode("<detail>content</detail></event>tail".getBytes(StandardCharsets.UTF_8));
 
-    assertEquals(11, index.invoke(null, data, "<event".getBytes(), 0));
-    assertEquals(2, last.invoke(null, data, "<?xml".getBytes(), 0, 11));
-    assertEquals(true, whitespace.invoke(null, data, 9, 11));
-    assertEquals(-1, index.invoke(null, data, "missing".getBytes(), 0));
+    assertEquals(1, events.size());
+    assertArrayEquals("<event uid='split'><detail>content</detail></event>".getBytes(StandardCharsets.UTF_8), events.getFirst());
   }
 
   @FunctionalInterface
