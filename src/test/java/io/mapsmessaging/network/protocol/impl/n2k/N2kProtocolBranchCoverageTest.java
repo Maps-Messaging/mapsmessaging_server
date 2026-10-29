@@ -18,7 +18,11 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.canbus.j1939.CanId;
 import io.mapsmessaging.canbus.j1939.CanIdBuilder;
+import io.mapsmessaging.canbus.j1939.n2k.N2kParserFactory;
+import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
+import io.mapsmessaging.canbus.j1939.n2k.compile.N2kCompiledRegistry;
 import io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
+import io.mapsmessaging.canbus.j1939.n2k.model.N2kTransportType;
 import io.mapsmessaging.dto.rest.protocol.impl.N2kProtocolInformation;
 import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.schema.SchemaManager;
@@ -187,43 +191,158 @@ class N2kProtocolBranchCoverageTest {
     verify(fixture.endPoint).writeFrame(any());
   }
 
-  @Test
-  void writePgnUsesSingleFrameForAddressClaim() throws Exception {
+  @ParameterizedTest
+  @CsvSource({
+      "59904,3,0x18EA4D2A",
+      "60928,8,0x18EE4D2A",
+      "126993,8,0x19F0112A"
+  })
+  void writePgn_routes_bundled_single_frame_metadata(int pgn, int length, int identifier) throws Exception {
     Fixture fixture = fixture();
-    byte[] data = {1, 2, 3, 4, 5, 6, 7, 8};
+    FramePacker packer = new FramePacker(new N2kMessageParser(N2kParserFactory.getN2kParser()));
+    setField(fixture.protocol, N2kProtocol.class, "framePacker", packer);
+    byte[] data = new byte[length];
+    java.util.Arrays.fill(data, (byte) 0x5A);
+    byte[] original = data.clone();
 
-    fixture.protocol.writePgn(60928, 77, data);
+    fixture.protocol.writePgn(pgn, 77, data);
 
     ArgumentCaptor<CanFrame> captor = ArgumentCaptor.forClass(CanFrame.class);
     verify(fixture.endPoint).writeFrame(captor.capture());
     verify(fixture.endPoint, never()).writeFrames(anyList());
-    CanFrame frame = captor.getValue();
-    assertArrayEquals(data, frame.data());
-    CanId canId = CanId.parse(frame.canIdentifier());
-    assertEquals(60928, canId.getPgn());
-    assertEquals(77, canId.getDestinationAddress());
-    assertEquals(42, canId.getSourceAddress());
+    assertEquals(identifier, captor.getValue().canIdentifier());
+    assertEquals(length, captor.getValue().dataLengthCode());
+    assertArrayEquals(original, captor.getValue().data());
+    assertArrayEquals(original, data);
   }
 
   @ParameterizedTest
-  @CsvSource({
-      "126996,10",
-      "126998,11",
-      "127250,12",
-      "129025,255"
-  })
-  void writePgnUsesFastPacketPackerForOtherPgns(int pgn, int destination) throws Exception {
+  @CsvSource({"126996,3,0x19F0142A,1", "126998,10,0x19F0162A,2"})
+  void writePgn_routes_bundled_fast_packet_metadata(int pgn, int length, int identifier, int expectedFrameCount) throws Exception {
+    Fixture fixture = fixture();
+    FramePacker packer = new FramePacker(new N2kMessageParser(N2kParserFactory.getN2kParser()));
+    setField(fixture.protocol, N2kProtocol.class, "framePacker", packer);
+    byte[] data = new byte[length];
+    java.util.Arrays.fill(data, (byte) 0x5A);
+    byte[] original = data.clone();
+
+    fixture.protocol.writePgn(pgn, 77, data);
+
+    ArgumentCaptor<List<CanFrame>> captor = ArgumentCaptor.forClass(List.class);
+    verify(fixture.endPoint).writeFrames(captor.capture());
+    verify(fixture.endPoint, never()).writeFrame(any());
+    List<CanFrame> frames = captor.getValue();
+    assertEquals(expectedFrameCount, frames.size());
+    assertEquals(length, frames.getFirst().data()[1] & 0xFF);
+    byte[] reconstructed = new byte[length];
+    int offset = 0;
+    for (int index = 0; index < frames.size(); index++) {
+      CanFrame frame = frames.get(index);
+      assertEquals(identifier, frame.canIdentifier());
+      int start = index == 0 ? 2 : 1;
+      int count = Math.min(8 - start, length - offset);
+      System.arraycopy(frame.data(), start, reconstructed, offset, count);
+      offset += count;
+    }
+    assertArrayEquals(original, reconstructed);
+    assertArrayEquals(original, data);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"0", "8", "9"})
+  void writePgn_limits_unknown_pgn_fallback_to_single_frame(int length) throws Exception {
+    Fixture fixture = fixture();
+    FramePacker packer = new FramePacker(new N2kMessageParser(new N2kCompiledRegistry(Map.of())));
+    setField(fixture.protocol, N2kProtocol.class, "framePacker", packer);
+    byte[] data = new byte[length];
+
+    if (length > 8) {
+      assertThrows(IllegalArgumentException.class, () -> fixture.protocol.writePgn(130001, 77, data));
+      verify(fixture.endPoint, never()).writeFrame(any());
+    } else {
+      fixture.protocol.writePgn(130001, 77, data);
+      ArgumentCaptor<CanFrame> captor = ArgumentCaptor.forClass(CanFrame.class);
+      verify(fixture.endPoint).writeFrame(captor.capture());
+      assertEquals(0x19FBD12A, captor.getValue().canIdentifier());
+      assertArrayEquals(data, captor.getValue().data());
+    }
+    verify(fixture.endPoint, never()).writeFrames(anyList());
+  }
+
+  @Test
+  void writePgn_uses_metadata_even_for_address_claim() throws Exception {
     Fixture fixture = fixture();
     byte[] data = {10, 11, 12};
-    List<CanFrame> packed = List.of(frame(pgn, 42, destination, new byte[]{1}));
-    when(fixture.framePacker.packFastPacket(eq(pgn), anyInt(), eq(42), eq(destination), same(data)))
-        .thenReturn(packed);
+    List<CanFrame> packed = List.of(frame(60928, 42, 77, new byte[]{1}));
+    when(fixture.framePacker.getTransportType(60928, data.length)).thenReturn(N2kTransportType.FAST_PACKET);
+    when(fixture.framePacker.packFastPacket(60928, 0x18EE4D2A, 42, 77, data)).thenReturn(packed);
 
-    fixture.protocol.writePgn(pgn, destination, data);
+    fixture.protocol.writePgn(60928, 77, data);
 
-    verify(fixture.framePacker).packFastPacket(eq(pgn), anyInt(), eq(42), eq(destination), same(data));
+    verify(fixture.framePacker).packFastPacket(60928, 0x18EE4D2A, 42, 77, data);
     verify(fixture.endPoint).writeFrames(same(packed));
     verify(fixture.endPoint, never()).writeFrame(any());
+  }
+
+  @Test
+  void writePgn_rejects_unsupported_transport_before_writing() throws Exception {
+    Fixture fixture = fixture();
+    when(fixture.framePacker.getTransportType(130000, 3)).thenReturn(N2kTransportType.TRANSPORT_PROTOCOL);
+
+    assertThrows(UnsupportedOperationException.class,
+        () -> fixture.protocol.writePgn(130000, 77, new byte[3]));
+
+    verify(fixture.framePacker, never()).packFastPacket(anyInt(), anyInt(), anyInt(), anyInt(), any());
+    verify(fixture.endPoint, never()).writeFrame(any());
+    verify(fixture.endPoint, never()).writeFrames(anyList());
+  }
+
+  @Test
+  void writePgn_propagates_metadata_failure_before_writing() throws Exception {
+    Fixture fixture = fixture();
+    IllegalArgumentException failure = new IllegalArgumentException("metadata lookup failed");
+    when(fixture.framePacker.getTransportType(130000, 3)).thenThrow(failure);
+
+    assertSame(failure, assertThrows(IllegalArgumentException.class,
+        () -> fixture.protocol.writePgn(130000, 77, new byte[3])));
+
+    verify(fixture.framePacker, never()).packFastPacket(anyInt(), anyInt(), anyInt(), anyInt(), any());
+    verify(fixture.endPoint, never()).writeFrame(any());
+    verify(fixture.endPoint, never()).writeFrames(anyList());
+  }
+
+  @Test
+  void writePgn_propagates_packing_failure_before_writing() throws Exception {
+    Fixture fixture = fixture();
+    byte[] data = {10, 11, 12};
+    IllegalStateException failure = new IllegalStateException("packing failed");
+    when(fixture.framePacker.getTransportType(126996, data.length)).thenReturn(N2kTransportType.FAST_PACKET);
+    when(fixture.framePacker.packFastPacket(126996, 0x19F0142A, 42, 77, data)).thenThrow(failure);
+
+    assertSame(failure, assertThrows(IllegalStateException.class,
+        () -> fixture.protocol.writePgn(126996, 77, data)));
+
+    verify(fixture.endPoint, never()).writeFrame(any());
+    verify(fixture.endPoint, never()).writeFrames(anyList());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"SINGLE_FRAME", "FAST_PACKET"})
+  void writePgn_propagates_endpoint_write_failure(N2kTransportType transport) throws Exception {
+    Fixture fixture = fixture();
+    byte[] data = {10, 11, 12};
+    IOException failure = new IOException("write failed");
+    when(fixture.framePacker.getTransportType(130000, data.length)).thenReturn(transport);
+    if (transport == N2kTransportType.SINGLE_FRAME) {
+      doThrow(failure).when(fixture.endPoint).writeFrame(any());
+    } else {
+      List<CanFrame> packed = List.of(frame(130000, 42, 77, data));
+      when(fixture.framePacker.packFastPacket(130000, 0x19FBD02A, 42, 77, data)).thenReturn(packed);
+      doThrow(failure).when(fixture.endPoint).writeFrames(same(packed));
+    }
+
+    assertSame(failure, assertThrows(IOException.class,
+        () -> fixture.protocol.writePgn(130000, 77, data)));
   }
 
   @Test
