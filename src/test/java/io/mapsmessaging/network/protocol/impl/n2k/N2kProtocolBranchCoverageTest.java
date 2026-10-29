@@ -192,6 +192,8 @@ class N2kProtocolBranchCoverageTest {
     Fixture fixture = fixture();
     byte[] data = {1, 2, 3, 4, 5, 6, 7, 8};
 
+    setField(fixture.protocol, N2kProtocol.class, "framePacker",
+        new FramePacker(new io.mapsmessaging.schemas.formatters.impl.CanbusFormatter((String) null).getParser()));
     fixture.protocol.writePgn(60928, 77, data);
 
     ArgumentCaptor<CanFrame> captor = ArgumentCaptor.forClass(CanFrame.class);
@@ -207,23 +209,29 @@ class N2kProtocolBranchCoverageTest {
 
   @ParameterizedTest
   @CsvSource({
-      "126996,10",
-      "126998,11",
-      "127250,12",
-      "129025,255"
+      "126996,10,true",
+      "126998,11,true",
+      "127250,12,false",
+      "129025,255,false"
   })
-  void writePgnUsesFastPacketPackerForOtherPgns(int pgn, int destination) throws Exception {
+  void writePgnUsesRegistryTransport(int pgn, int destination, boolean fastPacket) throws Exception {
     Fixture fixture = fixture();
     byte[] data = {10, 11, 12};
-    List<CanFrame> packed = List.of(frame(pgn, 42, destination, new byte[]{1}));
-    when(fixture.framePacker.packFastPacket(eq(pgn), anyInt(), eq(42), eq(destination), same(data)))
-        .thenReturn(packed);
+    setField(fixture.protocol, N2kProtocol.class, "framePacker",
+        new FramePacker(new io.mapsmessaging.schemas.formatters.impl.CanbusFormatter((String) null).getParser()));
 
     fixture.protocol.writePgn(pgn, destination, data);
 
-    verify(fixture.framePacker).packFastPacket(eq(pgn), anyInt(), eq(42), eq(destination), same(data));
-    verify(fixture.endPoint).writeFrames(same(packed));
-    verify(fixture.endPoint, never()).writeFrame(any());
+    if (fastPacket) {
+      verify(fixture.endPoint).writeFrames(anyList());
+      verify(fixture.endPoint, never()).writeFrame(any());
+    } else {
+      ArgumentCaptor<CanFrame> captor = ArgumentCaptor.forClass(CanFrame.class);
+      verify(fixture.endPoint).writeFrame(captor.capture());
+      verify(fixture.endPoint, never()).writeFrames(anyList());
+      assertArrayEquals(data, captor.getValue().data());
+      assertEquals(pgn, CanId.parse(captor.getValue().canIdentifier()).getPgn());
+    }
   }
 
   @Test

@@ -240,13 +240,16 @@ public class N2kProtocol extends Protocol {
 
   public void writePgn(int pgn, int destinationAddress, byte[] data) throws IOException {
     int canId1 = CanIdBuilder.build(pgn, 6, canbusAddress, destinationAddress);
-    if(pgn == 60928){
-      CanFrame frame = new CanFrame(canId1, true, data.length, data);
-      ((CanbusEndPoint) getEndPoint()).writeFrame(frame);
-    }
-    else {
-      List<CanFrame> frames = framePacker.packFastPacket(pgn, canId1, canbusAddress, destinationAddress, data);
-      ((CanbusEndPoint) getEndPoint()).writeFrames(frames);
+    switch (framePacker.getTransportType(pgn, data.length)) {
+      case SINGLE_FRAME -> {
+        CanFrame frame = new CanFrame(canId1, true, data.length, data);
+        ((CanbusEndPoint) getEndPoint()).writeFrame(frame);
+      }
+      case FAST_PACKET -> {
+        List<CanFrame> frames = framePacker.packFastPacket(pgn, canId1, canbusAddress, destinationAddress, data);
+        ((CanbusEndPoint) getEndPoint()).writeFrames(frames);
+      }
+      case TRANSPORT_PROTOCOL -> throw new UnsupportedOperationException("Transport protocol is not supported for PGN " + pgn);
     }
   }
 
