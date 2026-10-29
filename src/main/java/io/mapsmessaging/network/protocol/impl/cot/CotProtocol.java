@@ -30,14 +30,15 @@ import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.api.transformers.ParsedMessage;
 import io.mapsmessaging.dto.rest.analytics.StatisticsConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.impl.CotProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.Selectable;
-import io.mapsmessaging.network.io.impl.Selector;
+import io.mapsmessaging.network.io.ServerPacket;
+import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
@@ -53,15 +54,11 @@ import org.slf4j.LoggerFactory;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
+import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Accepts a raw, unframed stream of Cursor-on-Target (CoT) XML &lt;event&gt; documents (the wire
@@ -79,7 +76,7 @@ import java.util.concurrent.Executors;
  * <p>Discovered via the standard ProtocolImplFactory ServiceLoader registration. Logging uses
  * SLF4J for now (this protocol carries no {@code ServerLogMessages} constants of its own).
  */
-public class CotProtocol extends Protocol implements Selectable {
+public class CotProtocol extends Protocol {
 
   private static final String DESTINATION_NAME = "/tak/cot/inbound";
   private static final int MAX_BUFFER_SIZE = 1_048_576; // 1MB safety cap against a malformed/never-terminated stream
@@ -87,22 +84,14 @@ public class CotProtocol extends Protocol implements Selectable {
   // whole record. The packet handed over by protocol detection is only 1 KB and must not be reused
   // for reads: over ssl:// any record carrying more than 1 KB of CoT would never decode.
   private static final int MIN_READ_BUFFER_SIZE = 32 * 1024;
-  private static final String READER_THREAD_PREFIX = "CoT Protocol Reader::";
   private static final String UPDATE_SOURCE = "cot-ingest";
-
-  private static final ExecutorService READER_POOL = Executors.newCachedThreadPool(runnable -> {
-    Thread thread = new Thread(runnable, "cot-protocol-reader");
-    thread.setDaemon(true);
-    return thread;
-  });
 
   private final Logger logger = LoggerFactory.getLogger(CotProtocol.class);
   private final CotToTwinMapper cotToTwinMapper = new CotToTwinMapper();
-  private final Packet packet;
+  private final SelectorTask selectorTask;
   private final CotStreamCodec streamCodec;
   private final String sessionId;
   private volatile String inboundDestinationName = DESTINATION_NAME;
-  private final Queue<Packet> outboundPackets = new ConcurrentLinkedQueue<>();
 
   private Session session;
   private boolean closed;
@@ -114,14 +103,14 @@ public class CotProtocol extends Protocol implements Selectable {
   CotProtocol(EndPoint endPoint, Packet initialPacket, CotProtocolConfigDTO config, CotStreamCodec streamCodec) throws IOException {
     super(endPoint, config != null ? config : new CotProtocolConfigDTO());
     this.streamCodec = Objects.requireNonNull(streamCodec, "streamCodec");
-    this.packet = new Packet(readBufferSize(endPoint), false);
+    this.selectorTask = new SelectorTask(this, selectorConfig(endPoint));
     this.sessionId = "cot-" + UUID.randomUUID();
     createSession();
     logger.debug("CoT passthrough connection created on {}", endPoint.getConfig().getUrl());
     if (initialPacket != null && initialPacket.available() > 0) {
       appendAndProcess(initialPacket);
     }
-    endPoint.register(SelectionKey.OP_READ, this);
+    selectorTask.register(SelectionKey.OP_READ);
   }
 
   /** The configured server read buffer size, never smaller than one TLS record and never above the 1 MB cap. */
@@ -151,76 +140,14 @@ public class CotProtocol extends Protocol implements Selectable {
     }
   }
 
-  @Override
-  public void selected(Selectable selectable, Selector selector, int selection) {
-    if ((selection & SelectionKey.OP_WRITE) != 0) {
-      try {
-        flushOutbound();
-      } catch (IOException e) {
-        logger.warn("Exception writing CoT XML stream", e);
-        closeQuietly();
-        return;
-      }
+  private static EndPointConfigDTO selectorConfig(EndPoint endPoint) {
+    EndPointConfigDTO config = new EndPointConfigDTO("tcp");
+    config.setServerReadBufferSize(readBufferSize(endPoint));
+    EndPointConfigDTO configured = endPoint.getConfig().getEndPointConfig();
+    if (configured != null) {
+      config.setServerWriteBufferSize(configured.getServerWriteBufferSize());
     }
-    if ((selection & SelectionKey.OP_READ) == 0) {
-      return;
-    }
-    try {
-      endPoint.deregister(SelectionKey.OP_READ);
-    } catch (ClosedChannelException e) {
-      logger.warn("Exception reading from CoT passthrough connection", e);
-      return;
-    }
-    READER_POOL.execute(new ReadTask());
-  }
-
-  private final class ReadTask implements Runnable {
-    @Override
-    public void run() {
-      // The pool reuses threads, so prefix for this run only - prefixing the current name every
-      // time grew it without bound over the life of the server.
-      Thread current = Thread.currentThread();
-      String poolName = current.getName();
-      current.setName(READER_THREAD_PREFIX + poolName);
-      try {
-        readAvailable();
-      } finally {
-        current.setName(poolName);
-      }
-    }
-
-    private void readAvailable() {
-      try {
-        int read;
-        boolean first = true;
-        do {
-          packet.clear();
-          read = endPoint.readPacket(packet);
-          int applicationBytes = packet.position();
-          if (read > 0 && applicationBytes > 0) {
-            EndPoint.totalReceived.increment();
-            packet.flip();
-            appendAndProcess(packet);
-          } else if (first && read <= 0) {
-            // Nothing readable on the first pass: the peer has gone away.
-            closeQuietly();
-            return;
-          } else {
-            // read > 0 but no application data was produced - e.g. an SSL read
-            // consumed encrypted bytes for a partial record and decoded nothing
-            // yet (readPacket then reports the encrypted count, not application
-            // payload). Stop draining and wait for the selector to signal fresh
-            // data instead of busy-spinning on a count that carries no payload.
-            break;
-          }
-          first = false;
-        } while (read > 0);
-        endPoint.register(SelectionKey.OP_READ, CotProtocol.this);
-      } catch (Exception e) {
-        logger.warn("Exception reading from CoT passthrough connection", e);
-        closeQuietly();
-      }
-    }
+    return config;
   }
 
   private void appendAndProcess(Packet packet) throws IOException {
@@ -313,6 +240,7 @@ public class CotProtocol extends Protocol implements Selectable {
     } catch (IOException e) {
       logger.warn("Exception reading from CoT passthrough connection", e);
     }
+    selectorTask.close();
     logger.debug("CoT passthrough connection closed");
   }
 
@@ -334,38 +262,47 @@ public class CotProtocol extends Protocol implements Selectable {
         return;
       }
       byte[] encoded = streamCodec.encode(parsedMessage.getMessage().getOpaqueData());
-      Packet outboundPacket = new Packet(encoded.length, false);
-      outboundPacket.put(encoded);
-      outboundPacket.flip();
-      outboundPackets.offer(outboundPacket);
-      endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+      selectorTask.push(new CotFrame(encoded, messageEvent.getCompletionTask()));
     } catch (IOException | RuntimeException e) {
       logger.warn("Failed to send CoT XML event", e);
-    } finally {
       if (messageEvent.getCompletionTask() != null) {
         messageEvent.getCompletionTask().run();
       }
     }
   }
 
-  private void flushOutbound() throws IOException {
-    Packet outboundPacket = outboundPackets.peek();
-    while (outboundPacket != null) {
-      int before = outboundPacket.position();
-      endPoint.sendPacket(outboundPacket);
-      if (outboundPacket.hasRemaining()) {
-        if (outboundPacket.position() == before) {
-          endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
-          return;
-        }
-        endPoint.register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, this);
+  private final class CotFrame implements ServerPacket {
+    private final byte[] encoded;
+    private final Runnable completionTask;
+    private boolean completed;
+
+    private CotFrame(byte[] encoded, Runnable completionTask) {
+      this.encoded = encoded;
+      this.completionTask = completionTask;
+    }
+
+    @Override
+    public int packFrame(Packet packet) {
+      packet.put(encoded);
+      return encoded.length;
+    }
+
+    @Override
+    public synchronized void complete() {
+      if (completed) {
         return;
       }
-      outboundPackets.poll();
+      completed = true;
       sentMessage();
-      outboundPacket = outboundPackets.peek();
+      if (completionTask != null) {
+        completionTask.run();
+      }
     }
-    endPoint.register(SelectionKey.OP_READ, this);
+
+    @Override
+    public SocketAddress getFromAddress() {
+      return null;
+    }
   }
 
   @Override
@@ -402,7 +339,11 @@ public class CotProtocol extends Protocol implements Selectable {
 
   @Override
   public boolean processPacket(Packet packet) throws IOException {
-    return false; // Reading is handled directly via the selector callback + ReadTask
+    if (packet.hasRemaining()) {
+      EndPoint.totalReceived.increment();
+    }
+    appendAndProcess(packet);
+    return true;
   }
 
   @Override

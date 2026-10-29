@@ -13,6 +13,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.CotProtocolConfigDTO;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
+import io.mapsmessaging.network.io.Selectable;
 import io.mapsmessaging.utilities.admin.JMXManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -20,7 +21,6 @@ import org.mockito.MockedStatic;
 import org.mockito.ArgumentCaptor;
 
 import javax.security.auth.Subject;
-import java.lang.reflect.Constructor;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -58,7 +58,7 @@ class CotProtocolTest {
       assertEquals("CoT 2.0 XML Streaming", protocol.getVersion());
       assertTrue(protocol.getSessionId().startsWith("cot-"));
       assertSame(subject, protocol.getSubject());
-      assertFalse(protocol.processPacket(new Packet(0, false)));
+      assertTrue(protocol.processPacket(new Packet(0, false)));
 
       MessageEvent event = mock(MessageEvent.class);
       Runnable completion = mock(Runnable.class);
@@ -101,15 +101,14 @@ class CotProtocolTest {
       CotProtocol protocol =
           new CotProtocol(endpoint, new Packet(0, false), new CotProtocolConfigDTO());
       // The constructor registers OP_READ once; clear that interaction first.
-      verify(endpoint).register(eq(SelectionKey.OP_READ), eq(protocol));
+      Selectable selector = selector(endpoint);
       clearInvocations(endpoint);
 
-      protocol.selected(protocol, null, SelectionKey.OP_READ);
+      selector.selected(null, null, SelectionKey.OP_READ);
 
-      // The reader must stop after a bounded number of reads and re-arm the
-      // selector, rather than looping on the empty positive count.
-      verify(endpoint, timeout(5000)).register(eq(SelectionKey.OP_READ), eq(protocol));
-      verify(endpoint, atMost(5)).readPacket(any());
+      // With no buffered endpoint data, the shared reader returns after one read
+      // and leaves read interest registered for the next selector callback.
+      verify(endpoint, times(1)).readPacket(any());
       verify(endpoint, never()).close();
 
       protocol.close();
@@ -131,10 +130,11 @@ class CotProtocolTest {
       // to up to 16 KB and can never be unwrapped into it.
       Packet detectionPacket = new Packet(1024, true);
       CotProtocol protocol = new CotProtocol(endpoint, detectionPacket, new CotProtocolConfigDTO());
+      Selectable selector = selector(endpoint);
       clearInvocations(endpoint);
 
-      protocol.selected(protocol, null, SelectionKey.OP_READ);
-      verify(endpoint, timeout(5000)).register(eq(SelectionKey.OP_READ), eq(protocol));
+      selector.selected(null, null, SelectionKey.OP_READ);
+      verify(endpoint).readPacket(any());
 
       assertFalse(readTargets.isEmpty());
       for (Packet target : readTargets) {
@@ -157,7 +157,7 @@ class CotProtocolTest {
 
   @Test
   @Timeout(10)
-  void readTask_doesNotGrowThePooledThreadNameAcrossRuns() throws Exception {
+  void shared_reader_preserves_the_calling_thread_name_across_reads() throws Exception {
     withSession((endpoint, session) -> {
       List<String> readerNames = new CopyOnWriteArrayList<>();
       when(endpoint.readPacket(any())).thenAnswer(invocation -> {
@@ -166,16 +166,15 @@ class CotProtocolTest {
       });
       CotProtocol protocol = new CotProtocol(endpoint, new Packet(0, false), new CotProtocolConfigDTO());
 
+      Selectable selector = selector(endpoint);
+      String callingThreadName = Thread.currentThread().getName();
       for (int run = 0; run < 3; run++) {
-        clearInvocations(endpoint);
-        protocol.selected(protocol, null, SelectionKey.OP_READ);
-        verify(endpoint, timeout(5000)).register(eq(SelectionKey.OP_READ), eq(protocol));
+        selector.selected(null, null, SelectionKey.OP_READ);
       }
 
       assertEquals(3, readerNames.size());
       for (String name : readerNames) {
-        assertTrue(name.startsWith("CoT Protocol Reader::"), name);
-        assertFalse(name.startsWith("CoT Protocol Reader::CoT Protocol Reader::"), name);
+        assertEquals(callingThreadName, name);
       }
       protocol.close();
     });
@@ -207,15 +206,7 @@ class CotProtocolTest {
       try (MockedStatic<MessageDaemon> daemon = mockStatic(MessageDaemon.class)) {
         daemon.when(MessageDaemon::getInstance).thenReturn(null);
         verify(destination, never()).storeMessage(any());
-        clearInvocations(endpoint);
-        // Run the actual reader on this thread so the singleton boundary remains isolated,
-        // independent of whether another protocol test has started the daemon.
-        Class<?> readerType = Class.forName(CotProtocol.class.getName() + "$ReadTask");
-        Constructor<?> constructor = readerType.getDeclaredConstructor(CotProtocol.class);
-        constructor.setAccessible(true);
-        Runnable reader = (Runnable) constructor.newInstance(protocol);
-        reader.run();
-        verify(endpoint).register(eq(SelectionKey.OP_READ), eq(protocol));
+        selector(endpoint).selected(null, null, SelectionKey.OP_READ);
         ArgumentCaptor<Message> stored = ArgumentCaptor.forClass(Message.class);
         verify(destination, times(1)).storeMessage(stored.capture());
         assertArrayEquals(event, stored.getValue().getOpaqueData());
@@ -259,6 +250,12 @@ class CotProtocolTest {
     }
   }
 
+  private static Selectable selector(EndPoint endpoint) throws Exception {
+    ArgumentCaptor<Selectable> callback = ArgumentCaptor.forClass(Selectable.class);
+    verify(endpoint).register(eq(SelectionKey.OP_READ), callback.capture());
+    return callback.getValue();
+  }
+
   private static EndPoint endpointWithReadBufferSize(long size) {
     EndPoint endpoint = endpoint();
     EndPointConfigDTO endPointConfig = mock(EndPointConfigDTO.class);
@@ -272,6 +269,7 @@ class CotProtocolTest {
     EndPointServerConfigDTO config = mock(EndPointServerConfigDTO.class);
     when(endpoint.getConfig()).thenReturn(config);
     when(config.getUrl()).thenReturn("tcp://localhost:8087");
+    when(config.getEndPointConfig()).thenReturn(new EndPointConfigDTO("tcp"));
     when(endpoint.getJMXTypePath()).thenReturn(List.of());
     return endpoint;
   }

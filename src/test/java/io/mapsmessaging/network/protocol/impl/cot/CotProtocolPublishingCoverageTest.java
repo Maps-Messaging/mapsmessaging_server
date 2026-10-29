@@ -12,13 +12,14 @@ import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.SubSystemManager;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.state.StateManagerAgent;
 import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
@@ -33,8 +34,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectionKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -215,54 +214,18 @@ class CotProtocolPublishingCoverageTest {
   }
 
   @Test
-  void partialOutboundWriteRetainsRemainderUntilWritableAgain() throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      byte[] payload = bytes("<?xml version='1.0'?><event version='2.0' uid='x' type='a-f-G-U-C' time='2026-10-07T07:00:00Z' start='2026-10-07T07:00:00Z' stale='2026-10-07T07:01:00Z' how='m-g'><point lat='1' lon='2' hae='3' ce='4' le='5'/></event>");
-      Packet packet = new Packet(payload.length, false);
-      packet.put(payload);
-      packet.flip();
+  void close_stops_the_shared_selector_and_internal_session_once() throws Exception {
+    try (Fixture fixture = new Fixture();
+        MockedStatic<SessionManager> managers = mockStatic(SessionManager.class)) {
+      SessionManager manager = mock(SessionManager.class);
+      managers.when(SessionManager::getInstance).thenReturn(manager);
 
-      @SuppressWarnings("unchecked")
-      java.util.Queue<Packet> queue =
-          (java.util.Queue<Packet>) field(fixture.protocol, CotProtocol.class, "outboundPackets");
-      queue.offer(packet);
+      fixture.protocol.close();
+      fixture.protocol.close();
 
-      when(fixture.endpoint.sendPacket(any(Packet.class))).thenAnswer(invocation -> {
-        Packet outbound = invocation.getArgument(0);
-        int remaining = outbound.available();
-        int write = Math.max(1, remaining / 2);
-        outbound.position(outbound.position() + write);
-        return write;
-      });
-
-      invoke(fixture.protocol, "flushOutbound", new Class<?>[0]);
-
-      assertEquals(1, queue.size());
-      verify(fixture.endpoint).register(SelectionKey.OP_READ | SelectionKey.OP_WRITE, fixture.protocol);
-
-      when(fixture.endpoint.sendPacket(any(Packet.class))).thenAnswer(invocation -> {
-        Packet outbound = invocation.getArgument(0);
-        int remaining = outbound.available();
-        outbound.position(outbound.limit());
-        return remaining;
-      });
-
-      invoke(fixture.protocol, "flushOutbound", new Class<?>[0]);
-
-      assertTrue(queue.isEmpty());
-      verify(fixture.endpoint).register(SelectionKey.OP_READ, fixture.protocol);
-    }
-  }
-
-  @Test
-  void selectedClosedEndpointReturnsWithoutSchedulingRead() throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      doThrow(new ClosedChannelException()).when(fixture.endpoint).deregister(anyInt());
-
-      fixture.protocol.selected(mock(Selectable.class), null, SelectionKey.OP_READ);
-
-      verify(fixture.endpoint).deregister(SelectionKey.OP_READ);
-      verify(fixture.endpoint, never()).readPacket(any());
+      verify(fixture.selectorTask).close();
+      verify(manager).close(fixture.session, false);
+      verify(fixture.endpoint).close();
     }
   }
 
@@ -276,12 +239,6 @@ class CotProtocolPublishingCoverageTest {
     Method method = CotProtocol.class.getDeclaredMethod(name, parameterTypes);
     method.setAccessible(true);
     return (T) method.invoke(target, args);
-  }
-
-  private static Object field(Object target, Class<?> owner, String name) throws Exception {
-    Field field = owner.getDeclaredField(name);
-    field.setAccessible(true);
-    return field.get(target);
   }
 
   private static void setField(Object target, Class<?> owner, String name, Object value)
@@ -299,6 +256,7 @@ class CotProtocolPublishingCoverageTest {
     private final CotToTwinMapper mapper = mock(CotToTwinMapper.class);
     private final Session session = mock(Session.class);
     private final EndPoint endpoint = mock(EndPoint.class);
+    private final SelectorTask selectorTask = mock(SelectorTask.class);
     private final EndPointStatus endpointStatus = mock(EndPointStatus.class);
     private final Logger logger = mock(Logger.class);
     private final CotProtocol protocol = mock(CotProtocol.class, CALLS_REAL_METHODS);
@@ -321,7 +279,7 @@ class CotProtocolPublishingCoverageTest {
 
       setField(protocol, CotProtocol.class, "streamCodec", new CotXmlStreamCodec(1_048_576));
       setField(protocol, CotProtocol.class, "inboundDestinationName", "/tak/cot/inbound");
-      setField(protocol, CotProtocol.class, "outboundPackets", new java.util.concurrent.ConcurrentLinkedQueue<Packet>());
+      setField(protocol, CotProtocol.class, "selectorTask", selectorTask);
       setField(protocol, CotProtocol.class, "cotToTwinMapper", mapper);
       setField(protocol, CotProtocol.class, "session", session);
       setField(protocol, CotProtocol.class, "logger", logger);
