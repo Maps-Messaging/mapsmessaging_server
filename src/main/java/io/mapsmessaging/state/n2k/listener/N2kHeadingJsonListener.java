@@ -36,10 +36,10 @@ public class N2kHeadingJsonListener extends AbstractN2kJsonListener {
 
   @Override
   public void handle(DroneTwin droneTwin, JsonObject packet, TwinUpdateContext context) {
-    Double headingRadians = getDouble(packet, "headingSensorReading");
+    Double headingRadians = getDouble(packet, "heading", "headingSensorReading");
     Double variationRadians = getDouble(packet, "variation");
     Double deviationRadians = getDouble(packet, "deviation");
-    Double headingSensorReference = getDouble(packet, "headingSensorReference");
+    Double headingSensorReference = getDouble(packet, "reference", "headingSensorReference");
 
     if (headingRadians == null && variationRadians == null && deviationRadians == null
         && headingSensorReference == null) {

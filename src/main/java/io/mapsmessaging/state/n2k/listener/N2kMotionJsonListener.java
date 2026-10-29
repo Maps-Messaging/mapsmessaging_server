@@ -36,8 +36,8 @@ public class N2kMotionJsonListener extends AbstractN2kJsonListener {
 
   @Override
   public void handle(DroneTwin droneTwin, JsonObject packet, TwinUpdateContext context) {
-    Double courseOverGroundRadians = getDouble(packet, "courseOverGround");
-    Double speedOverGroundMetersPerSecond = getDouble(packet, "speedOverGround");
+    Double courseOverGroundRadians = getDouble(packet, "cog", "courseOverGround");
+    Double speedOverGroundMetersPerSecond = getDouble(packet, "sog", "speedOverGround");
     Double courseReference = getDouble(packet, "cogReference");
 
     if (courseOverGroundRadians == null && speedOverGroundMetersPerSecond == null && courseReference == null) {

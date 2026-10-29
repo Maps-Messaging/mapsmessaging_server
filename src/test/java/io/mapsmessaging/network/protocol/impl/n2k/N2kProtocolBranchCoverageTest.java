@@ -19,6 +19,7 @@ import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.canbus.j1939.CanId;
 import io.mapsmessaging.canbus.j1939.CanIdBuilder;
 import io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
+import io.mapsmessaging.canbus.j1939.n2k.model.N2kTransportType;
 import io.mapsmessaging.dto.rest.protocol.impl.N2kProtocolInformation;
 import io.mapsmessaging.engine.schema.Schema;
 import io.mapsmessaging.engine.schema.SchemaManager;
@@ -208,11 +209,9 @@ class N2kProtocolBranchCoverageTest {
   @ParameterizedTest
   @CsvSource({
       "126996,10",
-      "126998,11",
-      "127250,12",
-      "129025,255"
+      "126998,11"
   })
-  void writePgnUsesFastPacketPackerForOtherPgns(int pgn, int destination) throws Exception {
+  void writePgnUsesFastPacketPackerForFastPgns(int pgn, int destination) throws Exception {
     Fixture fixture = fixture();
     byte[] data = {10, 11, 12};
     List<CanFrame> packed = List.of(frame(pgn, 42, destination, new byte[]{1}));
@@ -561,6 +560,9 @@ class N2kProtocolBranchCoverageTest {
     Session session = mock(Session.class);
     MessageFormatter formatter = mock(MessageFormatter.class);
     FramePacker framePacker = mock(FramePacker.class);
+    when(framePacker.getTransportType(eq(60928), anyInt())).thenReturn(N2kTransportType.SINGLE_FRAME);
+    when(framePacker.getTransportType(eq(126996), anyInt())).thenReturn(N2kTransportType.FAST_PACKET);
+    when(framePacker.getTransportType(eq(126998), anyInt())).thenReturn(N2kTransportType.FAST_PACKET);
     SchemaConfig defaultSchema = mock(SchemaConfig.class);
     Destination destination = mock(Destination.class);
     Logger logger = mock(Logger.class);

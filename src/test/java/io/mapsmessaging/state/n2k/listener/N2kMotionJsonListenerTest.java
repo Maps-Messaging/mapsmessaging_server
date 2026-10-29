@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,15 +32,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kMotionJsonListenerTest {
 
-  @Test
-  void motionPacketUpdatesCourseSpeedReferenceAndTimestamps() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void motionPacketUpdatesCourseSpeedReferenceAndTimestamps(boolean canonical) {
     N2kMotionJsonListener listener = new N2kMotionJsonListener();
     DroneTwin twin = new DroneTwin("motion");
     TwinUpdateContext context = context();
 
     JsonObject packet = new JsonObject();
-    packet.addProperty("courseOverGround", Math.toRadians(370.0));
-    packet.addProperty("speedOverGround", 4.6);
+    packet.addProperty(canonical ? "cog" : "courseOverGround", Math.toRadians(370.0));
+    packet.addProperty(canonical ? "sog" : "speedOverGround", 4.6);
     packet.addProperty("cogReference", 2);
 
     listener.handle(twin, packet, context);

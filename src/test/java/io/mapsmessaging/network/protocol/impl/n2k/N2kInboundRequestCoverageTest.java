@@ -11,6 +11,7 @@ package io.mapsmessaging.network.protocol.impl.n2k;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.canbus.j1939.CanIdBuilder;
 import io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
+import io.mapsmessaging.canbus.j1939.n2k.model.N2kTransportType;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.n2k.msg.AbstractAisFieldValueSource;
@@ -126,6 +127,7 @@ class N2kInboundRequestCoverageTest {
     CanbusEndPoint endPoint = mock(CanbusEndPoint.class);
     CanbusFormatter formatter = mock(CanbusFormatter.class, RETURNS_DEEP_STUBS);
     FramePacker framePacker = mock(FramePacker.class);
+    when(framePacker.getTransportType(anyInt(), anyInt())).thenReturn(N2kTransportType.FAST_PACKET);
 
     setField(protocol, N2kProtocol.class, "formatter", formatter);
     setField(protocol, N2kProtocol.class, "framePacker", framePacker);

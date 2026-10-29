@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,8 +32,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kEnvironmentalParametersJsonListenerTest {
 
-  @Test
-  void environmentalValuesAreStoredAsTwinAttributes() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void environmentalValuesAreStoredAsTwinAttributes(boolean canonical) {
     N2kEnvironmentalParametersJsonListener listener = new N2kEnvironmentalParametersJsonListener();
     DroneTwin twin = new DroneTwin("n2k-environment");
     TwinUpdateContext context = new TwinUpdateContext();
@@ -41,8 +44,8 @@ class N2kEnvironmentalParametersJsonListenerTest {
     packet.addProperty("temperature", 293.15);
     packet.addProperty("humidity", 68.5);
     packet.addProperty("atmosphericPressure", 101325.0);
-    packet.addProperty("temperatureInstance", 3);
-    packet.addProperty("humidityInstance", 4);
+    packet.addProperty(canonical ? "temperatureSource" : "temperatureInstance", 3);
+    packet.addProperty(canonical ? "humiditySource" : "humidityInstance", 4);
 
     listener.handle(twin, packet, context);
 

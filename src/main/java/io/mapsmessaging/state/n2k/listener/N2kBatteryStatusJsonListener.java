@@ -37,10 +37,10 @@ public class N2kBatteryStatusJsonListener extends AbstractN2kJsonListener {
 
   @Override
   public void handle(DroneTwin droneTwin, JsonObject packet, TwinUpdateContext context) {
-    Double batteryInstance = getDouble(packet, "batteryInstance");
-    Double batteryVoltage = getDouble(packet, "batteryVoltage");
-    Double batteryCurrent = getDouble(packet, "batteryCurrent");
-    Double batteryCaseTemperatureKelvin = getDouble(packet, "batteryCaseTemperature");
+    Double batteryInstance = getDouble(packet, "instance", "batteryInstance");
+    Double batteryVoltage = getDouble(packet, "voltage", "batteryVoltage");
+    Double batteryCurrent = getDouble(packet, "current", "batteryCurrent");
+    Double batteryCaseTemperatureKelvin = getDouble(packet, "temperature", "batteryCaseTemperature");
 
     if (batteryVoltage == null && batteryCurrent == null && batteryCaseTemperatureKelvin == null
         && batteryInstance == null) {

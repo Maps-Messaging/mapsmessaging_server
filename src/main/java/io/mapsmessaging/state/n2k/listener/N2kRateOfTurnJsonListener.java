@@ -36,7 +36,7 @@ public class N2kRateOfTurnJsonListener extends AbstractN2kJsonListener {
 
   @Override
   public void handle(DroneTwin droneTwin, JsonObject packet, TwinUpdateContext context) {
-    Double rateOfTurnRadiansPerSecond = getDouble(packet, "rateOfTurn");
+    Double rateOfTurnRadiansPerSecond = getDouble(packet, "rate", "rateOfTurn");
     if (rateOfTurnRadiansPerSecond == null) {
       return;
     }

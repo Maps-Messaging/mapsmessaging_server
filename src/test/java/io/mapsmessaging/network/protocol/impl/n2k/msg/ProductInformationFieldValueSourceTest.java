@@ -30,13 +30,13 @@ class ProductInformationFieldValueSourceTest {
     ProductInformationFieldValueSource source =
         new ProductInformationFieldValueSource(null, " ", "v1", null);
 
-    assertEquals(2.1, source.getDouble("nmea2000DatabaseVersion"), 0.0);
-    assertEquals(1L, source.getLong("nmeaManufacturersProductCode"));
-    assertEquals("Maps Messaging Server", source.getString("manufacturersModelId"));
-    assertEquals("unknown", source.getString("manufacturersSoftwareVersionCode"));
-    assertEquals("v1", source.getString("manufacturersModelVersion"));
-    assertEquals("unknown", source.getString("manufacturersModelSerialCode"));
-    assertEquals(0L, source.getLong("nmea2000CertificationLevel"));
+    assertEquals(2.1, source.getDouble("nmea2000Version"), 0.0);
+    assertEquals(1L, source.getLong("productCode"));
+    assertEquals("Maps Messaging Server", source.getString("modelId"));
+    assertEquals("unknown", source.getString("softwareVersionCode"));
+    assertEquals("v1", source.getString("modelVersion"));
+    assertEquals("unknown", source.getString("modelSerialCode"));
+    assertEquals(0L, source.getLong("certificationLevel"));
     assertEquals(1L, source.getLong("loadEquivalency"));
   }
 
@@ -46,13 +46,13 @@ class ProductInformationFieldValueSourceTest {
         new ProductInformationFieldValueSource(
             3.0, 42L, "model", "software", "version", "serial", 2L, 3L);
 
-    assertEquals(3.0, source.getDouble("nmea2000DatabaseVersion"), 0.0);
-    assertEquals(42L, source.getLong("nmeaManufacturersProductCode"));
-    assertEquals("model", source.getString("manufacturersModelId"));
-    assertEquals("software", source.getString("manufacturersSoftwareVersionCode"));
-    assertEquals("version", source.getString("manufacturersModelVersion"));
-    assertEquals("serial", source.getString("manufacturersModelSerialCode"));
-    assertEquals(2L, source.getLong("nmea2000CertificationLevel"));
+    assertEquals(3.0, source.getDouble("nmea2000Version"), 0.0);
+    assertEquals(42L, source.getLong("productCode"));
+    assertEquals("model", source.getString("modelId"));
+    assertEquals("software", source.getString("softwareVersionCode"));
+    assertEquals("version", source.getString("modelVersion"));
+    assertEquals("serial", source.getString("modelSerialCode"));
+    assertEquals(2L, source.getLong("certificationLevel"));
     assertEquals(3L, source.getLong("loadEquivalency"));
   }
 }

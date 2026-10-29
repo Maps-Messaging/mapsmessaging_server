@@ -36,11 +36,11 @@ public class N2kInverterStatusJsonListener extends AbstractN2kJsonListener {
 
   @Override
   public void handle(DroneTwin droneTwin, JsonObject packet, TwinUpdateContext context) {
-    Double inverterInstance = getDouble(packet, "inverterInstance");
+    Double inverterInstance = getDouble(packet, "instance", "inverterInstance");
     Double acInstance = getDouble(packet, "acInstance");
     Double dcInstance = getDouble(packet, "dcInstance");
     Double operatingState = getDouble(packet, "operatingState");
-    Double inverterEnableDisable = getDouble(packet, "inverterEnabledisable");
+    Double inverterEnableDisable = getDouble(packet, "inverterEnable", "inverterEnabledisable");
 
     if (inverterInstance == null && acInstance == null && dcInstance == null
         && operatingState == null && inverterEnableDisable == null) {

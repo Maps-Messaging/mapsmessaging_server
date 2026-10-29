@@ -40,8 +40,8 @@ public class N2kGnssDopsJsonListener extends AbstractN2kJsonListener {
     Double horizontalDilution = getDouble(packet, "hdop");
     Double verticalDilution = getDouble(packet, "vdop");
     Double timeDilution = getDouble(packet, "tdop");
-    Double setMode = getDouble(packet, "setMode");
-    Double operationMode = getDouble(packet, "opMode");
+    Double setMode = getDouble(packet, "desiredMode", "setMode");
+    Double operationMode = getDouble(packet, "actualMode", "opMode");
 
     if (horizontalDilution == null && verticalDilution == null && timeDilution == null
         && setMode == null && operationMode == null) {

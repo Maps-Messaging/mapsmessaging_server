@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,19 +32,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kInverterStatusJsonListenerTest {
 
-  @Test
-  void inverterStatusUpdatesPowerAttributes() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void inverterStatusUpdatesPowerAttributes(boolean canonical) {
     N2kInverterStatusJsonListener listener = new N2kInverterStatusJsonListener();
     DroneTwin twin = new DroneTwin("n2k-inverter");
     TwinUpdateContext context = new TwinUpdateContext();
     context.setReceivedTime(Instant.parse("2026-09-19T20:16:00Z"));
 
     JsonObject packet = new JsonObject();
-    packet.addProperty("inverterInstance", 1);
+    packet.addProperty(canonical ? "instance" : "inverterInstance", 1);
     packet.addProperty("acInstance", 2);
     packet.addProperty("dcInstance", 3);
     packet.addProperty("operatingState", 4);
-    packet.addProperty("inverterEnabledisable", 1);
+    packet.addProperty(canonical ? "inverterEnable" : "inverterEnabledisable", 1);
 
     listener.handle(twin, packet, context);
 

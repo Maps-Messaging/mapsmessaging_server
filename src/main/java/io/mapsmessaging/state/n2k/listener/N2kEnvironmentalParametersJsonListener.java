@@ -39,8 +39,8 @@ public class N2kEnvironmentalParametersJsonListener extends AbstractN2kJsonListe
     Double temperatureKelvin = getDouble(packet, "temperature");
     Double humidityPercent = getDouble(packet, "humidity");
     Double atmosphericPressurePascals = getDouble(packet, "atmosphericPressure");
-    Double temperatureInstance = getDouble(packet, "temperatureInstance");
-    Double humidityInstance = getDouble(packet, "humidityInstance");
+    Double temperatureInstance = getDouble(packet, "temperatureSource", "temperatureInstance");
+    Double humidityInstance = getDouble(packet, "humiditySource", "humidityInstance");
 
     if (temperatureKelvin == null && humidityPercent == null && atmosphericPressurePascals == null
         && temperatureInstance == null && humidityInstance == null) {

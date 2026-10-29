@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,17 +32,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kHeadingJsonListenerTest {
 
-  @Test
-  void headingPacketUpdatesHeadingMetadataAndTimestamp() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void headingPacketUpdatesHeadingMetadataAndTimestamp(boolean canonical) {
     N2kHeadingJsonListener listener = new N2kHeadingJsonListener();
     DroneTwin twin = new DroneTwin("heading");
     TwinUpdateContext context = context();
 
     JsonObject packet = new JsonObject();
-    packet.addProperty("headingSensorReading", Math.toRadians(-10.0));
+    packet.addProperty(canonical ? "heading" : "headingSensorReading", Math.toRadians(-10.0));
     packet.addProperty("variation", Math.toRadians(2.0));
     packet.addProperty("deviation", Math.toRadians(-1.0));
-    packet.addProperty("headingSensorReference", 1);
+    packet.addProperty(canonical ? "reference" : "headingSensorReference", 1);
 
     listener.handle(twin, packet, context);
 
