@@ -96,7 +96,6 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
 
   public MQTTProtocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
-    System.err.println("MQTT 3.1.1 Protocol on " + endPoint.getName());
     logger = LoggerFactory.getLogger("MQTT 3.1.1 Protocol on " + endPoint.getName());
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
