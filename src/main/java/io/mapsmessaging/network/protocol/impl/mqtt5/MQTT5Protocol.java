@@ -222,6 +222,8 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
     connect.add(new ReceiveMaximum(serverReceiveMaximum));
     if (username != null) {
       connect.setUsername(username);
+    }
+    if (password != null) {
       connect.setPassword(password.trim().toCharArray());
     }
     if(willMsg != null){

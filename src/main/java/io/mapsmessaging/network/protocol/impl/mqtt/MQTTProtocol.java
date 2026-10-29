@@ -152,6 +152,9 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
   }
 
   public void connect(@NonNull @NotNull String sessionId, String username, String password, Publish willMsg) throws IOException {
+    if (password != null && username == null) {
+      throw new IOException("MQTT 3.1.1 password requires a username [MQTT-3.1.2-22]");
+    }
     Connect connect = new Connect();
     connect.setSessionId(sessionId);
     connectionSessionId = sessionId;
@@ -159,6 +162,8 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
     connect.setKeepAlive((int) keepAlive);
     if (username != null) {
       connect.setUsername(username);
+    }
+    if (password != null) {
       connect.setPassword(password.trim().toCharArray());
     }
     if(willMsg != null) {
