@@ -611,7 +611,7 @@ class MQTT5ProtocolLifecycleCoverageTest {
   private static Stream<Arguments> credentialCases() {
     return Stream.of(
         Arguments.of(null, null, false, false, null),
-        Arguments.of(null, "secret", false, false, null),
+        Arguments.of(null, "secret", false, true, "secret"),
         Arguments.of("", " pass ", false, true, "pass"),
         Arguments.of("user", " pass ", true, true, "pass"),
         Arguments.of(" user ", "x", true, true, "x"),
