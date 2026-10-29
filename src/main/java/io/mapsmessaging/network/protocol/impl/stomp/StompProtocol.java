@@ -38,12 +38,8 @@ import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
+import io.mapsmessaging.network.protocol.impl.stomp.frames.*;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Error;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.Frame;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.FrameFactory;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.HeartBeat;
-import io.mapsmessaging.network.protocol.impl.stomp.frames.Subscribe;
 import io.mapsmessaging.network.protocol.impl.stomp.state.SessionState;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
@@ -80,7 +76,9 @@ public class StompProtocol extends Protocol {
 
   private Frame activeFrame;
   private Future<?> heartbeatFuture;
+  @Getter
   private volatile long negotiatedOutgoingHeartbeat;
+  @Getter
   private volatile long negotiatedIncomingHeartbeat;
 
   @Getter
@@ -163,14 +161,7 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeRemote(
-      @NonNull @NotNull String resource,
-      @NonNull @NotNull String mappedResource,
-      @NonNull @NotNull QualityOfService qos,
-      @Nullable ParserExecutor executor,
-      @Nullable InterServerTransformation transformer,
-      StatisticsConfigDTO statistics,
-      Map<String, Object> linkProperties) throws IOException {
+  public void subscribeRemote(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, @Nullable ParserExecutor executor, @Nullable InterServerTransformation transformer, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
     super.subscribeRemote(resource, mappedResource, qos, executor, transformer, statistics, linkProperties);
     sessionState.addMapping(resource, mappedResource);
     Subscribe subscribe = new Subscribe();
@@ -181,15 +172,7 @@ public class StompProtocol extends Protocol {
   }
 
   @Override
-  public void subscribeLocal(
-      @NonNull @NotNull String resource,
-      @NonNull @NotNull String mappedResource,
-      @NonNull @NotNull QualityOfService qos,
-      String selector,
-      @Nullable InterServerTransformation transformer,
-      @Nullable NamespaceFilters namespaceFilters,
-      StatisticsConfigDTO statistics,
-      Map<String, Object> linkProperties) throws IOException {
+  public void subscribeLocal(@NonNull @NotNull String resource, @NonNull @NotNull String mappedResource, @NonNull @NotNull QualityOfService qos, String selector, @Nullable InterServerTransformation transformer, @Nullable NamespaceFilters namespaceFilters, StatisticsConfigDTO statistics, Map<String, Object> linkProperties) throws IOException {
     super.subscribeLocal(resource, mappedResource, qos, selector, transformer, namespaceFilters, statistics, linkProperties);
     sessionState.addMapping(resource, mappedResource);
     SubscriptionContextBuilder scb = createSubscriptionContextBuilder(resource, selector, qos, 10240);
@@ -218,23 +201,12 @@ public class StompProtocol extends Protocol {
   }
 
   public HeartBeat configureHeartBeat(HeartBeat clientHeartBeat) {
-    HeartBeat serverHeartBeat =
-        new HeartBeat(heartbeatCanSendMillis, heartbeatWantsReceiveMillis);
-    negotiatedOutgoingHeartbeat =
-        HeartBeat.negotiate(serverHeartBeat.getCanSend(), clientHeartBeat.getWantsReceive());
-    negotiatedIncomingHeartbeat =
-        HeartBeat.negotiate(clientHeartBeat.getCanSend(), serverHeartBeat.getWantsReceive());
+    HeartBeat serverHeartBeat = new HeartBeat(heartbeatCanSendMillis, heartbeatWantsReceiveMillis);
+    negotiatedOutgoingHeartbeat = HeartBeat.negotiate(serverHeartBeat.getCanSend(), clientHeartBeat.getWantsReceive());
+    negotiatedIncomingHeartbeat = HeartBeat.negotiate(clientHeartBeat.getCanSend(), serverHeartBeat.getWantsReceive());
     keepAlive = negotiatedOutgoingHeartbeat;
     startHeartbeatTask();
     return serverHeartBeat;
-  }
-
-  public long getNegotiatedOutgoingHeartbeat() {
-    return negotiatedOutgoingHeartbeat;
-  }
-
-  public long getNegotiatedIncomingHeartbeat() {
-    return negotiatedIncomingHeartbeat;
   }
 
   @Override
@@ -256,11 +228,7 @@ public class StompProtocol extends Protocol {
       return;
     }
     String topicName = parsedMessage.getDestinationName();
-    sessionState.sendMessage(
-        topicName,
-        messageEvent.getSubscription().getContext(),
-        parsedMessage.getMessage(),
-        messageEvent.getCompletionTask());
+    sessionState.sendMessage(topicName, messageEvent.getSubscription().getContext(), parsedMessage.getMessage(), messageEvent.getCompletionTask());
   }
 
   public void registerRead() throws IOException {
@@ -289,8 +257,7 @@ public class StompProtocol extends Protocol {
 
   @Override
   public void sendKeepAlive() {
-    if (negotiatedOutgoingHeartbeat > 0
-        && heartbeatPending.compareAndSet(false, true)) {
+    if (negotiatedOutgoingHeartbeat > 0 && heartbeatPending.compareAndSet(false, true)) {
       selectorTask.push(keepAliveFrame);
     }
   }
@@ -360,21 +327,16 @@ public class StompProtocol extends Protocol {
       return;
     }
     long checkInterval = Math.max(100, smallest / 2);
-    heartbeatFuture =
-        SimpleTaskScheduler.getInstance()
-            .scheduleAtFixedRate(this::checkHeartbeats, checkInterval, checkInterval, TimeUnit.MILLISECONDS);
+    heartbeatFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::checkHeartbeats, checkInterval, checkInterval, TimeUnit.MILLISECONDS);
   }
 
   private void checkHeartbeats() {
     long now = System.currentTimeMillis();
-    if (negotiatedIncomingHeartbeat > 0
-        && now - endPoint.getLastRead()
-            > negotiatedIncomingHeartbeat + heartbeatToleranceMillis) {
+    if (negotiatedIncomingHeartbeat > 0 && now - endPoint.getLastRead() > negotiatedIncomingHeartbeat + heartbeatToleranceMillis) {
       close();
       return;
     }
-    if (negotiatedOutgoingHeartbeat > 0
-        && now - endPoint.getLastWrite() >= negotiatedOutgoingHeartbeat) {
+    if (negotiatedOutgoingHeartbeat > 0 && now - endPoint.getLastWrite() >= negotiatedOutgoingHeartbeat) {
       sendKeepAlive();
     }
   }
