@@ -20,6 +20,8 @@
 package io.mapsmessaging.state;
 
 
+import io.mapsmessaging.config.NetworkConnectionManagerConfig;
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.dto.rest.system.Status;
@@ -33,6 +35,7 @@ import io.mapsmessaging.state.adapter.StateMessageAdapterFactory;
 import io.mapsmessaging.state.auditor.AuditorFactory;
 import io.mapsmessaging.state.auditor.StateAuditContext;
 import io.mapsmessaging.state.config.DroneInfoRegistry;
+import io.mapsmessaging.state.config.TakConnectionConfigConverter;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigLoader;
@@ -116,6 +119,12 @@ public class StateManagerAgent implements Agent {
     } else {
       aisManager = null;
     }
+    List<EndPointConnectionServerConfig> migrationList = TakConnectionConfigConverter.convert(config.getTak());
+    if(!migrationList.isEmpty()) {
+      NetworkConnectionManagerConfig networkConnectionManagerConfig = ConfigurationManager.getInstance().getConfiguration(NetworkConnectionManagerConfig.class);
+      networkConnectionManagerConfig.getEndPointServerConfigList().addAll(migrationList);
+    }
+
   }
 
   @Override

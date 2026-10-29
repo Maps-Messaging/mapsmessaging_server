@@ -43,8 +43,9 @@ public final class TakConnectionConfigConverter {
     List<EndPointConnectionServerConfig> entries = new ArrayList<>();
     String hostname = takConfig.getHostname();
     if (hostname != null && !hostname.isBlank()) {
-      entries.add(createEntry("state-tak-primary", hostname, takConfig.getPort(), takConfig.isTlsEnabled(), takConfig.getTlsContext(),
-          takConfig.getKeyStore(), takConfig.getTrustStore(), takConfig.getTopic()));
+      entries.add(
+        createEntry("state-tak-primary", hostname, takConfig.getPort(), takConfig.isTlsEnabled(), takConfig.getTlsContext(), takConfig.getKeyStore(), takConfig.getTrustStore(), takConfig.getTopic())
+      );
     }
     if (takConfig.getAdditionalServers() != null) {
       int index = 1;
@@ -52,15 +53,15 @@ public final class TakConnectionConfigConverter {
         if (server == null) {
           throw new IllegalArgumentException("Additional TAK server configuration is required");
         }
-        entries.add(createEntry("state-tak-additional-" + index++, server.getHostname(), server.getPort(), server.isTlsEnabled(), server.getTlsContext(),
-            server.getKeyStore(), server.getTrustStore(), takConfig.getTopic()));
+        entries.add(
+          createEntry("state-tak-additional-" + index++, server.getHostname(), server.getPort(), server.isTlsEnabled(), server.getTlsContext(), server.getKeyStore(), server.getTrustStore(), takConfig.getTopic())
+        );
       }
     }
     return entries;
   }
 
-  private static EndPointConnectionServerConfig createEntry(String name, String hostname, int port, boolean tlsEnabled, String tlsContext,
-      KeyStoreConfigDTO keyStore, KeyStoreConfigDTO trustStore, String topic) {
+  private static EndPointConnectionServerConfig createEntry(String name, String hostname, int port, boolean tlsEnabled, String tlsContext, KeyStoreConfigDTO keyStore, KeyStoreConfigDTO trustStore, String topic) {
     if (hostname == null || hostname.isBlank()) {
       throw new IllegalArgumentException("TAK server hostname is required");
     }
