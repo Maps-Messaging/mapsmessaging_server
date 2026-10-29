@@ -8,25 +8,20 @@
 
 package io.mapsmessaging.network.protocol.impl.cot;
 
-import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.SubSystemManager;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.api.message.Message;
+import java.util.concurrent.CompletableFuture;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.state.StateManagerAgent;
-import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
-import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,22 +34,17 @@ class CotProtocolStreamCoverageTest {
   @MethodSource("streamCases")
   void publishesCompleteDocumentsAndRetainsOnlyRemainder(
       List<String> chunks, List<String> expectedDocuments, String expectedRemainder) throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      for (String chunk : chunks) {
-        fixture.append(chunk);
-      }
-
-      ArgumentCaptor<byte[]> archived = ArgumentCaptor.forClass(byte[].class);
-      verify(fixture.adapter, times(expectedDocuments.size())).publishLocal(archived.capture());
-
-      ArgumentCaptor<byte[]> routed = ArgumentCaptor.forClass(byte[].class);
-      verify(fixture.mapper, times(expectedDocuments.size()))
-          .routeToTwinManager(eq(fixture.twinManager), routed.capture(), eq("cot-ingest"));
-
-      assertEquals(expectedDocuments, asStrings(archived.getAllValues()));
-      assertEquals(expectedDocuments, asStrings(routed.getAllValues()));
-      verifyNoInteractions(fixture.session);
+    Fixture fixture = new Fixture();
+    for (String chunk : chunks) {
+      fixture.append(chunk);
     }
+
+    ArgumentCaptor<Message> published = ArgumentCaptor.forClass(Message.class);
+    verify(fixture.destination, times(expectedDocuments.size())).storeMessage(published.capture());
+    assertEquals(expectedDocuments, published.getAllValues().stream()
+        .map(message -> new String(message.getOpaqueData(), StandardCharsets.UTF_8)).toList());
+    verify(fixture.session, times(expectedDocuments.size()))
+        .findDestination("/configured/cot", DestinationType.TOPIC);
   }
 
   private static Stream<Arguments> streamCases() {
@@ -110,20 +100,8 @@ class CotProtocolStreamCoverageTest {
     );
   }
 
-  private static List<String> asStrings(List<byte[]> values) {
-    return values.stream().map(value -> new String(value, StandardCharsets.UTF_8)).toList();
-  }
-
   private static byte[] bytes(String value) {
     return value.getBytes(StandardCharsets.UTF_8);
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T> T invoke(Object target, String name, Class<?>[] parameterTypes, Object... args)
-      throws Exception {
-    Method method = CotProtocol.class.getDeclaredMethod(name, parameterTypes);
-    method.setAccessible(true);
-    return (T) method.invoke(target, args);
   }
 
   private static void setField(Object target, String name, Object value) throws Exception {
@@ -132,32 +110,16 @@ class CotProtocolStreamCoverageTest {
     field.set(target, value);
   }
 
-  private static final class Fixture implements AutoCloseable {
+  private static final class Fixture {
     private final Session session = mock(Session.class);
-    private final CotIngestAdapter adapter = mock(CotIngestAdapter.class);
-    private final TwinManager twinManager = mock(TwinManager.class);
-    private final CotToTwinMapper mapper = mock(CotToTwinMapper.class);
+    private final Destination destination = mock(Destination.class);
     private final CotProtocol protocol = mock(CotProtocol.class, CALLS_REAL_METHODS);
-    private final MockedStatic<MessageDaemon> daemonStatic;
 
     private Fixture() throws Exception {
-      MessageDaemon daemon = mock(MessageDaemon.class);
-      SubSystemManager subSystemManager = mock(SubSystemManager.class);
-      StateManagerAgent stateManager = mock(StateManagerAgent.class);
-      when(daemon.getSubSystemManager()).thenReturn(subSystemManager);
-      when(subSystemManager.getStateManager()).thenReturn(stateManager);
-      when(stateManager.getStateMessageAdapter(CotIngestAdapter.class))
-          .thenReturn(Optional.of(adapter));
-      when(stateManager.getTwinManager()).thenReturn(twinManager);
-      when(adapter.publishLocal(any(byte[].class))).thenReturn(true);
-      when(mapper.routeToTwinManager(
-          eq(twinManager), any(byte[].class), eq("cot-ingest"))).thenReturn(true);
-
-      daemonStatic = mockStatic(MessageDaemon.class);
-      daemonStatic.when(MessageDaemon::getInstance).thenReturn(daemon);
-
+      when(session.findDestination("/configured/cot", DestinationType.TOPIC))
+          .thenReturn(CompletableFuture.completedFuture(destination));
       setField(protocol, "streamCodec", new CotXmlStreamCodec(1_048_576));
-      setField(protocol, "cotToTwinMapper", mapper);
+      setField(protocol, "inboundDestinationName", "/configured/cot");
       setField(protocol, "session", session);
     }
 
@@ -166,12 +128,8 @@ class CotProtocolStreamCoverageTest {
       Packet packet = new Packet(data.length, false);
       packet.put(data);
       packet.flip();
-      invoke(protocol, "appendAndProcess", new Class<?>[]{Packet.class}, packet);
+      protocol.processPacket(packet);
     }
 
-    @Override
-    public void close() {
-      daemonStatic.close();
-    }
   }
 }

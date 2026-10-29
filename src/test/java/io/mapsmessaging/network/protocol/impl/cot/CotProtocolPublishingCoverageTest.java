@@ -9,34 +9,29 @@
 package io.mapsmessaging.network.protocol.impl.cot;
 
 import io.mapsmessaging.MessageDaemon;
-import io.mapsmessaging.SubSystemManager;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.CotProtocolConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.EndPointStatus;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.impl.SelectorTask;
-import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.state.StateManagerAgent;
-import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
-import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
+import io.mapsmessaging.network.io.Selectable;
+import io.mapsmessaging.utilities.admin.JMXManager;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.channels.SelectionKey;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
-import org.slf4j.Logger;
-
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -48,75 +43,51 @@ class CotProtocolPublishingCoverageTest {
   void oversizedIncompleteDocumentIsRejectedBeforePublishing() throws Exception {
     try (Fixture fixture = new Fixture()) {
       byte[] data = bytes("<event>" + "x".repeat(1_048_576));
-      Packet packet = new Packet(data.length, false);
-      packet.put(data);
-      packet.flip();
 
-      InvocationTargetException failure = assertThrows(InvocationTargetException.class,
-          () -> invoke(fixture.protocol, "appendAndProcess", new Class<?>[]{Packet.class}, packet));
+      assertThrows(IOException.class, () -> fixture.receive(data));
 
-      assertInstanceOf(IOException.class, failure.getCause());
-      verifyNoInteractions(fixture.adapter);
-      verifyNoInteractions(fixture.mapper);
+      verify(fixture.session, never()).findDestination(anyString(), any(DestinationType.class));
+      verifyNoInteractions(fixture.destination);
     }
   }
 
   @Test
-  void adapterSuccessSkipsProtocolSessionArchive() throws Exception {
-    try (Fixture fixture = new Fixture()) {
+  void incoming_event_uses_configured_namespace_without_accessing_state_subsystems() throws Exception {
+    try (Fixture fixture = new Fixture();
+        MockedStatic<MessageDaemon> daemon = mockStatic(MessageDaemon.class)) {
+      MessageDaemon runningDaemon = mock(MessageDaemon.class);
+      daemon.when(MessageDaemon::getInstance).thenReturn(runningDaemon);
+      fixture.protocol.subscribeRemote("remote", "/configured/cot", QualityOfService.AT_MOST_ONCE,
+          null, null, null, null);
+      when(fixture.session.findDestination("/configured/cot", DestinationType.TOPIC))
+          .thenReturn(CompletableFuture.completedFuture(fixture.destination));
       byte[] xml = bytes("<event uid='a'></event>");
 
-      invoke(fixture.protocol, "publish", new Class<?>[]{byte[].class}, xml);
+      fixture.receive(xml);
 
-      verify(fixture.adapter).publishLocal(same(xml));
-      verify(fixture.session, never()).findDestination(anyString(), any(DestinationType.class));
-      verify(fixture.mapper).routeToTwinManager(fixture.twinManager, xml, "cot-ingest");
+      ArgumentCaptor<Message> message = ArgumentCaptor.forClass(Message.class);
+      verify(fixture.destination).storeMessage(message.capture());
+      assertArrayEquals(xml, message.getValue().getOpaqueData());
+      verify(fixture.session).findDestination("/configured/cot", DestinationType.TOPIC);
+      verify(fixture.session, never()).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
+      verify(runningDaemon, never()).getSubSystemManager();
     }
   }
 
   @Test
-  void adapterFalseFallsBackToProtocolSessionArchive() throws Exception {
+  void unbound_listener_publishes_original_xml_with_existing_message_attributes() throws Exception {
     try (Fixture fixture = new Fixture()) {
-      when(fixture.adapter.publishLocal(any(byte[].class))).thenReturn(false);
-      Destination destination = fixture.archiveDestination();
-      byte[] xml = bytes("<event uid='fallback'></event>");
+      byte[] xml = bytes("<event uid='listener'><detail><remarks>café</remarks></detail></event>");
 
-      invoke(fixture.protocol, "publish", new Class<?>[]{byte[].class}, xml);
+      fixture.receive(xml);
 
       ArgumentCaptor<Message> message = ArgumentCaptor.forClass(Message.class);
-      verify(destination).storeMessage(message.capture());
+      verify(fixture.destination).storeMessage(message.capture());
       assertArrayEquals(xml, message.getValue().getOpaqueData());
       assertEquals("text/xml", message.getValue().getContentType());
       assertEquals(QualityOfService.AT_MOST_ONCE, message.getValue().getQualityOfService());
       assertFalse(message.getValue().isRetain());
-    }
-  }
-
-  @Test
-  void missingAdapterFallsBackToProtocolSessionArchive() throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      when(fixture.stateManager.getStateMessageAdapter(CotIngestAdapter.class))
-          .thenReturn(Optional.empty());
-      Destination destination = fixture.archiveDestination();
-
-      invoke(fixture.protocol, "publish",
-          new Class<?>[]{byte[].class}, bytes("<event uid='missing-adapter'></event>"));
-
-      verify(destination).storeMessage(any(Message.class));
-    }
-  }
-
-  @Test
-  void adapterRuntimeFailureFallsBackToProtocolSessionArchive() throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      when(fixture.adapter.publishLocal(any(byte[].class)))
-          .thenThrow(new IllegalStateException("adapter unavailable"));
-      Destination destination = fixture.archiveDestination();
-
-      invoke(fixture.protocol, "publish",
-          new Class<?>[]{byte[].class}, bytes("<event uid='adapter-failure'></event>"));
-
-      verify(destination).storeMessage(any(Message.class));
+      verify(fixture.session).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
     }
   }
 
@@ -125,14 +96,11 @@ class CotProtocolPublishingCoverageTest {
     try (Fixture fixture = new Fixture()) {
       CompletableFuture<Destination> failed = new CompletableFuture<>();
       failed.completeExceptionally(new IOException("lookup failed"));
-      when(fixture.session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
-          .thenReturn(failed);
+      when(fixture.session.findDestination("/tak/cot/inbound", DestinationType.TOPIC)).thenReturn(failed);
 
-      assertDoesNotThrow(() -> invoke(
-          fixture.protocol,
-          "publishArchiveWithProtocolSession",
-          new Class<?>[]{byte[].class},
-          bytes("<event></event>")));
+      assertDoesNotThrow(() -> fixture.receive(bytes("<event></event>")));
+
+      verifyNoInteractions(fixture.destination);
     }
   }
 
@@ -142,72 +110,29 @@ class CotProtocolPublishingCoverageTest {
       when(fixture.session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
           .thenReturn(CompletableFuture.completedFuture(null));
 
-      assertDoesNotThrow(() -> invoke(
-          fixture.protocol,
-          "publishArchiveWithProtocolSession",
-          new Class<?>[]{byte[].class},
-          bytes("<event></event>")));
+      assertDoesNotThrow(() -> fixture.receive(bytes("<event></event>")));
+
+      verifyNoInteractions(fixture.destination);
     }
   }
 
   @Test
   void archiveStoreFailureIsContained() throws Exception {
     try (Fixture fixture = new Fixture()) {
-      Destination destination = fixture.archiveDestination();
-      doThrow(new IOException("store failed")).when(destination).storeMessage(any(Message.class));
+      doThrow(new IOException("store failed")).when(fixture.destination).storeMessage(any(Message.class));
 
-      assertDoesNotThrow(() -> invoke(
-          fixture.protocol,
-          "publishArchiveWithProtocolSession",
-          new Class<?>[]{byte[].class},
-          bytes("<event></event>")));
+      assertDoesNotThrow(() -> fixture.receive(bytes("<event></event>")));
 
-      verify(destination).storeMessage(any(Message.class));
-    }
-  }
-
-  @Test
-  void missingTwinManagerSkipsMapper() throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      when(fixture.stateManager.getTwinManager()).thenReturn(null);
-
-      invoke(fixture.protocol, "routeToTwinManager",
-          new Class<?>[]{byte[].class}, bytes("<event uid='a'></event>"));
-
-      verifyNoInteractions(fixture.mapper);
-    }
-  }
-
-  @Test
-  void mapperRejectionIsContained() throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      when(fixture.mapper.routeToTwinManager(
-          eq(fixture.twinManager), any(byte[].class), eq("cot-ingest"))).thenReturn(false);
-
-      invoke(fixture.protocol, "routeToTwinManager",
-          new Class<?>[]{byte[].class}, bytes("<event></event>"));
-
-      verify(fixture.mapper).routeToTwinManager(
-          eq(fixture.twinManager), any(byte[].class), eq("cot-ingest"));
-    }
-  }
-
-  @Test
-  void twinManagerResolutionFailureReturnsNull() throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      when(fixture.daemon.getSubSystemManager()).thenThrow(new IllegalStateException("not ready"));
-
-      TwinManager result = invoke(
-          fixture.protocol, "resolveTwinManager", new Class<?>[0]);
-
-      assertNull(result);
+      verify(fixture.destination).storeMessage(any(Message.class));
     }
   }
 
   @Test
   void nullSessionHasNoSubject() throws Exception {
     try (Fixture fixture = new Fixture()) {
-      setField(fixture.protocol, CotProtocol.class, "session", null);
+      Field sessionField = CotProtocol.class.getDeclaredField("session");
+      sessionField.setAccessible(true);
+      sessionField.set(fixture.protocol, null);
 
       assertNull(fixture.protocol.getSubject());
     }
@@ -215,17 +140,18 @@ class CotProtocolPublishingCoverageTest {
 
   @Test
   void close_stops_the_shared_selector_and_internal_session_once() throws Exception {
-    try (Fixture fixture = new Fixture();
-        MockedStatic<SessionManager> managers = mockStatic(SessionManager.class)) {
-      SessionManager manager = mock(SessionManager.class);
-      managers.when(SessionManager::getInstance).thenReturn(manager);
+    try (Fixture fixture = new Fixture()) {
+      ArgumentCaptor<Selectable> selector = ArgumentCaptor.forClass(Selectable.class);
+      verify(fixture.endpoint).register(eq(SelectionKey.OP_READ), selector.capture());
 
       fixture.protocol.close();
       fixture.protocol.close();
+      selector.getValue().selected(null, null, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 
-      verify(fixture.selectorTask).close();
-      verify(manager).close(fixture.session, false);
+      verify(fixture.manager).close(fixture.session, false);
       verify(fixture.endpoint).close();
+      verify(fixture.endpoint, never()).readPacket(any());
+      verify(fixture.endpoint, never()).sendPacket(any());
     }
   }
 
@@ -233,69 +159,46 @@ class CotProtocolPublishingCoverageTest {
     return value.getBytes(StandardCharsets.UTF_8);
   }
 
-  @SuppressWarnings("unchecked")
-  private static <T> T invoke(Object target, String name, Class<?>[] parameterTypes, Object... args)
-      throws Exception {
-    Method method = CotProtocol.class.getDeclaredMethod(name, parameterTypes);
-    method.setAccessible(true);
-    return (T) method.invoke(target, args);
-  }
-
-  private static void setField(Object target, Class<?> owner, String name, Object value)
-      throws Exception {
-    Field field = owner.getDeclaredField(name);
-    field.setAccessible(true);
-    field.set(target, value);
-  }
-
   private static final class Fixture implements AutoCloseable {
-    private final MessageDaemon daemon = mock(MessageDaemon.class);
-    private final StateManagerAgent stateManager = mock(StateManagerAgent.class);
-    private final CotIngestAdapter adapter = mock(CotIngestAdapter.class);
-    private final TwinManager twinManager = mock(TwinManager.class);
-    private final CotToTwinMapper mapper = mock(CotToTwinMapper.class);
+    private final boolean originalJmx = JMXManager.isEnableJMX();
+    private final SessionManager manager = mock(SessionManager.class);
     private final Session session = mock(Session.class);
     private final EndPoint endpoint = mock(EndPoint.class);
-    private final SelectorTask selectorTask = mock(SelectorTask.class);
-    private final EndPointStatus endpointStatus = mock(EndPointStatus.class);
-    private final Logger logger = mock(Logger.class);
-    private final CotProtocol protocol = mock(CotProtocol.class, CALLS_REAL_METHODS);
-    private final MockedStatic<MessageDaemon> daemonStatic;
+    private final Destination destination = mock(Destination.class);
+    private final MockedStatic<SessionManager> managerStatic;
+    private final CotProtocol protocol;
 
     private Fixture() throws Exception {
-      SubSystemManager subSystemManager = mock(SubSystemManager.class);
-      when(daemon.getSubSystemManager()).thenReturn(subSystemManager);
-      when(subSystemManager.getStateManager()).thenReturn(stateManager);
-      when(stateManager.getStateMessageAdapter(CotIngestAdapter.class))
-          .thenReturn(Optional.of(adapter));
-      when(stateManager.getTwinManager()).thenReturn(twinManager);
-      when(endpoint.getEndPointStatus()).thenReturn(endpointStatus);
-      when(adapter.publishLocal(any(byte[].class))).thenReturn(true);
-      when(mapper.routeToTwinManager(
-          eq(twinManager), any(byte[].class), eq("cot-ingest"))).thenReturn(true);
-
-      daemonStatic = mockStatic(MessageDaemon.class);
-      daemonStatic.when(MessageDaemon::getInstance).thenReturn(daemon);
-
-      setField(protocol, CotProtocol.class, "streamCodec", new CotXmlStreamCodec(1_048_576));
-      setField(protocol, CotProtocol.class, "inboundDestinationName", "/tak/cot/inbound");
-      setField(protocol, CotProtocol.class, "selectorTask", selectorTask);
-      setField(protocol, CotProtocol.class, "cotToTwinMapper", mapper);
-      setField(protocol, CotProtocol.class, "session", session);
-      setField(protocol, CotProtocol.class, "logger", logger);
-      setField(protocol, Protocol.class, "endPoint", endpoint);
-    }
-
-    private Destination archiveDestination() {
-      Destination destination = mock(Destination.class);
+      JMXManager.setEnableJMX(false);
+      EndPointServerConfigDTO config = mock(EndPointServerConfigDTO.class);
+      when(endpoint.getConfig()).thenReturn(config);
+      when(config.getEndPointConfig()).thenReturn(new EndPointConfigDTO("tcp"));
+      when(config.getUrl()).thenReturn("tcp://localhost:8087");
+      when(endpoint.getJMXTypePath()).thenReturn(List.of());
+      when(endpoint.getEndPointStatus()).thenReturn(mock(EndPointStatus.class));
+      when(manager.create(any(), any())).thenReturn(session);
+      managerStatic = mockStatic(SessionManager.class);
+      managerStatic.when(SessionManager::getInstance).thenReturn(manager);
       when(session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
           .thenReturn(CompletableFuture.completedFuture(destination));
-      return destination;
+      protocol = new CotProtocol(endpoint, new Packet(0, false), new CotProtocolConfigDTO());
+    }
+
+    private void receive(byte[] xml) throws IOException {
+      Packet packet = new Packet(xml.length, false);
+      packet.put(xml);
+      packet.flip();
+      protocol.processPacket(packet);
     }
 
     @Override
-    public void close() {
-      daemonStatic.close();
+    public void close() throws Exception {
+      try {
+        protocol.close();
+      } finally {
+        managerStatic.close();
+        JMXManager.setEnableJMX(originalJmx);
+      }
     }
   }
 }

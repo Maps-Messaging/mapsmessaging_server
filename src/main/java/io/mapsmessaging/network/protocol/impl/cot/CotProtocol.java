@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.cot;
 
-import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -42,9 +41,6 @@ import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilters;
-import io.mapsmessaging.state.adapter.cot.CotIngestAdapter;
-import io.mapsmessaging.state.drone.core.TwinManager;
-import io.mapsmessaging.state.drone.tak.CotToTwinMapper;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,20 +57,11 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Accepts a raw, unframed stream of Cursor-on-Target (CoT) XML &lt;event&gt; documents (the wire
- * format used by TAK clients/servers), republishes each complete document byte for byte and with
- * no parsing onto a fixed archive topic, and separately maps it into a {@code DroneTwin}
- * ({@link CotToTwinMapper}) that gets registered/updated in the shared {@code TwinManager} - the
- * same twin store mavlink and N2K feed. From there {@code TakTwinObserver} ->
- * {@code TakEventMapper} -> {@code CotEventPolicy} (MTI-aware) renders it back out to TAK, so an
- * inbound CoT track gets the same MTI status lookup, affiliation/colour handling and stale/expiry
- * behaviour as every other twin, instead of passing straight through unmodified as before. There
- * is no application level login on this connection - the session authenticates as the built in
- * anonymous identity, the same identity the existing anonymous Stomp interface uses. Transport
- * security is provided by binding this protocol to an ssl:// listener in NetworkManager.yaml.
+ * Receives CoT XML events and publishes each complete document through the protocol session
+ * to the configured inbound namespace. Outbound subscription events use the shared selector
+ * writer. The session uses the built-in anonymous identity; TCP/TLS is managed by the endpoint.
  *
- * <p>Discovered via the standard ProtocolImplFactory ServiceLoader registration. Logging uses
- * SLF4J for now (this protocol carries no {@code ServerLogMessages} constants of its own).
+ * <p>Discovered via the standard ProtocolImplFactory ServiceLoader registration.
  */
 public class CotProtocol extends Protocol {
 
@@ -84,10 +71,8 @@ public class CotProtocol extends Protocol {
   // whole record. The packet handed over by protocol detection is only 1 KB and must not be reused
   // for reads: over ssl:// any record carrying more than 1 KB of CoT would never decode.
   private static final int MIN_READ_BUFFER_SIZE = 32 * 1024;
-  private static final String UPDATE_SOURCE = "cot-ingest";
 
   private final Logger logger = LoggerFactory.getLogger(CotProtocol.class);
-  private final CotToTwinMapper cotToTwinMapper = new CotToTwinMapper();
   private final SelectorTask selectorTask;
   private final CotStreamCodec streamCodec;
   private final String sessionId;
@@ -159,27 +144,6 @@ public class CotProtocol extends Protocol {
   }
 
   private void publish(byte[] xml) {
-    if (!publishThroughCotIngestAdapter(xml)) {
-      publishArchiveWithProtocolSession(xml);
-    }
-    routeToTwinManager(xml);
-  }
-
-  private boolean publishThroughCotIngestAdapter(byte[] xml) {
-    try {
-      return MessageDaemon.getInstance()
-          .getSubSystemManager()
-          .getStateManager()
-          .getStateMessageAdapter(CotIngestAdapter.class)
-          .map(adapter -> adapter.publishLocal(xml))
-          .orElse(false);
-    } catch (RuntimeException e) {
-      logger.debug("CoT ingest adapter unavailable for archive publishing", e);
-      return false;
-    }
-  }
-
-  private void publishArchiveWithProtocolSession(byte[] xml) {
     Message message = new MessageBuilder()
         .setOpaqueData(xml)
         .setContentType("text/xml")
@@ -201,26 +165,6 @@ public class CotProtocol extends Protocol {
         }
       }
     });
-  }
-
-  private void routeToTwinManager(byte[] xml) {
-    TwinManager twinManager = resolveTwinManager();
-    if (twinManager == null) {
-      logger.warn("TwinManager not available yet, CoT event not routed");
-      return;
-    }
-
-    if (!cotToTwinMapper.routeToTwinManager(twinManager, xml, UPDATE_SOURCE)) {
-      logger.warn("CoT event had no usable uid, not routed to TwinManager (still archived to {})", DESTINATION_NAME);
-    }
-  }
-
-  private TwinManager resolveTwinManager() {
-    try {
-      return MessageDaemon.getInstance().getSubSystemManager().getStateManager().getTwinManager();
-    } catch (Exception e) {
-      return null;
-    }
   }
 
   private void closeQuietly() {
