@@ -199,53 +199,19 @@ public class CotProtocol extends Protocol {
   }
 
   @Override
-  public void sendMessage(MessageEvent messageEvent) {
+  public void sendMessage(@NotNull MessageEvent messageEvent) {
     try {
       ParsedMessage parsedMessage = parseOutboundMessage(messageEvent);
       if (parsedMessage == null) {
         return;
       }
       byte[] encoded = streamCodec.encode(parsedMessage.getMessage().getOpaqueData());
-      selectorTask.push(new CotFrame(encoded, messageEvent.getCompletionTask()));
+      selectorTask.push(new CotFrame(encoded, messageEvent.getCompletionTask(), this));
     } catch (IOException | RuntimeException e) {
       logger.warn("Failed to send CoT XML event", e);
       if (messageEvent.getCompletionTask() != null) {
         messageEvent.getCompletionTask().run();
       }
-    }
-  }
-
-  private final class CotFrame implements ServerPacket {
-    private final byte[] encoded;
-    private final Runnable completionTask;
-    private boolean completed;
-
-    private CotFrame(byte[] encoded, Runnable completionTask) {
-      this.encoded = encoded;
-      this.completionTask = completionTask;
-    }
-
-    @Override
-    public int packFrame(Packet packet) {
-      packet.put(encoded);
-      return encoded.length;
-    }
-
-    @Override
-    public synchronized void complete() {
-      if (completed) {
-        return;
-      }
-      completed = true;
-      sentMessage();
-      if (completionTask != null) {
-        completionTask.run();
-      }
-    }
-
-    @Override
-    public SocketAddress getFromAddress() {
-      return null;
     }
   }
 
