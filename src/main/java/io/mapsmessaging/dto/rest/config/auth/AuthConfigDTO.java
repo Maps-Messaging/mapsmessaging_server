@@ -40,8 +40,8 @@ public class AuthConfigDTO extends BaseConfigDTO {
   @Schema(
       description = "Username for authentication",
       example = "user123",
-      requiredMode = Schema.RequiredMode.REQUIRED,
-      nullable = false,
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
       minLength = 1
   )
   protected String username;

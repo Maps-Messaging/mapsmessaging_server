@@ -31,7 +31,7 @@ public class Connecting extends State {
   @Override
   public void execute() {
     String protocol = endPointConnection.getUrl().getProtocol();
-    boolean assumeConnected = (endPointConnection.getProtocol() != null && endPointConnection.getProtocol().getName().equalsIgnoreCase("CoT"));
+    boolean assumeConnected = (endPointConnection.getProtocol() != null && endPointConnection.getProtocol().getName() != null && endPointConnection.getProtocol().getName().equalsIgnoreCase("CoT"));
     if (protocol.equalsIgnoreCase("udp") ||
         protocol.equalsIgnoreCase("serial") ||
         assumeConnected) {
