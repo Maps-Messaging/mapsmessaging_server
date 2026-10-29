@@ -193,8 +193,7 @@ public class TakTwinObserver implements TwinObserver {
       return;
     }
 
-    TakTwinContext twinContext =
-        takContexts.computeIfAbsent(source.getTwinId(), key -> new TakTwinContext());
+    TakTwinContext twinContext = takContexts.computeIfAbsent(source.getTwinId(), key -> new TakTwinContext());
 
     CotConfigDTO cotConfig = resolveCotConfig(context, twinContext);
     if (namespaceFilteringEnabled && cotConfig == null) {

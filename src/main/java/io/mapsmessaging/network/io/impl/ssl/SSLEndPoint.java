@@ -55,8 +55,7 @@ public class SSLEndPoint extends TCPEndPoint implements BufferedReadEndPoint {
   SSLHandshakeManager handshakeManager;
   SSLEngine sslEngine;
 
-  public SSLEndPoint(long id, SSLEngine engine, SocketChannel accepted, Selector select, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus,
-      List<String> jmxParent) throws IOException {
+  public SSLEndPoint(long id, SSLEngine engine, SocketChannel accepted, Selector select, EndPointConnectedCallback callback, EndPointServerStatus endPointServerStatus, List<String> jmxParent) throws IOException {
     super(id, accepted, select, endPointServerStatus, jmxParent);
     sslEngine = engine;
     logger.log(ServerLogMessages.SSL_CREATE_ENGINE);
@@ -70,8 +69,7 @@ public class SSLEndPoint extends TCPEndPoint implements BufferedReadEndPoint {
   }
 
 
-  public SSLEndPoint(long id, SSLEngine engine, Socket socket, Selector select, String authConfig, EndPointServer server, EndPointManagerJMX managerMBean)
-      throws IOException {
+  public SSLEndPoint(long id, SSLEngine engine, Socket socket, Selector select, String authConfig, EndPointServer server, EndPointManagerJMX managerMBean) throws IOException {
     super(id, socket, select, authConfig, server, managerMBean);
     sslEngine = engine;
     logger.log(ServerLogMessages.SSL_CREATE_ENGINE);
