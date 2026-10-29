@@ -43,7 +43,7 @@ class CotProtocolStreamCoverageTest {
     verify(fixture.destination, times(expectedDocuments.size())).storeMessage(published.capture());
     assertEquals(expectedDocuments, published.getAllValues().stream()
         .map(message -> new String(message.getOpaqueData(), StandardCharsets.UTF_8)).toList());
-    verify(fixture.session, times(expectedDocuments.size()))
+    verify(fixture.session, times(expectedDocuments.isEmpty() ? 0 : 1))
         .findDestination("/configured/cot", DestinationType.TOPIC);
   }
 
@@ -121,6 +121,7 @@ class CotProtocolStreamCoverageTest {
       setField(protocol, "streamCodec", new CotXmlStreamCodec(1_048_576));
       setField(protocol, "inboundDestinationName", "/configured/cot");
       setField(protocol, "session", session);
+      setField(protocol, "publicationFuture", CompletableFuture.completedFuture(null));
     }
 
     private void append(String chunk) throws Exception {

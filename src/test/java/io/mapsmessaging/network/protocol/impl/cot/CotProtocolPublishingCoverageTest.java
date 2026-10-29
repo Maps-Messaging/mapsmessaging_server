@@ -46,7 +46,7 @@ class CotProtocolPublishingCoverageTest {
 
       assertThrows(IOException.class, () -> fixture.receive(data));
 
-      verify(fixture.session, never()).findDestination(anyString(), any(DestinationType.class));
+      verify(fixture.session, times(1)).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
       verifyNoInteractions(fixture.destination);
     }
   }
@@ -57,10 +57,10 @@ class CotProtocolPublishingCoverageTest {
         MockedStatic<MessageDaemon> daemon = mockStatic(MessageDaemon.class)) {
       MessageDaemon runningDaemon = mock(MessageDaemon.class);
       daemon.when(MessageDaemon::getInstance).thenReturn(runningDaemon);
-      fixture.protocol.subscribeRemote("remote", "/configured/cot", QualityOfService.AT_MOST_ONCE,
-          null, null, null, null);
       when(fixture.session.findDestination("/configured/cot", DestinationType.TOPIC))
           .thenReturn(CompletableFuture.completedFuture(fixture.destination));
+      fixture.protocol.subscribeRemote("remote", "/configured/cot", QualityOfService.AT_MOST_ONCE,
+          null, null, null, null);
       byte[] xml = bytes("<event uid='a'></event>");
 
       fixture.receive(xml);
@@ -69,7 +69,7 @@ class CotProtocolPublishingCoverageTest {
       verify(fixture.destination).storeMessage(message.capture());
       assertArrayEquals(xml, message.getValue().getOpaqueData());
       verify(fixture.session).findDestination("/configured/cot", DestinationType.TOPIC);
-      verify(fixture.session, never()).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
+      verify(fixture.session, times(1)).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
       verify(runningDaemon, never()).getSubSystemManager();
     }
   }
@@ -92,12 +92,125 @@ class CotProtocolPublishingCoverageTest {
   }
 
   @Test
-  void archiveLookupFailureIsContained() throws Exception {
+  void session_creation_resolves_the_destination_before_any_event_arrives() throws Exception {
     try (Fixture fixture = new Fixture()) {
-      CompletableFuture<Destination> failed = new CompletableFuture<>();
-      failed.completeExceptionally(new IOException("lookup failed"));
-      when(fixture.session.findDestination("/tak/cot/inbound", DestinationType.TOPIC)).thenReturn(failed);
+      verify(fixture.session).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
+      verifyNoInteractions(fixture.destination);
+    }
+  }
 
+  @Test
+  void deleted_destination_is_resolved_again_before_storing_the_next_event() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      fixture.receive(bytes("<event uid='before-delete'></event>"));
+      when(fixture.destination.isClosed()).thenReturn(true);
+      Destination recreated = mock(Destination.class);
+      when(fixture.session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
+          .thenReturn(CompletableFuture.completedFuture(recreated));
+      byte[] afterDelete = bytes("<event uid='after-delete'></event>");
+
+      fixture.receive(afterDelete);
+      fixture.receive(bytes("<event uid='reused'></event>"));
+
+      verify(fixture.session, times(2)).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
+      verify(fixture.destination, times(1)).storeMessage(any(Message.class));
+      ArgumentCaptor<Message> messages = ArgumentCaptor.forClass(Message.class);
+      verify(recreated, times(2)).storeMessage(messages.capture());
+      assertArrayEquals(afterDelete, messages.getAllValues().getFirst().getOpaqueData());
+    }
+  }
+
+  @Test
+  void repeated_events_reuse_the_resolved_destination() throws Exception {
+    try (Fixture fixture = new Fixture()) {
+      fixture.receive(bytes("<event uid='one'></event>"));
+      fixture.receive(bytes("<event uid='two'></event>"));
+
+      verify(fixture.session, times(1)).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
+      verify(fixture.destination, times(2)).storeMessage(any(Message.class));
+    }
+  }
+
+  @Test
+  void pending_lookup_is_shared_and_events_publish_in_receive_order() throws Exception {
+    CompletableFuture<Destination> pending = new CompletableFuture<>();
+    try (Fixture fixture = new Fixture(pending)) {
+      byte[] first = bytes("<event uid='one'></event>");
+      byte[] second = bytes("<event uid='two'></event>");
+
+      fixture.receive(first);
+      fixture.receive(second);
+      verify(fixture.session, times(1)).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
+      verifyNoInteractions(fixture.destination);
+      pending.complete(fixture.destination);
+
+      ArgumentCaptor<Message> messages = ArgumentCaptor.forClass(Message.class);
+      verify(fixture.destination, times(2)).storeMessage(messages.capture());
+      assertArrayEquals(first, messages.getAllValues().get(0).getOpaqueData());
+      assertArrayEquals(second, messages.getAllValues().get(1).getOpaqueData());
+    }
+  }
+
+  @Test
+  void failed_lookup_is_retried_for_the_next_event() throws Exception {
+    CompletableFuture<Destination> pending = new CompletableFuture<>();
+    try (Fixture fixture = new Fixture(pending)) {
+      fixture.receive(bytes("<event uid='failed'></event>"));
+      pending.completeExceptionally(new IOException("lookup failed"));
+      when(fixture.session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
+          .thenReturn(CompletableFuture.completedFuture(fixture.destination));
+      fixture.receive(bytes("<event uid='retry'></event>"));
+      fixture.receive(bytes("<event uid='cached'></event>"));
+
+      verify(fixture.session, times(2)).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
+      verify(fixture.destination, times(2)).storeMessage(any(Message.class));
+    }
+  }
+
+  @Test
+  void null_lookup_result_is_retried_for_the_next_event() throws Exception {
+    CompletableFuture<Destination> pending = new CompletableFuture<>();
+    try (Fixture fixture = new Fixture(pending)) {
+      fixture.receive(bytes("<event uid='missing'></event>"));
+      pending.complete(null);
+      when(fixture.session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
+          .thenReturn(CompletableFuture.completedFuture(fixture.destination));
+      fixture.receive(bytes("<event uid='retry'></event>"));
+      fixture.receive(bytes("<event uid='cached'></event>"));
+
+      verify(fixture.session, times(2)).findDestination("/tak/cot/inbound", DestinationType.TOPIC);
+      verify(fixture.destination, times(2)).storeMessage(any(Message.class));
+    }
+  }
+
+  @Test
+  void namespace_change_resolves_the_new_destination_without_redirecting_pending_events() throws Exception {
+    CompletableFuture<Destination> pending = new CompletableFuture<>();
+    try (Fixture fixture = new Fixture(pending)) {
+      Destination replacement = mock(Destination.class);
+      when(fixture.session.findDestination("/replacement/cot", DestinationType.TOPIC))
+          .thenReturn(CompletableFuture.completedFuture(replacement));
+      byte[] original = bytes("<event uid='original'></event>");
+      fixture.receive(original);
+
+      fixture.protocol.subscribeRemote("remote", "/replacement/cot", QualityOfService.AT_MOST_ONCE,
+          null, null, null, null);
+      fixture.receive(bytes("<event uid='replacement'></event>"));
+      fixture.receive(bytes("<event uid='cached'></event>"));
+      pending.complete(fixture.destination);
+
+      ArgumentCaptor<Message> message = ArgumentCaptor.forClass(Message.class);
+      verify(fixture.destination).storeMessage(message.capture());
+      assertArrayEquals(original, message.getValue().getOpaqueData());
+      verify(replacement, times(2)).storeMessage(any(Message.class));
+      verify(fixture.session, times(1)).findDestination("/replacement/cot", DestinationType.TOPIC);
+    }
+  }
+
+  @Test
+  void archiveLookupFailureIsContained() throws Exception {
+    CompletableFuture<Destination> failed = CompletableFuture.failedFuture(new IOException("lookup failed"));
+    try (Fixture fixture = new Fixture(failed)) {
       assertDoesNotThrow(() -> fixture.receive(bytes("<event></event>")));
 
       verifyNoInteractions(fixture.destination);
@@ -106,10 +219,7 @@ class CotProtocolPublishingCoverageTest {
 
   @Test
   void nullArchiveDestinationIsIgnored() throws Exception {
-    try (Fixture fixture = new Fixture()) {
-      when(fixture.session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
-          .thenReturn(CompletableFuture.completedFuture(null));
-
+    try (Fixture fixture = new Fixture(CompletableFuture.completedFuture(null))) {
       assertDoesNotThrow(() -> fixture.receive(bytes("<event></event>")));
 
       verifyNoInteractions(fixture.destination);
@@ -169,6 +279,10 @@ class CotProtocolPublishingCoverageTest {
     private final CotProtocol protocol;
 
     private Fixture() throws Exception {
+      this(null);
+    }
+
+    private Fixture(CompletableFuture<Destination> initialLookup) throws Exception {
       JMXManager.setEnableJMX(false);
       EndPointServerConfigDTO config = mock(EndPointServerConfigDTO.class);
       when(endpoint.getConfig()).thenReturn(config);
@@ -180,7 +294,7 @@ class CotProtocolPublishingCoverageTest {
       managerStatic = mockStatic(SessionManager.class);
       managerStatic.when(SessionManager::getInstance).thenReturn(manager);
       when(session.findDestination("/tak/cot/inbound", DestinationType.TOPIC))
-          .thenReturn(CompletableFuture.completedFuture(destination));
+          .thenReturn(initialLookup != null ? initialLookup : CompletableFuture.completedFuture(destination));
       protocol = new CotProtocol(endpoint, new Packet(0, false), new CotProtocolConfigDTO());
     }
 

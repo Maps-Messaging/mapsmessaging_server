@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.cot;
 
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -55,6 +56,7 @@ import java.nio.channels.SelectionKey;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Receives CoT XML events and publishes each complete document through the protocol session
@@ -77,6 +79,9 @@ public class CotProtocol extends Protocol {
   private final CotStreamCodec streamCodec;
   private final String sessionId;
   private volatile String inboundDestinationName = DESTINATION_NAME;
+  private String resolvedDestinationName;
+  private CompletableFuture<Destination> destinationFuture;
+  private CompletableFuture<Void> publicationFuture = CompletableFuture.completedFuture(null);
 
   private Session session;
   private boolean closed;
@@ -119,6 +124,7 @@ public class CotProtocol extends Protocol {
           .setSessionExpiry(0)
           .setReceiveMaximum(1);
       session = SessionManager.getInstance().create(scb.build(), this);
+      findInboundDestination(inboundDestinationName);
     } catch (LoginException e) {
       logger.error("CoT passthrough session creation failed", e);
       throw new IOException("Unable to create CoT passthrough session", e);
@@ -143,7 +149,7 @@ public class CotProtocol extends Protocol {
     }
   }
 
-  private void publish(byte[] xml) {
+  private synchronized void publish(byte[] xml) {
     Message message = new MessageBuilder()
         .setOpaqueData(xml)
         .setContentType("text/xml")
@@ -152,19 +158,37 @@ public class CotProtocol extends Protocol {
         .build();
 
     String destinationName = inboundDestinationName;
-    session.findDestination(destinationName, DestinationType.TOPIC).whenComplete((destination, throwable) -> {
-      if (throwable != null) {
-        logger.error("Failed to publish CoT event to {}", destinationName, throwable);
-        return;
+    // Preserve receive order while an asynchronous destination lookup is pending.
+    publicationFuture = publicationFuture.handle((unused, previousFailure) -> null)
+        .thenCompose(unused -> findInboundDestination(destinationName).handle((destination, throwable) -> {
+          if (throwable != null) {
+            logger.error("Failed to publish CoT event to {}", destinationName, throwable);
+          } else if (destination != null) {
+            try {
+              destination.storeMessage(message);
+            } catch (IOException e) {
+              logger.error("Failed to publish CoT event to {}", destinationName, e);
+            }
+          }
+          return null;
+        }));
+  }
+
+  private synchronized CompletableFuture<Destination> findInboundDestination(String destinationName) {
+    if (destinationFuture != null && destinationName.equals(resolvedDestinationName)) {
+      if (!destinationFuture.isDone()) {
+        return destinationFuture;
       }
-      if (destination != null) {
-        try {
-          destination.storeMessage(message);
-        } catch (IOException e) {
-          logger.error("Failed to publish CoT event to {}", destinationName, e);
+      if (!destinationFuture.isCompletedExceptionally()) {
+        Destination destination = destinationFuture.getNow(null);
+        if (destination != null && !destination.isClosed()) {
+          return destinationFuture;
         }
       }
-    });
+    }
+    resolvedDestinationName = destinationName;
+    destinationFuture = session.findDestination(destinationName, DestinationType.TOPIC);
+    return destinationFuture;
   }
 
   private void closeQuietly() {
@@ -240,6 +264,7 @@ public class CotProtocol extends Protocol {
       @Nullable Map<String, Object> linkProperties) throws IOException {
     super.subscribeRemote(resource, mappedResource, qualityOfService, parser, transformer, statistics, linkProperties);
     inboundDestinationName = mappedResource;
+    findInboundDestination(mappedResource);
   }
 
   @Override
