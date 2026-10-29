@@ -34,6 +34,9 @@ import io.mapsmessaging.dto.rest.config.network.EndPointConfigDTO;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.dto.rest.config.protocol.impl.CotProtocolConfigDTO;
 import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
@@ -45,8 +48,6 @@ import io.mapsmessaging.utilities.filtering.NamespaceFilters;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
@@ -96,7 +97,7 @@ public class CotProtocol extends Protocol {
     this.selectorTask = new SelectorTask(this, selectorConfig(endPoint));
     this.sessionId = "cot-" + UUID.randomUUID();
     createSession();
-    logger.debug("CoT passthrough connection created on {}", endPoint.getConfig().getUrl());
+    logger.log(ServerLogMessages.COT_CONNECTION_CREATED, endPoint.getConfig().getUrl());
     if (initialPacket != null && initialPacket.available() > 0) {
       appendAndProcess(initialPacket);
     }
@@ -126,7 +127,7 @@ public class CotProtocol extends Protocol {
       session = SessionManager.getInstance().create(scb.build(), this);
       findInboundDestination(inboundDestinationName);
     } catch (LoginException e) {
-      logger.error("CoT passthrough session creation failed", e);
+      logger.log(ServerLogMessages.COT_SESSION_CREATE_FAILED, e);
       throw new IOException("Unable to create CoT passthrough session", e);
     }
   }
@@ -162,12 +163,12 @@ public class CotProtocol extends Protocol {
     publicationFuture = publicationFuture.handle((unused, previousFailure) -> null)
         .thenCompose(unused -> findInboundDestination(destinationName).handle((destination, throwable) -> {
           if (throwable != null) {
-            logger.error("Failed to publish CoT event to {}", destinationName, throwable);
+            logger.log(ServerLogMessages.COT_PUBLISH_FAILED, throwable, destinationName);
           } else if (destination != null) {
             try {
               destination.storeMessage(message);
             } catch (IOException e) {
-              logger.error("Failed to publish CoT event to {}", destinationName, e);
+              logger.log(ServerLogMessages.COT_PUBLISH_FAILED, e, destinationName);
             }
           }
           return null;
@@ -201,15 +202,15 @@ public class CotProtocol extends Protocol {
         SessionManager.getInstance().close(session, false);
       }
     } catch (IOException e) {
-      logger.warn("Exception reading from CoT passthrough connection", e);
+      logger.log(ServerLogMessages.COT_CONNECTION_EXCEPTION, e);
     }
     try {
       super.close();
     } catch (IOException e) {
-      logger.warn("Exception reading from CoT passthrough connection", e);
+      logger.log(ServerLogMessages.COT_CONNECTION_EXCEPTION, e);
     }
     selectorTask.close();
-    logger.debug("CoT passthrough connection closed");
+    logger.log(ServerLogMessages.COT_CONNECTION_CLOSED);
   }
 
   @Override
@@ -232,7 +233,7 @@ public class CotProtocol extends Protocol {
       byte[] encoded = streamCodec.encode(parsedMessage.getMessage().getOpaqueData());
       selectorTask.push(new CotFrame(encoded, messageEvent.getCompletionTask(), this));
     } catch (IOException | RuntimeException e) {
-      logger.warn("Failed to send CoT XML event", e);
+      logger.log(ServerLogMessages.COT_SEND_FAILED, e);
       if (messageEvent.getCompletionTask() != null) {
         messageEvent.getCompletionTask().run();
       }

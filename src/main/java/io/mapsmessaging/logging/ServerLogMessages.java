@@ -381,6 +381,15 @@ public enum ServerLogMessages implements LogMessage {
   ECHO_CLOSE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "EndPoint was closing but raised an exception"),
   // </editor-fold>
 
+  // <editor-fold desc="CoT Protocol log messages">
+  COT_CONNECTION_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "CoT passthrough connection created on {}"),
+  COT_SESSION_CREATE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "CoT passthrough session creation failed"),
+  COT_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to publish CoT event to {}"),
+  COT_CONNECTION_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception reading from CoT passthrough connection"),
+  COT_CONNECTION_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "CoT passthrough connection closed"),
+  COT_SEND_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to send CoT XML event"),
+  // </editor-fold>
+
   // <editor-fold desc="Stomp Protocol log messages">
   STOMP_STATE_ENGINE_FAILED_COMPLETION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed on frame completion callback"),
   STOMP_STARTING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Starting Stomp Protocol Implementation on {}"),
