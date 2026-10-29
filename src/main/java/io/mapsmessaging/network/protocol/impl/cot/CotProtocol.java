@@ -379,8 +379,7 @@ public class CotProtocol extends Protocol implements Selectable {
       @Nullable StatisticsConfigDTO statistics,
       @Nullable Map<String, Object> linkProperties) throws IOException {
     super.subscribeLocal(resource, mappedResource, qualityOfService, selector, transformer, namespaceFilters, statistics, linkProperties);
-    session.addSubscription(
-        createSubscriptionContextBuilder(resource, selector, qualityOfService, 10).build());
+    session.addSubscription(createSubscriptionContextBuilder(resource, selector, qualityOfService, 10).build());
   }
 
   @Override

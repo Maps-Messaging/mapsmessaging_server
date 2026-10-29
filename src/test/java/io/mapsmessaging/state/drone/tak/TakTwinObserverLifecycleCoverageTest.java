@@ -10,7 +10,6 @@
 
 package io.mapsmessaging.state.drone.tak;
 
-import io.mapsmessaging.dto.rest.config.network.KeyStoreConfigDTO;
 import io.mapsmessaging.state.config.CotConfigDTO;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
@@ -23,7 +22,6 @@ import io.mapsmessaging.utilities.admin.JMXManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -121,28 +119,13 @@ class TakTwinObserverLifecycleCoverageTest {
   }
 
   @Test
-  void detectionUsesExistingPrimarySocketWhenConfigured() throws Exception {
+  void detection_without_a_publisher_keeps_the_context_for_later_updates() throws Exception {
     withObserver(observer -> {
-      TakEventMapper mapper = mock(TakEventMapper.class);
-      TakXmlSerialiser serialiser = mock(TakXmlSerialiser.class);
-      TakSocketConnection socket = mock(TakSocketConnection.class);
-      DetectionEvent detection = mock(DetectionEvent.class);
-      DroneTwin source = new DroneTwin("asset");
-      TakEvent event = new TakEvent();
-      TwinUpdateContext updateContext = context();
-      when(mapper.mapDetection(source, detection, updateContext)).thenReturn(event);
-      when(serialiser.toXml(event)).thenReturn("<event/>");
-      setField(observer, "takEventMapper", mapper);
-      setField(observer, "takXmlSerialiser", serialiser);
-      setField(observer, "takHost", "tak.invalid");
-      setField(observer, "takPort", 8088);
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(socket);
-      contexts(observer).put("asset", twinContext);
+      DroneTwin source = positionedTwin("asset");
 
-      observer.onDetectionEvent(source, detection, updateContext);
+      assertDoesNotThrow(() -> observer.onDetectionEvent(source, mock(DetectionEvent.class), context()));
 
-      verify(socket).accept("<event/>");
+      assertTrue(contexts(observer).containsKey("asset"));
     });
   }
 
@@ -246,107 +229,93 @@ class TakTwinObserverLifecycleCoverageTest {
   }
 
   @Test
-  void removingKnownTwinClosesPerTwinSocketAndClearsState() throws Exception {
+  void removing_known_twin_clears_context_and_stats() throws Exception {
     withObserver(observer -> {
       TakEventMapper mapper = mock(TakEventMapper.class);
-      TakSocketConnection socket = mock(TakSocketConnection.class);
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(socket);
-      contexts(observer).put("asset", twinContext);
+      contexts(observer).put("asset", new TakTwinContext());
       statsTimes(observer).put("asset", 123L);
       setField(observer, "takEventMapper", mapper);
 
       observer.onTwinRemoved(new DroneTwin("asset"), context());
 
-      verify(socket).close();
       assertFalse(contexts(observer).containsKey("asset"));
       assertFalse(statsTimes(observer).containsKey("asset"));
     });
   }
 
   @Test
-  void removingTwinDoesNotClosePerTwinSocketWhenGlobalSocketExists() throws Exception {
+  void removing_twin_keeps_the_shared_topic_publisher_open() throws Exception {
     withObserver(observer -> {
-      TakEventMapper mapper = mock(TakEventMapper.class);
-      TakSocketConnection global = mock(TakSocketConnection.class);
-      TakSocketConnection perTwin = mock(TakSocketConnection.class);
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(perTwin);
-      contexts(observer).put("asset", twinContext);
-      setField(observer, "takEventMapper", mapper);
-      setField(observer, "globalSocketConnection", global);
+      EventPublisher publisher = mock(EventPublisher.class);
+      setField(observer, "eventPublisher", publisher);
+      contexts(observer).put("asset", new TakTwinContext());
 
-      observer.onTwinRemoved(new DroneTwin("asset"), context());
+      observer.onTwinRemoved(positionedTwin("asset"), context());
 
-      verify(perTwin, never()).close();
+      verify(publisher).publish(anyString());
+      verify(publisher, never()).close();
     });
   }
 
   @Test
-  void removalPublishesMappedEventBeforeClosingPerTwinSocket() throws Exception {
+  void removal_publishes_mapped_event_to_topic_and_clears_state() throws Exception {
     withObserver(observer -> {
       TakEventMapper mapper = mock(TakEventMapper.class);
       TakXmlSerialiser serialiser = mock(TakXmlSerialiser.class);
-      TakSocketConnection socket = mock(TakSocketConnection.class);
+      EventPublisher publisher = mock(EventPublisher.class);
       DroneTwin twin = positionedTwin("asset");
       TwinUpdateContext updateContext = context();
       TakEvent event = new TakEvent();
       when(mapper.mapRemoval(twin, updateContext)).thenReturn(event);
       when(serialiser.toXml(event)).thenReturn("<remove/>");
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(socket);
-      contexts(observer).put("asset", twinContext);
+      contexts(observer).put("asset", new TakTwinContext());
+      statsTimes(observer).put("asset", 123L);
       setField(observer, "takEventMapper", mapper);
       setField(observer, "takXmlSerialiser", serialiser);
+      setField(observer, "eventPublisher", publisher);
 
       observer.onTwinRemoved(twin, updateContext);
 
-      verify(socket).accept("<remove/>");
-      verify(socket).close();
+      verify(publisher).publish("<remove/>");
+      assertFalse(contexts(observer).containsKey("asset"));
+      assertFalse(statsTimes(observer).containsKey("asset"));
     });
   }
 
   @Test
-  void removalMapperNullSkipsSocketPublishButStillClosesConnection() throws Exception {
+  void removal_mapper_null_skips_topic_publish_but_still_clears_state() throws Exception {
     withObserver(observer -> {
       TakEventMapper mapper = mock(TakEventMapper.class);
-      TakSocketConnection socket = mock(TakSocketConnection.class);
-      DroneTwin twin = positionedTwin("asset");
-      TwinUpdateContext updateContext = context();
-      when(mapper.mapRemoval(twin, updateContext)).thenReturn(null);
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(socket);
-      contexts(observer).put("asset", twinContext);
+      EventPublisher publisher = mock(EventPublisher.class);
+      contexts(observer).put("asset", new TakTwinContext());
       setField(observer, "takEventMapper", mapper);
+      setField(observer, "eventPublisher", publisher);
 
-      observer.onTwinRemoved(twin, updateContext);
+      observer.onTwinRemoved(positionedTwin("asset"), context());
 
-      verify(socket, never()).accept(anyString());
-      verify(socket).close();
+      verifyNoInteractions(publisher);
+      assertFalse(contexts(observer).containsKey("asset"));
     });
   }
 
   @Test
-  void removalNamespaceMissSkipsMappingAndSocketPublish() throws Exception {
+  void removal_namespace_miss_skips_mapping_and_topic_publish() throws Exception {
     withObserver(observer -> {
       CotConfigResolver resolver = mock(CotConfigResolver.class);
       TakEventMapper mapper = mock(TakEventMapper.class);
-      TakSocketConnection socket = mock(TakSocketConnection.class);
-      DroneTwin twin = positionedTwin("asset");
+      EventPublisher publisher = mock(EventPublisher.class);
       TwinUpdateContext updateContext = context();
       updateContext.setSourceNamespace("/unmapped/source");
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(socket);
-      contexts(observer).put("asset", twinContext);
+      contexts(observer).put("asset", new TakTwinContext());
       setField(observer, "namespaceFilteringEnabled", true);
       setField(observer, "cotConfigResolver", resolver);
       setField(observer, "takEventMapper", mapper);
+      setField(observer, "eventPublisher", publisher);
 
-      observer.onTwinRemoved(twin, updateContext);
+      observer.onTwinRemoved(positionedTwin("asset"), updateContext);
 
-      verifyNoInteractions(mapper);
-      verify(socket, never()).accept(anyString());
-      verify(socket).close();
+      verifyNoInteractions(mapper, publisher);
+      assertFalse(contexts(observer).containsKey("asset"));
     });
   }
 
@@ -388,11 +357,11 @@ class TakTwinObserverLifecycleCoverageTest {
   }
 
   @Test
-  void twinPublishUsesExistingPrimarySocket() throws Exception {
+  void twin_publish_uses_the_topic_publisher() throws Exception {
     withObserver(observer -> {
       TakEventMapper mapper = mock(TakEventMapper.class);
       TakXmlSerialiser serialiser = mock(TakXmlSerialiser.class);
-      TakSocketConnection socket = mock(TakSocketConnection.class);
+      EventPublisher publisher = mock(EventPublisher.class);
       DroneTwin twin = positionedTwin("asset");
       TwinUpdateContext updateContext = context();
       TakEvent event = new TakEvent();
@@ -400,98 +369,55 @@ class TakTwinObserverLifecycleCoverageTest {
       when(serialiser.toXml(event)).thenReturn("<event/>");
       setField(observer, "takEventMapper", mapper);
       setField(observer, "takXmlSerialiser", serialiser);
-      setField(observer, "takHost", "tak.invalid");
-      setField(observer, "takPort", 8088);
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(socket);
-      contexts(observer).put("asset", twinContext);
+      setField(observer, "eventPublisher", publisher);
 
       observer.onTwinAdded(twin, updateContext);
 
-      verify(socket).accept("<event/>");
+      verify(publisher).publish("<event/>");
     });
   }
 
   @Test
-  void twinPublishUsesConfiguredGlobalSocketAndCachesItInContext() throws Exception {
+  void removal_publisher_failure_is_contained_and_state_is_cleared() throws Exception {
     withObserver(observer -> {
-      TakEventMapper mapper = mock(TakEventMapper.class);
-      TakXmlSerialiser serialiser = mock(TakXmlSerialiser.class);
-      TakSocketConnection global = mock(TakSocketConnection.class);
-      DroneTwin twin = positionedTwin("asset");
-      TwinUpdateContext updateContext = context();
-      TakEvent event = new TakEvent();
-      when(mapper.map(twin, updateContext)).thenReturn(event);
-      when(serialiser.toXml(event)).thenReturn("<event/>");
-      setField(observer, "takEventMapper", mapper);
-      setField(observer, "takXmlSerialiser", serialiser);
-      setField(observer, "takHost", "tak.invalid");
-      setField(observer, "takPort", 8088);
-      setField(observer, "globalSocketConnection", global);
+      EventPublisher publisher = mock(EventPublisher.class);
+      doThrow(new IOException("expected")).when(publisher).publish(anyString());
+      setField(observer, "eventPublisher", publisher);
+      contexts(observer).put("asset", new TakTwinContext());
+      statsTimes(observer).put("asset", 123L);
 
-      observer.onTwinAdded(twin, updateContext);
+      assertDoesNotThrow(() -> observer.onTwinRemoved(positionedTwin("asset"), context()));
 
-      assertSame(global, contexts(observer).get("asset").getSocketConnection());
-      verify(global).accept("<event/>");
-    });
-  }
-
-  @ParameterizedTest
-  @MethodSource("tlsShortCircuitCases")
-  void tlsFactoryReturnsNullWhenTlsPrerequisitesAreMissing(
-      boolean tlsEnabled, boolean keyStorePresent, boolean trustStorePresent) throws Exception {
-    withObserver(observer -> {
-      KeyStoreConfigDTO keyStore = keyStorePresent ? mock(KeyStoreConfigDTO.class) : null;
-      KeyStoreConfigDTO trustStore = trustStorePresent ? mock(KeyStoreConfigDTO.class) : null;
-
-      assertNull(invoke(
-          observer,
-          "buildSslSocketFactory",
-          new Class<?>[]{boolean.class, String.class, KeyStoreConfigDTO.class, KeyStoreConfigDTO.class},
-          tlsEnabled,
-          "TLSv1.2",
-          keyStore,
-          trustStore));
+      verify(publisher).publish(anyString());
+      assertFalse(contexts(observer).containsKey("asset"));
+      assertFalse(statsTimes(observer).containsKey("asset"));
     });
   }
 
   @Test
-  void shutdownClosesPerTwinSocketsAndClearsObserverState() throws Exception {
+  void shutdown_clears_observer_state() throws Exception {
     withObserverWithoutAutomaticShutdown(observer -> {
-      TakSocketConnection first = mock(TakSocketConnection.class);
-      TakSocketConnection second = mock(TakSocketConnection.class);
-      TakTwinContext firstContext = new TakTwinContext();
-      TakTwinContext secondContext = new TakTwinContext();
-      firstContext.setSocketConnection(first);
-      secondContext.setSocketConnection(second);
-      contexts(observer).put("one", firstContext);
-      contexts(observer).put("two", secondContext);
+      contexts(observer).put("one", new TakTwinContext());
+      contexts(observer).put("two", new TakTwinContext());
       statsTimes(observer).put("one", 1L);
       statsTimes(observer).put("two", 2L);
 
       observer.shutdown();
 
-      verify(first).close();
-      verify(second).close();
       assertTrue(contexts(observer).isEmpty());
       assertTrue(statsTimes(observer).isEmpty());
     });
   }
 
   @Test
-  void shutdownClosesGlobalSocketInsteadOfPerTwinSockets() throws Exception {
+  void shutdown_closes_the_topic_publisher() throws Exception {
     withObserverWithoutAutomaticShutdown(observer -> {
-      TakSocketConnection global = mock(TakSocketConnection.class);
-      TakSocketConnection perTwin = mock(TakSocketConnection.class);
-      TakTwinContext twinContext = new TakTwinContext();
-      twinContext.setSocketConnection(perTwin);
-      contexts(observer).put("asset", twinContext);
-      setField(observer, "globalSocketConnection", global);
+      EventPublisher publisher = mock(EventPublisher.class);
+      setField(observer, "eventPublisher", publisher);
 
       observer.shutdown();
 
-      verify(global).close();
-      verify(perTwin, never()).close();
+      verify(publisher).close();
     });
   }
 
@@ -517,14 +443,6 @@ class TakTwinObserverLifecycleCoverageTest {
         Arguments.of(null, ""),
         Arguments.of("", " "),
         Arguments.of(" ", null));
-  }
-
-  private static Stream<Arguments> tlsShortCircuitCases() {
-    return Stream.of(
-        Arguments.of(false, false, false),
-        Arguments.of(false, true, true),
-        Arguments.of(true, false, true),
-        Arguments.of(true, true, false));
   }
 
   private static DroneTwin positionedTwin(String id) {
@@ -560,14 +478,6 @@ class TakTwinObserverLifecycleCoverageTest {
     Field field = target.getClass().getDeclaredField(name);
     field.setAccessible(true);
     field.set(target, value);
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T> T invoke(
-      Object target, String name, Class<?>[] parameterTypes, Object... arguments) throws Exception {
-    Method method = target.getClass().getDeclaredMethod(name, parameterTypes);
-    method.setAccessible(true);
-    return (T) method.invoke(target, arguments);
   }
 
   private static void withObserver(ObserverAction action) throws Exception {

@@ -21,12 +21,8 @@ package io.mapsmessaging.state.drone.tak;
 
 import org.junit.jupiter.api.Test;
 
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.function.LongSupplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** TakOutputStats is process-wide, so every assertion here is on a before/after delta. */
 class TakOutputStatsTest {
@@ -61,72 +57,6 @@ class TakOutputStatsTest {
     assertEquals(0.0, TakOutputStats.getLatencySumSeconds() - beforeSum, 1e-9);
   }
 
-  @Test
-  void socket_connectWriteAndCloseAreCounted() throws Exception {
-    var writeTimeField = TakOutputStats.class.getDeclaredField("lastWriteMillis");
-    writeTimeField.setAccessible(true);
-    writeTimeField.setLong(null, System.currentTimeMillis() - 60_000);
-    long connects = TakOutputStats.CONNECT_COUNT.sum();
-    long disconnects = TakOutputStats.DISCONNECT_COUNT.sum();
-
-    try (ServerSocket server = new ServerSocket(0)) {
-      server.setSoTimeout(5000);
-      TakSocketConnection connection = new TakSocketConnection("127.0.0.1", server.getLocalPort(), 2000, 2000, true, 4);
-      try {
-        // The writer only dials out once it has something to send.
-        connection.accept("<event/>");
-        try (Socket accepted = server.accept()) {
-          awaitIncrease(() -> TakOutputStats.CONNECT_COUNT.sum(), connects);
-          accepted.setSoTimeout(5000);
-          var reader = new java.io.BufferedReader(new java.io.InputStreamReader(
-              accepted.getInputStream(), java.nio.charset.StandardCharsets.UTF_8));
-          assertEquals("<event/>", reader.readLine());
-          awaitTrue(() -> TakOutputStats.getLastWriteAgeMillis() >= 0
-              && TakOutputStats.getLastWriteAgeMillis() < 5000);
-          assertTrue(TakOutputStats.getLastWriteAgeMillis() < 5000);
-        }
-      } finally {
-        connection.close();
-      }
-    }
-
-    assertEquals(1, TakOutputStats.CONNECT_COUNT.sum() - connects);
-    assertEquals(1, TakOutputStats.DISCONNECT_COUNT.sum() - disconnects, "close() tears down the established connection");
-  }
-
-  @Test
-  void socket_refusedConnectionsAreCountedAsFailures() throws Exception {
-    int closedPort;
-    try (ServerSocket probe = new ServerSocket(0)) {
-      closedPort = probe.getLocalPort();
-    }
-    long failures = TakOutputStats.CONNECT_FAILURE_COUNT.sum();
-
-    TakSocketConnection connection = new TakSocketConnection("127.0.0.1", closedPort, 500, 500, true, 4);
-    try {
-      connection.accept("<event/>");
-      awaitIncrease(() -> TakOutputStats.CONNECT_FAILURE_COUNT.sum(), failures);
-    } finally {
-      connection.close();
-    }
-  }
-
-  @Test
-  void socket_queueOverflowIsCountedAsDropped() {
-    long dropped = TakOutputStats.SOCKET_DROPPED_COUNT.sum();
-    // Nothing listens on port 1; the writer thread holds at most one event while it retries,
-    // so pushing capacity + 2 events must overflow the 2-slot queue at least once.
-    TakSocketConnection connection = new TakSocketConnection("127.0.0.1", 1, 200, 200, true, 2);
-    try {
-      for (int i = 0; i < 4; i++) {
-        connection.accept("<event id=\"" + i + "\"/>");
-      }
-      assertTrue(TakOutputStats.SOCKET_DROPPED_COUNT.sum() - dropped >= 1);
-    } finally {
-      connection.close();
-    }
-  }
-
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.ValueSource(longs = {5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000})
   void latency_bucket_includes_its_exact_bound_and_excludes_next_millisecond(long boundMillis) {
@@ -142,15 +72,4 @@ class TakOutputStatsTest {
     assertEquals(2, TakOutputStats.getLatencyCount() - count);
   }
 
-  private static void awaitIncrease(LongSupplier value, long from) throws InterruptedException {
-    awaitTrue(() -> value.getAsLong() > from);
-  }
-
-  private static void awaitTrue(java.util.function.BooleanSupplier condition) throws InterruptedException {
-    long deadline = System.currentTimeMillis() + 5000;
-    while (!condition.getAsBoolean()) {
-      assertTrue(System.currentTimeMillis() < deadline, "condition not met within 5s");
-      Thread.sleep(20);
-    }
-  }
 }
