@@ -116,15 +116,14 @@ public class StateManagerAgent implements Agent {
       lifecycleList.add(new TwinPublisherManager(twinManager, config.getPublish()));
       aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig());
       lifecycleList.add(aisManager);
+      List<EndPointConnectionServerConfig> migrationList = TakConnectionConfigConverter.convert(config.getTak());
+      if(!migrationList.isEmpty()) {
+        NetworkConnectionManagerConfig networkConnectionManagerConfig = ConfigurationManager.getInstance().getConfiguration(NetworkConnectionManagerConfig.class);
+        networkConnectionManagerConfig.getEndPointServerConfigList().addAll(migrationList);
+      }
     } else {
       aisManager = null;
     }
-    List<EndPointConnectionServerConfig> migrationList = TakConnectionConfigConverter.convert(config.getTak());
-    if(!migrationList.isEmpty()) {
-      NetworkConnectionManagerConfig networkConnectionManagerConfig = ConfigurationManager.getInstance().getConfiguration(NetworkConnectionManagerConfig.class);
-      networkConnectionManagerConfig.getEndPointServerConfigList().addAll(migrationList);
-    }
-
   }
 
   @Override
