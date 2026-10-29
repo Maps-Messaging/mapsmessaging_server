@@ -234,6 +234,8 @@ public class Connect5 extends MQTTPacket5 {
 
   @Override
   public int packFrame(Packet packet) {
+    boolean usernamePresent = username != null;
+    boolean passwordPresent = password != null;
     // ---- Variable header ----
     // Protocol Name "MQTT"
     int variableHeaderLength = 2 + mqtt.length;
@@ -262,11 +264,11 @@ public class Connect5 extends MQTTPacket5 {
       payloadLength += willSectionLength;
     }
 
-    if (hasUsername()) {
+    if (usernamePresent) {
       payloadLength += 2 + username.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
     }
 
-    if (hasPassword()) {
+    if (passwordPresent) {
       payloadLength += 2 + password.length; // binary with 2-byte length
     }
 
@@ -292,10 +294,10 @@ public class Connect5 extends MQTTPacket5 {
         connectFlag |= 0b00100000;
       }
     }
-    if (hasPassword()) {
+    if (passwordPresent) {
       connectFlag |= 0b01000000;
     }
-    if (hasUsername()) {
+    if (usernamePresent) {
       connectFlag |= (byte) 0b10000000;
     }
     packet.put(connectFlag);
@@ -313,11 +315,11 @@ public class Connect5 extends MQTTPacket5 {
       writeBuffer(willMsg, packet);
     }
 
-    if (hasUsername()) {
+    if (usernamePresent) {
       writeUTF8(packet, username);
     }
 
-    if (hasPassword()) {
+    if (passwordPresent) {
       byte[] passwordBytes = new byte[password.length];
       for (int index = 0; index < password.length; index++) {
         passwordBytes[index] = (byte) password[index];
