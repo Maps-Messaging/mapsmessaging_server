@@ -121,17 +121,69 @@ def policy_selection(declaration, policy):
     if declaration.startswith("id:") and " | " not in declaration:
         license_id = declaration[3:]
         return license_id if license_id in policy["ids"] else ""
-    if declaration.startswith("expression:"):
-        expression = declaration[len("expression:"):].strip()
-        # Only explicit OR alternatives; not AND, WITH, or parenthesised expressions.
-        choices = expression.split(" OR ")
-        if len(choices) >= 2 and all(re.fullmatch(r"[A-Za-z0-9-.+]+", x) for x in choices):
-            if policy["preferred"] in choices:
-                return policy["preferred"]
-            for name in choices:
-                if name in policy["ids"]:
-                    return name
-    return ""
+    if not declaration.startswith("expression:"):
+        return ""
+
+    expression = declaration[len("expression:"):].strip()
+    tokens = re.findall(r"[()]|\b(?:OR|AND|WITH)\b|[A-Za-z0-9][A-Za-z0-9.+-]*", expression)
+    if not tokens or "".join(tokens) != re.sub(r"\s+", "", expression):
+        return ""
+
+    position = 0
+
+    def primary():
+        nonlocal position
+        if position >= len(tokens):
+            raise ValueError("Incomplete SPDX expression")
+        token = tokens[position]
+        position += 1
+        if token == "(":
+            choices = alternatives()
+            if position >= len(tokens) or tokens[position] != ")":
+                raise ValueError("Unclosed SPDX group")
+            position += 1
+            return choices
+        if token in ("OR", "AND", "WITH", ")"):
+            raise ValueError("Invalid SPDX operand")
+        return {token} if token in policy["ids"] else set()
+
+    def with_exception():
+        nonlocal position
+        choices = primary()
+        if position < len(tokens) and tokens[position] == "WITH":
+            position += 1
+            if position >= len(tokens) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.+-]*", tokens[position]) or tokens[position] in ("OR", "AND", "WITH"):
+                raise ValueError("Invalid SPDX exception")
+            position += 1
+            return set()  # Licence exceptions require explicit review.
+        return choices
+
+    def conjunction():
+        nonlocal position
+        choices = with_exception()
+        while position < len(tokens) and tokens[position] == "AND":
+            position += 1
+            with_exception()
+            choices = set()  # Both obligations apply; not a licence choice.
+        return choices
+
+    def alternatives():
+        nonlocal position
+        choices = conjunction()
+        while position < len(tokens) and tokens[position] == "OR":
+            position += 1
+            choices.update(conjunction())
+        return choices
+
+    try:
+        candidates = alternatives()
+    except ValueError:
+        return ""
+    if position != len(tokens):
+        return ""
+    if policy["preferred"] in candidates:
+        return policy["preferred"]
+    return next((licence for licence in sorted(candidates) if licence in policy["ids"]), "")
 
 
 def review_status(purl, group, declaration, register, policy, today):

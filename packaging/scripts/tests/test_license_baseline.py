@@ -172,6 +172,63 @@ class LicenseBaselineTest(unittest.TestCase):
         self.assertEqual(0, summary["unapproved_third_party_count"])
         self.assertEqual("EPL-2.0", rows[0]["selected_license"])
 
+    def test_new_library_with_nested_apache_or_is_policy_approved(self):
+        self.write_bom([{
+            "purl": "pkg:maven/example/new-library@2.1", "name": "new-library",
+            "licenses": [{"expression": "(LGPL-2.1-only OR (MIT OR Apache-2.0))"}],
+        }])
+        rows, summary = self.run_baseline()
+        self.assertEqual("policy-approved", rows[0]["review_status"])
+        self.assertEqual("Apache-2.0", rows[0]["selected_license"])
+        self.assertEqual(0, summary["unapproved_third_party_count"])
+
+    def test_new_library_chooses_other_approved_license_if_no_apache(self):
+        self.write_bom([{
+            "purl": "pkg:maven/example/new-library@2.1", "name": "new-library",
+            "licenses": [{"expression": "(GPL-3.0-only OR MIT)"}],
+        }])
+        rows, summary = self.run_baseline()
+        self.assertEqual("MIT", rows[0]["selected_license"])
+        self.assertEqual("policy-approved", rows[0]["review_status"])
+        self.assertEqual(0, summary["unapproved_third_party_count"])
+
+    def test_new_library_is_not_approved_by_unverified_license_list(self):
+        self.write_bom([{
+            "purl": "pkg:maven/example/new-library@2.1", "name": "new-library",
+            "licenses": [{"license": {"id": "Apache-2.0"}},
+                         {"license": {"id": "GPL-3.0-only"}}],
+        }])
+        rows, summary = self.run_baseline()
+        self.assertEqual("unreviewed", rows[0]["review_status"])
+        self.assertEqual("", rows[0]["selected_license"])
+        self.assertEqual(1, summary["unapproved_third_party_count"])
+
+    def test_nested_spdx_precedence_never_ignores_required_and(self):
+        policy = license_baseline.load_policy(self.policy)
+        selection = license_baseline.policy_selection
+        self.assertEqual("Apache-2.0", selection("expression:Apache-2.0 OR (MIT AND GPL-3.0-only)", policy))
+        self.assertEqual("EPL-2.0", selection("expression:(Apache-2.0 AND MIT) OR EPL-2.0", policy))
+        self.assertEqual("", selection("expression:Apache-2.0 AND (MIT OR GPL-3.0-only)", policy))
+        self.assertEqual("", selection("expression:(Apache-2.0 OR MIT) AND LGPL-3.0-only", policy))
+
+    def test_spdx_with_exception_is_not_approved_without_explicit_review(self):
+        policy = license_baseline.load_policy(self.policy)
+        selection = license_baseline.policy_selection
+        self.assertEqual("", selection("expression:Apache-2.0 WITH Classpath-exception-2.0", policy))
+        self.assertEqual("MIT", selection("expression:MIT OR (GPL-2.0-only WITH Classpath-exception-2.0)", policy))
+        self.assertEqual("", selection("expression:Apache-2.0 OR (MIT WITH (BSD-3-Clause))", policy))
+
+    def test_malformed_expressions_fail_closed(self):
+        policy = license_baseline.load_policy(self.policy)
+        for expression in (
+            "Apache-2.0 OR", "(Apache-2.0 OR MIT", "Apache-2.0 OR OR MIT",
+            "Apache-2.0 AND", "Apache-2.0) OR MIT", "Apache-2.0 | GPL-3.0",
+            "(GPL-3.0-only OR MIT) AND", "Apache-2.0 OR MIT AND",
+        ):
+            with self.subTest(expression=expression):
+                self.assertEqual("", license_baseline.policy_selection("expression:" + expression, policy))
+
+
 
 if __name__ == "__main__":
     unittest.main()
