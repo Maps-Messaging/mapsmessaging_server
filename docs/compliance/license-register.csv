@@ -1,1 +1,2 @@
 purl,declared_license,decision,selected_license,reviewer,review_date,review_by,notes
+pkg:maven/com.ecwid.consul/consul-api@1.4.6?type=jar,,approved,Apache-2.0,Matthew,2026-10-31,,Nexus POM declares Apache-2.0; Buildkite uploaded 2024-10-17; JAR SHA-256=1860d37bb31065cc49ddb4a0d0d6d1695d44edb2b3e6d4b4d691e3497acf8d88; exact source modifications not verified; retain applicable notices
