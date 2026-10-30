@@ -11,6 +11,7 @@ package io.mapsmessaging.network.protocol.impl.n2k;
 import io.mapsmessaging.canbus.device.frames.CanFrame;
 import io.mapsmessaging.canbus.j1939.CanIdBuilder;
 import io.mapsmessaging.canbus.j1939.n2k.framing.FramePacker;
+import io.mapsmessaging.canbus.j1939.n2k.model.N2kTransportType;
 import io.mapsmessaging.network.io.impl.canbus.CanbusEndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.n2k.msg.AbstractAisFieldValueSource;
@@ -47,6 +48,8 @@ class N2kInboundRequestCoverageTest {
 
     when(fixture.formatter.getParser().encodeFromSource(
         eq(requestedPgn), any(AbstractAisFieldValueSource.class))).thenReturn(encoded);
+    when(fixture.framePacker.getTransportType(requestedPgn, encoded.length))
+        .thenReturn(N2kTransportType.FAST_PACKET);
     when(fixture.framePacker.packFastPacket(
         eq(requestedPgn), anyInt(), eq(42), eq(requester), same(encoded))).thenReturn(packed);
 
@@ -87,6 +90,8 @@ class N2kInboundRequestCoverageTest {
     List<CanFrame> packed = List.of(frame(126998, 42, 19, new byte[]{1}));
     when(fixture.formatter.getParser().encodeFromSource(
         eq(126998), any(AbstractAisFieldValueSource.class))).thenReturn(encoded);
+    when(fixture.framePacker.getTransportType(126998, encoded.length))
+        .thenReturn(N2kTransportType.FAST_PACKET);
     when(fixture.framePacker.packFastPacket(
         eq(126998), anyInt(), eq(42), eq(19), same(encoded))).thenReturn(packed);
     doThrow(new java.io.IOException("write"))
