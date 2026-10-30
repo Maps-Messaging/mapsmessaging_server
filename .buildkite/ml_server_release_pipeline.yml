@@ -10,10 +10,13 @@ steps:
       - chmod +x ./packaging/scripts/prepare_build.sh
       - ./packaging/scripts/prepare_build.sh
       - mvn -DskipTests=true clean deploy -Pml -U
+      - python3 packaging/scripts/license_baseline.py --profile ml --bom target/bom.json --register docs/compliance/license-register.csv --output-dir target/license-baseline/ml || (mkdir -p target/license-baseline/ml && echo "MSG-180 baseline reporting failed; see build log" | tee target/license-baseline/ml/ERROR.txt)
       - chmod +x ./packaging/github_release.sh
       - ./packaging/github_release.sh $(buildkite-agent secret get GIT_HUB_TOKEN)
       - chmod +x ./packaging/scripts/*
       - ./packaging/scripts/build_rpm_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_yum_release
       - ./packaging/scripts/build_deb_package.sh $(buildkite-agent secret get NEXUS_USER) $(buildkite-agent secret get NEXUS_PASSWORD) maps_apt_release
+    artifact_paths:
+      - "target/license-baseline/**/*"
     agents:
       queue: "java_build_queue_aws"
