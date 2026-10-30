@@ -24,6 +24,7 @@ import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.Request;
+import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.elements.exception.ConnectorException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,8 +36,11 @@ class BlockwiseSendTest extends BaseCoapTest {
   @ValueSource(ints = {0,1,2,3,4,5,6})
   void basicSendTest(int size) throws ConnectorException, IOException {
     CoapClient client = new CoapClient(getUri());
+    CoapEndpoint endpoint = new CoapEndpoint.Builder().build();
     client.setTimeout(10_000L);
     try {
+      endpoint.start();
+      client.setEndpoint(endpoint);
       byte[] payload = new byte[1024];
       for (int index = 0; index < payload.length; index++) {
         payload[index] = (byte) (32 + (index % 36));
@@ -66,6 +70,7 @@ class BlockwiseSendTest extends BaseCoapTest {
       Assertions.assertArrayEquals(payload, response.getPayload());
     } finally {
       client.shutdown();
+      endpoint.destroy();
     }
   }
 
