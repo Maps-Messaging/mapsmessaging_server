@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Generate non-enforcing MSG-180 licence inventory from a CycloneDX JSON BOM."""
+"""Generate MSG-180 licence inventory and enforce reviewed third-party policy."""
 
 import argparse
 import csv
 import hashlib
 import json
+import re
 import shutil
 from collections import Counter
 from datetime import date, datetime, timezone
@@ -22,7 +23,8 @@ REVIEW_FIELDS = INVENTORY_FIELDS + (
     "review_status", "recorded_decision", "selected_license", "reviewer",
     "review_date", "review_by", "notes",
 )
-PERMISSIVE_IDS = frozenset(("Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause", "ISC"))
+FAILURE_FIELDS = ("purl", "name", "declared_license", "review_status", "reason")
+DEFAULT_POLICY = Path(__file__).resolve().parents[2] / "docs/compliance/license-policy.yaml"
 
 
 def declared_licenses(component):
@@ -51,10 +53,8 @@ def review_hint(component, declaration):
         return "missing-license-metadata"
     if component.get("group") == "io.mapsmessaging":
         return "internal-review"
-    if declaration.startswith("id:") and declaration[3:] in PERMISSIVE_IDS:
-        return "permissive-candidate"
-    if declaration.startswith("expression:") and declaration[11:] in PERMISSIVE_IDS:
-        return "permissive-candidate"
+    if declaration.startswith("id:") and " | " not in declaration:
+        return "single-spdx"
     return "manual-review"
 
 
@@ -79,9 +79,89 @@ def load_register(path):
         return records
 
 
-def inventory_rows(bom, profile, register):
+def load_policy(path):
+    # JSON is valid YAML 1.2, so no additional parser is needed on Buildkite.
+    policy = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(policy, dict) or policy.get("schema_version") != 1 or policy.get("mode") != "enforce":
+        raise ValueError("Unsupported or non-enforcing licence policy")
+    ids = policy.get("approved_single_licenses")
+    if not isinstance(ids, list) or not ids or any(not isinstance(x, str) or not x for x in ids) or len(ids) != len(set(ids)):
+        raise ValueError("Invalid approved licence list")
+    preferred = policy.get("preferred_license")
+    if preferred not in ids:
+        raise ValueError("Preferred licence must be an approved licence")
+    if policy.get("internal_group") != "io.mapsmessaging":
+        raise ValueError("Internal group must be explicitly io.mapsmessaging")
+    artifacts = {}
+    rules = policy.get("verified_artifacts")
+    if not isinstance(rules, list):
+        raise ValueError("Missing verified_artifacts policy list")
+    for entry in rules:
+        if not isinstance(entry, dict):
+            raise ValueError("Invalid verified artifact rule")
+        purl, declaration, selected, evidence = (
+            entry.get("purl"), entry.get("declared_license"),
+            entry.get("selected_license"), entry.get("evidence_url")
+        )
+        if not all(isinstance(x, str) and x for x in (purl, declaration, selected, evidence)):
+            raise ValueError("Invalid verified artifact metadata")
+        if not purl.startswith("pkg:maven/") or purl.startswith("pkg:maven/io.mapsmessaging/"):
+            raise ValueError("Verified artifact must be an external Maven dependency: " + purl)
+        if selected not in ids or purl in artifacts or not evidence.startswith("https://"):
+            raise ValueError("Invalid, unapproved, or duplicate artifact selection: " + purl)
+        if selected != "MIT" or declaration != "name:Bouncy Castle Licence":
+            names = [d.removeprefix("id:") for d in declaration.split(" | ")]
+            if selected not in names and "name:Apache License, 2.0" not in declaration:
+                raise ValueError("Selected licence absent from declaration: " + purl)
+        artifacts[purl] = entry
+    return {"ids": frozenset(ids), "preferred": preferred, "verified": artifacts}
+
+
+def policy_selection(declaration, policy):
+    if declaration.startswith("id:") and " | " not in declaration:
+        license_id = declaration[3:]
+        return license_id if license_id in policy["ids"] else ""
+    if declaration.startswith("expression:"):
+        expression = declaration[len("expression:"):].strip()
+        # Only explicit OR alternatives; not AND, WITH, or parenthesised expressions.
+        choices = expression.split(" OR ")
+        if len(choices) >= 2 and all(re.fullmatch(r"[A-Za-z0-9-.+]+", x) for x in choices):
+            if policy["preferred"] in choices:
+                return policy["preferred"]
+            for name in choices:
+                if name in policy["ids"]:
+                    return name
+    return ""
+
+
+def review_status(purl, group, declaration, register, policy, today):
+    previous = register.get(purl)
+    if previous:
+        if previous.get("declared_license", "") != declaration:
+            return "needs-re-review", "", previous
+        if previous.get("review_by") and previous["review_by"] < today:
+            return "review-expired", "", previous
+        decision = previous.get("decision") or "unreviewed"
+        if decision in ("approved", "exception") and not previous.get("selected_license"):
+            return "needs-re-review", "", previous
+        return decision, previous.get("selected_license", ""), previous
+    if group == "io.mapsmessaging":
+        return "internal-unreviewed", "", {}
+    approved = policy_selection(declaration, policy)
+    if approved:
+        return "policy-approved", approved, {}
+    verified = policy["verified"].get(purl)
+    if verified and verified["declared_license"] == declaration:
+        return "policy-approved", verified["selected_license"], {}
+    if verified:
+        return "needs-re-review", "", {}
+    return "unreviewed", "", {}
+
+
+def inventory_rows(bom, profile, register, policy, today=None):
     if bom.get("bomFormat") != "CycloneDX" or not isinstance(bom.get("components"), list):
         raise ValueError("Expected a CycloneDX JSON BOM containing components")
+    today = today or date.today().isoformat()
     rows = []
     for component in bom["components"]:
         if not isinstance(component, dict):
@@ -93,15 +173,7 @@ def inventory_rows(bom, profile, register):
         if not purl:
             raise ValueError("CycloneDX component lacks a purl/bom-ref: " + name)
         declaration, urls = declared_licenses(component)
-        previous = register.get(purl, {})
-        status = "unreviewed"
-        if previous:
-            if previous.get("declared_license", "") != declaration:
-                status = "needs-re-review"
-            elif previous.get("review_by") and previous["review_by"] < date.today().isoformat():
-                status = "review-expired"
-            else:
-                status = previous.get("decision") or "unreviewed"
+        status, selected, previous = review_status(purl, group, declaration, register, policy, today)
         rows.append({
             "profile": profile,
             "purl": purl,
@@ -116,7 +188,7 @@ def inventory_rows(bom, profile, register):
             "review_hint": review_hint(component, declaration),
             "review_status": status,
             "recorded_decision": previous.get("decision", ""),
-            "selected_license": previous.get("selected_license", ""),
+            "selected_license": selected,
             "reviewer": previous.get("reviewer", ""),
             "review_date": previous.get("review_date", ""),
             "review_by": previous.get("review_by", ""),
@@ -136,8 +208,8 @@ def run(args):
     raw = args.bom.read_bytes()
     bom = json.loads(raw)
     register = load_register(args.register)
-    rows = inventory_rows(bom, args.profile, register)
-
+    policy = load_policy(args.policy)
+    rows = inventory_rows(bom, args.profile, register, policy)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "bom.json").write_bytes(raw)
     xml_bom = args.bom.with_suffix(".xml")
@@ -145,7 +217,18 @@ def run(args):
         shutil.copyfile(xml_bom, args.output_dir / "bom.xml")
     write_csv(args.output_dir / "inventory.csv", INVENTORY_FIELDS, rows)
     write_csv(args.output_dir / "review-register.csv", REVIEW_FIELDS, rows)
-
+    failures = []
+    for row in rows:
+        if row["group"] == "io.mapsmessaging":
+            continue
+        if row["review_status"] not in ("policy-approved", "approved", "exception"):
+            failures.append({
+                "purl": row["purl"], "name": row["name"],
+                "declared_license": row["declared_license"],
+                "review_status": row["review_status"],
+                "reason": "Third-party dependency has no current approved licence selection",
+            })
+    write_csv(args.output_dir / "validation-failures.csv", FAILURE_FIELDS, failures)
     hints = dict(sorted(Counter(row["review_hint"] for row in rows).items()))
     statuses = dict(sorted(Counter(row["review_status"] for row in rows).items()))
     project = bom.get("metadata", {}).get("component") or {}
@@ -158,26 +241,31 @@ def run(args):
         "dependency_count": len(rows),
         "review_hints": hints,
         "review_statuses": statuses,
-        "enforcement_enabled": False,
+        "unapproved_third_party_count": len(failures),
+        "enforcement_enabled": bool(args.enforce),
         "limitations": [
-            "Licence classifications are metadata-based review hints, not legal approvals.",
+            "Licence approval does not satisfy copyright, NOTICE or EPL source-availability obligations.",
             "Maven BOM scope does not prove which files are shipped in installers or containers.",
             "Native binaries, bundled assets and JavaScript require separate inventories.",
+            "Internal MapsMessaging components are reported but excluded from this third-party gate.",
         ],
     }
-    (args.output_dir / "summary.json").write_text(
-        json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    (args.output_dir / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     summary_lines = [
-        f"MSG-180 licence baseline ({args.profile})",
+        f"MSG-180 licence validation ({args.profile})",
         f"Dependencies: {len(rows)}",
         "Review hints: " + ", ".join(f"{key}={value}" for key, value in hints.items()),
         "Review statuses: " + ", ".join(f"{key}={value}" for key, value in statuses.items()),
-        "Informational only: no licence finding fails this build.",
-        "Check review-register.csv and source BOM; licence metadata is not legal advice.",
+        f"Unapproved third-party dependencies: {len(failures)}",
+        "Enforcement: " + ("enabled" if args.enforce else "report-only"),
+        "See validation-failures.csv for blockers; notice compliance requires separate verification.",
     ]
     (args.output_dir / "summary.txt").write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
     print("\n".join(summary_lines))
+    if args.enforce and failures:
+        for issue in failures:
+            print("LICENCE BLOCKER: " + issue["purl"] + " (" + issue["review_status"] + ")")
+    return len(failures)
 
 
 def main():
@@ -185,10 +273,12 @@ def main():
     parser.add_argument("--profile", choices=("standard", "ml"), required=True)
     parser.add_argument("--bom", type=Path, required=True)
     parser.add_argument("--register", type=Path, required=True)
+    parser.add_argument("--policy", type=Path, default=DEFAULT_POLICY)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--enforce", action="store_true")
     args = parser.parse_args()
-    run(args)
+    return 1 if args.enforce and run(args) else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

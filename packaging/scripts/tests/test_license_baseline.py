@@ -1,4 +1,4 @@
-"""Unit tests for the non-blocking MSG-180 licence inventory builder."""
+"""Unit tests for the enforcing MSG-180 third-party licence gate."""
 
 import csv
 import importlib.util
@@ -22,6 +22,7 @@ class LicenseBaselineTest(unittest.TestCase):
         self.bom = self.root / "bom.json"
         self.register = self.root / "register.csv"
         self.register.write_text(",".join(license_baseline.REGISTER_FIELDS) + "\n", encoding="utf-8")
+        self.policy = license_baseline.DEFAULT_POLICY
 
     def write_bom(self, components):
         self.bom.write_text(json.dumps({
@@ -30,10 +31,11 @@ class LicenseBaselineTest(unittest.TestCase):
             "components": components,
         }), encoding="utf-8")
 
-    def run_baseline(self, profile="standard"):
+    def run_baseline(self, profile="standard", enforce=True):
         output = self.root / profile
         license_baseline.run(SimpleNamespace(
-            profile=profile, bom=self.bom, register=self.register, output_dir=output
+            profile=profile, bom=self.bom, register=self.register, policy=self.policy,
+            output_dir=output, enforce=enforce
         ))
         with (output / "review-register.csv").open(encoding="utf-8", newline="") as handle:
             rows = list(csv.DictReader(handle))
@@ -53,11 +55,12 @@ class LicenseBaselineTest(unittest.TestCase):
         self.assertEqual(3, summary["dependency_count"])
         with (self.root / "standard" / "inventory.csv").open(encoding="utf-8", newline="") as handle:
             self.assertNotIn("review_status", csv.DictReader(handle).fieldnames)
-        self.assertFalse(summary["enforcement_enabled"])
+        self.assertTrue(summary["enforcement_enabled"])
         self.assertEqual("missing-license-metadata", rows[1]["review_hint"])
         self.assertEqual("manual-review", rows[0]["review_hint"])
-        self.assertEqual("permissive-candidate", rows[2]["review_hint"])
-        self.assertEqual({"unreviewed": 3}, summary["review_statuses"])
+        self.assertEqual("single-spdx", rows[2]["review_hint"])
+        self.assertEqual({"unreviewed": 2, "policy-approved": 1}, summary["review_statuses"])
+        self.assertEqual(2, summary["unapproved_third_party_count"])
 
     def test_prior_review_is_preserved_only_for_matching_declaration(self):
         self.write_bom([{
@@ -114,6 +117,60 @@ class LicenseBaselineTest(unittest.TestCase):
                 writer.writerow(["pkg:maven/example/a@1", "id:MIT", "approved", "MIT", "reviewer", "2026-01-01", "", "reviewed"])
         with self.assertRaisesRegex(ValueError, "Duplicate"):
             self.run_baseline()
+
+
+    def test_explicit_or_selects_apache_and_and_is_unreviewed(self):
+        self.write_bom([
+            {"purl": "pkg:maven/example/a@1", "name": "a",
+             "licenses": [{"expression": "Apache-2.0 OR EPL-2.0"}]},
+            {"purl": "pkg:maven/example/b@1", "name": "b",
+             "licenses": [{"expression": "Apache-2.0 AND EPL-2.0"}]},
+        ])
+        rows, summary = self.run_baseline()
+        self.assertEqual("policy-approved", rows[0]["review_status"])
+        self.assertEqual("Apache-2.0", rows[0]["selected_license"])
+        self.assertEqual("unreviewed", rows[1]["review_status"])
+        self.assertEqual(1, summary["unapproved_third_party_count"])
+
+    def test_specific_jetty_version_approved_but_new_version_fails(self):
+        self.write_bom([
+            {"purl": "pkg:maven/org.eclipse.jetty/jetty-http@12.1.12?type=jar",
+             "group": "org.eclipse.jetty", "name": "jetty-http", "version": "12.1.12",
+             "licenses": [{"license": {"id": "Apache-2.0"}}, {"license": {"id": "EPL-2.0"}}]},
+            {"purl": "pkg:maven/org.eclipse.jetty/jetty-http@12.1.13?type=jar",
+             "group": "org.eclipse.jetty", "name": "jetty-http", "version": "12.1.13",
+             "licenses": [{"license": {"id": "Apache-2.0"}}, {"license": {"id": "EPL-2.0"}}]},
+        ])
+        rows, summary = self.run_baseline()
+        self.assertEqual("Apache-2.0", rows[0]["selected_license"])
+        self.assertEqual("unreviewed", rows[1]["review_status"])
+        self.assertEqual(1, summary["unapproved_third_party_count"])
+
+    def test_external_missing_metadata_blocks_but_internal_does_not(self):
+        self.write_bom([
+            {"purl": "pkg:maven/com.ecwid.consul/consul-api@1.4.6", "group": "com.ecwid.consul", "name": "consul-api"},
+            {"purl": "pkg:maven/io.mapsmessaging/cot@1.1.0", "group": "io.mapsmessaging", "name": "cot"},
+        ])
+        rows, summary = self.run_baseline()
+        self.assertEqual("unreviewed", rows[0]["review_status"])
+        self.assertEqual("internal-unreviewed", rows[1]["review_status"])
+        self.assertEqual(1, summary["unapproved_third_party_count"])
+
+    def test_policy_corruption_fails_closed(self):
+        self.write_bom([])
+        self.policy = self.root / "bad-policy.yaml"
+        self.policy.write_text('{"schema_version":1,"mode":"report-only"}', encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "non-enforcing"):
+            self.run_baseline()
+
+    def test_policy_approved_single_epl(self):
+        self.write_bom([{
+            "purl": "pkg:maven/org.glassfish.grizzly/grizzly-http@4.0.2", "name": "grizzly-http",
+            "group": "org.glassfish.grizzly", "licenses": [{"license": {"id": "EPL-2.0"}}]
+        }])
+        rows, summary = self.run_baseline()
+        self.assertEqual(0, summary["unapproved_third_party_count"])
+        self.assertEqual("EPL-2.0", rows[0]["selected_license"])
 
 
 if __name__ == "__main__":

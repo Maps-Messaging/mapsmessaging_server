@@ -1,0 +1,343 @@
+{
+  "schema_version": 1,
+  "mode": "enforce",
+  "approved_single_licenses": [
+    "Apache-2.0",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MIT-0",
+    "EPL-2.0"
+  ],
+  "preferred_license": "Apache-2.0",
+  "verified_artifacts": [
+    {
+      "purl": "pkg:maven/ch.qos.logback.access/logback-access-common@2.0.15?type=jar",
+      "declared_license": "id:EPL-2.0 | name:GNU Lesser General Public License",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://logback.qos.ch/license.html"
+    },
+    {
+      "purl": "pkg:maven/ch.qos.logback/logback-classic@1.6.5?type=jar",
+      "declared_license": "id:EPL-2.0 | id:LGPL-2.1-only",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://logback.qos.ch/license.html"
+    },
+    {
+      "purl": "pkg:maven/ch.qos.logback/logback-core@1.6.5?type=jar",
+      "declared_license": "id:EPL-2.0 | id:LGPL-2.1-only",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://logback.qos.ch/license.html"
+    },
+    {
+      "purl": "pkg:maven/com.fazecast/jSerialComm@2.11.4?type=jar",
+      "declared_license": "id:Apache-2.0 | name:GNU Lesser GPL, Version 3",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://github.com/Fazecast/jSerialComm"
+    },
+    {
+      "purl": "pkg:maven/jakarta.annotation/jakarta.annotation-api@3.0.0?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/jakarta.interceptor/jakarta.interceptor-api@2.1.0?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/jakarta.servlet/jakarta.servlet-api@6.1.0?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/jakarta.transaction/jakarta.transaction-api@2.0.1?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/jakarta.ws.rs/jakarta.ws.rs-api@4.0.0?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/net.java.dev.jna/jna@5.18.1?type=jar",
+      "declared_license": "id:Apache-2.0 | id:LGPL-2.1-or-later",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://central.sonatype.com/artifact/net.java.dev.jna/jna/5.18.1"
+    },
+    {
+      "purl": "pkg:maven/org.bouncycastle/bcpkix-jdk18on@1.86?type=jar",
+      "declared_license": "name:Bouncy Castle Licence",
+      "selected_license": "MIT",
+      "evidence_url": "https://github.com/bcgit/bc-java/blob/main/LICENSE.md"
+    },
+    {
+      "purl": "pkg:maven/org.bouncycastle/bcprov-jdk18on@1.86?type=jar",
+      "declared_license": "name:Bouncy Castle Licence",
+      "selected_license": "MIT",
+      "evidence_url": "https://github.com/bcgit/bc-java/blob/main/LICENSE.md"
+    },
+    {
+      "purl": "pkg:maven/org.bouncycastle/bcutil-jdk18on@1.86?type=jar",
+      "declared_license": "name:Bouncy Castle Licence",
+      "selected_license": "MIT",
+      "evidence_url": "https://github.com/bcgit/bc-java/blob/main/LICENSE.md"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.collections/eclipse-collections-api@10.4.0?type=jar",
+      "declared_license": "id:BSD-3-Clause | id:EPL-1.0",
+      "selected_license": "BSD-3-Clause",
+      "evidence_url": "https://github.com/eclipse-collections/eclipse-collections/blob/master/NOTICE.md"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.collections/eclipse-collections-forkjoin@10.4.0?type=jar",
+      "declared_license": "id:BSD-3-Clause | id:EPL-1.0",
+      "selected_license": "BSD-3-Clause",
+      "evidence_url": "https://github.com/eclipse-collections/eclipse-collections/blob/master/NOTICE.md"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.collections/eclipse-collections@10.4.0?type=jar",
+      "declared_license": "id:BSD-3-Clause | id:EPL-1.0",
+      "selected_license": "BSD-3-Clause",
+      "evidence_url": "https://github.com/eclipse-collections/eclipse-collections/blob/master/NOTICE.md"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.ee/jetty-ee-webapp@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.ee10.websocket/jetty-ee10-websocket-jetty-server@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.ee10.websocket/jetty-ee10-websocket-servlet@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.ee10/jetty-ee10-annotations@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.ee10/jetty-ee10-plus@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.ee10/jetty-ee10-servlet@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.ee10/jetty-ee10-webapp@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.websocket/jetty-websocket-core-common@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.websocket/jetty-websocket-core-server@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.websocket/jetty-websocket-jetty-api@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.websocket/jetty-websocket-jetty-common@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty.websocket/jetty-websocket-jetty-server@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-annotations@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-http@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-io@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-jndi@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-plus@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-security@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-server@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-session@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-util@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.eclipse.jetty/jetty-xml@12.1.12?type=jar",
+      "declared_license": "id:Apache-2.0 | id:EPL-2.0",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://jetty.org/docs/jetty/12/"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.hk2.external/aopalliance-repackaged@4.0.0-M3?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.hk2/hk2-api@4.0.0-M3?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.hk2/hk2-locator@4.0.0-M3?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.hk2/hk2-utils@4.0.0-M3?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.hk2/osgi-resource-locator@3.0.0?type=jar",
+      "declared_license": "id:EPL-2.0 | id:GPL-2.0-with-classpath-exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://www.eclipse.org/legal/epl-2.0/"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.containers/jersey-container-grizzly2-http@4.0.2?type=jar",
+      "declared_license": "id:BSD-2-Clause | id:BSD-3-Clause | id:EPL-2.0 | id:GPL-2.0-with-classpath-exception | id:MIT | name:Apache License, 2.0 | name:Modified BSD | name:Public Domain | name:W3C license | name:jQuery license",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.containers/jersey-container-grizzly2-servlet@4.0.2?type=jar",
+      "declared_license": "id:BSD-2-Clause | id:BSD-3-Clause | id:EPL-2.0 | id:GPL-2.0-with-classpath-exception | id:MIT | name:Apache License, 2.0 | name:Modified BSD | name:Public Domain | name:W3C license | name:jQuery license",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.containers/jersey-container-servlet@4.0.2?type=jar",
+      "declared_license": "id:BSD-2-Clause | id:BSD-3-Clause | id:EPL-2.0 | id:GPL-2.0-with-classpath-exception | id:MIT | name:Apache License, 2.0 | name:Modified BSD | name:Public Domain | name:W3C license | name:jQuery license",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.core/jersey-client@4.0.2?type=jar",
+      "declared_license": "id:BSD-2-Clause | id:BSD-3-Clause | id:EPL-2.0 | id:GPL-2.0-with-classpath-exception | id:MIT | name:Apache License, 2.0 | name:Modified BSD | name:Public Domain | name:W3C license | name:jQuery license",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.core/jersey-common@4.0.2?type=jar",
+      "declared_license": "id:EPL-2.0 | name:Apache License, 2.0 | name:Public Domain | name:The GNU General Public License (GPL), Version 2, With Classpath Exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.core/jersey-server@4.0.2?type=jar",
+      "declared_license": "id:EPL-2.0 | name:Apache License, 2.0 | name:Modified BSD | name:The GNU General Public License (GPL), Version 2, With Classpath Exception",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.inject/jersey-hk2@4.0.2?type=jar",
+      "declared_license": "id:BSD-2-Clause | id:BSD-3-Clause | id:EPL-2.0 | id:GPL-2.0-with-classpath-exception | id:MIT | name:Apache License, 2.0 | name:Modified BSD | name:Public Domain | name:W3C license | name:jQuery license",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.media/jersey-media-multipart@4.0.2?type=jar",
+      "declared_license": "id:BSD-2-Clause | id:BSD-3-Clause | id:EPL-2.0 | id:GPL-2.0-with-classpath-exception | id:MIT | name:Apache License, 2.0 | name:Modified BSD | name:Public Domain | name:W3C license | name:jQuery license",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.glassfish.jersey.media/jersey-media-sse@4.0.2?type=jar",
+      "declared_license": "id:BSD-2-Clause | id:BSD-3-Clause | id:EPL-2.0 | id:GPL-2.0-with-classpath-exception | id:MIT | name:Apache License, 2.0 | name:Modified BSD | name:Public Domain | name:W3C license | name:jQuery license",
+      "selected_license": "EPL-2.0",
+      "evidence_url": "https://eclipse-ee4j.github.io/jersey.github.io/license.html"
+    },
+    {
+      "purl": "pkg:maven/org.javassist/javassist@3.30.2-GA?type=jar",
+      "declared_license": "id:Apache-2.0 | id:LGPL-2.1-only | id:MPL-1.1",
+      "selected_license": "Apache-2.0",
+      "evidence_url": "https://central.sonatype.com/artifact/org.javassist/javassist/3.30.2-GA"
+    }
+  ],
+  "internal_group": "io.mapsmessaging",
+  "notes": [
+    "Approves declared third-party licences, not copyright NOTICE or EPL source-availability obligations.",
+    "Prefer Apache-2.0 when it is an explicit SPDX OR alternative; unverified multi-entry CycloneDX lists are ambiguous.",
+    "Exact PURL/version and licence declaration must match each verified-artifact selection.",
+    "Unreviewed, missing, rejected, changed or expired third-party licences fail Maven verify. Internal MapsMessaging metadata is informational.",
+    "QuickFIX/J is intentionally unapproved because its dependency was removed; stale dependency versions must fail.",
+    "Supplied SBOMs do not cover bundled JavaScript, native, container or OS components."
+  ]
+}

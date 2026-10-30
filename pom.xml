@@ -164,6 +164,7 @@
 
     <license.fetch.skip>false</license.fetch.skip>
     <license.fetch.dir>${project.build.directory}/license</license.fetch.dir>
+    <license.profile>standard</license.profile>
 
   </properties>
 
@@ -303,6 +304,7 @@
       <properties>
         <!-- Base -->
         <maps.jms_selector.version>ml-2.2.0-SNAPSHOT</maps.jms_selector.version>
+        <license.profile>ml</license.profile>
       </properties>
       <build>
         <plugins>
@@ -389,6 +391,30 @@
             <configuration>
               <mainClass>io.mapsmessaging.tools.config.lint.ConfigLintMain</mainClass>
               <classpathScope>compile</classpathScope>
+            </configuration>
+          </execution>
+          <execution>
+            <id>validate-third-party-licences</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>python3</executable>
+              <arguments>
+                <argument>${project.basedir}/packaging/scripts/license_baseline.py</argument>
+                <argument>--profile</argument>
+                <argument>${license.profile}</argument>
+                <argument>--bom</argument>
+                <argument>${project.build.directory}/bom.json</argument>
+                <argument>--register</argument>
+                <argument>${project.basedir}/docs/compliance/license-register.csv</argument>
+                <argument>--policy</argument>
+                <argument>${project.basedir}/docs/compliance/license-policy.yaml</argument>
+                <argument>--output-dir</argument>
+                <argument>${project.build.directory}/license-baseline/${license.profile}</argument>
+                <argument>--enforce</argument>
+              </arguments>
             </configuration>
           </execution>
         </executions>

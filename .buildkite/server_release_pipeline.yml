@@ -8,7 +8,6 @@ steps:
       - chmod +x ./packaging/scripts/prepare_build.sh
       - ./packaging/scripts/prepare_build.sh
       - mvn -DskipTests=true clean deploy -U
-      - python3 packaging/scripts/license_baseline.py --profile standard --bom target/bom.json --register docs/compliance/license-register.csv --output-dir target/license-baseline/standard || (mkdir -p target/license-baseline/standard && echo "MSG-180 baseline reporting failed; see build log" | tee target/license-baseline/standard/ERROR.txt)
       - chmod +x ./packaging/*.sh
       - ./packaging/github_release.sh $(buildkite-agent secret get GIT_HUB_TOKEN)
       - chmod +x ./packaging/scripts/*
