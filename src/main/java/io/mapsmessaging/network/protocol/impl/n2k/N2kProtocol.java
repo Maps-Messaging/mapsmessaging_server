@@ -77,6 +77,7 @@ public class N2kProtocol extends Protocol {
   private final FramePacker framePacker;
   private final Session session;
   private final InboundProcessor inboundProcessor;
+  private boolean closed;
   private final String topicTemplate;
   private final String rawTopicTemplate;
   private final boolean parseToJson;
@@ -138,6 +139,7 @@ public class N2kProtocol extends Protocol {
     }
     inboundProcessor  = new InboundProcessor(this);
     Thread t = new Thread(inboundProcessor);
+    t.setDaemon(true);
     t.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
     scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(unknownCanIdentifiers::clear, 10, 10, TimeUnit.MINUTES);
@@ -146,15 +148,28 @@ public class N2kProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
-    super.close();
-    inboundProcessor.close();
-    endPoint.close();
-    logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
-    if(scheduledFuture != null){
+    synchronized (this) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+    }
+    if (inboundProcessor != null) {
+      inboundProcessor.close();
+    }
+    if (scheduledFuture != null) {
       scheduledFuture.cancel(false);
       scheduledFuture = null;
     }
+    try {
+      MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
+    } finally {
+      super.close();
+    }
+    logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
   }
 
   @Override

@@ -26,6 +26,7 @@ import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -83,6 +84,7 @@ public class CanaerospaceProtocol extends Protocol {
   private final MessageFormatter formatter;
   private final Session session;
   private final InboundProcessor inboundProcessor;
+  private boolean closed;
   private final String topicTemplate;
   private final String rawTopicTemplate;
   private final boolean parseToJson;
@@ -146,6 +148,7 @@ public class CanaerospaceProtocol extends Protocol {
 
     inboundProcessor = new InboundProcessor(this);
     Thread thread = new Thread(inboundProcessor, "canaerospace-inbound-" + endPoint.getName());
+    thread.setDaemon(true);
     thread.start();
 
     logger.log(CANAEROSPACE_PROTOCOL_CREATED_AND_BOUND, endPoint.getName());
@@ -153,9 +156,22 @@ public class CanaerospaceProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    super.close();
-    inboundProcessor.close();
-    endPoint.close();
+    synchronized (this) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+    }
+    if (inboundProcessor != null) {
+      inboundProcessor.close();
+    }
+    try {
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
+    } finally {
+      super.close();
+    }
     logger.log(CANAEROSPACE_PROTOCOL_CLOSING, endPoint.getName());
   }
 
