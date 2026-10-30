@@ -63,7 +63,7 @@ class CanbusProtocolLifecycleTest {
   }
 
   @Test
-  void close_stops_and_joins_each_inbound_worker() throws Exception {
+  void close_stops_inbound_loop_without_changing_blocking_read_behaviour() throws Exception {
     for (boolean n2k : new boolean[]{true, false}) {
       try (Fixture fixture = fixture(n2k)) {
         CountDownLatch entered = new CountDownLatch(1);
@@ -85,13 +85,17 @@ class CanbusProtocolLifecycleTest {
           worker = processor;
         }
         Thread thread = new Thread(worker, "canbus-lifecycle-test");
-        Class<?> owner = n2k ? N2kProtocol.class : CanaerospaceProtocol.class;
-        set(fixture.protocol, owner, "inboundThread", thread);
         thread.start();
         try {
           assertTrue(entered.await(5, TimeUnit.SECONDS));
           fixture.protocol.close();
-          assertFalse(thread.isAlive());
+          assertTrue(thread.isAlive(), "The existing blocking read remains pending until it returns");
+          assertFalse(thread.isInterrupted());
+          verify(fixture.endpoint).close();
+          release.countDown();
+          thread.join(1000);
+          assertFalse(thread.isAlive(), "A stopped processor must exit after the pending read returns");
+          verify(fixture.protocol).processPacket(any(Packet.class));
         } finally {
           release.countDown();
           thread.interrupt();
@@ -102,11 +106,9 @@ class CanbusProtocolLifecycleTest {
   }
 
   @Test
-  void reader_failure_cleanup_does_not_interrupt_its_own_session_close() throws Exception {
+  void close_does_not_interrupt_the_calling_thread() throws Exception {
     for (boolean n2k : new boolean[]{true, false}) {
       try (Fixture fixture = fixture(n2k)) {
-        set(fixture.protocol, n2k ? N2kProtocol.class : CanaerospaceProtocol.class,
-            "inboundThread", Thread.currentThread());
         doAnswer(call -> {
           assertFalse(Thread.currentThread().isInterrupted());
           return null;

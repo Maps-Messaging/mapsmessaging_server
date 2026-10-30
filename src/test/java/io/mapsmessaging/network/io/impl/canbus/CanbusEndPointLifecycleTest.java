@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
 class CanbusEndPointLifecycleTest {
 
   @Test
-  void socketcan_creation_opts_in_to_bounded_reads() throws Exception {
+  void socketcan_creation_uses_existing_blocking_device_api() throws Exception {
     AtomicReference<List<?>> arguments = new AtomicReference<>();
     CanbusConfigDTO config = new CanbusConfigDTO();
     config.setDeviceName("vcan0");
@@ -37,7 +37,7 @@ class CanbusEndPointLifecycleTest {
         (device, context) -> arguments.set(context.arguments()));
         MockedConstruction<EndPointJMX> beans = mockConstruction(EndPointJMX.class)) {
       try (CanbusEndPoint endpoint = new CanbusEndPoint(config, mock(CanbusEndPointServer.class), List.of())) {
-        assertEquals(List.of("vcan0", true), arguments.get());
+        assertEquals(List.of("vcan0"), arguments.get());
       }
       verify(devices.constructed().getFirst()).close();
     }
@@ -84,7 +84,7 @@ class CanbusEndPointLifecycleTest {
   }
 
   @Test
-  void socketcan_read_failure_notifies_lifecycle_owner() throws Exception {
+  void socketcan_read_failure_preserves_existing_read_path() throws Exception {
     CanDevice device = mock(CanDevice.class);
     IOException failure = new IOException("interface disappeared");
     when(device.readFrame()).thenThrow(failure);
@@ -93,7 +93,7 @@ class CanbusEndPointLifecycleTest {
     set(endpoint, EndPoint.class, "server", server);
 
     assertSame(failure, assertThrows(IOException.class, endpoint::readFrame));
-    verify(server).handleCloseEndPoint(endpoint);
+    verify(server, never()).handleCloseEndPoint(any());
   }
 
   @Test

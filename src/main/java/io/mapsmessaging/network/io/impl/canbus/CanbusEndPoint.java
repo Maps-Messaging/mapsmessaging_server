@@ -72,7 +72,7 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     }
 
     synchronized (deviceLock) {
-      CanDevice physical = new SocketCanDevice(config.getDeviceName(), true);
+      CanDevice physical = new SocketCanDevice(config.getDeviceName());
       canDevice =wrapDevice(physical);
     }
   }
@@ -191,15 +191,7 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
       try {
         return currentDevice.readFrame();
       } catch (EOFException e) {
-        if (isSerialCanDevice()) {
-          unbindFailedDevice(currentDevice);
-        } else {
-          notifyReadFailure();
-          throw e;
-        }
-      } catch (IOException failure) {
-        notifyReadFailure();
-        throw failure;
+        unbindFailedDevice(currentDevice);
       }
     }
 
@@ -211,12 +203,6 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     }
 
     return null;
-  }
-
-  private void notifyReadFailure() {
-    if (!closed.get() && !isSerialCanDevice() && server != null) {
-      server.handleCloseEndPoint(this);
-    }
   }
 
   public void writeFrame(CanFrame frame) throws IOException {

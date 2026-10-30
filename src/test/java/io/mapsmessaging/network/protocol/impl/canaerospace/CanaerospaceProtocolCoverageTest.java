@@ -220,26 +220,15 @@ class CanaerospaceProtocolCoverageTest {
   }
 
   @Test
-  void idle_bounded_read_does_not_publish_or_parse_a_frame() throws Exception {
+  void packetDispatchRejectsMissingCanFrame() throws Exception {
     Harness harness = harness();
     when(harness.endPoint.readFrame()).thenReturn(null);
 
-    assertTrue(harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class)));
-    verifyNoInteractions(harness.session, harness.formatter);
-  }
+    java.io.IOException failure = assertThrows(
+        java.io.IOException.class,
+        () -> harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class)));
 
-  @Test
-  void frame_after_idle_timeout_is_published_normally() throws Exception {
-    Harness harness = harness();
-    set(harness.protocol, "parseToJson", false);
-    CanFrame frame = frame(0x120);
-    when(harness.endPoint.readFrame()).thenReturn(null, frame);
-
-    assertTrue(harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class)));
-    verifyNoInteractions(harness.session, harness.formatter);
-    assertTrue(harness.protocol.processPacket(mock(io.mapsmessaging.network.io.Packet.class)));
-    assertArrayEquals(frame.getRawData(), capturedMessage(harness.destination).getOpaqueData());
-    verify(harness.session).findDestination("/can/vcan1/unknown", DestinationType.TOPIC);
+    assertEquals("No frame received from CAN bus", failure.getMessage());
   }
 
   @Test

@@ -77,7 +77,6 @@ public class N2kProtocol extends Protocol {
   private final FramePacker framePacker;
   private final Session session;
   private final InboundProcessor inboundProcessor;
-  private Thread inboundThread;
   private boolean closed;
   private final String topicTemplate;
   private final String rawTopicTemplate;
@@ -139,8 +138,9 @@ public class N2kProtocol extends Protocol {
       session.addSubscription(context);
     }
     inboundProcessor  = new InboundProcessor(this);
-    inboundThread = new Thread(inboundProcessor, "n2k-inbound-" + endPoint.getName());
-    inboundThread.start();
+    Thread t = new Thread(inboundProcessor);
+    t.setDaemon(true);
+    t.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
     scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(unknownCanIdentifiers::clear, 10, 10, TimeUnit.MINUTES);
     MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().registerProtocol(this);
@@ -161,26 +161,13 @@ public class N2kProtocol extends Protocol {
       scheduledFuture.cancel(false);
       scheduledFuture = null;
     }
-    if (inboundThread != null && inboundThread != Thread.currentThread()) {
-      inboundThread.interrupt();
-    }
     try {
       MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
       if (session != null) {
         SessionManager.getInstance().close(session, false);
       }
     } finally {
-      try {
-        super.close();
-      } finally {
-        if (inboundThread != null && inboundThread != Thread.currentThread()) {
-          try {
-            inboundThread.join(1000);
-          } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-          }
-        }
-      }
+      super.close();
     }
     logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
   }
