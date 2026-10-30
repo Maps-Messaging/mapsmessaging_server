@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.net.Socket;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
@@ -147,8 +148,9 @@ public class ConnectionManagementApiTest extends ApiTestBase {
         .stream()
         .filter(candidate -> candidate.getState() == EndPointManager.STATE.START)
         .filter(candidate -> candidate.getEndPointServer().getConfig().getUrl().startsWith("tcp://"))
+        .filter(candidate -> candidate.getProtocols().toLowerCase(Locale.ROOT).contains("mqtt"))
         .findFirst()
-        .orElseThrow(() -> new AssertionError("No active TCP listener available"));
+        .orElseThrow(() -> new AssertionError("No active TCP MQTT listener available"));
 
     EndPointURL listener = new EndPointURL(manager.getEndPointServer().getConfig().getUrl());
     try (Socket socket = new Socket("127.0.0.1", listener.getPort())) {
