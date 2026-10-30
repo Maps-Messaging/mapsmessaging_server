@@ -19,6 +19,10 @@
 
 package io.mapsmessaging.rest.api.impl.connections;
 
+import io.mapsmessaging.MessageDaemon;
+import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.EndPointURL;
+import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.rest.ApiTestBase;
 import io.mapsmessaging.rest.responses.StatusResponse;
 import io.restassured.http.ContentType;
@@ -26,7 +30,8 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 
 public class ConnectionManagementApiTest extends ApiTestBase {
@@ -134,57 +139,61 @@ public class ConnectionManagementApiTest extends ApiTestBase {
   }
 
   @Test
-  void closeSpecificConnection_happyPathIfAnyConnectionExists_elseSkip() {
-    Response response =
-        givenAuthenticated()
-            .when()
-            .get(BASE_PATH)
-            .then()
-            .statusCode(200)
-            .contentType(ContentType.JSON)
-            .extract()
-            .response();
+  void closeSpecificConnection_closesOwnedNetworkConnection() throws Exception {
+    EndPointManager manager = MessageDaemon.getInstance()
+        .getSubSystemManager()
+        .getNetworkManager()
+        .getAll()
+        .stream()
+        .filter(candidate -> candidate.getState() == EndPointManager.STATE.START)
+        .filter(candidate -> candidate.getEndPointServer().getConfig().getUrl().startsWith("tcp://"))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No active TCP listener available"));
 
-    List<String> connectionIds = response.jsonPath().getList("id", String.class);
-    if (connectionIds == null || connectionIds.isEmpty()) {
-      return;
+    EndPointURL listener = new EndPointURL(manager.getEndPointServer().getConfig().getUrl());
+    try (Socket socket = new Socket("127.0.0.1", listener.getPort())) {
+      EndPoint connection = awaitConnection(manager, socket.getLocalPort());
+      String connectionId = Long.toString(connection.getId());
+
+      StatusResponse success = givenAuthenticated()
+          .when()
+          .delete(BASE_PATH + "/" + connectionId)
+          .then()
+          .statusCode(200)
+          .contentType(ContentType.JSON)
+          .extract()
+          .as(StatusResponse.class);
+
+      Assertions.assertNotNull(success);
+      Assertions.assertEquals("success", success.getStatus());
+      Assertions.assertTrue(manager.getEndPointServer().getActiveEndPoints().stream()
+          .noneMatch(endpoint -> endpoint.getId() == connection.getId()));
+
+      StatusResponse notFound = givenAuthenticated()
+          .when()
+          .delete(BASE_PATH + "/" + connectionId)
+          .then()
+          .statusCode(404)
+          .contentType(ContentType.JSON)
+          .extract()
+          .as(StatusResponse.class);
+
+      Assertions.assertNotNull(notFound);
+      Assertions.assertEquals("Connection not found", notFound.getStatus());
     }
-
-    String connectionId = getFirstString(connectionIds);
-    if (connectionId == null || connectionId.isBlank()) {
-      return;
-    }
-
-    givenAuthenticated()
-        .when()
-        .delete(BASE_PATH + "/" + connectionId)
-        .then()
-        .statusCode(404)
-        .contentType(ContentType.JSON);
-
-    StatusResponse statusResponse =
-        givenAuthenticated()
-            .when()
-            .delete(BASE_PATH + "/" + connectionId)
-            .then()
-            .statusCode(404)
-            .contentType(ContentType.JSON)
-            .extract()
-            .as(StatusResponse.class);
-
-    Assertions.assertNotNull(statusResponse);
   }
 
-  private String getFirstString(List<String> values) {
-    if (values == null || values.isEmpty()) {
-      return null;
-    }
-    for (String value : values) {
-      if (value != null && !value.isBlank()) {
-        return value;
+  private EndPoint awaitConnection(EndPointManager manager, int localPort) throws InterruptedException {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (System.nanoTime() < deadline) {
+      for (EndPoint endpoint : manager.getEndPointServer().getActiveEndPoints()) {
+        if (endpoint.getRemoteSocketAddress().endsWith(":" + localPort)) {
+          return endpoint;
+        }
       }
+      Thread.sleep(25);
     }
-    return null;
+    throw new AssertionError("Test-owned TCP connection not registered within 5 seconds");
   }
 
 }
