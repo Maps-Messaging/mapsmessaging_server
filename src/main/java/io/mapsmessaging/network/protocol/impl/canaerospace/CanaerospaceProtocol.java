@@ -26,6 +26,7 @@ import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -83,6 +84,8 @@ public class CanaerospaceProtocol extends Protocol {
   private final MessageFormatter formatter;
   private final Session session;
   private final InboundProcessor inboundProcessor;
+  private Thread inboundThread;
+  private boolean closed;
   private final String topicTemplate;
   private final String rawTopicTemplate;
   private final boolean parseToJson;
@@ -145,17 +148,43 @@ public class CanaerospaceProtocol extends Protocol {
     }
 
     inboundProcessor = new InboundProcessor(this);
-    Thread thread = new Thread(inboundProcessor, "canaerospace-inbound-" + endPoint.getName());
-    thread.start();
+    inboundThread = new Thread(inboundProcessor, "canaerospace-inbound-" + endPoint.getName());
+    inboundThread.start();
 
     logger.log(CANAEROSPACE_PROTOCOL_CREATED_AND_BOUND, endPoint.getName());
   }
 
   @Override
   public void close() throws IOException {
-    super.close();
-    inboundProcessor.close();
-    endPoint.close();
+    synchronized (this) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+    }
+    if (inboundProcessor != null) {
+      inboundProcessor.close();
+    }
+    if (inboundThread != null && inboundThread != Thread.currentThread()) {
+      inboundThread.interrupt();
+    }
+    try {
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
+    } finally {
+      try {
+        super.close();
+      } finally {
+        if (inboundThread != null && inboundThread != Thread.currentThread()) {
+          try {
+            inboundThread.join(1000);
+          } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      }
+    }
     logger.log(CANAEROSPACE_PROTOCOL_CLOSING, endPoint.getName());
   }
 
@@ -195,7 +224,7 @@ public class CanaerospaceProtocol extends Protocol {
     CanFrame frame = ((CanbusEndPoint) endPoint).readFrame();
 
     if (frame == null) {
-      throw new IOException("No frame received from CAN bus");
+      return true;
     }
 
     if (logger.isDebugEnabled()) {

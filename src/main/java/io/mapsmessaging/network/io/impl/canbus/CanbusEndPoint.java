@@ -50,8 +50,19 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     this.closed = new AtomicBoolean(false);
     this.config = config;
     this.deviceLock = new Object();
-    createDevice();
-    this.mbean = new EndPointJMX(jmxPath, this);
+    try {
+      createDevice();
+      this.mbean = new EndPointJMX(jmxPath, this);
+    } catch (IOException | RuntimeException failure) {
+      closed.set(true);
+      IOException cleanupFailure = closeDevice(canDevice);
+      if (cleanupFailure != null) {
+        failure.addSuppressed(cleanupFailure);
+      }
+      closePort(activeSerialPort);
+      super.close();
+      throw failure;
+    }
   }
 
   private void createDevice() throws IOException {
@@ -61,7 +72,7 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     }
 
     synchronized (deviceLock) {
-      CanDevice physical = new SocketCanDevice(config.getDeviceName());
+      CanDevice physical = new SocketCanDevice(config.getDeviceName(), true);
       canDevice =wrapDevice(physical);
     }
   }
@@ -103,8 +114,6 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
       return;
     }
 
-    mbean.close();
-
     CanDevice deviceToClose;
     SerialPort portToClose;
 
@@ -117,11 +126,18 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
       activeSerialPortName = null;
     }
 
-    IOException exception = closeDevice(deviceToClose);
-    closePort(portToClose);
-
-    if (exception != null) {
-      throw exception;
+    try {
+      mbean.close();
+    } finally {
+      try {
+        IOException exception = closeDevice(deviceToClose);
+        closePort(portToClose);
+        if (exception != null) {
+          throw exception;
+        }
+      } finally {
+        super.close();
+      }
     }
   }
 
@@ -175,7 +191,15 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
       try {
         return currentDevice.readFrame();
       } catch (EOFException e) {
-        unbindFailedDevice(currentDevice);
+        if (isSerialCanDevice()) {
+          unbindFailedDevice(currentDevice);
+        } else {
+          notifyReadFailure();
+          throw e;
+        }
+      } catch (IOException failure) {
+        notifyReadFailure();
+        throw failure;
       }
     }
 
@@ -187,6 +211,12 @@ public class CanbusEndPoint extends EndPoint implements SerialPortListener {
     }
 
     return null;
+  }
+
+  private void notifyReadFailure() {
+    if (!closed.get() && !isSerialCanDevice() && server != null) {
+      server.handleCloseEndPoint(this);
+    }
   }
 
   public void writeFrame(CanFrame frame) throws IOException {

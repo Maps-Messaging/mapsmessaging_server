@@ -139,6 +139,10 @@ class CanbusEndPointConcurrencyTest {
     SerialCanDevice oldDevice = mock(SerialCanDevice.class);
     CanDevice replacement = mock(CanDevice.class);
     CanbusEndPoint endpoint = endpoint(oldDevice);
+    CanbusConfigDTO serialConfig = new CanbusConfigDTO();
+    serialConfig.setSerialConfig(mock(io.mapsmessaging.dto.rest.config.network.impl.SerialConfigDTO.class,
+        RETURNS_DEEP_STUBS));
+    set(endpoint, "config", serialConfig);
     SerialPort oldPort = port("old");
     SerialPort newPort = port("new");
     set(endpoint, "activeSerialPort", oldPort);

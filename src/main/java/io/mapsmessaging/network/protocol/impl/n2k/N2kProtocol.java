@@ -77,6 +77,8 @@ public class N2kProtocol extends Protocol {
   private final FramePacker framePacker;
   private final Session session;
   private final InboundProcessor inboundProcessor;
+  private Thread inboundThread;
+  private boolean closed;
   private final String topicTemplate;
   private final String rawTopicTemplate;
   private final boolean parseToJson;
@@ -137,8 +139,8 @@ public class N2kProtocol extends Protocol {
       session.addSubscription(context);
     }
     inboundProcessor  = new InboundProcessor(this);
-    Thread t = new Thread(inboundProcessor);
-    t.start();
+    inboundThread = new Thread(inboundProcessor, "n2k-inbound-" + endPoint.getName());
+    inboundThread.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
     scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(unknownCanIdentifiers::clear, 10, 10, TimeUnit.MINUTES);
     MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().registerProtocol(this);
@@ -146,15 +148,41 @@ public class N2kProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
-    super.close();
-    inboundProcessor.close();
-    endPoint.close();
-    logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
-    if(scheduledFuture != null){
+    synchronized (this) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+    }
+    if (inboundProcessor != null) {
+      inboundProcessor.close();
+    }
+    if (scheduledFuture != null) {
       scheduledFuture.cancel(false);
       scheduledFuture = null;
     }
+    if (inboundThread != null && inboundThread != Thread.currentThread()) {
+      inboundThread.interrupt();
+    }
+    try {
+      MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
+    } finally {
+      try {
+        super.close();
+      } finally {
+        if (inboundThread != null && inboundThread != Thread.currentThread()) {
+          try {
+            inboundThread.join(1000);
+          } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+          }
+        }
+      }
+    }
+    logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
   }
 
   @Override
