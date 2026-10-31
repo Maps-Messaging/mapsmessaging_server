@@ -158,7 +158,7 @@ class BulkRemoveMessageTaskFailureTest {
 
     private Fixture() {
       when(destination.getFullyQualifiedNamespace()).thenReturn("/reaper-test");
-      when(destination.getRetainedIdentifier()).thenReturn(-1L);
+      when(destination.getRetainedIdentifier()).thenReturn(null);
       when(destination.getStats()).thenReturn(mock(DestinationStats.class));
       when(destination.prepareCompletedRemoval(any())).thenReturn(true);
       doAnswer(invocation -> {

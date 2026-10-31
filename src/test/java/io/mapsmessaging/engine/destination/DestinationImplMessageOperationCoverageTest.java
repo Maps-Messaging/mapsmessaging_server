@@ -119,12 +119,12 @@ class DestinationImplMessageOperationCoverageTest {
   @Test
   void removeMessageAlwaysRemovesResourceEntry() throws Exception {
     Fixture fixture = new Fixture();
-    when(fixture.retainManager.current()).thenReturn(-1L);
+    when(fixture.retainManager.current()).thenReturn(null);
 
     fixture.destination.removeMessage(31);
 
     verify(fixture.resource).remove(31);
-    verify(fixture.retainManager, never()).replace(anyLong());
+    verify(fixture.retainManager, never()).replace(any());
     verify(fixture.stats).messageDeleteTime(anyLong());
   }
 
@@ -136,7 +136,7 @@ class DestinationImplMessageOperationCoverageTest {
     fixture.destination.removeMessage(32);
 
     verify(fixture.resource).remove(32);
-    verify(fixture.retainManager).replace(-1);
+    verify(fixture.retainManager).replace(null);
     verify(fixture.stats).retainedMessages(-1);
   }
 
@@ -147,7 +147,7 @@ class DestinationImplMessageOperationCoverageTest {
 
     fixture.destination.removeMessage(33);
 
-    verify(fixture.retainManager, never()).replace(anyLong());
+    verify(fixture.retainManager, never()).replace(any());
     verify(fixture.stats, never()).retainedMessages(anyInt());
   }
 
@@ -159,7 +159,7 @@ class DestinationImplMessageOperationCoverageTest {
 
     assertSame(failure, assertThrows(IOException.class, () -> fixture.destination.removeMessage(34)));
 
-    verify(fixture.retainManager, never()).replace(anyLong());
+    verify(fixture.retainManager, never()).replace(any());
     verify(fixture.stats, never()).messageDeleteTime(anyLong());
   }
 
@@ -172,7 +172,7 @@ class DestinationImplMessageOperationCoverageTest {
     fixture.destination.addMessage(message);
 
     verify(fixture.resource).add(message);
-    verify(fixture.retainManager, never()).replace(anyLong());
+    verify(fixture.retainManager, never()).replace(any());
     verify(fixture.stats).messageWriteTime(anyLong());
   }
 
@@ -183,7 +183,7 @@ class DestinationImplMessageOperationCoverageTest {
 
     fixture.destination.addMessage(message);
 
-    verify(fixture.retainManager).replace(-1);
+    verify(fixture.retainManager).replace(null);
     verify(fixture.stats).retainedMessages(-1);
   }
 
@@ -194,7 +194,7 @@ class DestinationImplMessageOperationCoverageTest {
 
     fixture.destination.addMessage(message);
 
-    verify(fixture.retainManager).replace(-1);
+    verify(fixture.retainManager).replace(null);
     verify(fixture.stats).retainedMessages(-1);
   }
 
@@ -219,7 +219,7 @@ class DestinationImplMessageOperationCoverageTest {
 
     assertSame(failure, assertThrows(IOException.class, () -> fixture.destination.addMessage(message)));
 
-    verify(fixture.retainManager, never()).replace(anyLong());
+    verify(fixture.retainManager, never()).replace(any());
     verify(fixture.stats, never()).messageWriteTime(anyLong());
   }
 

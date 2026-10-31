@@ -454,7 +454,7 @@ class DestinationReaperInterleavingTest {
       set("schemaSubscriptionManager", schemaSubscriptionManager);
       set("subscriptionTaskQueue", subscriptionTaskQueue);
       set("reaperFuture", reaperFuture);
-      when(retainManager.current()).thenReturn(-1L);
+      when(retainManager.current()).thenReturn(null);
       when(subscriptionManager.getAll()).thenReturn(new LinkedList<>());
       doAnswer(invocation -> {
         queuedTasks.add(invocation.getArgument(0));

@@ -172,7 +172,7 @@ class DestinationImplSubscriptionMaintenanceCoverageTest {
   void orphanScanDoesNothingWhenStoredSizeMatchesInterestSet() throws Exception {
     Fixture fixture = new Fixture();
     fixture.set("fullyQualifiedNamespace", "sensor/data");
-    when(fixture.retainManager.current()).thenReturn(-1L);
+    when(fixture.retainManager.current()).thenReturn(null);
     when(fixture.subscriptionManager.getAll()).thenReturn(queue(91L, 92L));
     when(fixture.resource.size()).thenReturn(2L);
 
@@ -185,7 +185,7 @@ class DestinationImplSubscriptionMaintenanceCoverageTest {
   void orphanScanKeepsSubscriptionInterestWhenStoredSizeDiffers() throws Exception {
     Fixture fixture = new Fixture();
     fixture.set("fullyQualifiedNamespace", "sensor/data");
-    when(fixture.retainManager.current()).thenReturn(-1L);
+    when(fixture.retainManager.current()).thenReturn(null);
     when(fixture.subscriptionManager.getAll()).thenReturn(queue(101L, 102L));
     when(fixture.resource.size()).thenReturn(4L);
     when(fixture.resource.contains(anyLong())).thenReturn(true);
@@ -236,7 +236,7 @@ class DestinationImplSubscriptionMaintenanceCoverageTest {
   void orphanScanExpiresInterestedMessagesMissingFromResource() throws Exception {
     Fixture fixture = new Fixture();
     fixture.set("fullyQualifiedNamespace", "sensor/data");
-    when(fixture.retainManager.current()).thenReturn(-1L);
+    when(fixture.retainManager.current()).thenReturn(null);
     when(fixture.subscriptionManager.getAll()).thenReturn(queue(121L, 122L, 123L));
     when(fixture.resource.size()).thenReturn(5L);
     when(fixture.resource.contains(121L)).thenReturn(true);
