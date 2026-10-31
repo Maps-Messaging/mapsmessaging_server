@@ -49,7 +49,7 @@ class DelayedBucketTest {
 
     Assertions.assertFalse(bucket.isEmpty());
     Assertions.assertEquals(3, bucket.size());
-    Assertions.assertEquals(7L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(7L), bucket.peek());
   }
 
   @Test
@@ -63,7 +63,7 @@ class DelayedBucketTest {
     boolean second = bucket.register(42L);
     Assertions.assertFalse(second);
     Assertions.assertEquals(1, bucket.size());
-    Assertions.assertEquals(42L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(42L), bucket.peek());
   }
 
   @Test
@@ -76,15 +76,15 @@ class DelayedBucketTest {
     bucket.register(11L);
 
     Assertions.assertEquals(3, bucket.size());
-    Assertions.assertEquals(10L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(10L), bucket.peek());
 
     Assertions.assertTrue(bucket.remove(10L));
     Assertions.assertEquals(2, bucket.size());
-    Assertions.assertEquals(11L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(11L), bucket.peek());
 
     Assertions.assertTrue(bucket.remove(11L));
     Assertions.assertEquals(1, bucket.size());
-    Assertions.assertEquals(12L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(12L), bucket.peek());
 
     Assertions.assertTrue(bucket.remove(12L));
     Assertions.assertEquals(0, bucket.size());
@@ -101,7 +101,7 @@ class DelayedBucketTest {
 
     Assertions.assertFalse(bucket.remove(999L));
     Assertions.assertEquals(1, bucket.size());
-    Assertions.assertEquals(5L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(5L), bucket.peek());
   }
 
   @Test
@@ -116,11 +116,11 @@ class DelayedBucketTest {
     Assertions.assertTrue(queue.offer(2L));
 
     Assertions.assertEquals(3, bucket.size());
-    Assertions.assertEquals(1L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(1L), bucket.peek());
 
     Assertions.assertTrue(queue.remove(1L));
     Assertions.assertEquals(2, bucket.size());
-    Assertions.assertEquals(2L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(2L), bucket.peek());
   }
 
   @Test
@@ -153,11 +153,11 @@ class DelayedBucketTest {
     Assertions.assertTrue(bucket.register(Long.MIN_VALUE));
     Assertions.assertTrue(bucket.register(0L));
 
-    Assertions.assertEquals(Long.MIN_VALUE, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), bucket.peek());
     Assertions.assertTrue(bucket.remove(Long.MIN_VALUE));
-    Assertions.assertEquals(-1L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(-1L), bucket.peek());
     Assertions.assertTrue(bucket.remove(-1L));
-    Assertions.assertEquals(0L, bucket.peek());
+    Assertions.assertEquals(Long.valueOf(0L), bucket.peek());
     Assertions.assertTrue(bucket.remove(0L));
     Assertions.assertNull(bucket.peek());
   }

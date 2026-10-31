@@ -101,9 +101,9 @@ class SignedPriorityMessageStateCompatibilityTest {
 
       manager.registerRetainedReplay(452L);
       Assertions.assertTrue(UniqueIdHelper.compute(UNIQUE_SESSION_ID, Priority.ONE_BELOW_HIGHEST.getValue()) < 0);
-      Assertions.assertEquals(452L, manager.nextMessageId(), "New priority-9 replay precedes old priority-7 replay");
+      Assertions.assertEquals(Long.valueOf(452L), manager.nextMessageId(), "New priority-9 replay precedes old priority-7 replay");
       Assertions.assertEquals(452L, manager.messagesAtRest.poll());
-      Assertions.assertEquals(legacyReplayId, manager.nextMessageId());
+      Assertions.assertEquals(Long.valueOf(legacyReplayId), manager.nextMessageId());
       Assertions.assertTrue(manager.isRetainedReplay(452L));
     }
   }

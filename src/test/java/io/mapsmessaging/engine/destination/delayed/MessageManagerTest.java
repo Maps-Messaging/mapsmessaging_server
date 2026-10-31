@@ -103,7 +103,7 @@ class MessageManagerTest {
 
     Assertions.assertTrue(removed);
     Assertions.assertEquals(1, manager.size());
-    Assertions.assertEquals(8L, manager.getNext(100L));
+    Assertions.assertEquals(Long.valueOf(8L), manager.getNext(100L));
   }
 
   @Test
@@ -188,11 +188,11 @@ class MessageManagerTest {
     manager.register(100L, newMessage(0L));
     manager.register(100L, newMessage(-1L));
     manager.register(100L, newMessage(Long.MIN_VALUE));
-    Assertions.assertEquals(Long.MIN_VALUE, manager.getNext(100L));
+    Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), manager.getNext(100L));
     Assertions.assertTrue(manager.remove(100L, Long.MIN_VALUE));
-    Assertions.assertEquals(-1L, manager.getNext(100L));
+    Assertions.assertEquals(Long.valueOf(-1L), manager.getNext(100L));
     Assertions.assertTrue(manager.remove(100L, -1L));
-    Assertions.assertEquals(0L, manager.getNext(100L));
+    Assertions.assertEquals(Long.valueOf(0L), manager.getNext(100L));
     Assertions.assertTrue(manager.remove(100L, 0L));
     Assertions.assertNull(manager.getNext(100L));
     Assertions.assertNull(manager.getNext(999L));
@@ -244,7 +244,7 @@ class MessageManagerTest {
     boolean removed = manager.remove(200L, 2L);
     Assertions.assertTrue(removed);
 
-    long next = manager.getNext(200L);
+    Long next = manager.getNext(200L);
     Assertions.assertNull(next);
 
     // Intended behaviour: bucket 200 removed, bucket 100 remains.

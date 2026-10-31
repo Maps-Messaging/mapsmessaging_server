@@ -74,7 +74,7 @@ class MessageStateManagerImplTest {
     Assertions.assertEquals(1, all.size());
     Assertions.assertTrue(all.contains(10L));
 
-    Assertions.assertEquals(10L, manager.nextMessageId());
+    Assertions.assertEquals(Long.valueOf(10L), manager.nextMessageId());
   }
 
   @Test
@@ -86,7 +86,7 @@ class MessageStateManagerImplTest {
     Assertions.assertTrue(manager.hasAtRestMessages());
     Assertions.assertEquals(1, manager.pending());
     Assertions.assertTrue(manager.hasMessage(42L));
-    Assertions.assertEquals(42L, manager.nextMessageId());
+    Assertions.assertEquals(Long.valueOf(42L), manager.nextMessageId());
   }
 
   @Test
@@ -152,7 +152,7 @@ class MessageStateManagerImplTest {
     Assertions.assertFalse(manager.hasMessagesInFlight());
     Assertions.assertTrue(manager.hasMessage(400L));
     Assertions.assertEquals(1, manager.pending());
-    Assertions.assertEquals(400L, manager.nextMessageId());
+    Assertions.assertEquals(Long.valueOf(400L), manager.nextMessageId());
   }
 
   @Test

@@ -58,11 +58,11 @@ class RetainManagerTest {
 
       Long oldIdFirst = retainManager.replace(10L);
       Assertions.assertNull(oldIdFirst);
-      Assertions.assertEquals(10L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(10L), retainManager.current());
 
       long oldIdSecond = retainManager.replace(20L);
       Assertions.assertEquals(10L, oldIdSecond);
-      Assertions.assertEquals(20L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(20L), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -83,7 +83,7 @@ class RetainManagerTest {
 
       long oldId = retainManager.replace(66L);
       Assertions.assertEquals(55L, oldId);
-      Assertions.assertEquals(66L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(66L), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -101,7 +101,7 @@ class RetainManagerTest {
     try {
       first = new RetainManager(false, path.toString());
       first.replace(99L);
-      Assertions.assertEquals(99L, first.current());
+      Assertions.assertEquals(Long.valueOf(99L), first.current());
     } finally {
       if (first != null) {
         first.close();
@@ -128,7 +128,7 @@ class RetainManagerTest {
     try {
       first = new RetainManager(true, path.toString());
       first.replace(77L);
-      Assertions.assertEquals(77L, first.current());
+      Assertions.assertEquals(Long.valueOf(77L), first.current());
     } finally {
       if (first != null) {
         first.close();
@@ -137,7 +137,7 @@ class RetainManagerTest {
 
     try {
       second = new RetainManager(true, path.toString());
-      Assertions.assertEquals(77L, second.current());
+      Assertions.assertEquals(Long.valueOf(77L), second.current());
     } finally {
       if (second != null) {
         second.close();
@@ -171,13 +171,13 @@ class RetainManagerTest {
     RetainManager manager = new RetainManager(false, tempDirectory.toString());
     try {
       Assertions.assertNull(manager.replace(Long.MIN_VALUE));
-      Assertions.assertEquals(Long.MIN_VALUE, manager.current());
-      Assertions.assertEquals(Long.MIN_VALUE, manager.replace(-2L));
-      Assertions.assertEquals(-2L, manager.replace(-1L));
-      Assertions.assertEquals(-1L, manager.current());
-      Assertions.assertEquals(-1L, manager.replace(0L));
-      Assertions.assertEquals(0L, manager.current());
-      Assertions.assertEquals(0L, manager.replace(null));
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), manager.current());
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), manager.replace(-2L));
+      Assertions.assertEquals(Long.valueOf(-2L), manager.replace(-1L));
+      Assertions.assertEquals(Long.valueOf(-1L), manager.current());
+      Assertions.assertEquals(Long.valueOf(-1L), manager.replace(0L));
+      Assertions.assertEquals(Long.valueOf(0L), manager.current());
+      Assertions.assertEquals(Long.valueOf(0L), manager.replace(null));
       Assertions.assertNull(manager.current());
     } finally {
       manager.close();
@@ -192,11 +192,11 @@ class RetainManagerTest {
 
       Long oldFirst = retainManager.replace(10L);
       Assertions.assertNull(oldFirst);
-      Assertions.assertEquals(10L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(10L), retainManager.current());
 
       long oldSecond = retainManager.replace(20L);
       Assertions.assertEquals(10L, oldSecond);
-      Assertions.assertEquals(20L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(20L), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -209,8 +209,8 @@ class RetainManagerTest {
     RetainManager manager = new RetainManager(false, null);
     try {
       Assertions.assertNull(manager.replace(-1L));
-      Assertions.assertEquals(-1L, manager.current());
-      Assertions.assertEquals(-1L, manager.replace(null));
+      Assertions.assertEquals(Long.valueOf(-1L), manager.current());
+      Assertions.assertEquals(Long.valueOf(-1L), manager.replace(null));
       Assertions.assertNull(manager.current());
     } finally {
       manager.close();
@@ -224,11 +224,11 @@ class RetainManagerTest {
       retainManager = new RetainManager(false, tempDirectory.toString());
 
       Assertions.assertNull(retainManager.replace(0L));
-      Assertions.assertEquals(0L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(0L), retainManager.current());
 
       long large = Long.MAX_VALUE;
-      Assertions.assertEquals(0L, retainManager.replace(large));
-      Assertions.assertEquals(large, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(0L), retainManager.replace(large));
+      Assertions.assertEquals(Long.valueOf(large), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -245,7 +245,7 @@ class RetainManagerTest {
 
       Assertions.assertNull(retainManager.current());
       Assertions.assertNull(retainManager.replace(0L));
-      Assertions.assertEquals(0L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(0L), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -258,13 +258,13 @@ class RetainManagerTest {
     RetainManager manager = new RetainManager(false, null);
     try {
       Assertions.assertNull(manager.replace(42L));
-      Assertions.assertEquals(42L, manager.current());
-      Assertions.assertEquals(42L, manager.replace(null));
+      Assertions.assertEquals(Long.valueOf(42L), manager.current());
+      Assertions.assertEquals(Long.valueOf(42L), manager.replace(null));
       Assertions.assertNull(manager.current());
       Assertions.assertNull(manager.replace(null));
       Assertions.assertNull(manager.current());
       Assertions.assertNull(manager.replace(43L));
-      Assertions.assertEquals(43L, manager.current());
+      Assertions.assertEquals(Long.valueOf(43L), manager.current());
     } finally {
       manager.close();
     }
@@ -276,8 +276,8 @@ class RetainManagerTest {
     RetainManager original = new RetainManager(true, path.toString());
     try {
       original.replace(77L);
-      Assertions.assertEquals(77L, original.current());
-      Assertions.assertEquals(77L, original.replace(null));
+      Assertions.assertEquals(Long.valueOf(77L), original.current());
+      Assertions.assertEquals(Long.valueOf(77L), original.replace(null));
       Assertions.assertNull(original.current());
     } finally {
       original.close();
@@ -297,21 +297,21 @@ class RetainManagerTest {
     RetainManager original = new RetainManager(true, path.toString());
     try {
       Assertions.assertNull(original.replace(-1L));
-      Assertions.assertEquals(-1L, original.current());
+      Assertions.assertEquals(Long.valueOf(-1L), original.current());
     } finally {
       original.close();
     }
     RetainManager reopened = new RetainManager(true, path.toString());
     try {
-      Assertions.assertEquals(-1L, reopened.current());
-      Assertions.assertEquals(-1L, reopened.replace(Long.MIN_VALUE));
-      Assertions.assertEquals(Long.MIN_VALUE, reopened.current());
+      Assertions.assertEquals(Long.valueOf(-1L), reopened.current());
+      Assertions.assertEquals(Long.valueOf(-1L), reopened.replace(Long.MIN_VALUE));
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), reopened.current());
     } finally {
       reopened.close();
     }
     RetainManager again = new RetainManager(true, path.toString());
     try {
-      Assertions.assertEquals(Long.MIN_VALUE, again.current());
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), again.current());
     } finally {
       again.close();
     }
