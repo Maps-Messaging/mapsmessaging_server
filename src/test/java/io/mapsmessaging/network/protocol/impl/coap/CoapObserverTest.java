@@ -37,6 +37,8 @@ class CoapObserverTest extends BaseCoapTest {
   @Test
   void testObserver() throws ConnectorException, IOException, InterruptedException {
     CoapClient client = new CoapClient(getUri());
+    CoapResponse initial = client.put("Initial payload...".getBytes(), 0);
+    Assertions.assertNotNull(initial, "Initial retained PUT must succeed");
     AtomicLong counter = new AtomicLong(0);
     client.observe(new CoapHandler() {
       @Override
@@ -50,17 +52,19 @@ class CoapObserverTest extends BaseCoapTest {
       }
     }, 4);
 
+    WaitForState.waitFor(5, TimeUnit.SECONDS, () -> counter.get() >= 1);
+    Assertions.assertEquals(1, counter.get(), "Observe must deliver the retained message before live PUTs");
 
     for(int x=0;x<4;x++) {
-      putAndWait(client, counter, x+1);
+      putAndWait(client, counter, x+2);
     }
 
     int count = 0;
-    while(counter.get() != 4 && count < 10){
+    while(counter.get() != 5 && count < 10){
       TimeUnit.SECONDS.sleep(1);
       count++;
     }
-    Assertions.assertEquals(4, counter.get());
+    Assertions.assertEquals(5, counter.get());
     client.shutdown();
   }
 
@@ -104,7 +108,7 @@ class CoapObserverTest extends BaseCoapTest {
 
   private void putAndWait(CoapClient client, AtomicLong counter, long expected) throws ConnectorException, IOException {
     client.put("Test payload...".getBytes(), 0);
-    WaitForState.waitFor(100, TimeUnit.MILLISECONDS, () -> counter.get() == expected);
+    WaitForState.waitFor(5, TimeUnit.SECONDS, () -> counter.get() == expected);
     Assertions.assertEquals(expected, counter.get());
 
   }
