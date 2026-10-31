@@ -57,6 +57,30 @@ class SignedPriorityMessageStateCompatibilityTest {
   }
 
   @Test
+  void signedMessageValuesRemainDistinctFromEmptyAtEveryPriority() {
+    MessageStateManagerImpl manager = new MessageStateManagerImpl(
+        "negative-message-values", UNIQUE_SESSION_ID,
+        new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
+    try {
+      Message minimum = message(Long.MIN_VALUE, Priority.NORMAL);
+      Message minusOne = message(-1L, Priority.HIGHEST);
+      manager.register(minimum);
+      manager.register(minusOne);
+      Assertions.assertEquals(Long.valueOf(-1L), manager.nextMessageId());
+      manager.allocate(minusOne);
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), manager.nextMessageId());
+      manager.allocate(minimum);
+      Assertions.assertNull(manager.nextMessageId());
+      manager.rollbackInFlightMessages();
+      Assertions.assertEquals(Long.valueOf(-1L), manager.nextMessageId());
+      manager.commit(-1L);
+      manager.commit(Long.MIN_VALUE);
+    } finally {
+      manager.close();
+    }
+  }
+
+  @Test
   void everyPriorityIncludingNegativeQueueIdentifiersSurvivesReload(@TempDir Path directory) throws Exception {
     String base = directory.resolve("signed-priority-state.bit").toString();
 

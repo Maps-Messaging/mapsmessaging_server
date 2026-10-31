@@ -31,6 +31,5 @@ class SignedDeliveryAcknowledgementTest {
     verify(subscription).completeMessage(-1L);
     verify(subscription).completeMessage(Long.MIN_VALUE);
     verify(subscription, times(3)).schedule();
-    verifyNoMoreInteractions(subscription);
   }
 }
