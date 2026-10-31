@@ -117,7 +117,7 @@ public class BoundedMessageStateManager implements MessageStateManager {
   }
 
   @Override
-  public long nextMessageId() {
+  public Long nextMessageId() {
     return 0;
   }
 

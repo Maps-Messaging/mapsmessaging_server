@@ -398,8 +398,8 @@ public class DestinationSubscription extends Subscription {
 
   protected Message peekNextMessage() throws IOException {
     for (;;) {
-      long nextMessageId = messageStateManager.nextMessageId();
-      if (nextMessageId < 0) {
+      Long nextMessageId = messageStateManager.nextMessageId();
+      if (nextMessageId == null) {
         return null;
       }
       Message message = destinationImpl.getMessage(nextMessageId);

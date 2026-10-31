@@ -48,7 +48,7 @@ class MessageStateManagerImplTest {
     Assertions.assertEquals(0, manager.pending());
     Assertions.assertFalse(manager.hasMessagesInFlight());
     Assertions.assertFalse(manager.hasAtRestMessages());
-    Assertions.assertEquals(-1L, manager.nextMessageId());
+    Assertions.assertNull(manager.nextMessageId());
   }
 
   @Test
@@ -317,7 +317,7 @@ class MessageStateManagerImplTest {
     Assertions.assertEquals(expectedCount, manager.size());
     Assertions.assertTrue(manager.hasMessagesInFlight());
     Assertions.assertFalse(manager.hasAtRestMessages());
-    Assertions.assertEquals(-1L, manager.nextMessageId());
+    Assertions.assertNull(manager.nextMessageId());
   }
 
 
