@@ -217,7 +217,7 @@ class DestinationImplMessageOperationCoverageTest {
 
     fixture.destination.addMessage(message);
 
-    verify(fixture.retainManager).replace(43);
+    verify(fixture.retainManager).replace(43L);
     verify(fixture.stats).retainedMessages(1);
   }
 
