@@ -593,8 +593,11 @@ public final class MqttSn2Protocol extends Protocol {
     if (publishingSession == null) {
       throw new IOException("MQTT-SN 2.0 publication without a broker session");
     }
-    builder.setMeta(new HashMap<>(Map.of("sessionId", publishingSession.getName(),
-            "protocol", "MQTT-SN", "version", "2.0")))
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("sessionId", Objects.requireNonNull(publishingSession.getName()));
+    metadata.put("protocol", "MQTT-SN");
+    metadata.put("version", "2.0");
+    builder.setMeta(metadata)
         .setOpaqueData(publish.payload()).setRetain(publish.retained())
         .setQoS(qos(publish.qos())).setTransformation(getProtocolMessageTransformation());
 
