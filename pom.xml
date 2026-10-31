@@ -506,7 +506,7 @@
         <version>3.6.0</version>
         <configuration>
           <argLine>
-            @{argLine} -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
+            @{argLine} -Dmaps.message.meta.validate=true -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
           </argLine>
           <includes>
             <include>**/*Test.java</include>

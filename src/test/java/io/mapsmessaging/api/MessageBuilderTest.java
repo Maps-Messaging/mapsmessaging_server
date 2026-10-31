@@ -25,11 +25,60 @@ import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransform
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class MessageBuilderTest {
+
+  @Test
+  void setMeta_transfersMutableMapWithoutCopy() {
+    Map<String, String> supplied = new LinkedHashMap<>();
+    supplied.put("source", "value");
+
+    Message message = new MessageBuilder().setMeta(supplied).build();
+
+    Assertions.assertSame(supplied, message.getMeta());
+    Assertions.assertEquals("value", message.getMeta().get("source"));
+  }
+
+  @Test
+  void setMeta_rejectsImmutableMapWhenValidationEnabled() {
+    Assertions.assertTrue(Boolean.getBoolean("maps.message.meta.validate"),
+        "The test JVM must enable metadata validation");
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> new MessageBuilder().setMeta(Map.of("key", "value")));
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> new MessageBuilder().setMeta(Collections.unmodifiableMap(new LinkedHashMap<>())));
+    MessageBuilder builder = new MessageBuilder().setMeta(new LinkedHashMap<>());
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> builder.setMeta(Map.of("merged", "value")));
+  }
+
+  @Test
+  void setMeta_validationRestoresOriginalContents() {
+    Map<String, String> supplied = new LinkedHashMap<>();
+    supplied.put("__maps_meta_validation__", "existing");
+    supplied.put("key", "value");
+    Map<String, String> expected = new LinkedHashMap<>(supplied);
+
+    MessageBuilder builder = new MessageBuilder().setMeta(supplied);
+
+    Assertions.assertSame(supplied, builder.getMeta());
+    Assertions.assertEquals(expected, supplied);
+    Assertions.assertIterableEquals(expected.keySet(), supplied.keySet());
+  }
+
+  @Test
+  void messageWithNullMetadataRetainsMutations() {
+    Message message = new MessageBuilder().build();
+    Map<String, String> metadata = message.getMeta();
+    metadata.put("added", "value");
+
+    Assertions.assertSame(metadata, message.getMeta());
+    Assertions.assertEquals("value", message.getMeta().get("added"));
+  }
 
   @Test
   void setMeta_mergesWhenBothNonNull() {
