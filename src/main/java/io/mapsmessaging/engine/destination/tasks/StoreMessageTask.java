@@ -29,8 +29,8 @@ public abstract class StoreMessageTask extends EngineTask {
 
   protected void storeMessage(DestinationImpl destination, Message message) throws IOException {
     if(message.isRetain()){
-      long previous = destination.getRetainedIdentifier();
-      if(previous != -1) {
+      Long previous = destination.getRetainedIdentifier();
+      if (previous != null) {
         RemoveMessageTask remove = new RemoveMessageTask(destination, previous);
         destination.submit(remove, DestinationImpl.DELETE_PRIORITY);
       }

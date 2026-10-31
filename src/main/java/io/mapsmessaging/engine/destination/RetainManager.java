@@ -30,48 +30,42 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class RetainManager {
 
+  private static final Object UNINITIALIZED = new Object();
   private final Queue<Long> retainIndex;
-  private final AtomicLong retainId;
+  private final AtomicReference<Object> retainId;
   private final BitSetFactory factory;
 
   public RetainManager(boolean isPersistent, String path) throws IOException {
     factory = createFactory(path, isPersistent);
     retainIndex = new NaturalOrderedLongQueue(0, factory);
-    retainId = new AtomicLong(-2);
+    retainId = new AtomicReference<>(UNINITIALIZED);
   }
 
-  public long current() {
-    long res = retainId.get();
-    if(res < -1) {
-      Long result = retainIndex.peek();
-      if(result != null) {
-        retainId.set(result);
-        return result;
-      }
-      else{
-        retainId.set(-1);
-        return -1;
-      }
+  /** Null means that no retained message exists; negative IDs are valid. */
+  public Long current() {
+    Object value = retainId.get();
+    if (value == UNINITIALIZED) {
+      Long restored = retainIndex.peek();
+      retainId.compareAndSet(UNINITIALIZED, restored);
+      value = retainId.get();
     }
-    return res;
+    return (Long) value;
   }
 
-  public long replace(long newRetainId) {
-    if (newRetainId < -1) {
-      throw new IllegalArgumentException("Retain id must be >= 0 or -1 to clear");
-    }
+  /** Transfers ownership of the retained identifier; null clears the current retain. */
+  public Long replace(Long newRetainId) {
     Long old = retainIndex.poll();
-    if (newRetainId != -1) {
+    if (newRetainId != null) {
       retainId.set(newRetainId);
       retainIndex.offer(newRetainId);
     } else {
-      retainId.set(-1);
+      retainId.set(null);
     }
-    return old != null ? old : -1;
+    return old;
   }
 
   private BitSetFactory createFactory(String path, boolean persistent) throws IOException {

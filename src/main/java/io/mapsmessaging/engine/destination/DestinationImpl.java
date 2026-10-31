@@ -390,9 +390,9 @@ public class DestinationImpl implements BaseDestination {
       return;
     }
     List<Long> list = new NaturalOrderedLongList(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
-    long retain = retainManager.current();
-    if(retain > -1) {
-      list.add(retainManager.current()); // we only have 1 retain event
+    Long retain = retainManager.current();
+    if (retain != null) {
+      list.add(retain); // we only have 1 retain event
     }
     list.addAll(subscriptionManager.getAll());
     if(list.size() != resource.size()) {
@@ -515,9 +515,9 @@ public class DestinationImpl implements BaseDestination {
    * All destinations have the ability to store a specific message Id as a "retained" message, meaning on new subscriptions this message is delivered first. This function returns
    * the message Id that represents the current "retained" message
    *
-   * @return message Id of the retained message or -1 indicating no retained message
+   * @return message ID of the retained message, or null if none exists
    */
-  public long getRetainedIdentifier() {
+  public Long getRetainedIdentifier() {
     return retainManager.current();
   }
 
@@ -666,7 +666,8 @@ public class DestinationImpl implements BaseDestination {
    */
   public void complete(long messageId) {
     QueueCleanupTrace.record(fullyQualifiedNamespace, "COMPLETE", messageId, "retained", retainManager.current());
-    if (retainManager.current() != messageId) {
+    Long retainedId = retainManager.current();
+    if (retainedId == null || retainedId.longValue() != messageId) {
       completionQueue.add(messageId);
       requestReaper();
     }
@@ -878,9 +879,10 @@ public class DestinationImpl implements BaseDestination {
     QueueCleanupTrace.record(fullyQualifiedNamespace, "REMOVE-BEGIN", messageId);
     resource.remove(messageId);
     QueueCleanupTrace.record(fullyQualifiedNamespace, "REMOVE-END", messageId);
-    if (messageId == retainManager.current()) {
+    Long retainedId = retainManager.current();
+    if (retainedId != null && retainedId.longValue() == messageId) {
       stats.retainedMessages(-1);
-      retainManager.replace(-1);
+      retainManager.replace(null);
     }
 
     nano = (System.nanoTime() - nano) / 1000; // Make it micro seconds
@@ -899,7 +901,7 @@ public class DestinationImpl implements BaseDestination {
     QueueCleanupTrace.record(fullyQualifiedNamespace, "STORED", message.getIdentifier());
     if (message.isRetain()) {
       if (message.getOpaqueData() == null || message.getOpaqueData().length == 0) {
-        retainManager.replace(-1);
+        retainManager.replace(null);
         stats.retainedMessages(-1);
       } else {
         retainManager.replace(message.getIdentifier());

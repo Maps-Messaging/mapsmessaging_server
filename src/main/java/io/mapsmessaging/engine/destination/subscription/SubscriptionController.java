@@ -309,8 +309,8 @@ public class SubscriptionController implements DestinationManagerListener {
 
   private void queueRetainedMessage(DestinationImpl destinationImpl, Subscription subscription) {
     if (subscription.getContext() != null && !subscription.getContext().getRetainHandler().equals(RetainHandler.DO_NOT_SEND)) {
-      long retainedId = destinationImpl.getRetainedIdentifier();
-      if (retainedId >= 0) {
+      Long retainedId = destinationImpl.getRetainedIdentifier();
+      if (retainedId != null) {
         subscription.register(retainedId);
       }
     }
