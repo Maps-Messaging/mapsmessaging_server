@@ -57,7 +57,7 @@ class SignedPriorityMessageStateCompatibilityTest {
   }
 
   @Test
-  void signedMessageValuesRemainDistinctFromEmptyAtEveryPriority() {
+  void signedMessageValuesRemainDistinctFromEmptyAtEveryPriority() throws Exception {
     MessageStateManagerImpl manager = new MessageStateManagerImpl(
         "negative-message-values", UNIQUE_SESSION_ID,
         new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
