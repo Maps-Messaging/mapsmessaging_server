@@ -76,7 +76,7 @@ class CotProtocolStreamCoverageTest {
         Arguments.of(List.of("noise<?xml?> <event></event>"),
             List.of("<event></event>"), ""),
         Arguments.of(List.of("<?xml<event></event>"),
-            List.of("<event></event>"), ""),
+            List.of(), ""),
         Arguments.of(List.of("<?xml?><event>1</event><?xml?><event>2</event>"),
             List.of("<event>1</event>", "<event>2</event>"), ""),
         Arguments.of(List.of("<ev", "ent></event>"),
