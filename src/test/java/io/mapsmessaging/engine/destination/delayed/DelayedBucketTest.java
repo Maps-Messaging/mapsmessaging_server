@@ -35,7 +35,7 @@ class DelayedBucketTest {
 
     Assertions.assertTrue(bucket.isEmpty());
     Assertions.assertEquals(0, bucket.size());
-    Assertions.assertEquals(-1L, bucket.peek());
+    Assertions.assertNull(bucket.peek());
   }
 
   @Test
@@ -89,7 +89,7 @@ class DelayedBucketTest {
     Assertions.assertTrue(bucket.remove(12L));
     Assertions.assertEquals(0, bucket.size());
     Assertions.assertTrue(bucket.isEmpty());
-    Assertions.assertEquals(-1L, bucket.peek());
+    Assertions.assertNull(bucket.peek());
   }
 
   @Test
@@ -141,7 +141,25 @@ class DelayedBucketTest {
 
     Assertions.assertEquals(0, bucket.size());
     Assertions.assertTrue(bucket.isEmpty());
+    Assertions.assertNull(bucket.peek());
+  }
+
+  @Test
+  void negativeMessageIdentifiersAreOrderedAndNeverTreatedAsAbsent() {
+    BitSetFactory factory = new BitSetFactoryImpl(8192);
+    DelayedBucket bucket = new DelayedBucket(100L, factory);
+
+    Assertions.assertTrue(bucket.register(-1L));
+    Assertions.assertTrue(bucket.register(Long.MIN_VALUE));
+    Assertions.assertTrue(bucket.register(0L));
+
+    Assertions.assertEquals(Long.MIN_VALUE, bucket.peek());
+    Assertions.assertTrue(bucket.remove(Long.MIN_VALUE));
     Assertions.assertEquals(-1L, bucket.peek());
+    Assertions.assertTrue(bucket.remove(-1L));
+    Assertions.assertEquals(0L, bucket.peek());
+    Assertions.assertTrue(bucket.remove(0L));
+    Assertions.assertNull(bucket.peek());
   }
 
   @Test

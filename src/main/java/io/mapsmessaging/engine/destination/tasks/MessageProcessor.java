@@ -47,8 +47,8 @@ public abstract class MessageProcessor extends SubscriptionTask {
   public Response taskCall() throws Exception {
     long counter = 0;
     while (true) {
-      long messageId = messageManager.getNext(bucketId);
-      if (messageId > -1) {
+      Long messageId = messageManager.getNext(bucketId);
+      if (messageId != null) {
         Message message = destination.getMessage(messageId);
         if (message != null) {
           counter += processMessage(message);
