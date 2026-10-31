@@ -535,8 +535,8 @@ public class DestinationSubscription extends Subscription {
 
   public void acknowledgePreviousEvent() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
-    long messageId = acknowledgementController.messageSent();
-    if (messageId > -1) {
+    Long messageId = acknowledgementController.messageSent();
+    if (messageId != null) {
       completeMessage(messageId);
     }
     schedule();

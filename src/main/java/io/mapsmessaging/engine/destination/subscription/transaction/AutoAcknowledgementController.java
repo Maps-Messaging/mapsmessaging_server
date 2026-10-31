@@ -86,7 +86,7 @@ public class AutoAcknowledgementController implements AcknowledgementController 
   }
 
   @Override
-  public long messageSent() {
+  public Long messageSent() {
     if (!standardReturn.isEmpty()) {
       OutstandingEventDetails outstanding = standardReturn.remove(0);
       if (outstanding != null) {
@@ -94,7 +94,7 @@ public class AutoAcknowledgementController implements AcknowledgementController 
         return outstanding.getId();
       }
     }
-    return -1;
+    return null;
   }
 
   @Override
