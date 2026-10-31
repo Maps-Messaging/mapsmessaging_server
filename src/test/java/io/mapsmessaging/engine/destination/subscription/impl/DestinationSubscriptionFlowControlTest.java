@@ -76,13 +76,41 @@ class DestinationSubscriptionFlowControlTest {
   @Test
   void emptyQueueDoesNotReserveConnectionSlot() throws IOException {
     Fixture fixture = new Fixture();
-    when(fixture.messageStateManager.nextMessageId()).thenReturn(-1L);
+    when(fixture.messageStateManager.nextMessageId()).thenReturn(null);
 
     Message message = fixture.subscription.retrieveWithFlowControl();
 
     assertNull(message);
     verify(fixture.clientConnection, never()).tryAcquireSendSlot(any(), any());
     verify(fixture.clientConnection, never()).releaseSendSlot(any());
+  }
+
+  @Test
+  void negativeMessageIdentifierIsRetrievedAndAllocatedNormally() throws IOException {
+    Fixture fixture = new Fixture();
+    Message message = mock(Message.class);
+    when(fixture.messageStateManager.nextMessageId()).thenReturn(-1L);
+    when(fixture.destination.getMessage(-1L)).thenReturn(message);
+    when(fixture.clientConnection.tryAcquireSendSlot(any(), any())).thenReturn(true);
+
+    assertSame(message, fixture.subscription.retrieveWithFlowControl());
+
+    verify(fixture.destination).getMessage(-1L);
+    verify(fixture.messageStateManager).allocate(message);
+  }
+
+  @Test
+  void minimumMessageIdentifierIsRetrievedAndAllocatedNormally() throws IOException {
+    Fixture fixture = new Fixture();
+    Message message = mock(Message.class);
+    when(fixture.messageStateManager.nextMessageId()).thenReturn(Long.MIN_VALUE);
+    when(fixture.destination.getMessage(Long.MIN_VALUE)).thenReturn(message);
+    when(fixture.clientConnection.tryAcquireSendSlot(any(), any())).thenReturn(true);
+
+    assertSame(message, fixture.subscription.retrieveWithFlowControl());
+
+    verify(fixture.destination).getMessage(Long.MIN_VALUE);
+    verify(fixture.messageStateManager).allocate(message);
   }
 
   @Test

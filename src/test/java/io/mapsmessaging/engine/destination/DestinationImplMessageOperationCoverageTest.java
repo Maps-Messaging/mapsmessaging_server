@@ -106,6 +106,17 @@ class DestinationImplMessageOperationCoverageTest {
   }
 
   @Test
+  void negativeRetainedMessageIsNotQueuedForRemoval() throws Exception {
+    Fixture fixture = new Fixture();
+    when(fixture.retainManager.current()).thenReturn(-1L);
+
+    fixture.destination.complete(-1L);
+
+    verify(fixture.completionQueue, never()).add(anyLong());
+    verify(fixture.stats).deliveredMessage();
+  }
+
+  @Test
   void completingNonRetainedMessageQueuesRemoval() throws Exception {
     Fixture fixture = new Fixture();
     when(fixture.retainManager.current()).thenReturn(21L);

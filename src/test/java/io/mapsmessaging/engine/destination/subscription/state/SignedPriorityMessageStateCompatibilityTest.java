@@ -49,9 +49,9 @@ class SignedPriorityMessageStateCompatibilityTest {
     manager.registerRetainedReplay(90L);
     manager.register(message(100L, Priority.HIGHEST));
 
-    Assertions.assertEquals(100L, manager.messagesAtRest.poll());
-    Assertions.assertEquals(90L, manager.messagesAtRest.poll(), "Retained replay must use priority 9");
-    Assertions.assertEquals(80L, manager.messagesAtRest.poll());
+    Assertions.assertEquals(Long.valueOf(100L), manager.messagesAtRest.poll());
+    Assertions.assertEquals(Long.valueOf(90L), manager.messagesAtRest.poll(), "Retained replay must use priority 9");
+    Assertions.assertEquals(Long.valueOf(80L), manager.messagesAtRest.poll());
     Assertions.assertNull(manager.messagesAtRest.poll());
     Assertions.assertTrue(manager.isRetainedReplay(90L));
   }
@@ -74,9 +74,9 @@ class SignedPriorityMessageStateCompatibilityTest {
       MessageStateManagerImpl manager = new MessageStateManagerImpl("signed-priority", UNIQUE_SESSION_ID, factory);
       Assertions.assertEquals(Priority.values().length, manager.pending());
       for (int priority = Priority.HIGHEST.getValue(); priority >= Priority.LOWEST.getValue(); priority--) {
-        Assertions.assertEquals(1000L + priority, manager.nextMessageId(),
+        Assertions.assertEquals(Long.valueOf(1000L + priority), manager.nextMessageId(),
             "Wrong persisted delivery order at priority " + priority);
-        Assertions.assertEquals(1000L + priority, manager.messagesAtRest.poll());
+        Assertions.assertEquals(Long.valueOf(1000L + priority), manager.messagesAtRest.poll());
       }
       Assertions.assertNull(manager.nextMessageId(), "Empty queue must be distinct from a stored negative ID");
     }
@@ -102,7 +102,7 @@ class SignedPriorityMessageStateCompatibilityTest {
       manager.registerRetainedReplay(452L);
       Assertions.assertTrue(UniqueIdHelper.compute(UNIQUE_SESSION_ID, Priority.ONE_BELOW_HIGHEST.getValue()) < 0);
       Assertions.assertEquals(Long.valueOf(452L), manager.nextMessageId(), "New priority-9 replay precedes old priority-7 replay");
-      Assertions.assertEquals(452L, manager.messagesAtRest.poll());
+      Assertions.assertEquals(Long.valueOf(452L), manager.messagesAtRest.poll());
       Assertions.assertEquals(Long.valueOf(legacyReplayId), manager.nextMessageId());
       Assertions.assertTrue(manager.isRetainedReplay(452L));
     }
