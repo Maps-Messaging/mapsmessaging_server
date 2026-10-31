@@ -158,7 +158,7 @@ class GlobalMessageExpiryInFlightTest extends BaseTestConfig {
       long id = publish(destination, true);
       assertEquals(id, destination.getRetainedIdentifier());
       expire(destination, id);
-      assertEquals(-1L, destination.getRetainedIdentifier());
+      assertNull(destination.getRetainedIdentifier());
       assertNull(destination.getMessage(id));
       assertEquals(0, first.getPending());
       assertEquals(0, second.getPending());

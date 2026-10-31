@@ -54,7 +54,7 @@ public interface MessageStateManager {
 
   boolean rollback(long messageId);
 
-  long nextMessageId();
+  Long nextMessageId();
 
   void rollbackInFlightMessages();
 

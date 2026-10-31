@@ -79,12 +79,12 @@ public class BulkRemoveMessageTask extends EngineTask {
 
   private Response removeBatch() throws Exception {
     int removed = 0;
-    long retained = destination.getRetainedIdentifier();
+    Long retained = destination.getRetainedIdentifier();
     long nano = System.nanoTime();
     long started = nanoClock.getAsLong();
     while (!queue.isEmpty() && nanoClock.getAsLong() - started < MAX_TASK_TIME_NANOS) {
       Long messageId = queue.peek();
-      if (messageId != null && retained != messageId) {
+      if (messageId != null && !messageId.equals(retained)) {
         try {
           destination.removeMessage(messageId);
           removed++;

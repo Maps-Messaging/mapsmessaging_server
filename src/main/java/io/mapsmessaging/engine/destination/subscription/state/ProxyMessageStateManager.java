@@ -98,7 +98,7 @@ public class ProxyMessageStateManager implements MessageStateManager {
   }
 
   @Override
-  public long nextMessageId() {
+  public Long nextMessageId() {
     return actualStateManager.nextMessageId();
   }
 

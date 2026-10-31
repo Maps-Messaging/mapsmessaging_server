@@ -39,10 +39,12 @@ public class MessageDeliveredListener extends EngineTask {
 
   @Override
   public Response taskCall() {
-    long messageId = acknowledgementController.messageSent();
-    QueueCleanupTrace.record(subscription.getDestinationImpl().getFullyQualifiedNamespace(), "DELIVERED-CALLBACK", messageId,
-        "controller", System.identityHashCode(acknowledgementController), "ackType", acknowledgementController.getType());
-    if (messageId > -1) {
+    Long messageId = acknowledgementController.messageSent();
+    QueueCleanupTrace.record(subscription.getDestinationImpl().getFullyQualifiedNamespace(), "DELIVERED-CALLBACK",
+        messageId == null ? 0L : messageId,
+        "idPresent", messageId != null, "controller", System.identityHashCode(acknowledgementController),
+        "ackType", acknowledgementController.getType());
+    if (messageId != null) {
       subscription.completeMessage(messageId);
     }
     subscription.schedule();

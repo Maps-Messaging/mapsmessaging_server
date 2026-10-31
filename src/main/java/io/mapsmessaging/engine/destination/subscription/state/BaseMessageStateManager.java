@@ -38,14 +38,8 @@ import java.util.Queue;
 
 public abstract class BaseMessageStateManager implements MessageStateManager {
 
-  // Temporary server-side namespace for retained replay state. Keep this positive until
-  // naturally_ordered_long_collections supports the full signed long ID range.
+  // Persisted retained-replay namespace. Keep stable to preserve existing replay markers.
   private static final long RETAINED_REPLAY_NAMESPACE = 1L << 59;
-
-  // Priority values 8-10 currently produce negative persistent queue IDs. Until the
-  // collection library supports signed long IDs, retained replays use the highest
-  // priority whose persistent queue ID remains positive.
-  private static final int RETAINED_REPLAY_PRIORITY = Priority.THREE_ABOVE_NORMAL.getValue();
 
   protected final Logger logger;
   protected final PriorityQueue<Long> messagesAtRest;
@@ -118,7 +112,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
 
   @Override
   public synchronized void register(long messageId) {
-    messagesAtRest.add(messageId, RETAINED_REPLAY_PRIORITY);
+    messagesAtRest.add(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
     retainedReplays.add(messageId);
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
   }
@@ -164,10 +158,9 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
 
   @SuppressWarnings("java:S2201") // size also resets the internals
   @Override
-  public synchronized long nextMessageId() {
+  public synchronized Long nextMessageId() {
     Long response = messagesAtRest.peek();
     if (response == null) {
-      response = -1L;
       messagesAtRest.size(); // reset the actual size since we do not have any messages
     }
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_NEXT, name, response);

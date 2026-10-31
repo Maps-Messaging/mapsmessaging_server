@@ -398,8 +398,8 @@ public class DestinationSubscription extends Subscription {
 
   protected Message peekNextMessage() throws IOException {
     for (;;) {
-      long nextMessageId = messageStateManager.nextMessageId();
-      if (nextMessageId < 0) {
+      Long nextMessageId = messageStateManager.nextMessageId();
+      if (nextMessageId == null) {
         return null;
       }
       Message message = destinationImpl.getMessage(nextMessageId);
@@ -535,8 +535,8 @@ public class DestinationSubscription extends Subscription {
 
   public void acknowledgePreviousEvent() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
-    long messageId = acknowledgementController.messageSent();
-    if (messageId > -1) {
+    Long messageId = acknowledgementController.messageSent();
+    if (messageId != null) {
       completeMessage(messageId);
     }
     schedule();

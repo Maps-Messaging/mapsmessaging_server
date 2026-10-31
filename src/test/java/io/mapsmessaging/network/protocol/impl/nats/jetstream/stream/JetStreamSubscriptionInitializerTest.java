@@ -141,7 +141,7 @@ class JetStreamSubscriptionInitializerTest {
         consumerState.allocate(message(id, Priority.NORMAL));
         consumerState.commit(id);
       }
-      assertEquals(-1L, consumerState.nextMessageId());
+      assertNull(consumerState.nextMessageId());
       assertEquals(500, archiveState.pending());
       assertEquals(500, independentState.pending());
     } finally {

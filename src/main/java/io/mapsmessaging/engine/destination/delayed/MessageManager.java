@@ -139,19 +139,19 @@ public class MessageManager {
    * @param bucketId the specific transaction that we are currently processing
    * @return The message ID of the next message to process
    */
-  public synchronized long getNext(long bucketId) {
+  public synchronized Long getNext(long bucketId) {
     DelayedBucket delayedBucket = treeList.get(bucketId);
 
     // The bucket is NOT in the tree so clean up the index and try again
     if (delayedBucket == null) {
       removeFromStructure(bucketId);
-      return -1;
+      return null;
     }
 
     // The bucket is empty so lets remove the index and the bucket and try again
     if (delayedBucket.isEmpty()) {
       removeFromStructure(bucketId);
-      return -1;
+      return null;
     }
     return delayedBucket.peek();
   }

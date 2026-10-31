@@ -33,16 +33,16 @@ class RetainManagerTest {
   Path tempDirectory;
 
   @Test
-  void current_onNewInstance_returnsMinusOne() throws IOException {
+  void current_onNewInstance_returnsNull() throws IOException {
     RetainManager retainManager = null;
     try {
       retainManager = new RetainManager(false, tempDirectory.toString());
 
-      long currentIdFirst = retainManager.current();
-      Assertions.assertEquals(-1L, currentIdFirst);
+      Long currentIdFirst = retainManager.current();
+      Assertions.assertNull(currentIdFirst);
 
-      long currentIdSecond = retainManager.current();
-      Assertions.assertEquals(-1L, currentIdSecond);
+      Long currentIdSecond = retainManager.current();
+      Assertions.assertNull(currentIdSecond);
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -56,13 +56,13 @@ class RetainManagerTest {
     try {
       retainManager = new RetainManager(false, null);
 
-      long oldIdFirst = retainManager.replace(10L);
-      Assertions.assertEquals(-1L, oldIdFirst);
-      Assertions.assertEquals(10L, retainManager.current());
+      Long oldIdFirst = retainManager.replace(10L);
+      Assertions.assertNull(oldIdFirst);
+      Assertions.assertEquals(Long.valueOf(10L), retainManager.current());
 
       long oldIdSecond = retainManager.replace(20L);
       Assertions.assertEquals(10L, oldIdSecond);
-      Assertions.assertEquals(20L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(20L), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -83,7 +83,7 @@ class RetainManagerTest {
 
       long oldId = retainManager.replace(66L);
       Assertions.assertEquals(55L, oldId);
-      Assertions.assertEquals(66L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(66L), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -101,7 +101,7 @@ class RetainManagerTest {
     try {
       first = new RetainManager(false, path.toString());
       first.replace(99L);
-      Assertions.assertEquals(99L, first.current());
+      Assertions.assertEquals(Long.valueOf(99L), first.current());
     } finally {
       if (first != null) {
         first.close();
@@ -110,7 +110,7 @@ class RetainManagerTest {
 
     try {
       second = new RetainManager(false, path.toString());
-      Assertions.assertEquals(-1L, second.current());
+      Assertions.assertNull(second.current());
     } finally {
       if (second != null) {
         second.close();
@@ -128,7 +128,7 @@ class RetainManagerTest {
     try {
       first = new RetainManager(true, path.toString());
       first.replace(77L);
-      Assertions.assertEquals(77L, first.current());
+      Assertions.assertEquals(Long.valueOf(77L), first.current());
     } finally {
       if (first != null) {
         first.close();
@@ -137,7 +137,7 @@ class RetainManagerTest {
 
     try {
       second = new RetainManager(true, path.toString());
-      Assertions.assertEquals(77L, second.current());
+      Assertions.assertEquals(Long.valueOf(77L), second.current());
     } finally {
       if (second != null) {
         second.close();
@@ -157,8 +157,8 @@ class RetainManagerTest {
       Assertions.assertTrue(Files.exists(missingPath));
       Assertions.assertTrue(Files.isDirectory(missingPath));
 
-      long current = retainManager.current();
-      Assertions.assertEquals(-1L, current);
+      Long current = retainManager.current();
+      Assertions.assertNull(current);
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -167,17 +167,20 @@ class RetainManagerTest {
   }
 
   @Test
-  void replace_rejectsNegativeValuesLessThanMinusOne() throws IOException {
-    RetainManager retainManager = null;
+  void replace_acceptsSignedLongBoundaries() throws IOException {
+    RetainManager manager = new RetainManager(false, tempDirectory.toString());
     try {
-      retainManager = new RetainManager(false, tempDirectory.toString());
-      RetainManager retainManager2 = retainManager;
-      Assertions.assertThrows(IllegalArgumentException.class, () -> retainManager2.replace(-2L));
-      Assertions.assertThrows(IllegalArgumentException.class, () -> retainManager2.replace(Long.MIN_VALUE));
+      Assertions.assertNull(manager.replace(Long.MIN_VALUE));
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), manager.current());
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), manager.replace(-2L));
+      Assertions.assertEquals(Long.valueOf(-2L), manager.replace(-1L));
+      Assertions.assertEquals(Long.valueOf(-1L), manager.current());
+      Assertions.assertEquals(Long.valueOf(-1L), manager.replace(0L));
+      Assertions.assertEquals(Long.valueOf(0L), manager.current());
+      Assertions.assertEquals(Long.valueOf(0L), manager.replace(null));
+      Assertions.assertNull(manager.current());
     } finally {
-      if (retainManager != null) {
-        retainManager.close();
-      }
+      manager.close();
     }
   }
 
@@ -187,13 +190,13 @@ class RetainManagerTest {
     try {
       retainManager = new RetainManager(false, null);
 
-      long oldFirst = retainManager.replace(10L);
-      Assertions.assertEquals(-1L, oldFirst);
-      Assertions.assertEquals(10L, retainManager.current());
+      Long oldFirst = retainManager.replace(10L);
+      Assertions.assertNull(oldFirst);
+      Assertions.assertEquals(Long.valueOf(10L), retainManager.current());
 
       long oldSecond = retainManager.replace(20L);
       Assertions.assertEquals(10L, oldSecond);
-      Assertions.assertEquals(20L, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(20L), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -202,16 +205,15 @@ class RetainManagerTest {
   }
 
   @Test
-  void replace_rejectsMinusOne() throws IOException {
-    RetainManager retainManager = null;
+  void minusOneIsAnActualRetainedIdentifierUntilExplicitlyCleared() throws IOException {
+    RetainManager manager = new RetainManager(false, null);
     try {
-      retainManager = new RetainManager(false, null);
-      RetainManager retainManager2 = retainManager;
-      Assertions.assertThrows(IllegalArgumentException.class, () -> retainManager2.replace(-2L));
+      Assertions.assertNull(manager.replace(-1L));
+      Assertions.assertEquals(Long.valueOf(-1L), manager.current());
+      Assertions.assertEquals(Long.valueOf(-1L), manager.replace(null));
+      Assertions.assertNull(manager.current());
     } finally {
-      if (retainManager != null) {
-        retainManager.close();
-      }
+      manager.close();
     }
   }
 
@@ -221,12 +223,12 @@ class RetainManagerTest {
     try {
       retainManager = new RetainManager(false, tempDirectory.toString());
 
-      Assertions.assertEquals(-1L, retainManager.replace(0L));
-      Assertions.assertEquals(0L, retainManager.current());
+      Assertions.assertNull(retainManager.replace(0L));
+      Assertions.assertEquals(Long.valueOf(0L), retainManager.current());
 
       long large = Long.MAX_VALUE;
-      Assertions.assertEquals(0L, retainManager.replace(large));
-      Assertions.assertEquals(large, retainManager.current());
+      Assertions.assertEquals(Long.valueOf(0L), retainManager.replace(large));
+      Assertions.assertEquals(Long.valueOf(large), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -241,9 +243,9 @@ class RetainManagerTest {
     try {
       retainManager = new RetainManager(false, null);
 
-      Assertions.assertEquals(-1L, retainManager.current());
-      Assertions.assertEquals(-1L, retainManager.replace(0L));
-      Assertions.assertEquals(0L, retainManager.current());
+      Assertions.assertNull(retainManager.current());
+      Assertions.assertNull(retainManager.replace(0L));
+      Assertions.assertEquals(Long.valueOf(0L), retainManager.current());
     } finally {
       if (retainManager != null) {
         retainManager.close();
@@ -255,14 +257,14 @@ class RetainManagerTest {
   void clearingRetainResetsCachedIdentifierAndAllowsSubsequentReplacement() throws IOException {
     RetainManager manager = new RetainManager(false, null);
     try {
-      Assertions.assertEquals(-1L, manager.replace(42L));
-      Assertions.assertEquals(42L, manager.current());
-      Assertions.assertEquals(42L, manager.replace(-1L));
-      Assertions.assertEquals(-1L, manager.current());
-      Assertions.assertEquals(-1L, manager.replace(-1L));
-      Assertions.assertEquals(-1L, manager.current());
-      Assertions.assertEquals(-1L, manager.replace(43L));
-      Assertions.assertEquals(43L, manager.current());
+      Assertions.assertNull(manager.replace(42L));
+      Assertions.assertEquals(Long.valueOf(42L), manager.current());
+      Assertions.assertEquals(Long.valueOf(42L), manager.replace(null));
+      Assertions.assertNull(manager.current());
+      Assertions.assertNull(manager.replace(null));
+      Assertions.assertNull(manager.current());
+      Assertions.assertNull(manager.replace(43L));
+      Assertions.assertEquals(Long.valueOf(43L), manager.current());
     } finally {
       manager.close();
     }
@@ -274,18 +276,44 @@ class RetainManagerTest {
     RetainManager original = new RetainManager(true, path.toString());
     try {
       original.replace(77L);
-      Assertions.assertEquals(77L, original.current());
-      Assertions.assertEquals(77L, original.replace(-1L));
-      Assertions.assertEquals(-1L, original.current());
+      Assertions.assertEquals(Long.valueOf(77L), original.current());
+      Assertions.assertEquals(Long.valueOf(77L), original.replace(null));
+      Assertions.assertNull(original.current());
     } finally {
       original.close();
     }
 
     RetainManager reopened = new RetainManager(true, path.toString());
     try {
-      Assertions.assertEquals(-1L, reopened.current());
+      Assertions.assertNull(reopened.current());
     } finally {
       reopened.close();
+    }
+  }
+
+  @Test
+  void negativeRetainValuesPersistAcrossReopen() throws IOException {
+    Path path = tempDirectory.resolve("negative-retained");
+    RetainManager original = new RetainManager(true, path.toString());
+    try {
+      Assertions.assertNull(original.replace(-1L));
+      Assertions.assertEquals(Long.valueOf(-1L), original.current());
+    } finally {
+      original.close();
+    }
+    RetainManager reopened = new RetainManager(true, path.toString());
+    try {
+      Assertions.assertEquals(Long.valueOf(-1L), reopened.current());
+      Assertions.assertEquals(Long.valueOf(-1L), reopened.replace(Long.MIN_VALUE));
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), reopened.current());
+    } finally {
+      reopened.close();
+    }
+    RetainManager again = new RetainManager(true, path.toString());
+    try {
+      Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), again.current());
+    } finally {
+      again.close();
     }
   }
 
