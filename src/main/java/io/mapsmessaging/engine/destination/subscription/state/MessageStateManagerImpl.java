@@ -73,11 +73,11 @@ public class MessageStateManagerImpl extends BaseMessageStateManager {
 
 
   //<editor-fold desc="Listener management APIs">
-  public void add(MessageStateManagerListener listener) {
+  public synchronized void add(MessageStateManagerListener listener) {
     listeners.add(listener);
   }
 
-  public void remove(MessageStateManagerListener listener) {
+  public synchronized void remove(MessageStateManagerListener listener) {
     listeners.remove(listener);
   }
   //</editor-fold>
