@@ -21,16 +21,23 @@ package io.mapsmessaging.auth;
 
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.MockedStatic;
 
 class AuthManagerPasswordFileTest {
 
@@ -58,6 +65,34 @@ class AuthManagerPasswordFileTest {
     AuthManager.secureExistingInitialPasswordFile(passwordFile);
 
     assertTrue(Files.notExists(passwordFile));
+  }
+
+  @Test
+  void unsupported_permission_restriction_does_not_abort_startup() {
+    Path passwordFile = mock(Path.class);
+    File file = mock(File.class);
+    when(passwordFile.toFile()).thenReturn(file);
+    when(file.setReadable(false, false)).thenReturn(false);
+    when(file.setWritable(false, false)).thenReturn(false);
+
+    try (MockedStatic<Files> files = mockStatic(Files.class)) {
+      files.when(() -> Files.getFileAttributeView(passwordFile, PosixFileAttributeView.class)).thenReturn(null);
+
+      assertDoesNotThrow(() -> AuthManager.restrictInitialPasswordFile(passwordFile));
+    }
+  }
+
+  @Test
+  void password_file_remains_writable_after_creation_and_restart() throws Exception {
+    Path passwordFile = tempDir.resolve("admin_password");
+    AuthManager.prepareInitialPasswordFile(passwordFile);
+    Files.writeString(passwordFile, "admin=test-password\n", StandardOpenOption.APPEND);
+
+    AuthManager.secureExistingInitialPasswordFile(passwordFile);
+
+    assertEquals("admin=test-password\n", Files.readString(passwordFile));
+    Files.writeString(passwordFile, "user=another-password\n", StandardOpenOption.APPEND);
+    assertEquals("admin=test-password\nuser=another-password\n", Files.readString(passwordFile));
   }
 
   private void assumePosix() {

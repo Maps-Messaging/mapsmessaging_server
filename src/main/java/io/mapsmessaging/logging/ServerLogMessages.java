@@ -851,6 +851,7 @@ public enum ServerLogMessages implements LogMessage {
 
   AUTH_STARTUP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager failed to start up"),
   AUTH_SAVE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager failed to save initial user configuration"),
+  AUTH_PASSWORD_PERMISSIONS_NOT_RESTRICTED(LEVEL.WARN, SERVER_CATEGORY.AUTHENTICATION, "Unable to restrict bootstrap password file '{}' to owner-only access; continuing with existing permissions"),
   AUTH_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager raised exception during stop"),
   AUTH_ADDED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} added"),
   AUTH_DELETED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} deleted"),

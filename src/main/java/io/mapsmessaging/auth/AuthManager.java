@@ -196,12 +196,12 @@ public class AuthManager implements Agent {
     }
   }
 
-  private static void restrictOwnerOnly(Path passwordFile) throws IOException {
+  private static void restrictOwnerOnly(Path passwordFile) {
     File file = passwordFile.toFile();
     boolean readable = file.setReadable(false, false) && file.setReadable(true, true);
     boolean writable = file.setWritable(false, false) && file.setWritable(true, true);
     if (!readable || !writable) {
-      throw new IOException("Unable to restrict admin password file to owner-only access");
+      LoggerFactory.getLogger(AuthManager.class).log(AUTH_PASSWORD_PERMISSIONS_NOT_RESTRICTED, passwordFile);
     }
   }
 
