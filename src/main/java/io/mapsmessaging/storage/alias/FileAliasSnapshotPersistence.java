@@ -13,10 +13,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Session-owned alias snapshot file. The session manager is responsible for
- * deleting this file when its owning session is permanently removed.
- */
+/** Session-owned alias snapshot file, deleted by the session manager when its owning session is permanently removed. */
 public final class FileAliasSnapshotPersistence implements TopicAliasRegistry.SnapshotPersistence {
   private final Path file;
 
@@ -48,10 +45,16 @@ public final class FileAliasSnapshotPersistence implements TopicAliasRegistry.Sn
 
   @Override
   public void delete() throws IOException {
-    if (Files.deleteIfExists(file)) forceDirectory(file.getParent());
+    if (Files.deleteIfExists(file)) {
+      forceDirectory(file.getParent());
+    }
   }
 
   private static void forceDirectory(Path directory) throws IOException {
+    // Windows NIO cannot open directory channels. Snapshot file contents are still forced before replacement.
+    if (System.getProperty("os.name", "").startsWith("Windows")) {
+      return;
+    }
     try (FileChannel channel = FileChannel.open(directory, StandardOpenOption.READ)) {
       channel.force(true);
     }
