@@ -503,7 +503,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.6.0</version>
+        <version>3.6.1</version>
         <configuration>
           <argLine>
             @{argLine} -Dmaps.message.meta.validate=true -DMAPS_HOME=${project.build.directory} -Dfile.encoding=UTF-8 -Djavax.net.ssl.trustStore=${project.basedir}/my-truststore.jks -Djavax.net.ssl.keyStore=${project.basedir}/my-keystore.jks -Djavax.net.ssl.keyStorePassword=password -Djavax.net.ssl.trustStorePassword=password
