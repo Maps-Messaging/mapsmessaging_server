@@ -27,6 +27,7 @@ import io.mapsmessaging.network.io.connection.StateChangeListener;
 import io.mapsmessaging.network.io.connection.state.Connected;
 import io.mapsmessaging.network.io.connection.state.Disconnected;
 import io.mapsmessaging.network.io.connection.state.Established;
+import io.mapsmessaging.network.io.connection.state.Holding;
 import io.mapsmessaging.network.io.connection.state.State;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.route.select.SelectionOrchestrator;
@@ -34,10 +35,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongSupplier;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -210,6 +215,263 @@ class RouteManagerReconnectTest {
     }
   }
 
+  @ParameterizedTest(name = "startup A={0}, B={1}")
+  @CsvSource({"false,false", "true,false", "false,true", "true,true"})
+  void startup_selects_only_an_available_stable_link(boolean primaryUp, boolean backupUp) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      route.primary.connection.getProperties().setCost(10);
+      route.backup.connection.getProperties().setCost(100);
+      if (primaryUp) {
+        route.primary.transportConnected();
+      }
+      if (backupUp) {
+        route.backup.transportConnected();
+      }
+      route.scan();
+      assertEquals(0, route.primary.subscriptionRequests.get(), "Startup must respect warmup");
+      assertEquals(0, route.backup.subscriptionRequests.get(), "Startup must respect warmup");
+      route.advance(Duration.ofSeconds(3));
+      if (primaryUp || backupUp) {
+        ControlledConnection expected = primaryUp ? route.primary : route.backup;
+        route.assertDeliveryOn(expected, 1);
+      } else {
+        assertNull(route.manager.getCurrentLink());
+        route.assertNoDelivery();
+      }
+    }
+  }
+
+  @ParameterizedTest(name = "first link after offline startup is A={0}")
+  @ValueSource(booleans = {true, false})
+  void offline_startup_recovers_when_either_link_becomes_available(boolean firstIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      route.scan();
+      assertNull(route.manager.getCurrentLink());
+      route.assertNoDelivery();
+      ControlledConnection first = route.link(firstIsPrimary);
+      first.transportConnected();
+      route.scan();
+      assertEquals(0, first.subscriptionRequests.get());
+      route.advance(Duration.ofMillis(2999));
+      route.assertNoDelivery();
+      route.advance(Duration.ofMillis(1));
+      route.assertDeliveryOn(first, 1);
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}")
+  @ValueSource(booleans = {true, false})
+  void both_up_selected_failure_activates_stable_standby(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, true);
+      ControlledConnection standby = route.other(selected);
+      assertInstanceOf(Holding.class, standby.state.get());
+      selected.transportDisconnected();
+      route.scan();
+      route.assertDeliveryOn(standby, 1);
+      assertEquals(1, selected.subscriptionRequests.get());
+      route.advance(Duration.ofSeconds(10));
+      route.assertDeliveryOn(standby, 1);
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}")
+  @ValueSource(booleans = {true, false})
+  void standby_disconnect_and_reconnect_does_not_disturb_selected_link(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, true);
+      ControlledConnection standby = route.other(selected);
+      int selectedUnsubscribes = selected.unsubscribeRequests.get();
+      standby.transportDisconnected();
+      route.scan();
+      route.assertDeliveryOn(selected, 1);
+      standby.transportConnected();
+      route.scan();
+      route.advance(Duration.ofSeconds(3));
+      route.advance(Duration.ofMinutes(5));
+      route.assertDeliveryOn(selected, 1);
+      assertInstanceOf(Holding.class, standby.state.get());
+      assertEquals(0, standby.subscriptionRequests.get());
+      assertEquals(selectedUnsubscribes, selected.unsubscribeRequests.get());
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}, returning cost={1}, switch back={2}")
+  @CsvSource({"true,1,true", "true,10,false", "true,100,false", "false,1,true", "false,10,false", "false,100,false"})
+  void former_selected_link_returns_while_replacement_remains_healthy(boolean selectedIsPrimary, int returningCost, boolean switchBack) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection former = route.establish(selectedIsPrimary, true);
+      ControlledConnection replacement = route.other(former);
+      former.transportDisconnected();
+      route.scan();
+      route.assertDeliveryOn(replacement, 1);
+      replacement.connection.getProperties().setCost(10);
+      former.connection.getProperties().setCost(returningCost);
+      former.transportConnected();
+      route.scan();
+      route.advance(Duration.ofSeconds(3));
+      route.assertDeliveryOn(replacement, 1); // Existing cooldown/flap policy still applies.
+      int replacementUnsubscribes = replacement.unsubscribeRequests.get();
+      route.advance(Duration.ofMinutes(5));
+      if (switchBack) {
+        route.assertDeliveryOn(former, 2);
+        assertInstanceOf(Holding.class, replacement.state.get());
+        assertEquals(replacementUnsubscribes + 1, replacement.unsubscribeRequests.get());
+      } else {
+        route.assertDeliveryOn(replacement, 1);
+        assertInstanceOf(Holding.class, former.state.get());
+        assertEquals(1, former.subscriptionRequests.get());
+        assertEquals(replacementUnsubscribes, replacement.unsubscribeRequests.get());
+      }
+      route.advance(Duration.ofSeconds(10));
+      route.assertDeliveryOn(switchBack ? former : replacement, switchBack ? 2 : 1);
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}, selected returns first={1}")
+  @CsvSource({"true,true", "true,false", "false,true", "false,false"})
+  void both_links_down_recover_in_either_order(boolean selectedIsPrimary, boolean selectedReturnsFirst) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, true);
+      ControlledConnection standby = route.other(selected);
+      standby.transportDisconnected();
+      selected.transportDisconnected();
+      route.scan();
+      route.assertNoDelivery();
+      ControlledConnection first = selectedReturnsFirst ? selected : standby;
+      ControlledConnection second = route.other(first);
+      first.connection.getProperties().setCost(10);
+      second.connection.getProperties().setCost(100);
+      first.transportConnected();
+      route.scan();
+      route.advance(Duration.ofMillis(2999));
+      route.assertNoDelivery();
+      route.advance(Duration.ofMillis(1));
+      int expectedSubscriptions = first == selected ? 2 : 1;
+      route.assertDeliveryOn(first, expectedSubscriptions);
+      second.transportConnected();
+      route.scan();
+      route.advance(Duration.ofSeconds(3));
+      route.advance(Duration.ofMinutes(5));
+      route.assertDeliveryOn(first, expectedSubscriptions);
+      assertInstanceOf(Holding.class, second.state.get());
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}")
+  @ValueSource(booleans = {true, false})
+  void simultaneous_recovery_establishes_only_one_link(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, true);
+      ControlledConnection standby = route.other(selected);
+      selected.transportDisconnected();
+      standby.transportDisconnected();
+      route.scan();
+      selected.transportConnected();
+      standby.transportConnected();
+      route.scan();
+      route.advance(Duration.ofSeconds(3));
+      route.assertDeliveryOn(selected, 2); // The original lower-cost link remains preferred.
+      assertEquals(0, standby.subscriptionRequests.get());
+      route.advance(Duration.ofMinutes(5));
+      route.assertDeliveryOn(selected, 2);
+    }
+  }
+
+  @ParameterizedTest(name = "only available link A={0}")
+  @ValueSource(booleans = {true, false})
+  void only_available_selected_link_reconnects_after_warmup(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, false);
+      selected.transportDisconnected();
+      route.scan();
+      route.assertNoDelivery();
+      selected.transportConnected();
+      route.scan();
+      route.advance(Duration.ofMillis(2999));
+      route.assertNoDelivery();
+      assertEquals(1, selected.subscriptionRequests.get());
+      route.advance(Duration.ofMillis(1));
+      route.assertDeliveryOn(selected, 2);
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}, disconnect after {1} ms")
+  @CsvSource({"true,2999", "true,3000", "true,3001", "false,2999", "false,3000", "false,3001"})
+  void disconnect_before_at_or_after_warmup_cannot_reuse_old_recovery(boolean selectedIsPrimary, long disconnectMillis) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, false);
+      selected.transportDisconnected();
+      route.scan();
+      selected.transportConnected();
+      route.scan();
+      if (disconnectMillis > 3000) {
+        route.advance(Duration.ofSeconds(3));
+        route.assertDeliveryOn(selected, 2);
+        route.advance(Duration.ofMillis(disconnectMillis - 3000));
+      } else {
+        route.elapseWithoutScan(Duration.ofMillis(disconnectMillis));
+      }
+      selected.transportDisconnected(); // At the boundary, disconnect is delivered before the due scan.
+      route.scan();
+      route.advance(Duration.ofSeconds(3));
+      route.assertNoDelivery();
+      int expectedSubscriptions = disconnectMillis > 3000 ? 3 : 2;
+      assertEquals(expectedSubscriptions - 1, selected.subscriptionRequests.get());
+      selected.transportConnected();
+      route.scan();
+      route.advance(Duration.ofMillis(2999));
+      route.assertNoDelivery();
+      route.advance(Duration.ofMillis(1));
+      route.assertDeliveryOn(selected, expectedSubscriptions);
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}")
+  @ValueSource(booleans = {true, false})
+  void repeated_flapping_requires_a_new_uninterrupted_warmup_for_either_link(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, false);
+      for (int attempt = 0; attempt < 4; attempt++) {
+        selected.transportDisconnected();
+        route.scan();
+        selected.transportConnected();
+        route.scan();
+        route.advance(Duration.ofSeconds(2));
+        route.assertNoDelivery();
+        assertEquals(1, selected.subscriptionRequests.get());
+      }
+      route.advance(Duration.ofSeconds(1));
+      route.assertDeliveryOn(selected, 2);
+      route.advance(Duration.ofMinutes(5));
+      route.assertDeliveryOn(selected, 2);
+    }
+  }
+
+  @ParameterizedTest(name = "initial selected A={0}")
+  @ValueSource(booleans = {true, false})
+  void failed_recovering_standby_cannot_activate_after_selected_link_returns(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, false);
+      ControlledConnection standby = route.other(selected);
+      selected.transportDisconnected();
+      route.scan();
+      standby.transportConnected();
+      route.scan();
+      route.advance(Duration.ofMillis(1500));
+      assertEquals(0, standby.subscriptionRequests.get(), "Recovering standby must still be warming up");
+      standby.transportDisconnected();
+      selected.transportConnected();
+      route.scan();
+      route.advance(Duration.ofMillis(1500)); // The abandoned standby warmup expires here.
+      route.assertNoDelivery();
+      assertEquals(0, standby.subscriptionRequests.get());
+      route.advance(Duration.ofMillis(1500));
+      route.assertDeliveryOn(selected, 2);
+      assertEquals(0, standby.subscriptionRequests.get(), "No stale standby establishment may execute");
+    }
+  }
+
   // The clock advances only when the test requests it. Selector evaluations stand in for
   // periodic/event-driven scans; the production selector and route/state logic remain real.
   private static final class TimedRoute implements AutoCloseable {
@@ -228,6 +490,48 @@ class RouteManagerReconnectTest {
       backup = new ControlledConnection("B", () -> now.get().toEpochMilli());
       manager.addEndPointConnection(primary.connection);
       manager.addEndPointConnection(backup.connection);
+    }
+
+    private ControlledConnection link(boolean primaryLink) {
+      return primaryLink ? primary : backup;
+    }
+
+    private ControlledConnection other(ControlledConnection link) {
+      return link == primary ? backup : primary;
+    }
+
+    private ControlledConnection establish(boolean selectedIsPrimary, boolean standbyUp) {
+      ControlledConnection selected = link(selectedIsPrimary);
+      ControlledConnection standby = other(selected);
+      selected.connection.getProperties().setCost(10);
+      standby.connection.getProperties().setCost(100);
+      selected.transportConnected();
+      if (standbyUp) {
+        standby.transportConnected();
+      }
+      scan();
+      advance(Duration.ofSeconds(3));
+      assertDeliveryOn(selected, 1);
+      return selected;
+    }
+
+    private void assertDeliveryOn(ControlledConnection selected, int subscriptionCount) {
+      ControlledConnection standby = other(selected);
+      assertAll(
+          () -> assertSame(manager.getRouteList().getLink(selected.connection), manager.getCurrentLink()),
+          () -> assertInstanceOf(Established.class, selected.state.get()),
+          () -> assertEquals(subscriptionCount, selected.subscriptionRequests.get(), "Unexpected duplicate or missing subscription"),
+          () -> assertTrue(selected.subscriptionActive.get(), "Selected link must have an active subscription"),
+          () -> assertFalse(standby.subscriptionActive.get(), "Standby must not deliver concurrently"));
+    }
+
+    private void assertNoDelivery() {
+      assertFalse(primary.subscriptionActive.get(), "A must not deliver without an established eligible route");
+      assertFalse(backup.subscriptionActive.get(), "B must not deliver without an established eligible route");
+    }
+
+    private void elapseWithoutScan(Duration duration) {
+      now.updateAndGet(previous -> previous.plus(duration));
     }
 
     private void establishPrimary() {
@@ -281,6 +585,8 @@ class RouteManagerReconnectTest {
     private final LongSupplier currentMillis;
     private StateChangeListener stateChangeListener;
     private final AtomicInteger subscriptionRequests = new AtomicInteger();
+    private final AtomicInteger unsubscribeRequests = new AtomicInteger();
+    private final AtomicBoolean subscriptionActive = new AtomicBoolean();
 
     private ControlledConnection(String name) throws Exception {
       this(name, () -> 0L);
@@ -319,12 +625,19 @@ class RouteManagerReconnectTest {
       }).when(connection).scheduleState(any(State.class), anyLong());
       doAnswer(invocation -> {
         subscriptionRequests.incrementAndGet();
+        subscriptionActive.set(true);
         return null;
       }).when(protocol).subscribeRemote(anyString(), anyString(), any(), any(), any(), any(), any());
+      doAnswer(invocation -> {
+        unsubscribeRequests.incrementAndGet();
+        subscriptionActive.set(false);
+        return null;
+      }).when(protocol).unsubscribeRemote(anyString());
       state.set(new Disconnected(connection));
     }
 
     private void transportDisconnected() {
+      subscriptionActive.set(false);
       scheduledStates.clear();
       State previous = state.getAndSet(new Disconnected(connection));
       if (stateChangeListener != null) {
