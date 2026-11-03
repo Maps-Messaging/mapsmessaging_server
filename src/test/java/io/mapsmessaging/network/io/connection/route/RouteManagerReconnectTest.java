@@ -528,6 +528,32 @@ class RouteManagerReconnectTest {
     }
   }
 
+  @ParameterizedTest(name = "failed selected A={0}")
+  @ValueSource(booleans = {true, false})
+  void failed_selected_link_does_not_fail_over_to_flapping_standby(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, false);
+      ControlledConnection standby = route.other(selected);
+      selected.transportDisconnected();
+      route.scan();
+      for (int reconnect = 0; reconnect < 4; reconnect++) {
+        standby.transportConnected();
+        route.scan();
+        route.advance(Duration.ofMillis(2999));
+        route.assertNoDelivery();
+        assertEquals(0, standby.subscriptionRequests.get(), "Flapping standby must not be activated");
+        standby.transportDisconnected();
+        route.scan();
+      }
+      standby.transportConnected();
+      route.scan();
+      route.advance(Duration.ofMillis(2999));
+      route.assertNoDelivery();
+      route.advance(Duration.ofMillis(1));
+      route.assertDeliveryOn(standby, 1);
+    }
+  }
+
   // The clock advances only when the test requests it. Selector evaluations stand in for
   // periodic/event-driven scans; the production selector and route/state logic remain real.
   private static final class TimedRoute implements AutoCloseable {
