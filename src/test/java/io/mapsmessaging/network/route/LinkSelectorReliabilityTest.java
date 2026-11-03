@@ -51,63 +51,118 @@ import static org.mockito.Mockito.when;
 
 class LinkSelectorReliabilityTest {
 
-  @ParameterizedTest(name = "selected A={0}, standby={1}, {2}={3}, eligible={4}")
+  @ParameterizedTest(name = "selected A={0}, standby={1}, {2}={3}, hard failover={4}")
   @MethodSource("healthBoundaries")
-  void failover_rejects_standby_at_or_above_hard_health_limit(boolean selectedIsPrimary, LinkState standbyState,
-      HealthMetric metric, double value, boolean eligible) {
+  void current_link_hard_limit_bypasses_cooldown_only_at_or_above_threshold(boolean selectedIsPrimary, LinkState standbyState,
+      HealthMetric metric, double value, boolean hardFailover) {
     Instant started = Instant.parse("2026-11-03T00:00:00Z");
     AtomicReference<Instant> now = new AtomicReference<>(started);
     try (MockedStatic<Instant> clock = mockStatic(Instant.class, CALLS_REAL_METHODS)) {
       clock.when(Instant::now).thenAnswer(invocation -> now.get());
-      TestLink selected = link(selectedIsPrimary ? "A" : "B", LinkState.DISCONNECTED, HealthMetric.LATENCY, 100, 0);
-      TestLink standby = link(selectedIsPrimary ? "B" : "A", standbyState, metric, value, 0);
-      RecordingSwitcher switcher = new RecordingSwitcher(selected);
+      TestLink selected = link(selectedIsPrimary ? "A" : "B", LinkState.CONNECTED, HealthMetric.LATENCY, 100, 10);
+      TestLink standby = link(selectedIsPrimary ? "B" : "A", standbyState, HealthMetric.LATENCY, 100, 10);
+      RecordingSwitcher switcher = new RecordingSwitcher(null);
       LinkSelector selector = selector(switcher, List.of(selected, standby));
-      if (standbyState == LinkState.HOLDING) {
-        assertFalse(selector.evaluateOnce().switched(), "Holding link must first complete warmup");
-      }
+      selector.evaluateOnce();
+      assertSame(selected, switcher.getCurrentLink());
       now.set(started.plusSeconds(3));
-      assertEquals(eligible, selector.evaluateOnce().switched(), "Hard health limits must apply to the destination link");
-      assertSame(eligible ? standby : selected, switcher.getCurrentLink());
+      setMetric(selected.metrics(), metric, value);
+      assertEquals(hardFailover, selector.evaluateOnce().switched(), "Only hard failure bypasses the switch cooldown");
+      assertSame(hardFailover ? standby : selected, switcher.getCurrentLink());
     }
   }
 
-  @ParameterizedTest(name = "selected A={0}, unreliable standby={1}, limit={2}")
-  @MethodSource("unhealthyStandbys")
-  void failover_prefers_reliable_alternative_even_when_unreliable_link_has_lower_cost(boolean selectedIsPrimary,
-      LinkState standbyState, HealthMetric metric) {
+  @ParameterizedTest(name = "selected A={0}, standby={1}, limit={2}, healthy base={3}, standby base={4}")
+  @MethodSource("healthCostCases")
+  void failover_orders_destinations_using_computed_health_and_realistic_base_costs(boolean selectedIsPrimary,
+      LinkState standbyState, HealthMetric metric, int healthyBaseCost, int standbyBaseCost) {
     Instant started = Instant.parse("2026-11-03T00:00:00Z");
     AtomicReference<Instant> now = new AtomicReference<>(started);
     try (MockedStatic<Instant> clock = mockStatic(Instant.class, CALLS_REAL_METHODS)) {
       clock.when(Instant::now).thenAnswer(invocation -> now.get());
-      TestLink selected = link(selectedIsPrimary ? "A" : "B", LinkState.DISCONNECTED, HealthMetric.LATENCY, 100, 0);
-      TestLink unreliable = link(selectedIsPrimary ? "B" : "A", standbyState, metric, metric.limit(), 0);
-      TestLink reliable = link("C", LinkState.HOLDING, HealthMetric.LATENCY, 100, 50000);
+      TestLink selected = link(selectedIsPrimary ? "A" : "B", LinkState.DISCONNECTED, HealthMetric.LATENCY, 100, 10);
+      TestLink unreliable = link(selectedIsPrimary ? "B" : "A", standbyState, metric, metric.limit(), standbyBaseCost);
+      TestLink reliable = link("C", standbyState, HealthMetric.LATENCY, 100, healthyBaseCost);
       RecordingSwitcher switcher = new RecordingSwitcher(selected);
       LinkSelector selector = selector(switcher, List.of(selected, unreliable, reliable));
       selector.evaluateOnce();
       now.set(started.plusSeconds(3));
       selector.evaluateOnce();
-      assertSame(reliable, switcher.getCurrentLink(), "An unreliable destination must not win on cost");
+      assertSame(preferHealthy(metric, healthyBaseCost, standbyBaseCost) ? reliable : unreliable, switcher.getCurrentLink(),
+          "Selection must match the independently calculated weighted score");
     }
   }
 
-  @ParameterizedTest(name = "selected A={0}, cheaper standby={1}, limit={2}")
-  @MethodSource("unhealthyStandbys")
-  void reliable_current_link_is_not_replaced_by_cheaper_unreliable_standby(boolean selectedIsPrimary,
-      LinkState standbyState, HealthMetric metric) {
+  @ParameterizedTest(name = "selected A={0}, standby={1}, limit={2}, healthy base={3}, standby base={4}")
+  @MethodSource("healthCostCases")
+  void computed_cost_and_hysteresis_preserve_the_healthy_current_link(boolean selectedIsPrimary,
+      LinkState standbyState, HealthMetric metric, int healthyBaseCost, int standbyBaseCost) {
     Instant started = Instant.parse("2026-11-03T00:00:00Z");
     AtomicReference<Instant> now = new AtomicReference<>(started);
     try (MockedStatic<Instant> clock = mockStatic(Instant.class, CALLS_REAL_METHODS)) {
       clock.when(Instant::now).thenAnswer(invocation -> now.get());
-      TestLink selected = link(selectedIsPrimary ? "A" : "B", LinkState.CONNECTED, HealthMetric.LATENCY, 100, 50000);
-      TestLink unreliable = link(selectedIsPrimary ? "B" : "A", standbyState, metric, metric.limit(), 0);
+      TestLink selected = link(selectedIsPrimary ? "A" : "B", LinkState.CONNECTED, HealthMetric.LATENCY, 100, healthyBaseCost);
+      TestLink unreliable = link(selectedIsPrimary ? "B" : "A", standbyState, metric, metric.limit(), standbyBaseCost);
       RecordingSwitcher switcher = new RecordingSwitcher(selected);
       LinkSelector selector = selector(switcher, List.of(selected, unreliable));
       selector.evaluateOnce();
       now.set(started.plusSeconds(3));
       selector.evaluateOnce();
-      assertSame(selected, switcher.getCurrentLink(), "Healthy current link must not be replaced by an unreliable cheaper link");
+      // The only lower standby score in this matrix is 170 versus 200 (error, bases 10/100).
+      // That is exactly 15% improvement; the strict hysteresis comparison must retain the current link.
+      assertSame(selected, switcher.getCurrentLink(), "Computed health cost and hysteresis must both govern switching");
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}, standby={1}, transient={2}")
+  @MethodSource("unhealthyStandbys")
+  void transient_cost_increase_during_cooldown_does_not_cause_switch_and_switch_back(boolean selectedIsPrimary,
+      LinkState standbyState, HealthMetric metric) {
+    Instant started = Instant.parse("2026-11-03T00:00:00Z");
+    AtomicReference<Instant> now = new AtomicReference<>(started);
+    try (MockedStatic<Instant> clock = mockStatic(Instant.class, CALLS_REAL_METHODS)) {
+      clock.when(Instant::now).thenAnswer(invocation -> now.get());
+      TestLink selected = link(selectedIsPrimary ? "A" : "B", LinkState.CONNECTED, HealthMetric.LATENCY, 100, 10);
+      TestLink standby = link(selectedIsPrimary ? "B" : "A", standbyState, HealthMetric.LATENCY, 100, 10);
+      RecordingSwitcher switcher = new RecordingSwitcher(null);
+      LinkSelector selector = selector(switcher, List.of(selected, standby));
+      selector.evaluateOnce();
+      assertSame(selected, switcher.getCurrentLink());
+      now.set(started.plusSeconds(3));
+      double degraded = switch (metric) {
+        case LATENCY -> 1999.0;
+        case LOSS -> 0.249;
+        case ERROR -> 0.199;
+      };
+      setMetric(selected.metrics(), metric, degraded);
+      assertFalse(selector.evaluateOnce().switched(), "A transient below the hard limit must respect cooldown");
+      now.set(started.plusSeconds(4));
+      setMetric(selected.metrics(), metric, metric == HealthMetric.LATENCY ? 100.0 : 0.0);
+      assertFalse(selector.evaluateOnce().switched());
+      now.set(started.plusSeconds(10));
+      assertFalse(selector.evaluateOnce().switched());
+      now.set(started.plusSeconds(301));
+      assertFalse(selector.evaluateOnce().switched(), "Recovery to equal cost must not cause a delayed switch");
+      assertSame(selected, switcher.getCurrentLink());
+    }
+  }
+
+  private static boolean preferHealthy(HealthMetric metric, int healthyBaseCost, int standbyBaseCost) {
+    // Hand-calculated default-weight costs: 100 ms healthy; 2000 ms latency limit;
+    // 100 ms + 400 * 0.25 loss; or 100 ms + 300 * 0.20 error. Other penalties are zero.
+    double degradedHealthCost = switch (metric) {
+      case LATENCY -> 2000.0;
+      case LOSS -> 200.0;
+      case ERROR -> 160.0;
+    };
+    return 100.0 + healthyBaseCost <= degradedHealthCost + standbyBaseCost;
+  }
+
+  private static void setMetric(LinkMetrics metrics, HealthMetric dimension, double value) {
+    switch (dimension) {
+      case LATENCY -> when(metrics.getLatencyMillisEma()).thenReturn(OptionalDouble.of(value));
+      case LOSS -> when(metrics.getLossRatio()).thenReturn(value);
+      case ERROR -> when(metrics.getErrorRate()).thenReturn(value);
     }
   }
 
@@ -115,15 +170,30 @@ class LinkSelectorReliabilityTest {
     List<Arguments> cases = new ArrayList<>();
     for (boolean selectedIsPrimary : new boolean[] {true, false}) {
       for (LinkState state : List.of(LinkState.HOLDING, LinkState.CONNECTED)) {
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LATENCY, 1999.0, true));
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LATENCY, 2000.0, false));
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LATENCY, 2001.0, false));
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LOSS, 0.249, true));
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LOSS, 0.25, false));
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LOSS, 0.251, false));
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.ERROR, 0.199, true));
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.ERROR, 0.20, false));
-        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.ERROR, 0.201, false));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LATENCY, 1999.0, false));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LATENCY, 2000.0, true));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LATENCY, 2001.0, true));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LOSS, 0.249, false));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LOSS, 0.25, true));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.LOSS, 0.251, true));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.ERROR, 0.199, false));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.ERROR, 0.20, true));
+        cases.add(Arguments.of(selectedIsPrimary, state, HealthMetric.ERROR, 0.201, true));
+      }
+    }
+    return cases.stream();
+  }
+
+  private static Stream<Arguments> healthCostCases() {
+    List<Arguments> cases = new ArrayList<>();
+    int[][] baseCosts = {{10, 10}, {10, 50}, {10, 100}, {50, 10}, {50, 50}, {50, 100}, {100, 10}, {100, 50}, {100, 100}};
+    for (boolean selectedIsPrimary : new boolean[] {true, false}) {
+      for (LinkState state : List.of(LinkState.HOLDING, LinkState.CONNECTED)) {
+        for (HealthMetric metric : HealthMetric.values()) {
+          for (int[] costs : baseCosts) {
+            cases.add(Arguments.of(selectedIsPrimary, state, metric, costs[0], costs[1]));
+          }
+        }
       }
     }
     return cases.stream();
@@ -145,8 +215,7 @@ class LinkSelectorReliabilityTest {
     return LinkSelector.builder()
         .costFunction(new DefaultCostFunction())
         .costWeights(CostWeights.builder().build())
-        .selectionPolicy(SelectionPolicy.builder().establishmentWarmup(Duration.ofSeconds(3))
-            .minimumHoldTime(Duration.ZERO).cooldownAfterSwitch(Duration.ZERO).build())
+        .selectionPolicy(SelectionPolicy.builder().establishmentWarmup(Duration.ofSeconds(3)).build())
         .linkRepository(() -> links)
         .linkSwitcher(switcher)
         .build();
