@@ -27,9 +27,13 @@ import io.mapsmessaging.network.io.connection.StateChangeListener;
 import io.mapsmessaging.network.io.connection.state.Connected;
 import io.mapsmessaging.network.io.connection.state.Disconnected;
 import io.mapsmessaging.network.io.connection.state.Established;
+import io.mapsmessaging.network.io.connection.state.Establishing;
 import io.mapsmessaging.network.io.connection.state.Holding;
 import io.mapsmessaging.network.io.connection.state.State;
 import io.mapsmessaging.network.protocol.Protocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdManager;
+import io.mapsmessaging.network.protocol.impl.mqtt.RemoteSubscriptionProtocol;
+import io.mapsmessaging.network.protocol.impl.mqtt.RemoteSubscriptionTracker;
 import io.mapsmessaging.network.route.select.SelectionOrchestrator;
 import java.time.Duration;
 import java.time.Instant;
@@ -54,72 +58,31 @@ class RouteManagerReconnectTest {
 
   @Test
   void selected_link_reconnect_restores_subscription_when_other_link_is_down() throws Exception {
-    try (MockedStatic<SelectionOrchestrator> scheduling = mockStatic(SelectionOrchestrator.class)) {
-      scheduling.when(() -> SelectionOrchestrator.start(any(), any())).thenReturn(mock(SelectionOrchestrator.class));
-      RouteManager manager = new RouteManager("reconnect-selected");
-      ControlledConnection primary = new ControlledConnection("A");
-      ControlledConnection backup = new ControlledConnection("B");
-      manager.addEndPointConnection(primary.connection);
-      manager.addEndPointConnection(backup.connection);
-
-      primary.transportConnected();
-      manager.getSelector().evaluateOnce();
-      primary.runScheduledStates();
-      assertInstanceOf(Established.class, primary.state.get());
-      assertEquals(1, primary.subscriptionRequests.get());
-      assertSame(manager.getRouteList().getLink(primary.connection), manager.getCurrentLink());
-
-      primary.transportDisconnected();
-      manager.getSelector().evaluateOnce();
-      assertInstanceOf(Disconnected.class, backup.state.get());
-
-      primary.transportConnected();
-      for (int scan = 0; scan < 10; scan++) {
-        manager.getSelector().evaluateOnce();
-        primary.runScheduledStates();
-        backup.runScheduledStates();
-      }
-
-      assertAll(
-          () -> assertInstanceOf(Established.class, primary.state.get(), "A must resume forwarding after reconnect"),
-          () -> assertEquals(2, primary.subscriptionRequests.get(), "A must issue a new subscription after reconnect"),
-          () -> assertEquals(0, backup.subscriptionRequests.get(), "B remains unavailable"));
+    try (TimedRoute route = new TimedRoute()) {
+      route.establishPrimary();
+      route.primary.transportDisconnected();
+      route.scan();
+      route.primary.transportConnected();
+      route.scan();
+      route.advance(Duration.ofSeconds(3));
+      route.assertPrimaryRecovered();
+      assertEquals(0, route.backup.subscriptionRequests.get());
     }
   }
 
   @Test
   void returning_link_restores_subscription_after_selection_switched_to_backup() throws Exception {
-    try (MockedStatic<SelectionOrchestrator> scheduling = mockStatic(SelectionOrchestrator.class)) {
-      scheduling.when(() -> SelectionOrchestrator.start(any(), any())).thenReturn(mock(SelectionOrchestrator.class));
-      RouteManager manager = new RouteManager("reconnect-after-failover");
-      ControlledConnection primary = new ControlledConnection("A");
-      ControlledConnection backup = new ControlledConnection("B");
-      manager.addEndPointConnection(primary.connection);
-      manager.addEndPointConnection(backup.connection);
-
-      primary.transportConnected();
-      manager.getSelector().evaluateOnce();
-      primary.runScheduledStates();
-      assertInstanceOf(Established.class, primary.state.get());
-      assertEquals(1, primary.subscriptionRequests.get());
-
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection primary = route.establish(true, true);
       primary.transportDisconnected();
-      backup.transportConnected();
-      manager.getSelector().evaluateOnce();
-      backup.runScheduledStates();
-      assertSame(manager.getRouteList().getLink(backup.connection), manager.getCurrentLink());
-      assertInstanceOf(Established.class, backup.state.get());
-      assertEquals(1, backup.subscriptionRequests.get());
-
-      backup.transportDisconnected();
-      manager.getSelector().evaluateOnce();
+      route.scan();
+      route.assertDeliveryOn(route.backup, 1);
+      route.backup.transportDisconnected();
+      route.scan();
       primary.transportConnected();
-      manager.getSelector().evaluateOnce();
-      primary.runScheduledStates();
-
-      assertSame(manager.getRouteList().getLink(primary.connection), manager.getCurrentLink());
-      assertInstanceOf(Established.class, primary.state.get());
-      assertEquals(2, primary.subscriptionRequests.get());
+      route.scan();
+      route.advance(Duration.ofSeconds(3));
+      route.assertPrimaryRecovered();
     }
   }
 
@@ -469,6 +432,99 @@ class RouteManagerReconnectTest {
       route.advance(Duration.ofMillis(1500));
       route.assertDeliveryOn(selected, 2);
       assertEquals(0, standby.subscriptionRequests.get(), "No stale standby establishment may execute");
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}")
+  @ValueSource(booleans = {true, false})
+  void disconnect_between_scans_resets_reconnect_warmup(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.establish(selectedIsPrimary, false);
+      selected.transportDisconnected();
+      selected.transportConnected();
+      route.scan();
+      route.advance(Duration.ofSeconds(2));
+      selected.transportDisconnected();
+      selected.transportConnected();
+      route.scan();
+      route.advance(Duration.ofSeconds(1));
+      route.assertNoDelivery();
+      route.advance(Duration.ofMillis(1999));
+      route.assertNoDelivery();
+      route.advance(Duration.ofMillis(1));
+      route.assertDeliveryOn(selected, 2);
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}")
+  @ValueSource(booleans = {true, false})
+  void cheaper_returning_link_cannot_bounce_back_during_flap_window(boolean selectedIsPrimary) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection original = route.establish(selectedIsPrimary, true);
+      ControlledConnection replacement = route.other(original);
+      original.transportDisconnected();
+      route.scan();
+      route.assertDeliveryOn(replacement, 1);
+      replacement.connection.getProperties().setCost(100);
+      original.connection.getProperties().setCost(1);
+      original.transportConnected();
+      route.scan();
+      route.advance(Duration.ofSeconds(3));
+      route.assertDeliveryOn(replacement, 1);
+      route.advance(Duration.ofSeconds(7));
+      route.assertDeliveryOn(replacement, 1); // Cooldown elapsed, but flap window still applies.
+      route.advance(Duration.ofMillis(289999));
+      route.assertDeliveryOn(replacement, 1);
+      route.advance(Duration.ofMillis(2));
+      route.assertDeliveryOn(original, 2);
+    }
+  }
+
+  @ParameterizedTest(name = "selected A={0}, acknowledgement succeeds={1}")
+  @CsvSource({"true,true", "true,false", "false,true", "false,false"})
+  void pending_subscription_does_not_trigger_reselection_but_disconnect_still_fails_over(boolean selectedIsPrimary, boolean acknowledged) throws Exception {
+    try (TimedRoute route = new TimedRoute()) {
+      ControlledConnection selected = route.link(selectedIsPrimary);
+      ControlledConnection standby = route.other(selected);
+      selected.connection.getProperties().setCost(10);
+      standby.connection.getProperties().setCost(100);
+      RemoteSubscriptionTracker tracker = new RemoteSubscriptionTracker(new PacketIdManager());
+      int packetId = tracker.register(List.of("remote/topic"));
+      Protocol protocol = mock(Protocol.class, withSettings().extraInterfaces(RemoteSubscriptionProtocol.class));
+      when(((RemoteSubscriptionProtocol) protocol).getRemoteSubscriptionTracker()).thenReturn(tracker);
+      when(selected.connection.getProtocol()).thenReturn(protocol);
+      doAnswer(invocation -> {
+        selected.subscriptionRequests.incrementAndGet();
+        return null;
+      }).when(protocol).subscribeRemote(anyString(), anyString(), any(), any(), any(), any(), any());
+      try {
+        selected.transportConnected();
+        standby.transportConnected();
+        route.scan();
+        route.advance(Duration.ofSeconds(3));
+        assertInstanceOf(Establishing.class, selected.state.get());
+        for (int scan = 0; scan < 5; scan++) {
+          route.advance(Duration.ofSeconds(1));
+          assertSame(route.manager.getRouteList().getLink(selected.connection), route.manager.getCurrentLink());
+          assertInstanceOf(Establishing.class, selected.state.get());
+          assertEquals(1, selected.subscriptionRequests.get(), "Pending subscription must not be restarted");
+          assertEquals(0, standby.subscriptionRequests.get());
+        }
+        if (acknowledged) {
+          tracker.acknowledge(packetId, new int[] {1});
+          selected.subscriptionActive.set(true); // The simulated peer has accepted the subscription.
+          route.scan();
+          route.assertDeliveryOn(selected, 1);
+        } else {
+          selected.transportDisconnected();
+          tracker.close(); // A late failure from the abandoned establishment must not win.
+          route.scan();
+          route.assertDeliveryOn(standby, 1);
+          assertEquals(1, selected.subscriptionRequests.get());
+        }
+      } finally {
+        tracker.close();
+      }
     }
   }
 

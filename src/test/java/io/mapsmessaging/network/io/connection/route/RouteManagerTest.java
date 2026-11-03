@@ -34,7 +34,7 @@ class RouteManagerTest {
   void switchingToNewLinkEstablishesItAndRepeatedSwitchIsNoOp() {
     RouteManager manager = new RouteManager("route-b");
     try {
-      EndPointConnection connection = connection("primary", "Connecting", LinkState.CONNECTING);
+      EndPointConnection connection = connection("primary", "Holding", LinkState.HOLDING);
       manager.addEndPointConnection(connection);
       Link link = manager.getRouteList().getLink(connection);
       clearInvocations(connection);
@@ -43,9 +43,12 @@ class RouteManagerTest {
       assertSame(link, manager.getCurrentLink());
       verify(connection).scheduleState(argThat(state -> state instanceof Establishing));
 
+      State establishing = mock(State.class);
+      when(establishing.getName()).thenReturn("Establishing");
+      when(connection.getState()).thenReturn(establishing);
       clearInvocations(connection);
       assertFalse(manager.switchTo(link, "same"));
-      verifyNoInteractions(connection);
+      verify(connection, never()).scheduleState(any(State.class));
     } finally {
       manager.getOrchestrator().close();
     }
