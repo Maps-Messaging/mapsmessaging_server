@@ -23,10 +23,19 @@ if (( EUID != 0 )); then
 fi
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly UPDATE_SCRIPT="/usr/local/sbin/update-maps.sh"
-readonly CRON_FILE="/etc/cron.d/maps-update"
+readonly UPDATE_SCRIPT="${SCRIPT_DIR}/update-maps.sh"
 
-install -m 0755 "${SCRIPT_DIR}/update-maps.sh" "${UPDATE_SCRIPT}"
-printf '%s\n' '0 0 * * * root /usr/local/sbin/update-maps.sh >> /var/log/maps-update.log 2>&1' | install -m 0644 /dev/stdin "${CRON_FILE}"
+if [[ ! -f "${UPDATE_SCRIPT}" ]]; then
+  echo "Missing update script: ${UPDATE_SCRIPT}" >&2
+  exit 1
+fi
+
+printf -v QUOTED_SCRIPT '%q' "${UPDATE_SCRIPT}"
+readonly CRON_ENTRY="0 0 * * * /bin/bash ${QUOTED_SCRIPT}"
+EXISTING_CRONTAB="$(crontab -l 2>/dev/null || true)"
+
+if ! grep -Fqx -- "${CRON_ENTRY}" <<< "${EXISTING_CRONTAB}"; then
+  { [[ -z "${EXISTING_CRONTAB}" ]] || printf '%s\n' "${EXISTING_CRONTAB}"; printf '%s\n' "${CRON_ENTRY}"; } | crontab -
+fi
 
 echo "Maps update scheduled for midnight daily (system local time)."
