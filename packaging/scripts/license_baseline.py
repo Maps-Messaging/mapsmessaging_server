@@ -70,6 +70,14 @@ def load_register(path):
                 raise ValueError("Register has an entry without a purl")
             if purl in records:
                 raise ValueError("Duplicate register entry: " + purl)
+            if purl.startswith("regex:"):
+                pattern = purl[len("regex:"):]
+                if not pattern.startswith("^pkg:maven/") or not pattern.endswith("$"):
+                    raise ValueError("Register regex must be an anchored Maven PURL: " + purl)
+                try:
+                    re.compile(pattern)
+                except re.error as error:
+                    raise ValueError("Invalid register regex: " + purl) from error
             decision = (row.get("decision") or "").strip()
             if decision not in ("", "approved", "rejected", "exception", "pending"):
                 raise ValueError("Invalid register decision for " + purl + ": " + decision)
@@ -188,6 +196,14 @@ def policy_selection(declaration, policy):
 
 def review_status(purl, group, declaration, register, policy, today):
     previous = register.get(purl)
+    if previous is None:
+        matches = [
+            row for key, row in register.items()
+            if key.startswith("regex:") and re.fullmatch(key[len("regex:"):], purl)
+        ]
+        if len(matches) > 1:
+            raise ValueError("Multiple register regex entries match: " + purl)
+        previous = matches[0] if matches else None
     if previous:
         if previous.get("declared_license", "") != declaration:
             return "needs-re-review", "", previous
