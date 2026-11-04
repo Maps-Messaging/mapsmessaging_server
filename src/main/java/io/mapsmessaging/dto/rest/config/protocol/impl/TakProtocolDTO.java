@@ -74,11 +74,11 @@ public class TakProtocolDTO {
 
   @Schema(
       description = "TLS protocol used for the connection when tlsEnabled is true.",
-      example = "TLSv1.2",
+      example = "TLS",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      defaultValue = "TLSv1.2"
+      defaultValue = "TLS"
   )
-  private String tlsContext = "TLSv1.2";
+  private String tlsContext = "TLS";
 
   @Schema(
       description = "Key store presenting this broker's client certificate to the TAK server (mutual TLS). Required when tlsEnabled is true.",
