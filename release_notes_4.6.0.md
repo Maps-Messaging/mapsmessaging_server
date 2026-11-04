@@ -27,3 +27,4 @@ This release focuses on connection recovery, stored-message reliability and impr
 - **Drone tasking, where installed:** Prevents pending tasks for the same drone from racing to execute, allows cancellation after disarming, and improves task status reporting during vehicle-mode changes.
 - **Windows operation:** Fixes administrator-password setup and persistent-session saves failing on unsupported file operations.
 - **Linux maintenance:** Adds scripts for optional daily automatic Maps package updates.
+- **Schema management:** Adds paged schema listings so integrations can retrieve large schema collections in smaller batches.
