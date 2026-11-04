@@ -230,5 +230,64 @@ class LicenseBaselineTest(unittest.TestCase):
 
 
 
+    def write_register_rule(self, purl, declaration="id:Apache-2.0 | id:EPL-2.0", decision="approved", selected="Apache-2.0", review_by=""):
+        with self.register.open("a", encoding="utf-8", newline="") as handle:
+            csv.writer(handle).writerow([purl, declaration, decision, selected, "reviewer", "2026-01-01", review_by, "reviewed"])
+
+    def jetty_component(self, version, licences=None):
+        return {
+            "purl": f"pkg:maven/org.eclipse.jetty/jetty-http@{version}?type=jar",
+            "group": "org.eclipse.jetty", "name": "jetty-http", "version": version,
+            "licenses": licences if licences is not None else [
+                {"license": {"id": "Apache-2.0"}}, {"license": {"id": "EPL-2.0"}}
+            ],
+        }
+
+    def test_regex_register_approves_matching_versions_only(self):
+        self.write_register_rule(r"regex:^pkg:maven/org\.eclipse\.jetty/jetty-http@12\.1\.\d+\?type=jar$")
+        self.write_bom([self.jetty_component("12.1.14"), self.jetty_component("12.1.15"), self.jetty_component("12.2.0")])
+        rows, summary = self.run_baseline()
+        self.assertEqual(["approved", "approved", "unreviewed"], [row["review_status"] for row in rows])
+        self.assertEqual(1, summary["unapproved_third_party_count"])
+        self.assertEqual("reviewer", rows[1]["reviewer"])
+
+    def test_regex_register_requires_same_license_declaration(self):
+        self.write_register_rule(r"regex:^pkg:maven/org\.eclipse\.jetty/jetty-http@12\.1\.\d+\?type=jar$")
+        self.write_bom([self.jetty_component("12.1.15", [{"license": {"id": "GPL-3.0-only"}}])])
+        rows, summary = self.run_baseline()
+        self.assertEqual("needs-re-review", rows[0]["review_status"])
+        self.assertEqual(1, summary["unapproved_third_party_count"])
+
+    def test_exact_register_entry_takes_precedence_over_regex(self):
+        self.write_register_rule(r"regex:^pkg:maven/org\.eclipse\.jetty/jetty-http@12\.1\.\d+\?type=jar$")
+        self.write_register_rule("pkg:maven/org.eclipse.jetty/jetty-http@12.1.15?type=jar", decision="rejected")
+        self.write_bom([self.jetty_component("12.1.15")])
+        rows, summary = self.run_baseline()
+        self.assertEqual("rejected", rows[0]["review_status"])
+        self.assertEqual(1, summary["unapproved_third_party_count"])
+
+    def test_overlapping_register_regex_rules_fail_closed(self):
+        self.write_register_rule(r"regex:^pkg:maven/org\.eclipse\.jetty/jetty-http@12\.1\.\d+\?type=jar$")
+        self.write_register_rule(r"regex:^pkg:maven/org\.eclipse\.jetty/jetty-http@12\.1\.15\?type=jar$")
+        self.write_bom([self.jetty_component("12.1.15")])
+        with self.assertRaisesRegex(ValueError, "Multiple register regex"):
+            self.run_baseline()
+
+    def test_register_rejects_invalid_or_unanchored_regex(self):
+        self.write_bom([])
+        for pattern in ("regex:pkg:maven/example/a@.*", "regex:^pkg:maven/example/[?type=jar$"):
+            self.register.write_text(",".join(license_baseline.REGISTER_FIELDS) + "\n", encoding="utf-8")
+            self.write_register_rule(pattern)
+            with self.subTest(pattern=pattern), self.assertRaisesRegex(ValueError, "regex"):
+                self.run_baseline()
+
+    def test_regex_register_review_expiry_is_enforced(self):
+        self.write_register_rule(r"regex:^pkg:maven/org\.eclipse\.jetty/jetty-http@12\.1\.\d+\?type=jar$", review_by="2000-01-01")
+        self.write_bom([self.jetty_component("12.1.15")])
+        rows, summary = self.run_baseline()
+        self.assertEqual("review-expired", rows[0]["review_status"])
+        self.assertEqual(1, summary["unapproved_third_party_count"])
+
+
 if __name__ == "__main__":
     unittest.main()
