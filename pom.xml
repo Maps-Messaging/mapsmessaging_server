@@ -90,7 +90,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <logback.version>1.6.6</logback.version>
-    <pi4j.version>2.8.0</pi4j.version>
     <jersey.version>4.0.2</jersey.version>
     <swagger-ui.version>3.17.0</swagger-ui.version>
 
@@ -1092,13 +1091,6 @@
       <version>1.12.797</version>
       <scope>test</scope>
     </dependency>
-
-    <dependency>
-      <groupId>com.pi4j</groupId>
-      <artifactId>pi4j-core</artifactId>
-      <version>${pi4j.version}</version>
-    </dependency>
-
 
     <!-- https://mvnrepository.com/artifact/org.mapdb/mapdb -->
     <dependency>
