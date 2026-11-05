@@ -28,3 +28,6 @@ This release focuses on connection recovery, stored-message reliability and impr
 - **Windows operation:** Fixes administrator-password setup and persistent-session saves failing on unsupported file operations.
 - **Linux maintenance:** Adds scripts for optional daily automatic Maps package updates.
 - **Schema management:** Adds paged schema listings so integrations can retrieve large schema collections in smaller batches.
+- **Impact monitoring:** Adds H3LIS200DL sensor support for monitoring shocks and impacts across three axes.
+- **NFC readers:** Completes DFRobot PN532 support, improving reader discovery, tag detection and recovery after communication failures.
+- **Motion sensing and clock detection:** Adds MPU-6050 six-axis motion sensing and improves identification of motion sensors and DS3231 clocks that use the same device address.
