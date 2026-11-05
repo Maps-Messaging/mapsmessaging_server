@@ -48,6 +48,7 @@ public class SaslManager {
     String mechanismName = mechanism == null ? "ANONYMOUS" : mechanism.getMechanism();
     sasl.setMechanisms(mechanismName);
     sasl.server();
+    sasl.allowSkip(mechanism == null);
     if ("ANONYMOUS".equalsIgnoreCase(mechanismName)) {
       sasl.done(Sasl.PN_SASL_OK);
     }

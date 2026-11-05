@@ -32,9 +32,33 @@ import static org.mockito.Mockito.when;
 
 import io.mapsmessaging.network.protocol.sasl.SaslAuthenticationMechanism;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.engine.Transport;
+import org.apache.qpid.proton.engine.TransportResult;
 import org.junit.jupiter.api.Test;
 
 class SaslManagerProgressTest {
+
+  @Test
+  void unauthenticated_endpoint_accepts_plain_amqp_header() {
+    Transport transport = Transport.Factory.create();
+    new SaslManager(transport.sasl(), null);
+    transport.getInputBuffer().put(new byte[] {'A', 'M', 'Q', 'P', 0, 1, 0, 0});
+
+    TransportResult result = transport.processInput();
+
+    assertTrue(result.isOk(), result.getErrorDescription());
+  }
+
+  @Test
+  void authenticated_endpoint_rejects_plain_amqp_header() {
+    Transport transport = Transport.Factory.create();
+    SaslAuthenticationMechanism mechanism = mock(SaslAuthenticationMechanism.class);
+    when(mechanism.getMechanism()).thenReturn("SCRAM-SHA-256");
+    new SaslManager(transport.sasl(), mechanism);
+    transport.getInputBuffer().put(new byte[] {'A', 'M', 'Q', 'P', 0, 1, 0, 0});
+
+    assertFalse(transport.processInput().isOk());
+  }
 
   @Test
   void emptyProtonInputDoesNotAdvanceScram() throws Exception {
