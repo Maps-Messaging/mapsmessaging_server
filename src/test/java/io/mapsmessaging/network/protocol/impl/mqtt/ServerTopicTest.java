@@ -42,7 +42,8 @@ class ServerTopicTest extends MQTTBaseTest {
   @DisplayName("Test System Topics")
   void testSystemTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     MqttConnectOptions options = getOptions(auth, version);
-    MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
+    String clientId = getClientId(UuidGenerator.getInstance().generate().toString(), version);
+    MqttClient client = new MqttClient(getUrl(protocol, auth), clientId, new MemoryPersistence());
     AtomicInteger counter = new AtomicInteger(0);
     client.setCallback(new MqttCallback() {
       @Override
@@ -71,10 +72,7 @@ class ServerTopicTest extends MQTTBaseTest {
     Assertions.assertTrue(counter.get() != 0);
     client.disconnect();
     client.close();
-    endTime = System.currentTimeMillis() + 20000;
-    while (SessionManagerTest.getInstance().hasIdleSessions() && endTime > System.currentTimeMillis()) {
-      delay(100);
-    }
+    waitForClientDisconnect(clientId);
   }
 
   @ParameterizedTest
@@ -84,7 +82,8 @@ class ServerTopicTest extends MQTTBaseTest {
   void testDeviceTopics(int version, String protocol, boolean auth, int QoS) throws MqttException, IOException {
     if (md.hasDeviceManager()) {
       MqttConnectOptions options = getOptions(auth, version);
-      MqttClient client = new MqttClient(getUrl(protocol, auth), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
+      String clientId = getClientId(UuidGenerator.getInstance().generate().toString(), version);
+      MqttClient client = new MqttClient(getUrl(protocol, auth), clientId, new MemoryPersistence());
       AtomicInteger counter = new AtomicInteger(0);
       client.setCallback(new MqttCallback() {
         @Override
@@ -113,10 +112,15 @@ class ServerTopicTest extends MQTTBaseTest {
       Assertions.assertNotEquals(counter.get(), 0);
       client.disconnect();
       client.close();
-      endTime = System.currentTimeMillis() + 20000;
-      while (SessionManagerTest.getInstance().hasIdleSessions() && endTime > System.currentTimeMillis()) {
-        delay(100);
-      }
+      waitForClientDisconnect(clientId);
     }
+  }
+
+  private void waitForClientDisconnect(String clientId) {
+    long endTime = System.currentTimeMillis() + 5000;
+    while (SessionManagerTest.getInstance().hasActiveSession(clientId) && endTime > System.currentTimeMillis()) {
+      delay(10);
+    }
+    Assertions.assertFalse(SessionManagerTest.getInstance().hasActiveSession(clientId), "MQTT session still active after disconnect: " + clientId);
   }
 }
