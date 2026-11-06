@@ -36,7 +36,6 @@ import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.schemas.config.SchemaConfig;
-import io.mapsmessaging.security.uuid.UuidGenerator;
 import io.mapsmessaging.selector.ParseException;
 import io.mapsmessaging.selector.SelectorParser;
 import io.mapsmessaging.selector.operators.ParserExecutor;
@@ -48,6 +47,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -100,12 +100,15 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     SchemaConfig schemaConfig = device.getSchema();
     try {
       if(schemaConfig != null) {
+        if (schemaConfig.getUniqueId() == null || schemaConfig.getUniqueId().isEmpty()) {
+          schemaConfig.setUniqueId(schemaId);
+        }
         SchemaManager manager = SchemaManager.getInstance();
-        boolean found = manager.getAll().stream().anyMatch(configured -> (configured.getSource() != null && configured.getSource().equalsIgnoreCase(schemaConfig.getSource())));
-        if(!found) {
-          if (schemaConfig.getUniqueId() == null || schemaConfig.getUniqueId().isEmpty()) {
-            schemaConfig.setUniqueId(UuidGenerator.getInstance().generate());
-          }
+        io.mapsmessaging.engine.schema.Schema destinationSchema = destination.getSchema();
+        boolean destinationMatches = destinationSchema != null && schemaConfig.getUniqueId().equals(destinationSchema.getUniqueId());
+        SchemaConfig registered = manager.getSchema(schemaConfig.getUniqueId());
+        boolean definitionMatches = registered != null && Arrays.equals(registered.packAsBytes(), schemaConfig.packAsBytes());
+        if (!destinationMatches || !definitionMatches) {
           MessageBuilder messageBuilder = new MessageBuilder();
           messageBuilder.setOpaqueData(schemaConfig.packAsBytes());
           destination.updateSchema(schemaConfig, messageBuilder.build());
@@ -113,7 +116,14 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
         }
       }
     } catch (Exception e) {
-      logger.log(DEVICE_SCHEMA_UPDATE_EXCEPTION, e, schemaConfig.toString() );
+      logger.log(DEVICE_SCHEMA_UPDATE_EXCEPTION, e, String.valueOf(schemaConfig));
+      busHandler.closedSession(this);
+      try {
+        SessionManager.getInstance().close(session, true);
+      } catch (IOException closeException) {
+        e.addSuppressed(closeException);
+      }
+      throw new ExecutionException(e);
     }
     if(device.enableConfig()) {
       config = session.findDestination(device.getTopicName(topicNameTemplate+ "/config"), DestinationType.TOPIC).get();
