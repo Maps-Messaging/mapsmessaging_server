@@ -1,5 +1,17 @@
 package io.mapsmessaging.hardware.device;
 
+import com.google.gson.JsonObject;
+import io.mapsmessaging.api.SessionManager;
+import io.mapsmessaging.api.features.DestinationType;
+import io.mapsmessaging.devices.DeviceType;
+import io.mapsmessaging.engine.schema.SchemaManager;
+import io.mapsmessaging.hardware.trigger.Trigger;
+import io.mapsmessaging.schemas.config.SchemaConfig;
+import org.mockito.MockedStatic;
+
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -73,5 +85,166 @@ class DeviceSessionManagementTest {
 
     assertDoesNotThrow(() -> management.sendMessage(event));
     verify(completion).run();
+  }
+
+  @Test
+  void startRegistersSchemaForNewDeviceDestination() throws Exception {
+    SchemaConfig schema = schema("shared-source");
+    Destination destination = mock(Destination.class);
+    SchemaManager schemaManager = mock(SchemaManager.class);
+    DeviceSessionManagement management = configuredSession(schema, destination);
+
+    try (MockedStatic<SchemaManager> mocked = mockStatic(SchemaManager.class)) {
+      mocked.when(SchemaManager::getInstance).thenReturn(schemaManager);
+      management.start();
+    }
+
+    verify(destination).updateSchema(eq(schema), any(Message.class));
+  }
+
+  @Test
+  void startBindsRegisteredSchemaToAnotherDeviceDestination() throws Exception {
+    SchemaConfig schema = schema("shared-source");
+    Destination destination = mock(Destination.class);
+    SchemaManager schemaManager = mock(SchemaManager.class);
+    when(schemaManager.getSchema(schema.getUniqueId())).thenReturn(schema);
+    DeviceSessionManagement management = configuredSession(schema, destination);
+
+    try (MockedStatic<SchemaManager> mocked = mockStatic(SchemaManager.class)) {
+      mocked.when(SchemaManager::getInstance).thenReturn(schemaManager);
+      management.start();
+    }
+
+    verify(destination).updateSchema(eq(schema), any(Message.class));
+  }
+
+  @Test
+  void startSkipsAlreadyMatchingDestinationAndDefinition() throws Exception {
+    SchemaConfig schema = schema("shared-source");
+    Destination destination = mock(Destination.class);
+    SchemaManager schemaManager = mock(SchemaManager.class);
+    when(schemaManager.getSchema(schema.getUniqueId())).thenReturn(schema);
+    when(destination.getSchema()).thenReturn(new io.mapsmessaging.engine.schema.Schema(schema));
+    DeviceSessionManagement management = configuredSession(schema, destination);
+
+    try (MockedStatic<SchemaManager> mocked = mockStatic(SchemaManager.class)) {
+      mocked.when(SchemaManager::getInstance).thenReturn(schemaManager);
+      management.start();
+    }
+
+    verify(destination, never()).updateSchema(any(), any());
+  }
+
+  @Test
+  void startUpdatesChangedSchemaWithSameUuidAndSource() throws Exception {
+    SchemaConfig schema = schema("shared-source");
+    SchemaConfig previous = schema("shared-source");
+    previous.setUniqueId(schema.getUniqueId());
+    JsonObject oldDefinition = new JsonObject();
+    oldDefinition.addProperty("previous", true);
+    previous.setSchema(oldDefinition);
+
+    Destination destination = mock(Destination.class);
+    SchemaManager schemaManager = mock(SchemaManager.class);
+    when(schemaManager.getSchema(schema.getUniqueId())).thenReturn(previous);
+    when(destination.getSchema()).thenReturn(new io.mapsmessaging.engine.schema.Schema(schema));
+    DeviceSessionManagement management = configuredSession(schema, destination);
+
+    try (MockedStatic<SchemaManager> mocked = mockStatic(SchemaManager.class)) {
+      mocked.when(SchemaManager::getInstance).thenReturn(schemaManager);
+      management.start();
+    }
+
+    verify(destination).updateSchema(eq(schema), any(Message.class));
+  }
+
+  @Test
+  void startUsesDeviceSchemaIdWhenDefinitionHasNoUuid() throws Exception {
+    SchemaConfig schema = schema("sensor");
+    schema.setLabels(null);
+    Destination destination = mock(Destination.class);
+    SchemaManager schemaManager = mock(SchemaManager.class);
+    UUID deviceUuid = UUID.randomUUID();
+    DeviceSessionManagement management = configuredSession(schema, destination, deviceUuid);
+
+    try (MockedStatic<SchemaManager> mocked = mockStatic(SchemaManager.class)) {
+      mocked.when(SchemaManager::getInstance).thenReturn(schemaManager);
+      management.start();
+    }
+
+    assertEquals(deviceUuid.toString(), schema.getUniqueId());
+    verify(destination).updateSchema(eq(schema), any(Message.class));
+  }
+
+  @Test
+  void startDoesNotActivateDeviceWhenSchemaRegistrationFails() throws Exception {
+    SchemaConfig schema = schema("sensor");
+    Destination destination = mock(Destination.class);
+    DeviceHandler device = mock(DeviceHandler.class);
+    BusHandler bus = mock(BusHandler.class);
+    Session session = mock(Session.class);
+    Trigger trigger = mock(Trigger.class);
+    SchemaManager schemaManager = mock(SchemaManager.class);
+    SessionManager sessionManager = mock(SessionManager.class);
+    when(device.getSchemaId()).thenReturn(UUID.fromString(schema.getUniqueId()));
+    when(device.getController()).thenReturn(mock(DeviceController.class));
+    when(device.getSchema()).thenReturn(schema);
+    when(device.getTopicName("/device/data")).thenReturn("/device/data");
+    when(device.getTrigger()).thenReturn(trigger);
+    when(device.getType()).thenReturn(DeviceType.SENSOR);
+    when(session.findDestination("/device/data", DestinationType.TOPIC)).thenReturn(CompletableFuture.completedFuture(destination));
+    doThrow(new IOException("cannot register")).when(destination).updateSchema(eq(schema), any(Message.class));
+    DeviceSessionManagement management = new DeviceSessionManagement(device, "/device", DataFilter.ALWAYS_SEND, bus, null);
+    management.setSession(session);
+
+    try (MockedStatic<SchemaManager> mocked = mockStatic(SchemaManager.class);
+         MockedStatic<SessionManager> sessions = mockStatic(SessionManager.class)) {
+      mocked.when(SchemaManager::getInstance).thenReturn(schemaManager);
+      sessions.when(SessionManager::getInstance).thenReturn(sessionManager);
+      assertThrows(ExecutionException.class, management::start);
+    }
+
+    verify(bus).closedSession(management);
+    verify(sessionManager).close(session, true);
+    verify(trigger, never()).addTask(management);
+  }
+
+  @Test
+  void startPreservesDevicesWithoutSchema() throws Exception {
+    Destination destination = mock(Destination.class);
+    DeviceSessionManagement management = configuredSession(null, destination);
+
+    management.start();
+
+    verify(destination, never()).updateSchema(any(), any());
+    verify(management.getDevice().getTrigger()).addTask(management);
+  }
+
+  private static SchemaConfig schema(String source) {
+    SchemaConfig config = new SchemaConfig();
+    config.setUniqueId(UUID.randomUUID());
+    config.setSource(source);
+    config.setSchema(new JsonObject());
+    return config;
+  }
+
+  private static DeviceSessionManagement configuredSession(SchemaConfig schema, Destination destination) {
+    return configuredSession(schema, destination, schema == null ? UUID.randomUUID() : UUID.fromString(schema.getUniqueId()));
+  }
+
+  private static DeviceSessionManagement configuredSession(SchemaConfig schema, Destination destination, UUID deviceUuid) {
+    DeviceHandler device = mock(DeviceHandler.class);
+    Session session = mock(Session.class);
+    when(device.getSchemaId()).thenReturn(deviceUuid);
+    when(device.getController()).thenReturn(mock(DeviceController.class));
+    when(device.getSchema()).thenReturn(schema);
+    when(device.getTopicName("/device/data")).thenReturn("/device/data");
+    when(device.getTrigger()).thenReturn(mock(Trigger.class));
+    when(device.getType()).thenReturn(DeviceType.SENSOR);
+    when(session.findDestination("/device/data", DestinationType.TOPIC)).thenReturn(CompletableFuture.completedFuture(destination));
+    DeviceSessionManagement management = new DeviceSessionManagement(
+        device, "/device", DataFilter.ALWAYS_SEND, mock(BusHandler.class), null);
+    management.setSession(session);
+    return management;
   }
 }
