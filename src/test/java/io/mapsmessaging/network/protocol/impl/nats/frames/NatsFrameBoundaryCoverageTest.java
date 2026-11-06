@@ -83,9 +83,10 @@ class NatsFrameBoundaryCoverageTest {
   @MethodSource("payloadLineCases")
   void payloadHeaderParsingHandlesReplyAndBounds(
       String line, String subject, String reply, int size) throws Exception {
-    MsgFrame frame = new MsgFrame(64);
+    PubFrame frame = new PubFrame(64);
     frame.parseLine(line);
     assertEquals(subject, frame.getSubject());
+    assertNull(frame.getSubscriptionId());
     assertEquals(reply, frame.getReplyTo());
     assertEquals(size, frame.getPayloadSize());
     assertTrue(frame.isValid());
@@ -94,8 +95,29 @@ class NatsFrameBoundaryCoverageTest {
   @ParameterizedTest
   @MethodSource("invalidPayloadLineCases")
   void payloadHeaderRejectsMalformedOrOversizeHeaders(String line) {
-    MsgFrame frame = new MsgFrame(8);
+    PubFrame frame = new PubFrame(8);
     assertThrows(Exception.class, () -> frame.parseLine(line));
+  }
+
+  @ParameterizedTest
+  @MethodSource("msgLineCases")
+  void msg_header_parsing_preserves_subscription_reply_and_bounds(
+      String line, String subject, String subscriptionId, String reply, int size) throws Exception {
+    MsgFrame frame = new MsgFrame(64);
+    frame.parseLine(line);
+    assertEquals(subject, frame.getSubject());
+    assertEquals(subscriptionId, frame.getSubscriptionId());
+    assertEquals(reply, frame.getReplyTo());
+    assertEquals(size, frame.getPayloadSize());
+    assertTrue(frame.isValid());
+  }
+
+  @ParameterizedTest
+  @MethodSource("invalidMsgLineCases")
+  void msg_header_rejects_missing_subscription_malformed_or_oversize_headers(
+      String line, Class<? extends Throwable> expected) {
+    MsgFrame frame = new MsgFrame(8);
+    assertThrows(expected, () -> frame.parseLine(line));
   }
 
   @ParameterizedTest
@@ -241,6 +263,28 @@ class NatsFrameBoundaryCoverageTest {
             "MSG foo _INBOX.x 3\r\nabc\r\n"),
         Arguments.of("foo", "1", "_INBOX.x", "abc".getBytes(StandardCharsets.US_ASCII),
             "MSG foo 1 _INBOX.x 3\r\nabc\r\n")
+    );
+  }
+
+  private static Stream<Arguments> msgLineCases() {
+    return Stream.of(
+        Arguments.of("foo sid 0", "foo", "sid", null, 0),
+        Arguments.of("foo sid 5", "foo", "sid", null, 5),
+        Arguments.of("foo sid _INBOX.x 5", "foo", "sid", "_INBOX.x", 5),
+        Arguments.of("a.b.c 42 reply 64", "a.b.c", "42", "reply", 64),
+        Arguments.of("  foo sid 7  ", "foo", "sid", null, 7)
+    );
+  }
+
+  private static Stream<Arguments> invalidMsgLineCases() {
+    return Stream.of(
+        Arguments.of("foo 0", NatsProtocolException.class),
+        Arguments.of("foo sid", NatsProtocolException.class),
+        Arguments.of("foo sid nope", NumberFormatException.class),
+        Arguments.of("foo sid 9", NatsProtocolException.class),
+        Arguments.of("foo sid reply 9", NatsProtocolException.class),
+        Arguments.of("foo sid reply nope", NumberFormatException.class),
+        Arguments.of("foo sid reply 0 extra", NatsProtocolException.class)
     );
   }
 
