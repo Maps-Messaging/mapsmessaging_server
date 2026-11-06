@@ -680,6 +680,9 @@ class N2kProtocolBranchCoverageTest {
     Session session = mock(Session.class);
     MessageFormatter formatter = mock(MessageFormatter.class);
     FramePacker framePacker = mock(FramePacker.class);
+    when(framePacker.getTransportType(eq(60928), anyInt())).thenReturn(N2kTransportType.SINGLE_FRAME);
+    when(framePacker.getTransportType(eq(126996), anyInt())).thenReturn(N2kTransportType.FAST_PACKET);
+    when(framePacker.getTransportType(eq(126998), anyInt())).thenReturn(N2kTransportType.FAST_PACKET);
     SchemaConfig defaultSchema = mock(SchemaConfig.class);
     Destination destination = mock(Destination.class);
     Logger logger = mock(Logger.class);

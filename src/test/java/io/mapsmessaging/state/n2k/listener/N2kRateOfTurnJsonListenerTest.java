@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,15 +32,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kRateOfTurnJsonListenerTest {
 
-  @Test
-  void rateOfTurnIsConvertedToDegreesPerSecond() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void rateOfTurnIsConvertedToDegreesPerSecond(boolean canonical) {
     N2kRateOfTurnJsonListener listener = new N2kRateOfTurnJsonListener();
     DroneTwin twin = new DroneTwin("turn");
     TwinUpdateContext context = new TwinUpdateContext();
     context.setReceivedTime(Instant.parse("2026-09-19T20:40:00Z"));
 
     JsonObject packet = new JsonObject();
-    packet.addProperty("rateOfTurn", Math.toRadians(-12.5));
+    packet.addProperty(canonical ? "rate" : "rateOfTurn", Math.toRadians(-12.5));
 
     listener.handle(twin, packet, context);
 

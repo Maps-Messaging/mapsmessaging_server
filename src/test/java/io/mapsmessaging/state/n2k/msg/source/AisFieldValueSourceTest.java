@@ -49,8 +49,8 @@ class AisFieldValueSourceTest {
     assertEquals(1L, source.getLong("positionAccuracy"));
     assertEquals(4.5, source.getDouble("sog"), 0.0);
 
-    assertFalse(source.has("trueHeading"));
-    assertNull(source.getDouble("trueHeading"));
+    assertFalse(source.has("heading"));
+    assertNull(source.getDouble("heading"));
     assertNull(source.getString("messageId"));
     assertFalse(source.has("missing"));
   }
@@ -75,12 +75,12 @@ class AisFieldValueSourceTest {
     assertEquals(19L, source.getLong("messageId"));
     assertEquals(987654321L, source.getLong("userId"));
     assertEquals(1.5, source.getDouble("latitude"), 0.0);
-    assertEquals(55L, source.getLong("shipcargoType"));
+    assertEquals(55L, source.getLong("typeOfShip"));
     assertEquals(Math.toRadians(180.0), source.getDouble("trueHeading"), 0.0);
-    assertEquals(6.0, source.getDouble("shipLength"), 0.0);
-    assertEquals(2.0, source.getDouble("shipBeam"), 0.0);
+    assertEquals(6.0, source.getDouble("length"), 0.0);
+    assertEquals(2.0, source.getDouble("beam"), 0.0);
     assertEquals("SURVEY-1", source.getString("name"));
-    assertEquals(0L, source.getLong("dataTerminalEquipmentDte"));
+    assertEquals(0L, source.getLong("dte"));
     assertFalse(source.has("missing"));
   }
 }

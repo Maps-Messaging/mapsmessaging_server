@@ -49,11 +49,11 @@ class AisClassBStaticDataPartBFieldValueSourceTest {
 
     assertEquals(24L, source.getLong("messageId"));
     assertEquals(123456789L, source.getLong("userId"));
-    assertEquals(55L, source.getLong("typeOfShipAndCargo"));
+    assertEquals(55L, source.getLong("typeOfShip"));
     assertEquals("MAPS", source.getString("vendorId"));
-    assertEquals("BOAT01", source.getString("callSign"));
-    assertEquals(6.0, source.getDouble("shipLength"), 0.0);
-    assertEquals(2.0, source.getDouble("shipBeam"), 0.0);
+    assertEquals("BOAT01", source.getString("callsign"));
+    assertEquals(6.0, source.getDouble("length"), 0.0);
+    assertEquals(2.0, source.getDouble("beam"), 0.0);
     assertEquals(3L, source.getLong("sequenceId"));
   }
 
@@ -69,7 +69,7 @@ class AisClassBStaticDataPartBFieldValueSourceTest {
 
     assertTrue(source.has("messageId"));
     assertFalse(source.has("vendorId"));
-    assertFalse(source.has("callSign"));
-    assertFalse(source.has("shipLength"));
+    assertFalse(source.has("callsign"));
+    assertFalse(source.has("length"));
   }
 }

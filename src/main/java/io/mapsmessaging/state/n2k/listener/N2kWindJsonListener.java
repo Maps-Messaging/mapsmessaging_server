@@ -37,8 +37,8 @@ public class N2kWindJsonListener extends AbstractN2kJsonListener {
   @Override
   public void handle(DroneTwin droneTwin, JsonObject packet, TwinUpdateContext context) {
     Double windSpeedMetersPerSecond = getDouble(packet, "windSpeed");
-    Double windDirectionRadians = getDouble(packet, "windDirection");
-    Double windReference = getDouble(packet, "windReference");
+    Double windDirectionRadians = getDouble(packet, "windAngle", "windDirection");
+    Double windReference = getDouble(packet, "reference", "windReference");
 
     if (windSpeedMetersPerSecond == null && windDirectionRadians == null && windReference == null) {
       return;

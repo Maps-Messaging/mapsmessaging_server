@@ -10,9 +10,9 @@ class ConfigurationInformationFieldValueSourceTest {
   void defaultsExposeServerBridgeAndManufacturerDescriptions() {
     ConfigurationInformationFieldValueSource source = new ConfigurationInformationFieldValueSource();
 
-    assertEquals("Maps Messaging Server", source.getString("installationDescriptionField1"));
-    assertEquals("AIS Source Bridge", source.getString("installationDescriptionField2"));
-    assertEquals("MapsMessaging B.V.", source.getString("manufacturerInformationField3"));
+    assertEquals("Maps Messaging Server", source.getString("installationDescription1"));
+    assertEquals("AIS Source Bridge", source.getString("installationDescription2"));
+    assertEquals("MapsMessaging B.V.", source.getString("manufacturerInformation"));
   }
 
   @Test
@@ -20,9 +20,9 @@ class ConfigurationInformationFieldValueSourceTest {
     ConfigurationInformationFieldValueSource source =
         new ConfigurationInformationFieldValueSource("Bridge A", "Port feed", "Example Ltd");
 
-    assertEquals("Bridge A", source.getString("installationDescriptionField1"));
-    assertEquals("Port feed", source.getString("installationDescriptionField2"));
-    assertEquals("Example Ltd", source.getString("manufacturerInformationField3"));
+    assertEquals("Bridge A", source.getString("installationDescription1"));
+    assertEquals("Port feed", source.getString("installationDescription2"));
+    assertEquals("Example Ltd", source.getString("manufacturerInformation"));
   }
 
   @Test
@@ -30,8 +30,8 @@ class ConfigurationInformationFieldValueSourceTest {
     ConfigurationInformationFieldValueSource source =
         new ConfigurationInformationFieldValueSource(null, " ", "");
 
-    assertEquals("Maps Messaging Server", source.getString("installationDescriptionField1"));
-    assertEquals("AIS Source Bridge", source.getString("installationDescriptionField2"));
-    assertEquals("MapsMessaging B.V.", source.getString("manufacturerInformationField3"));
+    assertEquals("Maps Messaging Server", source.getString("installationDescription1"));
+    assertEquals("AIS Source Bridge", source.getString("installationDescription2"));
+    assertEquals("MapsMessaging B.V.", source.getString("manufacturerInformation"));
   }
 }

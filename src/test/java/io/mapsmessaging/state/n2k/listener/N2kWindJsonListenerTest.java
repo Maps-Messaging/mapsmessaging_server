@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,8 +32,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kWindJsonListenerTest {
 
-  @Test
-  void windPacketUpdatesAttributesAndOperationalTimestamp() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void windPacketUpdatesAttributesAndOperationalTimestamp(boolean canonical) {
     N2kWindJsonListener listener = new N2kWindJsonListener();
     DroneTwin twin = new DroneTwin("wind");
     TwinUpdateContext context = new TwinUpdateContext();
@@ -39,8 +42,8 @@ class N2kWindJsonListenerTest {
 
     JsonObject packet = new JsonObject();
     packet.addProperty("windSpeed", 12.3);
-    packet.addProperty("windDirection", Math.toRadians(225.0));
-    packet.addProperty("windReference", 4);
+    packet.addProperty(canonical ? "windAngle" : "windDirection", Math.toRadians(225.0));
+    packet.addProperty(canonical ? "reference" : "windReference", 4);
 
     listener.handle(twin, packet, context);
 

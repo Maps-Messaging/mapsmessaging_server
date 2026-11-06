@@ -54,13 +54,13 @@ public class ProductInformationFieldValueSource extends AbstractAisFieldValueSou
       long certificationLevel,
       long loadEquivalency
   ) {
-    putDouble("nmea2000DatabaseVersion", nmea2000Version);
-    putLong("nmeaManufacturersProductCode", productCode);
-    putString("manufacturersModelId", safe(modelId, "Maps Messaging Server"));
-    putString("manufacturersSoftwareVersionCode", safe(softwareVersionCode, "unknown"));
-    putString("manufacturersModelVersion", safe(modelVersion, "1.0"));
-    putString("manufacturersModelSerialCode", safe(modelSerialCode, "unknown"));
-    putLong("nmea2000CertificationLevel", certificationLevel);
+    putDouble("nmea2000Version", nmea2000Version);
+    putLong("productCode", productCode);
+    putString("modelId", safe(modelId, "Maps Messaging Server"));
+    putString("softwareVersionCode", safe(softwareVersionCode, "unknown"));
+    putString("modelVersion", safe(modelVersion, "1.0"));
+    putString("modelSerialCode", safe(modelSerialCode, "unknown"));
+    putLong("certificationLevel", certificationLevel);
     putLong("loadEquivalency", loadEquivalency);
   }
 

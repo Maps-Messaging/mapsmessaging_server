@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,8 +32,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kMagneticVariationJsonListenerTest {
 
-  @Test
-  void variationPacketUpdatesAttributesAndNavigationTimestamp() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void variationPacketUpdatesAttributesAndNavigationTimestamp(boolean canonical) {
     N2kMagneticVariationJsonListener listener = new N2kMagneticVariationJsonListener();
     DroneTwin twin = new DroneTwin("variation");
     TwinUpdateContext context = new TwinUpdateContext();
@@ -39,8 +42,8 @@ class N2kMagneticVariationJsonListenerTest {
 
     JsonObject packet = new JsonObject();
     packet.addProperty("variation", Math.toRadians(-4.5));
-    packet.addProperty("variationSource", 3);
-    packet.addProperty("ageOfServiceDate", 20123);
+    packet.addProperty(canonical ? "source" : "variationSource", 3);
+    packet.addProperty(canonical ? "ageOfService" : "ageOfServiceDate", 20123);
 
     listener.handle(twin, packet, context);
 

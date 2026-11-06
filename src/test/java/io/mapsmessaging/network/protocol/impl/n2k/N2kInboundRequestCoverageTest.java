@@ -131,6 +131,7 @@ class N2kInboundRequestCoverageTest {
     CanbusEndPoint endPoint = mock(CanbusEndPoint.class);
     CanbusFormatter formatter = mock(CanbusFormatter.class, RETURNS_DEEP_STUBS);
     FramePacker framePacker = mock(FramePacker.class);
+    when(framePacker.getTransportType(anyInt(), anyInt())).thenReturn(N2kTransportType.FAST_PACKET);
 
     setField(protocol, N2kProtocol.class, "formatter", formatter);
     setField(protocol, N2kProtocol.class, "framePacker", framePacker);

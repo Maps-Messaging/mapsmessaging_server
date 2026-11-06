@@ -34,7 +34,7 @@ public class IsoAddressClaimFieldValueSource extends AbstractAisFieldValueSource
     putLong("deviceInstanceLower", 0L);
     putLong("deviceInstanceUpper", 0L);
     putLong("deviceFunction", 130L);
-    putLong("reserved", 0L);
+    putLong("spare", 0L);
     putLong("deviceClass", 25L);
     putLong("systemInstance", 0L);
     putLong("industryGroup", 4L);

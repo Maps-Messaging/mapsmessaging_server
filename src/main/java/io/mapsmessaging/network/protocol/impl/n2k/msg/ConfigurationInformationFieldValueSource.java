@@ -34,9 +34,9 @@ public class ConfigurationInformationFieldValueSource extends AbstractAisFieldVa
       String installationDescription2,
       String manufacturerInformation
   ) {
-    putString("installationDescriptionField1", safe(installationDescription1, "Maps Messaging Server"));
-    putString("installationDescriptionField2", safe(installationDescription2, "AIS Source Bridge"));
-    putString("manufacturerInformationField3", safe(manufacturerInformation, "MapsMessaging B.V."));
+    putString("installationDescription1", safe(installationDescription1, "Maps Messaging Server"));
+    putString("installationDescription2", safe(installationDescription2, "AIS Source Bridge"));
+    putString("manufacturerInformation", safe(manufacturerInformation, "MapsMessaging B.V."));
   }
 
   private String safe(String value, String defaultValue) {

@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,8 +32,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kGnssDopsJsonListenerTest {
 
-  @Test
-  void gnssDopsUpdateFixAndNavigationState() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void gnssDopsUpdateFixAndNavigationState(boolean canonical) {
     N2kGnssDopsJsonListener listener = new N2kGnssDopsJsonListener();
     DroneTwin twin = new DroneTwin("n2k-gnss");
     TwinUpdateContext context = new TwinUpdateContext();
@@ -41,8 +44,8 @@ class N2kGnssDopsJsonListenerTest {
     packet.addProperty("hdop", 0.8);
     packet.addProperty("vdop", 1.2);
     packet.addProperty("tdop", 1.4);
-    packet.addProperty("setMode", 2);
-    packet.addProperty("opMode", 3);
+    packet.addProperty(canonical ? "desiredMode" : "setMode", 2);
+    packet.addProperty(canonical ? "actualMode" : "opMode", 3);
 
     listener.handle(twin, packet, context);
 

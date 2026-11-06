@@ -23,6 +23,8 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 
@@ -30,17 +32,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class N2kBatteryStatusJsonListenerTest {
 
-  @Test
-  void batteryPacketCreatesAndUpdatesBatteryState() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void batteryPacketCreatesAndUpdatesBatteryState(boolean canonical) {
     N2kBatteryStatusJsonListener listener = new N2kBatteryStatusJsonListener();
     DroneTwin twin = new DroneTwin("n2k-battery");
     TwinUpdateContext context = context("2026-09-19T20:10:00Z");
 
     JsonObject packet = new JsonObject();
-    packet.addProperty("batteryInstance", 2);
-    packet.addProperty("batteryVoltage", 24.6);
-    packet.addProperty("batteryCurrent", 8.4);
-    packet.addProperty("batteryCaseTemperature", 300.15);
+    packet.addProperty(canonical ? "instance" : "batteryInstance", 2);
+    packet.addProperty(canonical ? "voltage" : "batteryVoltage", 24.6);
+    packet.addProperty(canonical ? "current" : "batteryCurrent", 8.4);
+    packet.addProperty(canonical ? "temperature" : "batteryCaseTemperature", 300.15);
 
     listener.handle(twin, packet, context);
 

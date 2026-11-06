@@ -37,8 +37,8 @@ public class N2kMagneticVariationJsonListener extends AbstractN2kJsonListener {
   @Override
   public void handle(DroneTwin droneTwin, JsonObject packet, TwinUpdateContext context) {
     Double variationRadians = getDouble(packet, "variation");
-    Double variationSource = getDouble(packet, "variationSource");
-    Double ageOfServiceDate = getDouble(packet, "ageOfServiceDate");
+    Double variationSource = getDouble(packet, "source", "variationSource");
+    Double ageOfServiceDate = getDouble(packet, "ageOfService", "ageOfServiceDate");
 
     if (variationRadians == null && variationSource == null && ageOfServiceDate == null) {
       return;
