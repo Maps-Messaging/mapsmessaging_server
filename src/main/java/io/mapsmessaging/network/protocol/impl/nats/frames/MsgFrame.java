@@ -36,6 +36,11 @@ public class MsgFrame extends PayloadFrame {
   }
 
   @Override
+  protected boolean requiresSubscriptionId() {
+    return true;
+  }
+
+  @Override
   public PayloadFrame duplicate() {
     return copy(new MsgFrame(maxBufferSize));
   }

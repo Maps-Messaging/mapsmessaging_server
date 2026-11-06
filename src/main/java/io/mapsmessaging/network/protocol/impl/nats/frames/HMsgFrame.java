@@ -28,6 +28,11 @@ public class HMsgFrame extends HPayloadFrame {
   }
 
   @Override
+  protected boolean requiresSubscriptionId() {
+    return true;
+  }
+
+  @Override
   public PayloadFrame duplicate() {
     return copy(new HMsgFrame(maxBufferSize));
   }

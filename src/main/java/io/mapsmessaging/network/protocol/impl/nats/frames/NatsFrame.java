@@ -59,29 +59,34 @@ public abstract class NatsFrame implements ServerPacket {
 
   protected String extractLine(Packet packet) throws IOException {
     int start = packet.position();
-    while (packet.hasRemaining()) {
-      byte b = packet.get();
-      if (b == '\r') {
-        if (!packet.hasRemaining()) {
-          throw new EndOfBufferException("Need more data after CR");
-        }
-        byte next = packet.get();
-        if (next == '\n') {
-          // We found CRLF
-          int end = packet.position();
-          int length = end - start - 2; // exclude CRLF
-          byte[] jsonBytes = new byte[length];
-          packet.position(start);
-          packet.get(jsonBytes);
-          String line = new String(jsonBytes, StandardCharsets.US_ASCII);
-          packet.position(end);
-          return line;
-        } else {
-          throw new IOException("Invalid NATS frame: CR not followed by LF");
+    try {
+      while (packet.hasRemaining()) {
+        byte b = packet.get();
+        if (b == '\r') {
+          if (!packet.hasRemaining()) {
+            throw new EndOfBufferException("Need more data after CR");
+          }
+          byte next = packet.get();
+          if (next == '\n') {
+            // We found CRLF
+            int end = packet.position();
+            int length = end - start - 2; // exclude CRLF
+            byte[] jsonBytes = new byte[length];
+            packet.position(start);
+            packet.get(jsonBytes);
+            String line = new String(jsonBytes, StandardCharsets.US_ASCII);
+            packet.position(end);
+            return line;
+          } else {
+            throw new IOException("Invalid NATS frame: CR not followed by LF");
+          }
         }
       }
+      throw new EndOfBufferException("Incomplete NATS frame");
+    } catch (EndOfBufferException e) {
+      packet.position(start);
+      throw e;
     }
-    throw new EndOfBufferException("Incomplete NATS frame");
   }
 
   public CompletionHandler getCallback() {
