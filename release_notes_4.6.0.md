@@ -31,3 +31,8 @@ This release focuses on connection recovery, stored-message reliability and impr
 - **Impact monitoring:** Adds H3LIS200DL sensor support for monitoring shocks and impacts across three axes.
 - **NFC readers:** Completes DFRobot PN532 support, improving reader discovery, tag detection and recovery after communication failures.
 - **Motion sensing and clock detection:** Adds MPU-6050 six-axis motion sensing and improves identification of motion sensors and DS3231 clocks that use the same device address.
+
+- **Direct-connected device reliability:** Improves accuracy and recovery for a broad range of I²C sensors, real-time clocks, displays and other attached peripherals. Fixes potential data errors in measurements, clock functions, device settings and memory operations.
+- **More trustworthy device data:** Aligns device-generated JSON schemas with the information actually published, making it easier for applications to interpret measurements and distinguish read-only data from device commands.
+- **Expanded hardware coverage:** Improves operation of LED and LCD displays, GPIO and PWM controllers, non-volatile memory, 1-Wire temperature sensors and SPI analogue-to-digital converters.
+- **Device integration guidance:** Adds Linux installation, device-specific setup instructions and working examples to the supporting device library, including details of permissions, address conflicts and special hardware requirements.
