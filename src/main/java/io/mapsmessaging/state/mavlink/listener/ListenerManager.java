@@ -43,6 +43,7 @@ public class ListenerManager {
     listeners.put(HomePositionListener.LISTENER_ID, new HomePositionListener(twinManager));
     listeners.put(MissionCurrentListener.LISTENER_ID, new MissionCurrentListener(twinManager));
     listeners.put(MissionItemReachedListener.LISTENER_ID, new MissionItemReachedListener(twinManager));
+    listeners.put(MountStatusListener.LISTENER_ID, new MountStatusListener(twinManager));
     listeners.put(StatusTextListener.LISTENER_ID, new StatusTextListener(twinManager));
     listeners.put(SysStatusListener.LISTENER_ID, new SysStatusListener(twinManager));
     listeners.put(SystemTimeListener.LISTENER_ID, new SystemTimeListener(twinManager));

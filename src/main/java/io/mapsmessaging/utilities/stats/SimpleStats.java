@@ -87,7 +87,7 @@ public class SimpleStats implements Stats{
 
   private synchronized void process() {
     long currentTime = System.currentTimeMillis();
-    if((nextProcessed+timeSpan) < currentTime) {
+    if((nextProcessed+timeSpan) <= currentTime) {
       double duration = (currentTime - nextProcessed);
       long t = current.sum();
       duration = duration/1000L;

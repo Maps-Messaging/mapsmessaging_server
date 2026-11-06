@@ -23,6 +23,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.state.config.AltitudeMode;
 import io.mapsmessaging.state.config.DroneInfoDTO;
+import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
@@ -36,6 +37,7 @@ import io.mapsmessaging.state.mavlink.bootstrap.MavlinkBootstrapStateEngine;
 import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
+import io.mapsmessaging.state.mavlink.packet.MountStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.NamedValueFloatPacket;
 import org.junit.jupiter.api.Test;
 
@@ -47,9 +49,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
+import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MOUNT_STATUS;
 import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.NAMED_VALUE_FLOAT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -90,6 +94,36 @@ class MavlinkTwinUpdaterTest {
     assertEquals("mavlink/original", twin.getResponseTopicName());
     assertEquals("outbound-1", twin.getUniqueOutboundIdentifier());
     verify(listenerManager).handle(BATTERY_STATUS, "drone-1", packet, context);
+    updater.close();
+  }
+
+  @Test
+  void auxiliary_mount_component_updates_camera_without_replacing_primary_component_identity() {
+    TwinManager twinManager = twinManager();
+    DroneTwin twin = new DroneTwin("drone-1");
+    twin.setSystemId(17);
+    twin.setComponentId(42);
+    twinManager.registerTwin(twin, context(null, null));
+    MavlinkTwinUpdater updater = new MavlinkTwinUpdater(twinManager, new ListenerManager(twinManager));
+    ProcessedFrame frame = frame(17, 154, MOUNT_STATUS);
+    when(frame.getFields()).thenReturn(
+        Map.of(
+            "pointing_a", 0,
+            "pointing_b", 0,
+            "pointing_c", 9913
+        )
+    );
+    when(frame.isValid()).thenReturn(true);
+    MountStatusPacket packet = new MountStatusPacket(frame);
+
+    updater.updateTwinState(frame, packet, context(null, null), knownSource(), new DroneInfoDTO());
+
+    assertEquals(17, twin.getSystemId());
+    assertEquals(42, twin.getComponentId());
+    assertEquals(0.0d, twin.getCameraPitchDegrees(), 0.000001d);
+    assertEquals(0.0d, twin.getCameraRollDegrees(), 0.000001d);
+    assertEquals(99.13d, twin.getCameraBearingDegrees(), 0.000001d);
+    assertEquals(NOW, twin.getCameraOrientationUpdatedAt());
     updater.close();
   }
 
@@ -168,14 +202,23 @@ class MavlinkTwinUpdaterTest {
     MavlinkKnownSourceDTO knownSource = knownSource();
     knownSource.setDescription("Survey aircraft");
     knownSource.setVehicleClass(VehicleClass.UAV);
+    knownSource.setCotClassification("A-M-F-Q");
     DroneInfoDTO droneInfo = new DroneInfoDTO();
     UUID uuid = UUID.fromString("d972348c-8496-45de-b130-9c003d7bf245");
     droneInfo.setUuid(uuid);
     droneInfo.setBatteryCapacityHours(4.5);
+    droneInfo.setCancelAction(StopActionEnum.RETURN_TO_HOME);
     droneInfo.setArrivalToleranceMeters(35.0d);
     droneInfo.setAltitudeMode(AltitudeMode.FIXED);
     droneInfo.setAltitudeMeters(7.5d);
     droneInfo.setDescription(Map.of("role", "survey"));
+    droneInfo.setSpecialization(Map.of(
+        "$discriminator", "NodeSpecializationTypeEnum_SURFACE_VESSEL",
+        "surface_vessel", Map.of(
+            "app11_vessel_type", "NavalVesselTypeEnum_UNKNOWN",
+            "extra", Map.of("parameters", Map.of("vessel_form", "RHIB"))
+        )
+    ));
     MavlinkPacket packet = mock(MavlinkPacket.class);
     ProcessedFrame frame = frame(17, 42, 999);
     TwinUpdateContext context = context("mavlink/outbound", "outbound-2");
@@ -188,12 +231,20 @@ class MavlinkTwinUpdaterTest {
     assertEquals("Survey aircraft", twin.getDescriptionString());
     assertEquals("drone-1", twin.getCallSign());
     assertEquals(4.5, twin.getBatteryCapacityHours());
+    assertEquals(StopActionEnum.RETURN_TO_HOME, twin.getStopAction());
     assertEquals(35.0d, twin.getArrivalToleranceMeters());
     assertEquals(AltitudeMode.FIXED, twin.getAltitudeMode());
     assertEquals(7.5d, twin.getAltitudeMeters());
     assertEquals("mavlink/outbound", twin.getResponseTopicName());
     assertEquals("outbound-2", twin.getUniqueOutboundIdentifier());
     assertEquals("survey", twin.getDescription().get("role"));
+    assertEquals(
+        "NodeSpecializationTypeEnum_SURFACE_VESSEL",
+        twin.getSpecialization().get("$discriminator")
+    );
+    Map<?, ?> surfaceVessel = assertInstanceOf(Map.class, twin.getSpecialization().get("surface_vessel"));
+    assertEquals("NavalVesselTypeEnum_UNKNOWN", surfaceVessel.get("app11_vessel_type"));
+    assertEquals("A-M-F-Q", twin.getAttributes().get("cotClassification"));
     updater.close();
   }
 
@@ -245,6 +296,23 @@ class MavlinkTwinUpdaterTest {
 
     assertFalse(twin.getContactManager().hasContact(contactId));
     updater.close();
+  }
+
+  @Test
+  void last_message_age_starts_unset_and_closed_updates_do_not_refresh_it() {
+    MavlinkTwinUpdater updater = new MavlinkTwinUpdater(twinManager(), mock(ListenerManager.class));
+    try {
+      assertEquals(-1, updater.getLastMessageAgeMillis());
+      updater.updateTwinState(frame(17, 42, 999), mock(MavlinkPacket.class),
+          context(null, null), knownSource(), new DroneInfoDTO());
+      assertTrue(updater.getLastMessageAgeMillis() >= 0);
+      assertEquals(1, updater.getMessagesProcessedCount());
+    } finally {
+      updater.close();
+    }
+    updater.updateTwinState(frame(17, 42, 999), mock(MavlinkPacket.class),
+        context(null, null), knownSource(), new DroneInfoDTO());
+    assertEquals(1, updater.getMessagesProcessedCount());
   }
 
   private TwinManager twinManager() {

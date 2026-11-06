@@ -42,26 +42,26 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Objects;
 
 public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
 
   private final DestinationSubscription parent;
 
   public BrowserSubscriptionBuilder(DestinationImpl destination, SubscriptionContext context, @NonNull @NotNull DestinationSubscription parent) throws IOException {
-    super(destination, context, Objects.requireNonNull(parent.getContext()));
+    super(destination, context, requireParentContext(parent));
     this.parent = parent;
   }
 
   @Override
   public Subscription construct(SessionImpl session, String sessionId, String uniqueSessionId, long uniqueSession) throws IOException {
+    SubscriptionContext parentContext = requireParentContext(parent);
     AcknowledgementController acknowledgementController = createAcknowledgementController(context.getAcknowledgementController());
     MessageStateManager stateManager;
     if (parserExecutor == null) {
       stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), true);
       return new DestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager, false);
     } else {
-      if (selectorHasChanged(parent.getContext().getSelector(), context.getSelector())) {
+      if (selectorHasChanged(parentContext.getSelector(), context.getSelector())) {
         // Need task to filter the messages from the parent to the current state manager
         stateManager = new IteratorStateManagerImpl(context.getAlias(), session.getContext().getInternalSessionId(), (MessageStateManagerImpl) parent.getMessageStateManager(), false);
         StateManagerFilterTask task = new StateManagerFilterTask(destination, parent.getMessageStateManager(), stateManager, parserExecutor);
@@ -71,6 +71,14 @@ public class BrowserSubscriptionBuilder extends SubscriptionBuilder {
       }
       return new SelectorDestinationSubscription(destination, context, session, sessionId, acknowledgementController, stateManager, parserExecutor, false);
     }
+  }
+
+  private static SubscriptionContext requireParentContext(DestinationSubscription parent) throws IOException {
+    SubscriptionContext parentContext = parent.getContext();
+    if (parentContext == null) {
+      throw new IOException("Parent subscription is no longer active");
+    }
+    return parentContext;
   }
 
 

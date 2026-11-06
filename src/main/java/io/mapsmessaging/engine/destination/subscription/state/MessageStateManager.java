@@ -40,13 +40,21 @@ public interface MessageStateManager {
 
   void register(long messageId);
 
+  default void registerRetainedReplay(long messageId) {
+    register(messageId);
+  }
+
+  default boolean isRetainedReplay(long messageId) {
+    return false;
+  }
+
   void allocate(Message message);
 
   void commit(long messageId);
 
   boolean rollback(long messageId);
 
-  long nextMessageId();
+  Long nextMessageId();
 
   void rollbackInFlightMessages();
 

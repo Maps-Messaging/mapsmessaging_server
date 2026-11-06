@@ -24,6 +24,8 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessageProperty;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.MessagePropertyFactory;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.ReceiveMaximum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -142,6 +144,15 @@ public class Connect5 extends MQTTPacket5 {
     keepAlive = readShort(packet);
 
     loadProperties(packet);
+    MessageProperty receiveMaximum = getProperties().get(MessagePropertyFactory.RECEIVE_MAXIMUM);
+    if (receiveMaximum instanceof ReceiveMaximum receive
+        && receive.getReceiveMaximum() == 0) {
+      throw new MalformedException("MQTT 5 Receive Maximum must not be zero [MQTT-3.1.2.11.3]");
+    }
+    if (getProperties().duplicates().stream()
+        .anyMatch(property -> property.getId() == MessagePropertyFactory.RECEIVE_MAXIMUM)) {
+      throw new MalformedException("MQTT 5 Receive Maximum property must not repeat [MQTT-3.1.2.11.3]");
+    }
 
     sessionId = readUTF8(packet);
 
@@ -223,6 +234,8 @@ public class Connect5 extends MQTTPacket5 {
 
   @Override
   public int packFrame(Packet packet) {
+    boolean usernamePresent = username != null;
+    boolean passwordPresent = password != null;
     // ---- Variable header ----
     // Protocol Name "MQTT"
     int variableHeaderLength = 2 + mqtt.length;
@@ -251,11 +264,11 @@ public class Connect5 extends MQTTPacket5 {
       payloadLength += willSectionLength;
     }
 
-    if (hasUsername()) {
+    if (usernamePresent) {
       payloadLength += 2 + username.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
     }
 
-    if (hasPassword()) {
+    if (passwordPresent) {
       payloadLength += 2 + password.length; // binary with 2-byte length
     }
 
@@ -281,10 +294,10 @@ public class Connect5 extends MQTTPacket5 {
         connectFlag |= 0b00100000;
       }
     }
-    if (hasPassword()) {
+    if (passwordPresent) {
       connectFlag |= 0b01000000;
     }
-    if (hasUsername()) {
+    if (usernamePresent) {
       connectFlag |= (byte) 0b10000000;
     }
     packet.put(connectFlag);
@@ -302,11 +315,11 @@ public class Connect5 extends MQTTPacket5 {
       writeBuffer(willMsg, packet);
     }
 
-    if (hasUsername()) {
+    if (usernamePresent) {
       writeUTF8(packet, username);
     }
 
-    if (hasPassword()) {
+    if (passwordPresent) {
       byte[] passwordBytes = new byte[password.length];
       for (int index = 0; index < password.length; index++) {
         passwordBytes[index] = (byte) password[index];

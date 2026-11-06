@@ -38,9 +38,13 @@ import java.util.Queue;
 
 public abstract class BaseMessageStateManager implements MessageStateManager {
 
+  // Persisted retained-replay namespace. Keep stable to preserve existing replay markers.
+  private static final long RETAINED_REPLAY_NAMESPACE = 1L << 59;
+
   protected final Logger logger;
   protected final PriorityQueue<Long> messagesAtRest;
   protected final PriorityCollection<Long> messagesInFlight;
+  protected final NaturalOrderedLongQueue retainedReplays;
   protected final String name;
 
   protected BaseMessageStateManager(String name, long uniqueSessionId, BitSetFactory priorityBitSetFactory, BitSetFactory inflightBitSetFactory) {
@@ -57,11 +61,13 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
       priorityLists[x] = new ConcurrentNaturalOrderedLongQueue(x, inflightBitSetFactory);
     }
     messagesInFlight = new PriorityQueue<>(priorityLists, null);
+    retainedReplays = new ConcurrentNaturalOrderedLongQueue(retainedReplayStateId(uniqueSessionId), priorityBitSetFactory);
   }
 
   public void close() throws IOException {
     messagesAtRest.clear();
     messagesInFlight.clear();
+    retainedReplays.clear();
   }
 
   public boolean isEmpty() {
@@ -69,13 +75,13 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   }
 
   @Override
-  public Queue<Long> getAllAtRest() {
+  public synchronized Queue<Long> getAllAtRest() {
     Queue<Long> queue = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     return messagesAtRest.flatten(queue);
   }
 
   @Override
-  public Queue<Long> getAll() {
+  public synchronized Queue<Long> getAll() {
     Queue<Long> queue = new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
     messagesAtRest.flatten(queue);
     queue.addAll(messagesInFlight);
@@ -83,7 +89,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   }
 
   @Override
-  public Queue<Long> getAllAtRest(Queue<Long> copy) {
+  public synchronized Queue<Long> getAllAtRest(Queue<Long> copy) {
     copy.addAll(messagesAtRest);
     return copy;
   }
@@ -107,7 +113,18 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   @Override
   public synchronized void register(long messageId) {
     messagesAtRest.add(messageId, Priority.ONE_BELOW_HIGHEST.getValue());
+    retainedReplays.add(messageId);
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_REGISTER, name, messageId);
+  }
+
+  @Override
+  public synchronized void registerRetainedReplay(long messageId) {
+    register(messageId);
+  }
+
+  @Override
+  public synchronized boolean isRetainedReplay(long messageId) {
+    return retainedReplays.contains(messageId);
   }
 
   @Override
@@ -122,6 +139,7 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   @Override
   public synchronized void commit(long messageId) {
     messagesInFlight.remove(messageId);
+    retainedReplays.remove(messageId);
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_COMMIT, name, messageId);
   }
 
@@ -140,10 +158,9 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
 
   @SuppressWarnings("java:S2201") // size also resets the internals
   @Override
-  public synchronized long nextMessageId() {
+  public synchronized Long nextMessageId() {
     Long response = messagesAtRest.peek();
     if (response == null) {
-      response = -1L;
       messagesAtRest.size(); // reset the actual size since we do not have any messages
     }
     logger.log(ServerLogMessages.MESSAGE_STATE_MANAGER_NEXT, name, response);
@@ -189,5 +206,13 @@ public abstract class BaseMessageStateManager implements MessageStateManager {
   public synchronized void expired(long messageIdentifier) {
     messagesAtRest.remove(messageIdentifier);
     messagesInFlight.remove(messageIdentifier);
+    retainedReplays.remove(messageIdentifier);
+  }
+
+  private static long retainedReplayStateId(long uniqueSessionId) {
+    if (uniqueSessionId < 0 || uniqueSessionId >= RETAINED_REPLAY_NAMESPACE) {
+      throw new IllegalArgumentException("Session id must be between 0 and " + (RETAINED_REPLAY_NAMESPACE - 1));
+    }
+    return RETAINED_REPLAY_NAMESPACE | uniqueSessionId;
   }
 }

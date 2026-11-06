@@ -102,9 +102,7 @@ public class StoreFiller {
         subscriberThreads[x*y] = new Thread(() -> {
           try {
             subscriber(topicNames[finalX], counter.incrementAndGet());
-          } catch (MqttException e) {
-            throw new RuntimeException(e);
-          } catch (InterruptedException e) {
+          } catch (MqttException | InterruptedException e) {
             throw new RuntimeException(e);
           }
         });
@@ -112,20 +110,7 @@ public class StoreFiller {
       }
       TimeUnit.MILLISECONDS.sleep(500);
     }
-    /*
-    MqttConnectOptions options = new MqttConnectOptions();
-    options.setMqttVersion(4);
-    options.setCleanSession(true);
-    MqttClient client = new MqttClient("tcp://localhost:1883","PausedClient", new MemoryPersistence());
-    client.connect(options);
-    Assertions.assertTrue(client.isConnected());
-    for(String topic:topicNames) {
-      client.subscribe(topic, 2);
-    }
-    TimeUnit.SECONDS.sleep(2);
-    client.disconnect();
-    Assertions.assertFalse(client.isConnected());
-*/
+
     System.err.println("Subscriptions started");
     TimeUnit.SECONDS.sleep(20);
     System.err.println("Publishers starting");
@@ -136,9 +121,7 @@ public class StoreFiller {
         Thread t = new Thread(() -> {
           try {
             publisher(topicNames[(index%topicNames.length)]);
-          } catch (MqttException e) {
-            throw new RuntimeException(e);
-          } catch (InterruptedException e) {
+          } catch (MqttException | InterruptedException e) {
             throw new RuntimeException(e);
           }
         });

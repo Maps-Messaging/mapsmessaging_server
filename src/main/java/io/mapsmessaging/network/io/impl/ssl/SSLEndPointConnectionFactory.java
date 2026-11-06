@@ -55,12 +55,23 @@ public class SSLEndPointConnectionFactory implements EndPointConnectionFactory {
         url.getHost(),
         url.getPort(),
         securityProps.getSslConfig().isHostnameVerificationEnabled());
+
     SocketChannel channel = SocketChannel.open();
-    InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
-    channel.configureBlocking(true);
-    channel.connect(address);
-    channel.configureBlocking(false);
-    return new SSLEndPoint(generateID(), engine, channel, selector.allocate(), callback, endPointServerStatus, jmxPath);
+    boolean endpointCreated = false;
+    try {
+      InetSocketAddress address = new InetSocketAddress(url.getHost(), url.getPort());
+      channel.configureBlocking(true);
+      channel.socket().connect(address, securityProps.getTimeout());
+      channel.configureBlocking(false);
+
+      EndPoint endPoint = new SSLEndPoint(generateID(), engine, channel, selector.allocate(), callback, endPointServerStatus, jmxPath);
+      endpointCreated = true;
+      return endPoint;
+    } finally {
+      if (!endpointCreated) {
+        channel.close();
+      }
+    }
   }
 
   static SSLEngine createClientEngine(SSLContext context, String host, int port, boolean hostnameVerificationEnabled) {

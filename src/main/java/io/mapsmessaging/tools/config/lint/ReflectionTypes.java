@@ -28,14 +28,14 @@ public final class ReflectionTypes {
   }
 
   public static Class<?> toClass(Type type) {
-    if (type instanceof Class<?>) {
-      return (Class<?>) type;
+    if (type instanceof Class<?> directClass) {
+      return directClass;
     }
 
-    if (type instanceof ParameterizedType) {
-      Type raw = ((ParameterizedType) type).getRawType();
-      if (raw instanceof Class<?>) {
-        return (Class<?>) raw;
+    if (type instanceof ParameterizedType matchedParameterizedType) {
+      Type raw = (matchedParameterizedType).getRawType();
+      if (raw instanceof Class<?> matchedClass) {
+        return matchedClass;
       }
     }
 

@@ -21,12 +21,16 @@ package io.mapsmessaging.network.protocol.impl.mqtt;
 
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class MQTTConnectionTest extends MQTTBaseTest {
 
@@ -88,6 +92,56 @@ class MQTTConnectionTest extends MQTTBaseTest {
 
   }
 
+  @DisplayName("Ungraceful disconnect publishes Will")
+  @ParameterizedTest
+  @ValueSource(ints = {MQTT_3_1, MQTT_3_1_1})
+  void ungracefulDisconnectPublishesWill(int version) throws Exception {
+    String topic = "/topic/will/" + UuidGenerator.getInstance().generate();
+    byte[] payload = "session lifecycle will".getBytes(StandardCharsets.UTF_8);
+    CountDownLatch willReceived = new CountDownLatch(1);
+
+    MqttClient subscriber =
+        new MqttClient(getUrl("tcp", false), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
+    MqttClient publisher =
+        new MqttClient(getUrl("tcp", false), getClientId(UuidGenerator.getInstance().generate().toString(), version), new MemoryPersistence());
+
+    try {
+      subscriber.setCallback(new MqttCallback() {
+        @Override
+        public void connectionLost(Throwable throwable) {
+        }
+
+        @Override
+        public void messageArrived(String receivedTopic, MqttMessage message) {
+          if (topic.equals(receivedTopic) && java.util.Arrays.equals(payload, message.getPayload())) {
+            willReceived.countDown();
+          }
+        }
+
+        @Override
+        public void deliveryComplete(IMqttDeliveryToken token) {
+        }
+      });
+
+      subscriber.connect(getOptions(false, version));
+      subscriber.subscribe(topic, 1);
+
+      MqttConnectOptions publisherOptions = getOptions(false, version);
+      publisherOptions.setWill(topic, payload, 1, false);
+      publisher.connect(publisherOptions);
+
+      publisher.disconnectForcibly(0, 1000, false);
+
+      Assertions.assertTrue(willReceived.await(10, TimeUnit.SECONDS), "Will message was not published after ungraceful disconnect");
+    } finally {
+      if (subscriber.isConnected()) {
+        subscriber.disconnect();
+      }
+      subscriber.close();
+      publisher.close();
+    }
+  }
+
   @DisplayName("Test invalid MQTT client connection")
   @ParameterizedTest
   @MethodSource("mqttTestParameters")
@@ -119,6 +173,26 @@ class MQTTConnectionTest extends MQTTBaseTest {
       // This is correct
       return;
     }
+    Assertions.assertTrue(client.isConnected());
+    client.disconnect();
+    Assertions.assertFalse(client.isConnected());
+    client.close();
+  }
+
+  @DisplayName("Accept MQTT connection with no credentials when anonymous access is enabled")
+  @ParameterizedTest
+  @ValueSource(ints = {MQTT_3_1, MQTT_3_1_1})
+  void testMissingCredentialsAcceptedWhenAnonymousEnabled(int version) throws MqttException, IOException {
+    MqttConnectOptions options = getOptions(false, version);
+    options.setConnectionTimeout(5);
+
+    MqttClient client = new MqttClient(
+        getUrl("tcp", true),
+        getClientId(UuidGenerator.getInstance().generate().toString(), version),
+        new MemoryPersistence());
+    client.setTimeToWait(5000);
+
+    client.connect(options);
     Assertions.assertTrue(client.isConnected());
     client.disconnect();
     Assertions.assertFalse(client.isConnected());

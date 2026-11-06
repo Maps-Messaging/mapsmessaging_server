@@ -23,7 +23,6 @@ import io.mapsmessaging.config.aggregator.AggregatorConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.AggregatorManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
 import lombok.NoArgsConstructor;
@@ -118,9 +117,9 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
     configurationProperties.put("mailboxCapacity", mailboxCapacity);
     configurationProperties.put("maxAggregators", maxAggregators);
 
-    for (AggregatorConfigDTO aggregatorConfigDTO : aggregatorConfigList) {
-      dataList.add(((AggregatorConfig) aggregatorConfigDTO).toConfigurationProperties());
-    }
+    aggregatorConfigList.stream()
+        .map(aggregatorConfigDTO -> ((AggregatorConfig) aggregatorConfigDTO).toConfigurationProperties())
+        .forEachOrdered(dataList::add);
 
     configurationProperties.put("data", dataList);
     return configurationProperties;

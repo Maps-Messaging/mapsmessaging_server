@@ -95,6 +95,9 @@ public final class MavlinkMissionItemFactory {
       altitudeMeters = position.getAltitudeAglMeters();
     }
     if (altitudeMeters == null) {
+      altitudeMeters = position.getAltitudeRelativeMeters();
+    }
+    if (altitudeMeters == null) {
       return 0.0f;
     }
     requireFinite(altitudeMeters, "altitudeMeters");
@@ -109,6 +112,7 @@ public final class MavlinkMissionItemFactory {
     validateCoordinate(position.getLongitude(), -180.0d, 180.0d, "Longitude");
     validateAltitude(position.getAltitudeMslMeters(), "MSL altitude");
     validateAltitude(position.getAltitudeAglMeters(), "AGL altitude");
+    validateAltitude(position.getAltitudeRelativeMeters(), "relative altitude");
   }
 
   private static void validateCoordinate(Double value, double minimum, double maximum, String name) {

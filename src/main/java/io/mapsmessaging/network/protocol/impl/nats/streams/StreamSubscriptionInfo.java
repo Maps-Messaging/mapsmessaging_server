@@ -31,9 +31,15 @@ import lombok.Setter;
 @AllArgsConstructor
 public class StreamSubscriptionInfo extends StreamInfo {
   private SubscribedEventManager subscribedEventManager;
+  private String subscriptionAlias;
 
   public StreamSubscriptionInfo(final SubscribedEventManager subscribedEventManager, StreamInfo streamInfo) {
     super(streamInfo.getSubject(), streamInfo.getDestination());
     this.subscribedEventManager = subscribedEventManager;
+  }
+
+  public StreamSubscriptionInfo(final SubscribedEventManager subscribedEventManager, StreamInfo streamInfo, String subscriptionAlias) {
+    this(subscribedEventManager, streamInfo);
+    this.subscriptionAlias = subscriptionAlias;
   }
 }

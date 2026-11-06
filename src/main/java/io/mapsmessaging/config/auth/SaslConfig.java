@@ -30,16 +30,28 @@ import java.util.Map;
 
 public class SaslConfig extends SaslConfigDTO implements Config {
 
+  private static final String REALM_NAME = "realmName";
+  private static final String MECHANISM_KEY = "mechanism";
+
   private static final String IDENTITY_PROVIDER = "identityProvider";
 
   public SaslConfig(ConfigurationProperties config) {
     identityProvider = config.getProperty(IDENTITY_PROVIDER);
-    realmName = config.getProperty("realmName", MessageDaemon.getInstance().getId());
-    mechanism = config.getProperty("mechanism");
+    String configuredRealm = config.getProperty(REALM_NAME);
+    MessageDaemon daemon = MessageDaemon.getInstance();
+    if (configuredRealm != null) {
+      realmName = configuredRealm;
+    } else {
+      realmName = daemon == null ? null : daemon.getId();
+    }
+    mechanism = config.getProperty(MECHANISM_KEY);
     saslEntries = new LinkedHashMap<>();
     for (Map.Entry<String, Object> entry : config.entrySet()) {
-      if (!entry.getKey().equalsIgnoreCase(IDENTITY_PROVIDER)) {
-        saslEntries.put(entry.getKey(), entry.getValue());
+      String key = entry.getKey();
+      if (!key.equalsIgnoreCase(IDENTITY_PROVIDER)
+          && !key.equalsIgnoreCase(REALM_NAME)
+          && !key.equalsIgnoreCase(MECHANISM_KEY)) {
+        saslEntries.put(key, entry.getValue());
       }
     }
   }
@@ -48,8 +60,8 @@ public class SaslConfig extends SaslConfigDTO implements Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put(IDENTITY_PROVIDER, this.identityProvider);
-    properties.put("realmName", this.realmName);
-    properties.put("mechanism", this.mechanism);
+    properties.put(REALM_NAME, this.realmName);
+    properties.put(MECHANISM_KEY, this.mechanism);
 
     // Include saslEntries, excluding identityProvider
     if (saslEntries != null) {
@@ -87,7 +99,13 @@ public class SaslConfig extends SaslConfigDTO implements Config {
     }
 
     // Check and update saslEntries map
-    if (updateMap(this.saslEntries, newConfig.getSaslEntries())) {
+    Map<String, Object> newEntries = newConfig.getSaslEntries();
+    if (newEntries == null) {
+      if (this.saslEntries != null && !this.saslEntries.isEmpty()) {
+        this.saslEntries = new LinkedHashMap<>();
+        hasChanged = true;
+      }
+    } else if (updateMap(this.saslEntries, newEntries)) {
       hasChanged = true;
     }
 

@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","name":"mwf","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{},"geometry":{"type":"Polygon","coordinates":[[[-9.1393,38.42824],[-9.13863,38.4211],[-9.13409,38.42197],[-9.13469,38.42851],[-9.1393,38.42824]]]}}]}

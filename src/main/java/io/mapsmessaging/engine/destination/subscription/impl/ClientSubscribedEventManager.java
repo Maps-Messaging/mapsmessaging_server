@@ -21,6 +21,7 @@ package io.mapsmessaging.engine.destination.subscription.impl;
 
 import io.mapsmessaging.api.SubscribedEventManager;
 import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.destination.subscription.Subscription;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.tasks.CreditUpdateTask;
 import io.mapsmessaging.engine.destination.subscription.tasks.SubscriptionTransactionTask;
@@ -40,6 +41,11 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
   public ClientSubscribedEventManager(DestinationImpl destination, SubscribedEventManager subscription) {
     this.subscription = subscription;
     this.destination = destination;
+  }
+
+  @Override
+  public String getDeliveryKey() {
+    return SubscribedEventManager.deliveryKey(getContext(), destination.getFullyQualifiedNamespace());
   }
 
   @Override
@@ -65,6 +71,23 @@ public class ClientSubscribedEventManager implements SubscribedEventManager {
   @Override
   public void updateCredit(int credit) {
     destination.submit(new CreditUpdateTask(subscription, credit));
+  }
+
+  @Override
+  public boolean isRetainedReplay(long messageId) {
+    if (subscription instanceof DestinationSubscription destinationSubscription) {
+      return destinationSubscription.getMessageStateManager().isRetainedReplay(messageId);
+    }
+    return subscription.isRetainedReplay(messageId);
+  }
+
+  @Override
+  public void resumeDelivery() {
+    if (subscription instanceof DestinationSubscription destinationSubscription) {
+      destinationSubscription.sendCapacityAvailable();
+    } else if (subscription instanceof Subscription activeSubscription) {
+      destination.scanForDelivery(activeSubscription);
+    }
   }
 
   @Override

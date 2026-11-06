@@ -58,7 +58,7 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
       nullable = false,
       minLength = 1,
       maxLength = 2048,
-      pattern = "^(tcp|ssl|udp|dtls|ws|wss|serial)://[^\\s]+$"
+      pattern = "^(tcp|ssl|udp|dtls|ws|wss|serial|shm|rdma)://[^\\s]+$"
   )
   protected String url;
 
@@ -143,10 +143,9 @@ public class EndPointServerConfigDTO extends BaseConfigDTO {
     if (protocolConfig instanceof ExtensionConfigDTO extensionConfig) {
       return extensionConfig.getProtocol();
     }
-    if(protocolConfig instanceof MqttConfigDTO mqttConfig) {
-      if(mqttConfig.getVersion() != MqttVersion.AUTO){
-        return mqttConfig.getVersion().name();
-      }
+    if (protocolConfig instanceof MqttConfigDTO mqttConfig
+        && mqttConfig.getVersion() != MqttVersion.AUTO) {
+      return mqttConfig.getVersion().name();
     }
     return protocolConfig.getType();
   }

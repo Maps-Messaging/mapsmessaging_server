@@ -112,10 +112,22 @@ class AutoAcknowledgementControllerTest {
     CreditManager creditManager = new FixedCreditManager(3);
     AutoAcknowledgementController controller = new AutoAcknowledgementController(creditManager);
 
-    long result = controller.messageSent();
+    Long result = controller.messageSent();
 
-    Assertions.assertEquals(-1L, result);
+    Assertions.assertNull(result);
     Assertions.assertEquals(3, creditManager.getCurrentCredit());
+  }
+
+  @Test
+  void messageSentTreatsNegativeIdsAsRealDeliveries() {
+    AutoAcknowledgementController controller = new AutoAcknowledgementController(new FixedCreditManager(3));
+    controller.sent(createMessage(-1L, 1));
+    controller.sent(createMessage(Long.MIN_VALUE, 1));
+
+    Assertions.assertEquals(Long.valueOf(-1L), controller.messageSent());
+    Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), controller.messageSent());
+    Assertions.assertNull(controller.messageSent());
+    Assertions.assertNull(new ClientAcknowledgementController(new FixedCreditManager(1)).messageSent());
   }
 
   @Test

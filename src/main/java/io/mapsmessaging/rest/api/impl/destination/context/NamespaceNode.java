@@ -149,9 +149,6 @@ public class NamespaceNode {
     return entriesSorted;
   }
 
-  private boolean hasChildren() {
-    return foldersByName != null && !foldersByName.isEmpty();
-  }
 
   public String getFullPath() {
     Deque<String> segments = new ArrayDeque<>();

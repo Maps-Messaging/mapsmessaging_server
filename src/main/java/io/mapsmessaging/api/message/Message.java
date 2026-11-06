@@ -74,7 +74,7 @@ public class Message implements IdentifierResolver, Storable {
   @Getter
   private final byte[] opaqueData;
 
-  private final Map<String, String> meta;
+  private Map<String, String> meta;
   @Getter
   private final Map<String, TypedData> dataMap;
 
@@ -308,7 +308,10 @@ public class Message implements IdentifierResolver, Storable {
   }
 
   public Map<String, String> getMeta(){
-    return meta == null ? new LinkedHashMap<>() : meta;
+    if (meta == null) {
+      meta = new LinkedHashMap<>();
+    }
+    return meta;
   }
 
   public void setIdentifier(long identifier) {

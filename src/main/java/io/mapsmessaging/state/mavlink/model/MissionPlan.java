@@ -22,16 +22,24 @@ package io.mapsmessaging.state.mavlink.model;
 import java.util.List;
 import java.util.Objects;
 
-public record MissionPlan(List<PlanItem> items, int iterations, boolean repeatIndefinitely) {
+public record MissionPlan(
+    List<PlanItem> items,
+    int iterations,
+    boolean repeatIndefinitely,
+    int repeatStartIndex) {
 
   public static final int REPEAT_FOREVER = -1;
 
   public MissionPlan(List<PlanItem> items) {
-    this(items, 1, false);
+    this(items, 1, false, 0);
   }
 
   public MissionPlan(List<PlanItem> items, int iterations) {
-    this(items, iterations, false);
+    this(items, iterations, false, 0);
+  }
+
+  public MissionPlan(List<PlanItem> items, int iterations, boolean repeatIndefinitely) {
+    this(items, iterations, repeatIndefinitely, 0);
   }
 
   public MissionPlan {
@@ -44,12 +52,26 @@ public record MissionPlan(List<PlanItem> items, int iterations, boolean repeatIn
       throw new IllegalArgumentException("iterations must be at least 1");
     }
     if (repeatIndefinitely && iterations != 1) {
-      throw new IllegalArgumentException("An indefinitely repeating mission must use one logical iteration");
+      throw new IllegalArgumentException(
+          "An indefinitely repeating mission must use one logical iteration");
+    }
+    if (repeatStartIndex < 0 || repeatStartIndex >= items.size()) {
+      throw new IllegalArgumentException(
+          "repeatStartIndex must address a mission item");
+    }
+    if (!repeatIndefinitely && iterations == 1 && repeatStartIndex != 0) {
+      throw new IllegalArgumentException(
+          "A one-shot mission cannot define a repeatStartIndex");
     }
   }
 
   public static MissionPlan repeatIndefinitely(List<PlanItem> items) {
-    return new MissionPlan(items, 1, true);
+    return repeatIndefinitely(items, 0);
+  }
+
+  public static MissionPlan repeatIndefinitely(
+      List<PlanItem> items, int repeatStartIndex) {
+    return new MissionPlan(items, 1, true, repeatStartIndex);
   }
 
   public boolean repeats() {

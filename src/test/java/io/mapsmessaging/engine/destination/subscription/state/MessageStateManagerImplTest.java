@@ -48,7 +48,7 @@ class MessageStateManagerImplTest {
     Assertions.assertEquals(0, manager.pending());
     Assertions.assertFalse(manager.hasMessagesInFlight());
     Assertions.assertFalse(manager.hasAtRestMessages());
-    Assertions.assertEquals(-1L, manager.nextMessageId());
+    Assertions.assertNull(manager.nextMessageId());
   }
 
   @Test
@@ -74,7 +74,7 @@ class MessageStateManagerImplTest {
     Assertions.assertEquals(1, all.size());
     Assertions.assertTrue(all.contains(10L));
 
-    Assertions.assertEquals(10L, manager.nextMessageId());
+    Assertions.assertEquals(Long.valueOf(10L), manager.nextMessageId());
   }
 
   @Test
@@ -86,7 +86,7 @@ class MessageStateManagerImplTest {
     Assertions.assertTrue(manager.hasAtRestMessages());
     Assertions.assertEquals(1, manager.pending());
     Assertions.assertTrue(manager.hasMessage(42L));
-    Assertions.assertEquals(42L, manager.nextMessageId());
+    Assertions.assertEquals(Long.valueOf(42L), manager.nextMessageId());
   }
 
   @Test
@@ -152,7 +152,7 @@ class MessageStateManagerImplTest {
     Assertions.assertFalse(manager.hasMessagesInFlight());
     Assertions.assertTrue(manager.hasMessage(400L));
     Assertions.assertEquals(1, manager.pending());
-    Assertions.assertEquals(400L, manager.nextMessageId());
+    Assertions.assertEquals(Long.valueOf(400L), manager.nextMessageId());
   }
 
   @Test
@@ -317,9 +317,29 @@ class MessageStateManagerImplTest {
     Assertions.assertEquals(expectedCount, manager.size());
     Assertions.assertTrue(manager.hasMessagesInFlight());
     Assertions.assertFalse(manager.hasAtRestMessages());
-    Assertions.assertEquals(-1L, manager.nextMessageId());
+    Assertions.assertNull(manager.nextMessageId());
   }
 
+
+  @Test
+  void expiry_removes_a_browser_snapshot_and_does_not_resurrect_its_inflight_event() throws Exception {
+    MessageStateManagerImpl parent = createManager();
+    Message message = createMessage(2001L, 3);
+    parent.register(message);
+    IteratorStateManagerImpl browser = new IteratorStateManagerImpl("browser", 777, parent, true);
+    try {
+      browser.allocate(message);
+      Assertions.assertTrue(browser.hasMessagesInFlight());
+      parent.expired(2001L);
+      Assertions.assertFalse(parent.hasMessage(2001L));
+      Assertions.assertFalse(browser.hasMessage(2001L));
+      Assertions.assertFalse(browser.rollback(2001L));
+      Assertions.assertEquals(0, browser.pending());
+    } finally {
+      browser.close();
+      parent.close();
+    }
+  }
 
   private MessageStateManagerImpl createManager() {
     BitSetFactory bitSetFactory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);

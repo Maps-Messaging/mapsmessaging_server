@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
@@ -27,6 +28,7 @@ import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public abstract class RequestHandler extends BaseStreamApiHandler {
 
@@ -39,13 +41,21 @@ public abstract class RequestHandler extends BaseStreamApiHandler {
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
     String action = subject.substring("$JS.API.".length());
     byte[] data = frame.getPayload();
-    JsonObject json = (data != null && data.length > 0) ? JsonParser.parseString(new String(data)).getAsJsonObject() : null;
+    JsonObject json = null;
+    if (data != null && data.length > 0) {
+      try {
+        json = JsonParser.parseString(new String(data, StandardCharsets.UTF_8)).getAsJsonObject();
+      } catch (IllegalStateException | JsonParseException exception) {
+        return createError(frame.getReplyTo(), sessionState.getJetStreamRequestManager().getSid(frame.getReplyTo()),
+            "Invalid JetStream request JSON");
+      }
+    }
     for (JetStreamFrameHandler handler : handlers) {
-      if (action.startsWith(handler.getName())) {
+      if (action.equals(handler.getName()) || action.startsWith(handler.getName() + ".")) {
         return handler.handle(frame, json, sessionState);
       }
     }
-    return createError(sessionState.getJetStreamRequestManager().getJetSubject(),
+    return createError(frame.getReplyTo(),
         sessionState.getJetStreamRequestManager().getSid(frame.getReplyTo()),
         "Function not implemented: " + subject);
   }

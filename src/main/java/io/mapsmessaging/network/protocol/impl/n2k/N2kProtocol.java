@@ -77,6 +77,7 @@ public class N2kProtocol extends Protocol {
   private final FramePacker framePacker;
   private final Session session;
   private final InboundProcessor inboundProcessor;
+  private boolean closed;
   private final String topicTemplate;
   private final String rawTopicTemplate;
   private final boolean parseToJson;
@@ -138,23 +139,37 @@ public class N2kProtocol extends Protocol {
     }
     inboundProcessor  = new InboundProcessor(this);
     Thread t = new Thread(inboundProcessor);
+    t.setDaemon(true);
     t.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
-    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(() -> unknownCanIdentifiers.clear(), 10, 10, TimeUnit.MINUTES);
+    scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(unknownCanIdentifiers::clear, 10, 10, TimeUnit.MINUTES);
     MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().registerProtocol(this);
   }
 
   @Override
   public void close() throws IOException {
-    MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
-    super.close();
-    inboundProcessor.close();
-    endPoint.close();
-    logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
-    if(scheduledFuture != null){
+    synchronized (this) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+    }
+    if (inboundProcessor != null) {
+      inboundProcessor.close();
+    }
+    if (scheduledFuture != null) {
       scheduledFuture.cancel(false);
       scheduledFuture = null;
     }
+    try {
+      MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
+    } finally {
+      super.close();
+    }
+    logger.log(N2K_PROTOCOL_CLOSING, endPoint.getName());
   }
 
   @Override
@@ -240,13 +255,16 @@ public class N2kProtocol extends Protocol {
 
   public void writePgn(int pgn, int destinationAddress, byte[] data) throws IOException {
     int canId1 = CanIdBuilder.build(pgn, 6, canbusAddress, destinationAddress);
-    if(pgn == 60928){
-      CanFrame frame = new CanFrame(canId1, true, data.length, data);
-      ((CanbusEndPoint) getEndPoint()).writeFrame(frame);
-    }
-    else {
-      List<CanFrame> frames = framePacker.packFastPacket(pgn, canId1, canbusAddress, destinationAddress, data);
-      ((CanbusEndPoint) getEndPoint()).writeFrames(frames);
+    switch (framePacker.getTransportType(pgn, data.length)) {
+      case SINGLE_FRAME -> {
+        CanFrame frame = new CanFrame(canId1, true, data.length, data);
+        ((CanbusEndPoint) getEndPoint()).writeFrame(frame);
+      }
+      case FAST_PACKET -> {
+        List<CanFrame> frames = framePacker.packFastPacket(pgn, canId1, canbusAddress, destinationAddress, data);
+        ((CanbusEndPoint) getEndPoint()).writeFrames(frames);
+      }
+      case TRANSPORT_PROTOCOL -> throw new UnsupportedOperationException("Transport protocol is not supported for PGN " + pgn);
     }
   }
 

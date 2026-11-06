@@ -34,8 +34,7 @@ public class ObjectMessageTranslator extends BaseMessageTranslator {
   public @NonNull @NotNull MessageBuilder decode(@NonNull @NotNull MessageBuilder messageBuilder, @NonNull @NotNull org.apache.qpid.proton.message.Message protonMessage) {
     super.decode(messageBuilder, protonMessage);
     Section body = protonMessage.getBody();
-    if (body instanceof Data) {
-      Data data = (Data) body;
+    if (body instanceof Data data) {
       messageBuilder.setOpaqueData(data.getValue().getArray());
     }
     return messageBuilder;

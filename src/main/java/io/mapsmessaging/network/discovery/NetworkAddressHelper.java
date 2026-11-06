@@ -77,8 +77,7 @@ public class NetworkAddressHelper {
   }
 
   private boolean isGloballyRoutableIPv6Address(InetAddress address) {
-    if (address instanceof Inet6Address) {
-      Inet6Address inet6Address = (Inet6Address) address;
+    if (address instanceof Inet6Address inet6Address) {
       return !(inet6Address.isSiteLocalAddress() || inet6Address.isLinkLocalAddress());
     }
     return false;
@@ -98,8 +97,7 @@ public class NetworkAddressHelper {
   }
 
   private boolean isDeprecatedIPv6Address(InetAddress address) {
-    if (address instanceof Inet6Address) {
-      Inet6Address inet6Address = (Inet6Address) address;
+    if (address instanceof Inet6Address inet6Address) {
       String hostAddress = inet6Address.getHostAddress();
       return hostAddress.contains("deprecated") || hostAddress.contains("temporary");
     }

@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.engine.destination.subscription.tasks;
 
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
 import io.mapsmessaging.engine.destination.subscription.impl.DestinationSubscription;
 import io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementController;
 import io.mapsmessaging.engine.tasks.EngineTask;
@@ -38,8 +39,12 @@ public class MessageDeliveredListener extends EngineTask {
 
   @Override
   public Response taskCall() {
-    long messageId = acknowledgementController.messageSent();
-    if (messageId > -1) {
+    Long messageId = acknowledgementController.messageSent();
+    QueueCleanupTrace.record(subscription.getDestinationImpl().getFullyQualifiedNamespace(), "DELIVERED-CALLBACK",
+        messageId == null ? 0L : messageId,
+        "idPresent", messageId != null, "controller", System.identityHashCode(acknowledgementController),
+        "ackType", acknowledgementController.getType());
+    if (messageId != null) {
       subscription.completeMessage(messageId);
     }
     subscription.schedule();

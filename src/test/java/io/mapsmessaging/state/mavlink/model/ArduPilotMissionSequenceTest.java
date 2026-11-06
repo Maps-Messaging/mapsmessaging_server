@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 class ArduPilotMissionSequenceTest {
 
   private static final UxvCommandContext CONTEXT = new UxvCommandContext(UUID.randomUUID(), 1, 1, 255, 190, 7);
+  private static final GeoPosition ARDUPILOT_HOME_PLACEHOLDER = new GeoPosition(0.0d, 0.0d, 0.0d, null);
   private static final GeoPosition FIRST = new GeoPosition(59.4877408d, 24.8089485d, 10.0d, null);
   private static final GeoPosition LAST = new GeoPosition(59.4785881d, 24.8086052d, 10.0d, null);
 
@@ -46,7 +47,7 @@ class ArduPilotMissionSequenceTest {
 
     assertEquals(1, model.firstMissionItemSequence());
     assertEquals(3, commandSet.messages().size());
-    assertMissionItem(commandSet, 0, 0, FIRST);
+    assertMissionItem(commandSet, 0, 0, ARDUPILOT_HOME_PLACEHOLDER);
     assertMissionItem(commandSet, 1, 1, FIRST);
     assertMissionItem(commandSet, 2, 2, LAST);
   }

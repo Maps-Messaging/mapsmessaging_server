@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 @Getter
 public class MessageBuilder {
 
+  private static final boolean VALIDATE_META = Boolean.getBoolean("maps.message.meta.validate");
+
   private java.util.Map<String, String> meta;
   private Map<String, TypedData> dataMap;
   private byte[] opaqueData;
@@ -75,6 +77,7 @@ public class MessageBuilder {
   }
 
   public MessageBuilder(Message previousMessage) {
+    long now = System.currentTimeMillis();
     id = 0;
     meta = new LinkedHashMap<>(previousMessage.getMeta());
     dataMap = new LinkedHashMap<>(previousMessage.getDataMap());
@@ -83,9 +86,14 @@ public class MessageBuilder {
     retain = previousMessage.isRetain();
     storeOffline = previousMessage.isStoreOffline();
     payloadUTF8 = previousMessage.isUTF8();
-    expiry = (previousMessage.getExpiry() - System.currentTimeMillis());
+    delayed = previousMessage.getDelayed() - now;
+    expiry = previousMessage.getExpiry() - now;
+    if (expiry > 0 && delayed > 0) {
+      expiry -= delayed;
+    }
     creation = previousMessage.getCreation();
     contentType = previousMessage.getContentType();
+    responseTopic = previousMessage.getResponseTopic();
     if(previousMessage.getCorrelationData() != null && !previousMessage.isCorrelationDataByteArray()) {
       correlationData = new String(previousMessage.getCorrelationData());
     }
@@ -93,7 +101,6 @@ public class MessageBuilder {
       correlationData = previousMessage.getCorrelationData();
     }
     qualityOfService = previousMessage.getQualityOfService();
-    delayed = (previousMessage.getDelayed() - System.currentTimeMillis() );
     schemaId = previousMessage.getSchemaId();
   }
 
@@ -147,7 +154,14 @@ public class MessageBuilder {
     return this;
   }
 
+  /**
+   * Metadata maps must be writable. Ownership transfers when the initial map is assigned;
+   * later calls merge into the owned map. The caller must not modify a transferred map.
+   */
   public @NonNull @NotNull MessageBuilder setMeta(@Nullable Map<String, String> meta) {
+    if (meta != null && VALIDATE_META) {
+      validateWritableMeta(meta);
+    }
     if(this.meta != null && meta != null) {
       this.meta.putAll(meta);
     }
@@ -155,6 +169,19 @@ public class MessageBuilder {
       this.meta = meta;
     }
     return this;
+  }
+
+  private static void validateWritableMeta(Map<String, String> meta) {
+    String key = "__maps_meta_validation__";
+    while (meta.containsKey(key)) {
+      key += "_";
+    }
+    try {
+      meta.put(key, "");
+      meta.remove(key);
+    } catch (UnsupportedOperationException e) {
+      throw new IllegalArgumentException("Message metadata must be writable", e);
+    }
   }
 
   public @NonNull @NotNull MessageBuilder setDataMap(@Nullable Map<String, TypedData> dataMap) {

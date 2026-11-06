@@ -35,7 +35,6 @@ import java.util.Objects;
 
 public class ServerCallbackHandler implements CallbackHandler {
 
-  private String username;
   private PasswordBuffer hashedPassword;
   private final String serverName;
 
@@ -49,30 +48,26 @@ public class ServerCallbackHandler implements CallbackHandler {
   @Override
   public void handle(Callback[] cbs) throws IOException {
     for (Callback cb : cbs) {
-      if (cb instanceof AuthorizeCallback) {
-        AuthorizeCallback ac = (AuthorizeCallback) cb;
+      if (cb instanceof AuthorizeCallback ac) {
         boolean authorized = Objects.equals(ac.getAuthenticationID(), ac.getAuthorizationID());
         ac.setAuthorized(authorized);
         if (authorized) {
           ac.setAuthorizedID(ac.getAuthorizationID());
         }
-      } else if (cb instanceof NameCallback) {
-        NameCallback nc = (NameCallback) cb;
-        username = nc.getDefaultName();
+      } else if (cb instanceof NameCallback nc) {
+        String username = nc.getDefaultName();
         try {
           hashedPassword = identityLookup.getPasswordHash(username);
         } catch (GeneralSecurityException e) {
           throw new IOException(e);
         }
         nc.setName(nc.getDefaultName());
-      } else if (cb instanceof PasswordCallback) {
+      } else if (cb instanceof PasswordCallback pc) {
         if (hashedPassword == null) {
           throw new IOException("Password requested before an identity was resolved");
         }
-        PasswordCallback pc = (PasswordCallback) cb;
         pc.setPassword(hashedPassword.getHash());
-      } else if (cb instanceof RealmCallback) {
-        RealmCallback rc = (RealmCallback) cb;
+      } else if (cb instanceof RealmCallback rc) {
         rc.setText(serverName);
       }
     }

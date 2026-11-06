@@ -63,12 +63,18 @@ public class AuthDbStoreManager implements AutoCloseable {
     Path newPath = securityPath.resolve(NEW_DB_FILE_NAME);
 
     dbStore = openStore(oldPath, newPath);
-
-    userMapSet = dbStore.hashMap(USER_ID_MAP_NAME, new UUIDSerializer(), new UserIdSerializer()).createOrOpen();
-    groupMapSet = dbStore.hashMap(GROUP_ID_MAP_NAME, new UUIDSerializer(), new GroupIdSerializer()).createOrOpen();
-    sessionPrivilegesMap = dbStore.hashMap(PRIVILEGES_MAP_NAME, new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
-
-    AuthDbValidator.validate(userMapSet, groupMapSet);
+    boolean initialized = false;
+    try {
+      userMapSet = dbStore.hashMap(USER_ID_MAP_NAME, new UUIDSerializer(), new UserIdSerializer()).createOrOpen();
+      groupMapSet = dbStore.hashMap(GROUP_ID_MAP_NAME, new UUIDSerializer(), new GroupIdSerializer()).createOrOpen();
+      sessionPrivilegesMap = dbStore.hashMap(PRIVILEGES_MAP_NAME, new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();
+      AuthDbValidator.validate(userMapSet, groupMapSet);
+      initialized = true;
+    } finally {
+      if (!initialized) {
+        safeClose(dbStore);
+      }
+    }
   }
 
   public void commit() {
@@ -124,7 +130,9 @@ public class AuthDbStoreManager implements AutoCloseable {
     deleteQuietly(oldPath);
   }
 
+  @SuppressWarnings("java:S2095") // Migration closes both owning databases after copying; their maps share that lifetime.
   private void copyAllMaps(DB oldDb, DB newDb) throws IOException {
+    // The migration owns both DBs and closes them after copying; their maps share that lifetime.
     Map<UUID, UserIdMap> oldUserMap = oldDb.hashMap(USER_ID_MAP_NAME, new UUIDSerializer(), new UserIdSerializer()).createOrOpen();
     Map<UUID, GroupIdMap> oldGroupMap = oldDb.hashMap(GROUP_ID_MAP_NAME, new UUIDSerializer(), new GroupIdSerializer()).createOrOpen();
     Map<UUID, SessionPrivileges> oldPrivilegesMap = oldDb.hashMap(PRIVILEGES_MAP_NAME, new UUIDSerializer(), new PrivilegeSerializer()).createOrOpen();

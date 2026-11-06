@@ -20,14 +20,17 @@
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.handler;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.api.NatsJetStreamSubscriptions;
 import io.mapsmessaging.network.protocol.impl.nats.frames.MsgFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession;
 import io.mapsmessaging.network.protocol.impl.nats.state.SessionState;
 import io.mapsmessaging.network.protocol.impl.nats.streams.NamespaceManager;
 import io.mapsmessaging.network.protocol.impl.nats.streams.StreamInfoList;
+import io.mapsmessaging.network.protocol.impl.nats.streams.StreamSubscriptionInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +45,7 @@ public class DeleteHandler extends JetStreamFrameHandler {
   }
 
   @Override
+  @SuppressWarnings("java:S2445") // Coordinate consumer removal with the synchronized SessionState operations and creation handler.
   public NatsFrame handle(PayloadFrame frame, JsonObject json, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
     String replyTo = frame.getReplyTo();
@@ -63,14 +67,54 @@ public class DeleteHandler extends JetStreamFrameHandler {
       return buildError(TYPE,"Stream '" + stream + "' not found", replyTo, sessionState);
     }
 
-    NamedConsumer namedConsumer = sessionState.getNamedConsumers().remove(consumerName);
-    if (namedConsumer == null) {
+    NamedConsumer namedConsumer = sessionState.getNamedConsumers().get(consumerName);
+    if (namedConsumer == null || !stream.equals(namedConsumer.getStreamName())) {
       return buildError(TYPE,"Consumer '" + consumerName + "' not found", replyTo, sessionState);
     }
 
-    sessionState.removeSubscription(consumerName);
-    namedConsumer.getEvents().clear();
-    namedConsumer.getStreams().clear();
+    synchronized (sessionState) {
+      if (!sessionState.getNamedConsumers().remove(consumerName, namedConsumer)) {
+        return buildError(TYPE, "Consumer '" + consumerName + "' no longer exists", replyTo, sessionState);
+      }
+      removeSubscriptions(sessionState, namedConsumer);
+      namedConsumer.close();
+      closeConsumerSession(sessionState, namedConsumer);
+    }
+    return buildSuccess(stream, replyTo, sessionState);
+  }
+
+  private void removeSubscriptions(SessionState state, NamedConsumer consumer) throws IOException {
+    for (StreamSubscriptionInfo subscription : consumer.getStreams()) {
+      if (subscription.getSubscriptionAlias() != null) {
+        removeSubscription(state, consumer, subscription);
+      }
+    }
+  }
+
+  private void removeSubscription(SessionState state, NamedConsumer consumer,
+                                  StreamSubscriptionInfo subscription) throws IOException {
+    if (consumer.getMapsSession() != null) {
+      NatsJetStreamSubscriptions.remove(consumer.getMapsSession(), subscription.getSubscribedEventManager());
+    } else {
+      state.removeSubscription(subscription.getSubscriptionAlias());
+    }
+  }
+
+  private void closeConsumerSession(SessionState state, NamedConsumer consumer) throws IOException {
+    if (consumer.getMapsSession() == null) {
+      return;
+    }
+    try {
+      DurableConsumerSession.close(state, consumer.getMapsSession()).get();
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw new IOException("Interrupted deleting durable consumer", interrupted);
+    } catch (java.util.concurrent.ExecutionException failure) {
+      throw new IOException("Could not delete durable consumer", failure);
+    }
+  }
+
+  private NatsFrame buildSuccess(String stream, String replyTo, SessionState sessionState) {
 
     JsonObject response = new JsonObject();
     response.addProperty("type", TYPE);

@@ -25,8 +25,8 @@ public final class JsonSchemaDefaults {
       return rawDefault;
     }
 
-    if (typeObj instanceof String) {
-      return coerceBySingleType(raw, (String) typeObj, rawDefault);
+    if (typeObj instanceof String matchedString) {
+      return coerceBySingleType(raw, matchedString, rawDefault);
     }
 
     // If you ever emit type as List (e.g. ["string","null"]) handle that later.

@@ -44,7 +44,7 @@ public class LockInfo {
       thostname = "localhost";
     }
     hostname = thostname;
-    started = OffsetDateTime.now().toString();
+    started = OffsetDateTime.now(java.time.ZoneId.systemDefault()).toString();
     version = BuildInfo.getBuildVersion();
     buildDate = BuildInfo.getBuildDate();
   }

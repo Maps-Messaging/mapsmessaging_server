@@ -1,0 +1,190 @@
+/*
+ *
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.packet;
+
+import java.nio.ByteBuffer;
+import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+
+/** MQTT-SN 2.0 CSD01 CONNACK encoder matching the reference-client decoder. */
+public final class MqttSn2ConnAckCodec {
+
+  // Protocol value container; payload bytes are cloned and compared explicitly in tests.
+  @SuppressWarnings("java:S6218")
+  public record ConnAck(boolean sessionPresent, int packetIdentifier, int reasonCode,
+                        Long sessionExpirySeconds, Integer serverKeepAliveSeconds,
+                        String authenticationMethod, byte[] authenticationData,
+                        String assignedClientIdentifier) {
+    public ConnAck {
+      authenticationData = authenticationData == null ? null : authenticationData.clone();
+    }
+
+    @Override
+    public byte[] authenticationData() {
+      return authenticationData == null ? null : authenticationData.clone();
+    }
+  }
+
+  private MqttSn2ConnAckCodec() {
+  }
+
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
+  public static ByteBuffer encode(ConnAck ack) {
+    if (ack.packetIdentifier() < 1 || ack.packetIdentifier() > 65535
+        || ack.reasonCode() < 0 || ack.reasonCode() > 255) {
+      throw new IllegalArgumentException("Invalid CONNACK Packet Identifier or Reason Code");
+    }
+    if (ack.sessionPresent() && ack.reasonCode() != 0) {
+      throw new IllegalArgumentException("Session Present cannot be set on failure");
+    }
+    if (ack.sessionExpirySeconds() != null
+        && (ack.sessionExpirySeconds() < 0 || ack.sessionExpirySeconds() > 0xFFFFFFFFL)) {
+      throw new IllegalArgumentException("Invalid Session Expiry");
+    }
+    if (ack.serverKeepAliveSeconds() != null
+        && (ack.serverKeepAliveSeconds() < 1 || ack.serverKeepAliveSeconds() > 65535)) {
+      throw new IllegalArgumentException("Invalid Server Keep Alive");
+    }
+    if (ack.authenticationMethod() == null && ack.authenticationData() != null) {
+      throw new IllegalArgumentException("Authentication data without mechanism");
+    }
+
+    byte[] method = ack.authenticationMethod() == null ? new byte[0]
+        : ack.authenticationMethod().getBytes(StandardCharsets.UTF_8);
+    if (ack.authenticationMethod() != null && (method.length == 0 || method.length > 255)) {
+      throw new IllegalArgumentException("Invalid CONNACK Authentication Method");
+    }
+    byte[] data = ack.authenticationData() == null ? new byte[0] : ack.authenticationData();
+    if (data.length > 65535) {
+      throw new IllegalArgumentException("CONNACK authentication data too large");
+    }
+    byte[] clientId = ack.assignedClientIdentifier() == null ? new byte[0]
+        : ack.assignedClientIdentifier().getBytes(StandardCharsets.UTF_8);
+
+    int flags = ack.sessionPresent() ? 1 : 0;
+    int length = 4 + clientId.length;
+    if (ack.sessionExpirySeconds() != null) {
+      flags |= 2;
+      length += 4;
+    }
+    if (ack.serverKeepAliveSeconds() != null) {
+      flags |= 4;
+      length += 2;
+    }
+    if (ack.authenticationMethod() != null) {
+      flags |= 8;
+      length += 3 + method.length + data.length;
+    }
+
+    ByteBuffer body = ByteBuffer.allocate(length);
+    body.put((byte) flags).putShort((short) ack.packetIdentifier())
+        .put((byte) ack.reasonCode());
+    if (ack.sessionExpirySeconds() != null) {
+      body.putInt(ack.sessionExpirySeconds().intValue());
+    }
+    if (ack.serverKeepAliveSeconds() != null) {
+      body.putShort((short) ack.serverKeepAliveSeconds().intValue());
+    }
+    if (ack.authenticationMethod() != null) {
+      body.put((byte) method.length).put(method)
+          .putShort((short) data.length).put(data);
+    }
+    body.put(clientId).flip();
+    return MqttSn2FrameCodec.encode(MqttSn2PacketType.CONNACK, body);
+  }
+  // Protocol wire-layout validation follows CSD01 field order; keep it auditable.
+  @SuppressWarnings("java:S3776")
+  public static ConnAck decode(MqttSn2FrameCodec.Frame frame) throws IOException {
+    if (frame.type() != MqttSn2PacketType.CONNACK) {
+      throw new IOException("Expected CONNACK");
+    }
+    ByteBuffer body = frame.payload().asReadOnlyBuffer();
+    if (body.remaining() < 4) {
+      throw new IOException("Truncated CONNACK");
+    }
+    int flags = Byte.toUnsignedInt(body.get());
+    if ((flags & 0xF0) != 0) {
+      throw new IOException("Reserved CONNACK flags");
+    }
+    int identifier = Short.toUnsignedInt(body.getShort());
+    if (identifier == 0) {
+      throw new IOException("Zero CONNACK Packet Identifier");
+    }
+    int reason = Byte.toUnsignedInt(body.get());
+    if ((flags & 1) != 0 && reason != 0) {
+      throw new IOException("Session Present must be zero on failed CONNACK");
+    }
+    Long expiry = null;
+    Integer keepAlive = null;
+    String method = null;
+    byte[] authData = null;
+    if ((flags & 2) != 0) {
+      if (body.remaining() < 4) {
+        throw new IOException("Truncated CONNACK expiry");
+      }
+      expiry = Integer.toUnsignedLong(body.getInt());
+    }
+    if ((flags & 4) != 0) {
+      if (body.remaining() < 2) {
+        throw new IOException("Truncated CONNACK keep alive");
+      }
+      keepAlive = Short.toUnsignedInt(body.getShort());
+      if (keepAlive == 0) {
+        throw new IOException("Zero server keep alive");
+      }
+    }
+    if ((flags & 8) != 0) {
+      if (!body.hasRemaining()) {
+        throw new IOException("Truncated CONNACK auth method length");
+      }
+      int len = Byte.toUnsignedInt(body.get());
+      if (body.remaining() < len + 2) {
+        throw new IOException("Truncated CONNACK auth method");
+      }
+      byte[] methodBytes = new byte[len];
+      body.get(methodBytes);
+      method = strictUtf8(methodBytes);
+      int dataLength = Short.toUnsignedInt(body.getShort());
+      if (body.remaining() < dataLength) {
+        throw new IOException("Truncated CONNACK auth data");
+      }
+      authData = new byte[dataLength];
+      body.get(authData);
+    }
+    byte[] identifierBytes = new byte[body.remaining()];
+    body.get(identifierBytes);
+    return new ConnAck((flags & 1) != 0, identifier, reason, expiry, keepAlive,
+        method, authData, strictUtf8(identifierBytes));
+  }
+
+  private static String strictUtf8(byte[] bytes) throws IOException {
+    try {
+      return StandardCharsets.UTF_8.newDecoder()
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .onUnmappableCharacter(CodingErrorAction.REPORT)
+          .decode(ByteBuffer.wrap(bytes)).toString();
+    } catch (CharacterCodingException e) {
+      throw new IOException("Malformed CONNACK UTF-8 string", e);
+    }
+  }
+
+}

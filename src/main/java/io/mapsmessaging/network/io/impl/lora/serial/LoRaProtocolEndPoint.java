@@ -44,8 +44,8 @@ public class LoRaProtocolEndPoint extends EndPoint {
   public LoRaProtocolEndPoint(EndPoint physical) {
     super(count.incrementAndGet(), physical.getServer());
     physicalEndPoint = physical;
-    if (physicalEndPoint instanceof StreamEndPoint) {
-      ((StreamEndPoint) physicalEndPoint).setStreamHandler(new LoRaStreamHandler(logger));
+    if (physicalEndPoint instanceof StreamEndPoint matchedStreamEndPoint) {
+      (matchedStreamEndPoint).setStreamHandler(new LoRaStreamHandler(logger));
     }
     jmxParentPath = physicalEndPoint.getJMXTypePath();
     name = "gateway:"+physicalEndPoint.getName();

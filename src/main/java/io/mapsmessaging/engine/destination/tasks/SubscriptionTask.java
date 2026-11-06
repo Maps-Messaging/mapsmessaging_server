@@ -29,7 +29,8 @@ public abstract class SubscriptionTask extends EngineTask {
   public long processSubscription(DestinationImpl destination, DestinationSubscriptionManager subscriptionManager, Message message) {
     int counter = subscriptionManager.register(message);
     if (counter == 0) {
-      if (message.getIdentifier() != destination.getRetainedIdentifier()) {
+      Long retainedId = destination.getRetainedIdentifier();
+      if (retainedId == null || retainedId.longValue() != message.getIdentifier()) {
         RemoveMessageTask remove = new RemoveMessageTask(destination, message.getIdentifier());
         destination.submit(remove, DestinationImpl.DELETE_PRIORITY);
       }

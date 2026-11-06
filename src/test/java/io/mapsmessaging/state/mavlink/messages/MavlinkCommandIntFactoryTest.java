@@ -125,7 +125,7 @@ class MavlinkCommandIntFactoryTest {
   void orbitPopulatesRadiusAndYawBehaviour() {
     MavlinkCommandInt command = MavlinkCommandIntFactory.orbit(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, -125.0d, PACKET_SEQUENCE);
 
-    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL, MavlinkCommandIntFactory.MAV_CMD_DO_ORBIT);
+    assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_INT, MavlinkCommandIntFactory.MAV_CMD_DO_ORBIT);
     assertEquals(-125.0f, command.getParam1());
     assertTrue(Float.isNaN(command.getParam2()));
     assertEquals(MavlinkCommandIntFactory.ORBIT_YAW_BEHAVIOUR_HOLD_FRONT_TO_CIRCLE_CENTER, command.getParam3());

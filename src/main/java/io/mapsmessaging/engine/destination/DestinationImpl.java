@@ -44,6 +44,9 @@ import io.mapsmessaging.engine.tasks.FutureResponse;
 import io.mapsmessaging.engine.tasks.LongResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.utils.FilePathHelper;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.schemas.config.SchemaConfig;
 import io.mapsmessaging.utilities.collections.NaturalOrderedLongList;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
@@ -63,6 +66,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -76,6 +80,11 @@ import java.util.concurrent.*;
  * single destination needs to do.
  */
 public class DestinationImpl implements BaseDestination {
+
+  private static final Logger logger = LoggerFactory.getLogger(DestinationImpl.class);
+
+  private static final String SUBSCRIPTIONS_KEY = "subscriptions";
+
   @Getter
   private static final DestinationGlobalStats globalStats = new DestinationGlobalStats(StatsFactory.getDefaultType());
 
@@ -99,6 +108,11 @@ public class DestinationImpl implements BaseDestination {
 
   protected final DestinationJMX destinationJMXBean;
   private final ScheduledFuture<?> reaperFuture;
+  private final Object reaperLock = new Object();
+  private final ReaperRetryQueue reaperRetries = new ReaperRetryQueue();
+  private boolean reaperQueued;
+  private boolean reaperRunning;
+  private boolean reaperPending;
 
   private final PriorityTaskScheduler resourceTaskQueue;
   private final TaskScheduler subscriptionTaskQueue;
@@ -183,7 +197,7 @@ public class DestinationImpl implements BaseDestination {
     destinationJMXBean = new DestinationJMX(this, resourceTaskQueue, subscriptionTaskQueue);
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
 
-    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, "subscriptions");
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, SUBSCRIPTIONS_KEY);
     delayedMessageManager = DestinationStateManagerFactory.createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
 
@@ -230,7 +244,7 @@ public class DestinationImpl implements BaseDestination {
     // Delayed Messages are automatically dealt with once the structure has been reloaded
     delayedMessageManager = DestinationStateManagerFactory.createDelayed(this, true, "delayed");
     delayScheduler = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new DelayProcessor(), 990, 1000, TimeUnit.MILLISECONDS);
-    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, "subscriptions");
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, true, SUBSCRIPTIONS_KEY);
     transactionMessageManager = DestinationStateManagerFactory.createTransaction(this, true, "transactions");
     rollbackTransactionsOnReload();
     closed = false;
@@ -264,7 +278,7 @@ public class DestinationImpl implements BaseDestination {
     sharedSubscriptionRegistry = new SharedSubscriptionRegister();
     delayedMessageManager = null;
     delayScheduler = null;
-    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, false, "subscriptions");
+    subscriptionBitsetFactory = DestinationStateManagerFactory.createSubscriptionFactory(this, false, SUBSCRIPTIONS_KEY);
     transactionMessageManager = null;
     closed = false;
     completionQueue = new EventReaperQueue();
@@ -274,8 +288,12 @@ public class DestinationImpl implements BaseDestination {
 
   //<editor-fold desc="Shutdown functions">
   public void close() throws IOException {
-    closed = true;
-    reaperFuture.cancel(true);
+    synchronized (reaperLock) {
+      closed = true;
+      reaperPending = false;
+      reaperRetries.clear();
+    }
+    reaperFuture.cancel(false);
     resource.close();
     retainManager.close();
     if (delayedMessageManager != null) {
@@ -301,7 +319,7 @@ public class DestinationImpl implements BaseDestination {
   }
 
   private ScheduledFuture<?> queueReaper() {
-    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(new EventReaper(), 5, 5, TimeUnit.SECONDS);
+    return SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this::requestReaperSafely, 5, 5, TimeUnit.SECONDS);
   }
 
   private void loadSchema() throws IOException {
@@ -339,7 +357,7 @@ public class DestinationImpl implements BaseDestination {
     Schema newSchema = new Schema(config);
     ResourceProperties resourceProperties = resource.getResourceProperties();
 
-    if (schema == null || schema.update(newSchema) && resourceProperties != null) {
+    if ((schema == null || schema.update(newSchema)) && resourceProperties != null) {
       resourceProperties.setSchemaId(config.getUniqueId());
       resourceProperties.write(new File(fullyQualifiedDirectoryRoot));
       if (message != null && schemaSubscriptionManager.hasSubscriptions()) {
@@ -368,19 +386,25 @@ public class DestinationImpl implements BaseDestination {
   // not in the list should be removed from the underlying store
   //
   public void scanForOrphanedMessages() throws IOException{
-    if(fullyQualifiedNamespace.startsWith("$SYS"))return;
+    if (fullyQualifiedNamespace.startsWith("$SYS")) {
+      return;
+    }
     List<Long> list = new NaturalOrderedLongList(0, new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
-    long retain = retainManager.current();
-    if(retain > -1) {
-      list.add(retainManager.current()); // we only have 1 retain event
+    Long retain = retainManager.current();
+    if (retain != null) {
+      list.add(retain); // we only have 1 retain event
     }
     list.addAll(subscriptionManager.getAll());
     if(list.size() != resource.size()) {
       resource.keepOnly(list);
+      Queue<Long> expired = new ArrayDeque<>();
       for(Long subId:list){
         if(!resource.contains(subId)){
-          subscriptionManager.expired(subId);
+          expired.add(subId);
         }
+      }
+      if (!expired.isEmpty()) {
+        expireSubscriptions(expired);
       }
     }
   }
@@ -404,14 +428,22 @@ public class DestinationImpl implements BaseDestination {
   public void delete() throws IOException {
     if (!closed) {
       closed = true;
-      if (transactionMessageManager != null) transactionMessageManager.delete();
-      if (subscriptionManager != null ) subscriptionManager.close();
-      if (schemaSubscriptionManager != null)schemaSubscriptionManager.close();
+      if (transactionMessageManager != null) {
+        transactionMessageManager.delete();
+      }
+      if (subscriptionManager != null ) {
+        subscriptionManager.close();
+      }
+      if (schemaSubscriptionManager != null) {
+        schemaSubscriptionManager.close();
+      }
       if (delayedMessageManager != null) {
         delayScheduler.cancel(true);
         delayedMessageManager.delete();
       }
-      if(retainManager != null) retainManager.close();
+      if (retainManager != null) {
+        retainManager.close();
+      }
       resource.delete();
       if (destinationJMXBean != null) {
         destinationJMXBean.close();
@@ -421,33 +453,29 @@ public class DestinationImpl implements BaseDestination {
   }
 
   public static void deleteFile(File directoryToBeDeleted, int count) {
-    int recursionDepth = count +1;
+    int recursionDepth = count + 1;
     StringBuilder failedFiles = new StringBuilder();
     File[] allContents = directoryToBeDeleted.listFiles();
     if (allContents != null) {
-      List<File> failed = new ArrayList<>();
       for (File file : allContents) {
         try {
-          Files.delete(file.toPath());
+          if (file.isDirectory() && !Files.isSymbolicLink(file.toPath())) {
+            deleteFile(file, recursionDepth);
+          }
+          else {
+            Files.deleteIfExists(file.toPath());
+          }
         } catch (IOException e) {
-          failed.add(file);
-        }
-      }
-      // Try once more
-      for (File file : failed) {
-        try {
-          Files.delete(file.toPath());
-        } catch (IOException io) {
           failedFiles.append(file.getAbsolutePath()).append(",");
         }
       }
     }
     try {
-      Files.delete(directoryToBeDeleted.toPath());
+      Files.deleteIfExists(directoryToBeDeleted.toPath());
     } catch (IOException e) {
       failedFiles.append(directoryToBeDeleted.getAbsolutePath()).append(",");
     }
-    if(!failedFiles.isEmpty() && recursionDepth < 3) {
+    if (!failedFiles.isEmpty() && recursionDepth < 3) {
       SimpleTaskScheduler.getInstance().schedule(() -> deleteFile(directoryToBeDeleted, recursionDepth), 10, TimeUnit.SECONDS);
     }
   }
@@ -487,9 +515,9 @@ public class DestinationImpl implements BaseDestination {
    * All destinations have the ability to store a specific message Id as a "retained" message, meaning on new subscriptions this message is delivered first. This function returns
    * the message Id that represents the current "retained" message
    *
-   * @return message Id of the retained message or -1 indicating no retained message
+   * @return message ID of the retained message, or null if none exists
    */
-  public long getRetainedIdentifier() {
+  public Long getRetainedIdentifier() {
     return retainManager.current();
   }
 
@@ -583,6 +611,15 @@ public class DestinationImpl implements BaseDestination {
   }
   //</editor-fold>
 
+  /**
+   * Invalidate delivery references globally while leaving each subscription's
+   * acknowledgement controller available to finish in-flight protocol exchanges.
+   */
+  public Future<Response> expireSubscriptions(Queue<Long> expired) {
+    return submit(new ExpireSubscriptionsTask(subscriptionManager, schemaSubscriptionManager,
+        new ArrayDeque<>(expired)));
+  }
+
   public void addSchemaSubscription(@NonNull @NotNull Subscription subscription) {
     stats.subscriptionAdded();
     schemaSubscriptionManager.put(subscription.getSessionId(), subscription);
@@ -611,7 +648,7 @@ public class DestinationImpl implements BaseDestination {
       long expiry = message.getExpiry();
       if (expiry > 0 && expiry < System.currentTimeMillis()) {
         submit(new RemoveMessageTask(this, messageId), RETRIEVE_PRIORITY);
-        subscriptionManager.expired(messageId);
+        expireSubscriptions(new ArrayDeque<>(List.of(messageId)));
         message = null;
         stats.expiredMessage();
       } else {
@@ -628,8 +665,11 @@ public class DestinationImpl implements BaseDestination {
    * @param messageId that the delivery is complete
    */
   public void complete(long messageId) {
-    if (retainManager.current() != messageId) {
+    QueueCleanupTrace.record(fullyQualifiedNamespace, "COMPLETE", messageId, "retained", retainManager.current());
+    Long retainedId = retainManager.current();
+    if (retainedId == null || retainedId.longValue() != messageId) {
       completionQueue.add(messageId);
+      requestReaper();
     }
     stats.deliveredMessage();
   }
@@ -800,12 +840,12 @@ public class DestinationImpl implements BaseDestination {
     Future<Response> future = submit(task, PUBLISH_PRIORITY);
     try {
       Response response = future.get(60, TimeUnit.SECONDS);
-      if (response instanceof LongResponse) {
-        return (int) ((LongResponse) response).getResponse();
-      } else if (response instanceof FutureResponse) {
-        response = ((FutureResponse) response).getResponse().get();
-        if (response instanceof LongResponse) {
-          return (int) ((LongResponse) response).getResponse();
+      if (response instanceof LongResponse directResponse) {
+        return (int) (directResponse).getResponse();
+      } else if (response instanceof FutureResponse matchedFutureResponse) {
+        response = (matchedFutureResponse).getResponse().get();
+        if (response instanceof LongResponse matchedLongResponse) {
+          return (int) (matchedLongResponse).getResponse();
         }
       }
       return 0;
@@ -836,10 +876,13 @@ public class DestinationImpl implements BaseDestination {
    */
   public void removeMessage(long messageId) throws IOException {
     long nano = System.nanoTime();
+    QueueCleanupTrace.record(fullyQualifiedNamespace, "REMOVE-BEGIN", messageId);
     resource.remove(messageId);
-    if (messageId == retainManager.current()) {
+    QueueCleanupTrace.record(fullyQualifiedNamespace, "REMOVE-END", messageId);
+    Long retainedId = retainManager.current();
+    if (retainedId != null && retainedId.longValue() == messageId) {
       stats.retainedMessages(-1);
-      retainManager.replace(-1);
+      retainManager.replace(null);
     }
 
     nano = (System.nanoTime() - nano) / 1000; // Make it micro seconds
@@ -855,9 +898,10 @@ public class DestinationImpl implements BaseDestination {
   public void addMessage(Message message) throws IOException {
     long nano = System.nanoTime();
     resource.add(message);
+    QueueCleanupTrace.record(fullyQualifiedNamespace, "STORED", message.getIdentifier());
     if (message.isRetain()) {
       if (message.getOpaqueData() == null || message.getOpaqueData().length == 0) {
-        retainManager.replace(-1);
+        retainManager.replace(null);
         stats.retainedMessages(-1);
       } else {
         retainManager.replace(message.getIdentifier());
@@ -871,39 +915,155 @@ public class DestinationImpl implements BaseDestination {
 
   public DestinationSubscription getSubscription(String subscriptionName) {
     Subscribable subscribable = subscriptionManager.getSubscription(subscriptionName);
-    if (subscribable instanceof DestinationSubscription) {
-      return (DestinationSubscription) subscribable;
+    if (subscribable instanceof DestinationSubscription matchedDestinationSubscription) {
+      return matchedDestinationSubscription;
     }
     return null;
   }
 
   //</editor-fold>
 
-  private final class EventReaper implements Runnable {
+  /** Diagnostic snapshot only; subscription/resource observations are not an atomic cross-thread view. */
+  public void traceCleanupState(String stage) throws IOException {
+    if (QueueCleanupTrace.isEnabled(fullyQualifiedNamespace)) {
+      QueueCleanupTrace.record(fullyQualifiedNamespace, stage, -1, "storedIds", resource.getKeys(), "interest", subscriptionManager.getAll());
+      synchronized (reaperLock) {
+        QueueCleanupTrace.record(fullyQualifiedNamespace, "REAPER-STATE", -1, "queued", reaperQueued, "running", reaperRunning,
+            "pending", reaperPending, "completionEmpty", completionQueue.isEmpty(), "retry", reaperRetries.cleanupTraceState());
+      }
+    }
+  }
 
-    private int countDown = 0;
-    private int idleCount =0;
+  /** Guard already queued removals against failures discovered after their interest snapshot. */
+  public boolean prepareCompletedRemoval(Queue<Long> messageIds) {
+    synchronized (reaperLock) {
+      if (closed || reaperRetries.blocksFreshWork()) {
+        return false;
+      }
+      reaperRetries.excludePending(messageIds);
+      return true;
+    }
+  }
+
+  /** Hold an isolated failure until its owning bulk-removal pass releases it for delayed retry. */
+  public void holdCompletedMessage(long messageId) {
+    synchronized (reaperLock) {
+      if (!closed) {
+        reaperRetries.hold(messageId);
+      }
+    }
+  }
+
+  /** Preserve failed/unprocessed IDs; the periodic tick retries them after a bounded delay. */
+  public void deferCompletedMessages(Queue<Long> messageIds, boolean batchFailure) {
+    synchronized (reaperLock) {
+      if (closed) {
+        return;
+      }
+      if (QueueCleanupTrace.isEnabled(fullyQualifiedNamespace)) {
+        QueueCleanupTrace.record(fullyQualifiedNamespace, "DEFER", -1, "batchFailure", batchFailure, messageIds.toString());
+      }
+      reaperRetries.defer(messageIds, batchFailure);
+    }
+  }
+
+  private void requestReaperSafely() {
+    try {
+      requestReaper();
+    } catch (RuntimeException failure) {
+      deferCompletedMessages(new ArrayDeque<>(), true);
+      logger.log(ServerLogMessages.DESTINATION_REAPER_FAILED, failure, fullyQualifiedNamespace, "periodic submission");
+    }
+  }
+
+  private void requestReaper() {
+    synchronized (reaperLock) {
+      if (closed) {
+        return;
+      }
+      if (reaperRetries.blocksFreshWork()) {
+        return;
+      }
+      if (reaperRunning) {
+        reaperPending = true;
+        return;
+      }
+      if (reaperQueued || (completionQueue.isEmpty() && !reaperRetries.hasReadyIds())) {
+        return;
+      }
+      reaperQueued = true;
+      try {
+        subscriptionTaskQueue.submit(new EventReaper());
+      } catch (RuntimeException failure) {
+        reaperQueued = false;
+        reaperRetries.defer(new ArrayDeque<>(), true);
+        logger.log(ServerLogMessages.DESTINATION_REAPER_FAILED, failure, fullyQualifiedNamespace, "reaper submission");
+        throw failure;
+      }
+    }
+  }
+
+  private final class EventReaper extends EngineTask {
 
     @Override
-    public void run() {
-      if(countDown <= 0) {
-        Queue<Long> completedQueue = completionQueue.getAndClear();
-        if (!completedQueue.isEmpty()) {
-          idleCount = 0;
-          countDown =0;
+    public Response taskCall() {
+      synchronized (reaperLock) {
+        reaperQueued = false;
+        if (closed || reaperRetries.blocksFreshWork()) {
+          return new io.mapsmessaging.engine.tasks.VoidResponse();
+        }
+        reaperRunning = true;
+      }
+      Queue<Long> completed = new ArrayDeque<>();
+      try {
+        synchronized (reaperLock) {
+          completed = completionQueue.getAndClear();
+          reaperRetries.drainReadyInto(completed);
+        }
+        if (!completed.isEmpty()) {
           Queue<Long> interested = subscriptionManager.getAll();
-          completedQueue.removeAll(interested);
-          if (!completedQueue.isEmpty()) {
-            BulkRemoveMessageTask bulkRemoveMessageTask = new BulkRemoveMessageTask(DestinationImpl.this, completedQueue);
-            subscriptionTaskQueue.submit(bulkRemoveMessageTask);
+          if (QueueCleanupTrace.isEnabled(fullyQualifiedNamespace)) {
+            QueueCleanupTrace.record(fullyQualifiedNamespace, "REAPER-INTEREST", -1, "candidates", completed.toString(), "interested", interested.toString());
+          }
+          completed.removeAll(interested);
+          if (QueueCleanupTrace.isEnabled(fullyQualifiedNamespace)) {
+            QueueCleanupTrace.record(fullyQualifiedNamespace, "REAPER-REMOVE", -1, completed.toString());
+          }
+          if (!completed.isEmpty()) {
+            // Same serial task scheduler, so removal cannot overtake reaper processing.
+            subscriptionTaskQueue.submit(new BulkRemoveMessageTask(DestinationImpl.this, completed));
           }
         }
-        else{
-          idleCount = (idleCount+1) % 20;
-          countDown = 5 * idleCount;
+      } catch (RuntimeException processingFailure) {
+        deferCompletedMessages(completed, true);
+        logger.log(ServerLogMessages.DESTINATION_REAPER_FAILED, processingFailure, fullyQualifiedNamespace, "interest lookup/removal submission");
+        try {
+          finishReaper();
+        } catch (RuntimeException schedulingFailure) {
+          processingFailure.addSuppressed(schedulingFailure);
+        }
+        throw processingFailure;
+      }
+      finishReaper();
+      return new io.mapsmessaging.engine.tasks.VoidResponse();
+    }
+  }
+
+  private void finishReaper() {
+    synchronized (reaperLock) {
+      reaperRunning = false;
+      boolean rerun = reaperPending || !completionQueue.isEmpty() || reaperRetries.hasReadyIds();
+      reaperPending = false;
+      if (rerun && !closed && !reaperQueued && !reaperRetries.blocksFreshWork()) {
+        reaperQueued = true;
+        try {
+          subscriptionTaskQueue.submit(new EventReaper());
+        } catch (RuntimeException failure) {
+          reaperQueued = false;
+          reaperRetries.defer(new ArrayDeque<>(), true);
+          throw failure;
         }
       }
-      countDown--;
     }
   }
 

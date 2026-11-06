@@ -47,6 +47,12 @@ public class ConnectionRemoteOpenEventListener extends BaseEventListener {
       conn.open();
       Symbol[] symbols = conn.getRemoteDesiredCapabilities();
       List<Symbol> offered = getRemoteCapabilities(symbols);
+      // Qpid JMS checks this connection capability before accepting
+      // JMSProducer.setDeliveryDelay(). MAPS stores delayed messages natively.
+      Symbol delayedDelivery = Symbol.valueOf("DELAYED_DELIVERY");
+      if (!offered.contains(delayedDelivery)) {
+        offered.add(delayedDelivery);
+      }
       Symbol[] off = new Symbol[offered.size()];
       conn.setOfferedCapabilities(offered.toArray(off));
       Connection connection = (Connection) event.getContext();

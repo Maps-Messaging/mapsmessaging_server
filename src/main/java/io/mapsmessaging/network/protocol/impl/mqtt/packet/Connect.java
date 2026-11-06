@@ -27,6 +27,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718028
@@ -42,6 +43,11 @@ public class Connect extends MQTTPacket {
   private static final byte[] MQTT31 = "MQIsdp".getBytes();
 
   private byte protocolLevel;
+  private boolean supportedProtocolLevel;
+
+  public boolean hasSupportedProtocolLevel() {
+    return supportedProtocolLevel;
+  }
 
   //
   // Will fields
@@ -77,6 +83,8 @@ public class Connect extends MQTTPacket {
 
   public Connect() {
     super(CONNECT);
+    protocolLevel = 4;
+    supportedProtocolLevel = true;
     keepAlive = 60_000;
   }
 
@@ -114,6 +122,7 @@ public class Connect extends MQTTPacket {
         }
       }
       protocolLevel = packet.get();
+      supportedProtocolLevel = protocolLevel == 3;
     } else if (header[2] == MQTT311[2]) {
       for (int x = 2; x < len; x++) {
         if (header[x] != MQTT311[x]) {
@@ -121,6 +130,7 @@ public class Connect extends MQTTPacket {
         }
       }
       protocolLevel = packet.get();
+      supportedProtocolLevel = protocolLevel == 4;
     } else {
       throw new MalformedException(NO_PROTOCOL_FOUND_MSG);
     }
@@ -235,6 +245,9 @@ public class Connect extends MQTTPacket {
   }
 
   public int packFrame(Packet packet) {
+    if (passwordFlag && !usernameFlag) {
+      throw new IllegalArgumentException("MQTT 3.1.1 password requires a username [MQTT-3.1.2-22]");
+    }
     ByteArrayOutputStream b = new ByteArrayOutputStream();
     b.write(0);
     b.write(MQTT311.length);
@@ -257,8 +270,11 @@ public class Connect extends MQTTPacket {
 
     // Will never be greater then 2^31
     int size = 10 + sessionId.length() + 2;
-    if (passwordFlag && usernameFlag) {
-      size += password.length + username.length() + 4;
+    if (usernameFlag) {
+      size += username.getBytes(StandardCharsets.UTF_8).length + 2;
+    }
+    if (passwordFlag) {
+      size += password.length + 2;
     }
 
     // Pack the header
@@ -268,10 +284,14 @@ public class Connect extends MQTTPacket {
     writeVariableInt(packet, size);
     packet.put(b.toByteArray());
     writeUTF8(packet, sessionId);
-    writeUTF8(packet, username);
-    writeShort(packet, password.length);
-    for (char c : password) {
-      packet.put((byte) c);
+    if (usernameFlag) {
+      writeUTF8(packet, username);
+    }
+    if (passwordFlag) {
+      writeShort(packet, password.length);
+      for (char c : password) {
+        packet.put((byte) c);
+      }
     }
     return packet.position() - start;
   }

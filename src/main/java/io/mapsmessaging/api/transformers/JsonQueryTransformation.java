@@ -49,6 +49,10 @@ import static io.mapsmessaging.logging.ServerLogMessages.*;
 
 public class JsonQueryTransformation implements InterServerTransformation {
 
+  private static final String UTC_EXPIRY_TIME_ISO_KEY = "utcExpiryTimeIso";
+  private static final String UTC_TIME_ISO_KEY = "utcTimeIso";
+
+
 
   private final Logger logger = LoggerFactory.getLogger(JsonQueryTransformation.class);
   private final Function<JsonElement, JsonElement> program;
@@ -101,11 +105,11 @@ public class JsonQueryTransformation implements InterServerTransformation {
     if(jsonElement != null && jsonElement.isJsonObject()){
       JsonObject jsonObject = jsonElement.getAsJsonObject();
       JsonObject meta = new JsonObject();
-      if(message.getMessage().getDataMap() != null && message.getMessage().getDataMap().get("utcTimeIso") != null) {
-        meta.addProperty("utcTimeIso", message.getMessage().getDataMap().get("utcTimeIso").getData().toString());
+      if(message.getMessage().getDataMap() != null && message.getMessage().getDataMap().get(UTC_TIME_ISO_KEY) != null) {
+        meta.addProperty(UTC_TIME_ISO_KEY, message.getMessage().getDataMap().get(UTC_TIME_ISO_KEY).getData().toString());
       }
-      if(message.getMessage().getDataMap() != null && message.getMessage().getDataMap().get("utcExpiryTimeIso") != null) {
-        meta.addProperty("utcExpiryTimeIso", message.getMessage().getDataMap().get("utcExpiryTimeIso").getData().toString());
+      if(message.getMessage().getDataMap() != null && message.getMessage().getDataMap().get(UTC_EXPIRY_TIME_ISO_KEY) != null) {
+        meta.addProperty(UTC_EXPIRY_TIME_ISO_KEY, message.getMessage().getDataMap().get(UTC_EXPIRY_TIME_ISO_KEY).getData().toString());
       }
       jsonObject.add("meta", meta);
     }

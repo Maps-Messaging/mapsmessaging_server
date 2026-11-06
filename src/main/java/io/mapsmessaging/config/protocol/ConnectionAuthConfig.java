@@ -37,8 +37,7 @@ public class ConnectionAuthConfig extends ConnectionAuthConfigDTO implements Con
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
 
-    if (config instanceof ConnectionAuthConfigDTO) {
-      ConnectionAuthConfigDTO newConfig = (ConnectionAuthConfigDTO) config;
+    if (config instanceof ConnectionAuthConfigDTO newConfig) {
       if (this.username == null || !this.username.equals(newConfig.getUsername())) {
         this.username = newConfig.getUsername();
         hasChanged = true;

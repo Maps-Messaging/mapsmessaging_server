@@ -21,10 +21,12 @@ package io.mapsmessaging.state.mavlink.model;
 
 public interface UgvModel extends UxvModel {
 
+    @Override
     default UxvModelCommandSet orbit(UxvCommandContext context, OrbitRequest request) {
         throw unsupported(UxvOperation.ORBIT);
     }
 
+    @Override
     default UxvModelCommandSet loiter(UxvCommandContext context, LoiterRequest request) {
         throw unsupported(UxvOperation.LOITER);
     }

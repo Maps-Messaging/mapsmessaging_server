@@ -26,10 +26,12 @@ import io.mapsmessaging.rest.cache.CacheKey;
 public class NoCache <V> implements Cache<CacheKey, V> {
 
   public NoCache() {
+    // This implementation deliberately stores no cache state.
   }
 
   @Override
   public void put(CacheKey key, V value) {
+    // Caching is disabled, so values are deliberately not retained.
   }
 
   @Override
@@ -39,10 +41,12 @@ public class NoCache <V> implements Cache<CacheKey, V> {
 
   @Override
   public void remove(CacheKey key) {
+    // No entries are retained when caching is disabled.
   }
 
   @Override
   public void clear() {
+    // No entries are retained when caching is disabled.
   }
 
   @Override
@@ -57,6 +61,6 @@ public class NoCache <V> implements Cache<CacheKey, V> {
 
   @Override
   public void removePath(String path) {
-
+    // No entries are retained when caching is disabled.
   }
 }

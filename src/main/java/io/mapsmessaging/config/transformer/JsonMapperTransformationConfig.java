@@ -33,8 +33,13 @@ public class JsonMapperTransformationConfig extends JsonMapperTransformationDTO 
 
   public JsonMapperTransformationConfig(ConfigurationProperties props) {
     setType(TransformationType.JSON_MAPPER);
-    ConfigurationProperties jsonMapper = (ConfigurationProperties) props.get("jsonMapper");
-    Object rawOperations = jsonMapper.get("operations");
+    // Accept `operations:` directly on the transformer entry (the shape JsonMutate and the other
+    // transformer configs use); fall back to the legacy `jsonMapper: { operations: [...] }`
+    // nesting if present. The old code assumed the nested form and NPE'd without it.
+    Object rawOperations = props.get("operations");
+    if (rawOperations == null && props.get("jsonMapper") instanceof ConfigurationProperties jsonMapper) {
+      rawOperations = jsonMapper.get("operations");
+    }
     if(rawOperations != null){
       operations = new ArrayList<>();
       if(rawOperations instanceof ConfigurationProperties operationProperties){

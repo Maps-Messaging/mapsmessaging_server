@@ -30,8 +30,15 @@ class JetStreamInfoTest extends JetStreamBaseTest {
   void testJetStreamInfoHelper() throws Exception {
     JsonObject info = requestJetStreamInfo();
     assertNotNull(info);
-    assertTrue(info.has("config"));
-    assertTrue(info.getAsJsonObject("config").has("api_prefix"));
+    // $JS.API.INFO is the JetStream account information API, not stream configuration.
+    assertEquals("io.nats.jetstream.api.v1.account_info_response", info.get("type").getAsString());
+    assertTrue(info.has("memory"));
+    assertTrue(info.has("storage"));
+    assertTrue(info.has("streams"));
+    assertTrue(info.has("consumers"));
+    assertTrue(info.has("limits"));
+    assertTrue(info.getAsJsonObject("limits").has("max_memory"));
+    assertTrue(info.has("api"));
   }
 
 

@@ -30,12 +30,9 @@ import java.util.Map;
 
 public class ExampleProtocol extends Extension {
 
-  private final ExtensionConfigDTO protocolConfig; // protocolConfig.getConfig() contains the extensions config section
-  private final EndPoint endPoint;
 
   public ExampleProtocol(EndPoint endPoint, ExtensionConfigDTO protocolConfigDTO) {
-    this.protocolConfig = protocolConfigDTO;
-    this.endPoint = endPoint;
+    // Example extension has no endpoint or configuration state to retain.
   }
 
   @Override

@@ -22,6 +22,7 @@ package io.mapsmessaging.network.protocol.impl.coap.blockwise;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ReceivePacket {
@@ -34,11 +35,18 @@ public class ReceivePacket {
     this.blockSize = 1 << ( blockSize +4);
   }
 
-  public void add(int index, byte[] block){
-    while(index > blocks.size()){
-      blocks.add(new byte[0]);
+  public boolean add(int index, byte[] block) {
+    if (index < 0 || block == null || block.length > blockSize) {
+      return false;
     }
-    blocks.add(index, block);
+    if (index < blocks.size()) {
+      return Arrays.equals(blocks.get(index), block);
+    }
+    if (index != blocks.size()) {
+      return false;
+    }
+    blocks.add(block);
+    return true;
   }
 
   public byte[] getFull(){

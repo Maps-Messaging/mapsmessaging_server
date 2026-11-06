@@ -49,7 +49,6 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_EVENT_LIST_SENDER_FAILED_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', failed with exception: {}"),
   MAVLINK_EVENT_LIST_SENDER_COMPLETION_HANDLER_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink event list sender '{}', operation '{}', model '{}', completion handler failed: {}"),
 
-
   MAVLINK_STATE_DIALECT_DEFAULTED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No MAVLink dialect specified for state subscriber, using default dialect {}"),
   MAVLINK_STATE_DIALECT_LOADED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Loaded MAVLink dialect {} for state subscriber"),
   MAVLINK_STATE_DIALECT_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load MAVLink dialect {}, falling back to default dialect {}"),
@@ -60,6 +59,7 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_STATE_PACKET_UNPACK_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "MAVLink state packet from {} did not produce a processed frame"),
   MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unsupported MAVLink message {} from {}"),
   MAVLINK_STATE_TWIN_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Created MAVLink twin {} for system {} component {}"),
+  MAVLINK_TASK_COMPLETION_GATES_DISABLED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Drone '{}' has both completeTaskOnArrivalTolerance and completeTaskOnAutoToLoiter disabled; untimed navigation completion will rely on final MAVLink MISSION_ITEM_REACHED, which is fragile on lossy links"),
 
   MAVLINK_STATE_SUBSCRIBER_STARTING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Starting MAVLink state subscriber on topic '{}'"),
   MAVLINK_STATE_SUBSCRIBER_STARTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Started MAVLink state subscriber on topic '{}'"),
@@ -85,17 +85,21 @@ public enum StateLogMessages implements LogMessage {
   STATE_MANAGER_START(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent starting"),
   STATE_MANAGER_STARTED(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent started"),
   STATE_MANAGER_STOP(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent stopping"),
+  STATE_MANAGER_COMPONENT_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to stop state component {}"),
   STATE_MANAGER_STOPPED(LEVEL.INFO, SERVER_CATEGORY.STATE, "StateManagerAgent stopped"),
   STATE_MANAGER_TAK_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "TAK observer enabled"),
   STATE_MANAGER_PUBLISH_ENABLED(LEVEL.INFO, SERVER_CATEGORY.STATE, "Twin JSON publisher enabled with topic {}"),
   STATE_MANAGER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to start Twin JSON publisher"),
   STATE_MANAGER_SCHEDULER_ERROR(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Scheduler task failed"),
   STATE_MANAGER_AUDIT_INIT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to initialize audit context - auditing will be disabled"),
+  STATE_MANAGER_TAK_EVENT_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to publish TAK event to topic '{}': {}"),
+  STATE_MANAGER_TAK_PUBLISHER_CREATE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to create TAK event publisher for topic '{}'"),
+  STATE_MANAGER_TAK_OBSERVER_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to publish TAK observer event"),
+  STATE_MANAGER_TAK_EVENT_QUEUE_FULL(LEVEL.WARN, SERVER_CATEGORY.STATE, "TAK event publish queue for topic '{}' is full, dropping oldest events ({} dropped so far)"),
   // </editor-fold>
 
-
   N2K_DRONE_CONFIG_RESOLVED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Resolved drone configuration '{}' for N2K topic '{}'"),
-  N2K_DRONE_CONFIG_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No drone configuration found for N2K source '{}' using topic '{}'"),
+  N2K_DRONE_CONFIG_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No N2K drone configuration found for source '{}' using topic '{}'"),
   N2K_SESSION_START_SKIPPED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "N2K session '{}' was not started for topic '{}' because no matching drone is configured"),
   N2K_SESSION_STARTING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Starting N2K session '{}' using topic '{}'"),
   N2K_SESSION_STARTED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Started N2K session '{}' using topic '{}'"),
@@ -109,6 +113,7 @@ public enum StateLogMessages implements LogMessage {
   N2K_MESSAGE_IGNORED_EMPTY(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring empty N2K message from '{}'"),
   N2K_MESSAGE_IGNORED_NOT_JSON(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring non-JSON N2K message from '{}'"),
   N2K_MESSAGE_IGNORED_NO_J1939(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because it contains no J1939 object"),
+  N2K_MESSAGE_IGNORED_NO_LISTENER(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No N2K twin-state listener registered for PGN '{}', packet {}"),
   N2K_MESSAGE_IGNORED_NO_PGN(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because the J1939 PGN is missing or invalid"),
   N2K_MESSAGE_IGNORED_NO_N2K(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K message from '{}' because it contains no N2K object"),
   N2K_MESSAGE_IGNORED_NO_PACKET(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring N2K PGN '{}' from '{}' because it contains no packet object"),
@@ -134,8 +139,9 @@ public enum StateLogMessages implements LogMessage {
   MAVLINK_EVENT_LIST_SENDER_NO_ACK_ADVANCING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink message for sender '{}', index {}, does not require acknowledgement, advancing"),
 
   MAVLINK_TWIN_MANAGER_START_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to start MAVLink twin manager subscriber: {}"),
-  MAVLINK_TWIN_MANAGER_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to stop MAVLink twin manager subscriber: {}");
-  //-------------------------------------------------------------------------------------------------------------
+  MAVLINK_TWIN_MANAGER_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to stop MAVLink twin manager subscriber: {}"),
+
+  STATE_MANAGER_TAK_TLS_CONTEXT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.STATE, "Failed to build TLS context for TAK server connection, falling back to plain TCP");
 
   private final @Getter String message;
   private final @Getter LEVEL level;

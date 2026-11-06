@@ -45,6 +45,7 @@ import io.mapsmessaging.state.mavlink.listener.ListenerManager;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacketFactory;
 import io.mapsmessaging.state.util.SessionHelper;
+import io.mapsmessaging.state.metrics.MessageOutcomeStats;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,6 +77,11 @@ import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_UNSU
 
 public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
+  private static final String DECODED_KEY = "decoded";
+  private static final String MAVLINK_NAME = "mavlink";
+  private static final String MESSAGE_ID_KEY = "messageId";
+
+
   private final Logger logger = LoggerFactory.getLogger(MavlinkStateSubscriber.class);
 
   private final StateLoopProtocol protocol;
@@ -92,7 +98,23 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
     this.namespaceTopicPath = mavlinkConfig.getTopic();
     this.sourceRegistry = new MavlinkSourceRegistry(mavlinkConfig);
     this.droneRegistry = registry;
-    this.twinUpdater = new MavlinkTwinUpdater(twinManager, new ListenerManager(twinManager), new MavlinkBootstrapRequestPublisher(twinManager, protocol));
+    this.twinUpdater = new MavlinkTwinUpdater(
+        twinManager,
+        new ListenerManager(twinManager),
+        new MavlinkBootstrapRequestPublisher(twinManager, protocol),
+        integrationSource(mavlinkConfig));
+  }
+
+  static String integrationSource(MavlinkTwinConfigDTO config) {
+    String name = config.getName();
+    if (name == null || name.isBlank()) {
+      name = MAVLINK_NAME;
+    }
+    String topic = config.getTopic();
+    if (topic == null || topic.isBlank()) {
+      topic = "unknown";
+    }
+    return name + "|" + topic;
   }
 
   MavlinkStateSubscriber(
@@ -214,6 +236,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       ProcessedFrame env = parseJson(message.getOpaqueData(), sourceName);
 
       if (env == null) {
+        MessageOutcomeStats.failure(MessageOutcomeStats.Source.MAVLINK, "malformed");
         return;
       }
 
@@ -223,12 +246,14 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       MavlinkPacket packet = MavlinkPacketFactory.create(env);
       if (packet == null) {
         logger.log(MAVLINK_STATE_UNSUPPORTED_PACKET_IGNORED, messageId, sourceName);
+        MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MAVLINK, "unsupported_message");
         return;
       }
 
       MavlinkKnownSourceDTO knownSource = sourceRegistry.getKnownSource(env);
       if (knownSource == null) {
         logger.log(MAVLINK_STATE_SOURCE_NOT_CONFIGURED, messageId, frame.getSystemId(), frame.getComponentId());
+        MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MAVLINK, "source_not_configured");
         return;
       }
 
@@ -237,6 +262,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
       if (droneInfo == null) {
         logger.log(MAVLINK_STATE_DRONE_NOT_CONFIGURED, messageId, sourceName, droneName);
+        MessageOutcomeStats.filtered(MessageOutcomeStats.Source.MAVLINK, "drone_not_configured");
         return;
       }
 
@@ -252,6 +278,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       updatingTwin = true;
       twinUpdater.updateTwinState(env, packet, context, knownSource, droneInfo);
     } catch (RuntimeException exception) {
+      MessageOutcomeStats.failure(MessageOutcomeStats.Source.MAVLINK, updatingTwin ? "twin_update_failed" : "conversion_failed");
       if (updatingTwin) {
         logger.log(MAVLINK_STATE_TWIN_UPDATE_FAILED, exception, droneName, messageId, sourceName);
       } else {
@@ -266,7 +293,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
   private TwinUpdateContext buildUpdateContext(ProcessedFrame env, String responseTopic) {
     TwinUpdateContext context = new TwinUpdateContext();
-    context.setUpdateSource("mavlink");
+    context.setUpdateSource(MAVLINK_NAME);
     context.setSourceInstanceId("mavlink:" + env.getFrame().getSystemId() + ":" + env.getFrame().getComponentId());
     context.setReceivedTime(Instant.now());
     context.setSequenceNumber((long) env.getFrame().getSequence());
@@ -284,14 +311,14 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
     try {
       JsonObject jsonObject = JsonParser.parseString(new String(opaqueData, StandardCharsets.UTF_8)).getAsJsonObject();
-      JsonObject mavlinkObject = jsonObject.getAsJsonObject("mavlink");
+      JsonObject mavlinkObject = jsonObject.getAsJsonObject(MAVLINK_NAME);
 
       if (mavlinkObject == null) {
         logger.log(MAVLINK_STATE_MAVLINK_OBJECT_MISSING, sourceName);
         return null;
       }
 
-      Object messageId = mavlinkObject.has("messageId") && !mavlinkObject.get("messageId").isJsonNull() ? mavlinkObject.get("messageId").getAsInt() : "unknown";
+      Object messageId = mavlinkObject.has(MESSAGE_ID_KEY) && !mavlinkObject.get(MESSAGE_ID_KEY).isJsonNull() ? mavlinkObject.get(MESSAGE_ID_KEY).getAsInt() : "unknown";
       JsonObject payloadObject = mavlinkObject.getAsJsonObject("payload");
 
       if (payloadObject == null) {
@@ -301,7 +328,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
       Frame frame = new Frame();
       frame.setVersion(Version.valueOf(mavlinkObject.get("version").getAsString()));
-      frame.setMessageId(mavlinkObject.get("messageId").getAsInt());
+      frame.setMessageId(mavlinkObject.get(MESSAGE_ID_KEY).getAsInt());
       frame.setSystemId(mavlinkObject.get("systemId").getAsInt());
       frame.setComponentId(mavlinkObject.get("componentId").getAsInt());
       frame.setSequence(mavlinkObject.get("sequence").getAsInt());
@@ -315,8 +342,8 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
       Map<String, Object> fields = new LinkedHashMap<>();
 
-      if (payloadObject.has("decoded") && payloadObject.get("decoded").isJsonObject()) {
-        fields = GsonFactory.createStrictJsonWithSafeFloats().fromJson(payloadObject.getAsJsonObject("decoded"), new TypeToken<LinkedHashMap<String, Object>>() {}.getType());
+      if (payloadObject.has(DECODED_KEY) && payloadObject.get(DECODED_KEY).isJsonObject()) {
+        fields = GsonFactory.createStrictJsonWithSafeFloats().fromJson(payloadObject.getAsJsonObject(DECODED_KEY), new TypeToken<LinkedHashMap<String, Object>>() {}.getType());
       }
 
       return new ProcessedFrame(Integer.toString(frame.getMessageId()), frame, fields, true, Collections.emptyList(), null);

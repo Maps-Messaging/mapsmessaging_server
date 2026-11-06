@@ -69,6 +69,9 @@ public class SerialEndPointServer extends EndPointServer implements SerialPortLi
     } else {
       ProtocolImplFactory factory = protocolFactory.getBoundedProtocol();
       try {
+        if (factory == null) {
+          throw new IOException("No protocol implementation available for " + protocols);
+        }
         Packet packet = new Packet(10, false);
         packet.flip();
         factory.create(endPoint, packet);

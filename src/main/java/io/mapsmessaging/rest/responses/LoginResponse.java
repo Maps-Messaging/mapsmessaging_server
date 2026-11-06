@@ -55,7 +55,7 @@ public class LoginResponse {
       RestAccessControl accessControl = AuthenticationContext.getInstance().getAccessControl();
 
       this.username = username;
-      uniqueId = userIdMap.getId();
+      uniqueId = userIdMap != null ? userIdMap.getId() : null;
       if(accessControl == null) {
         accessMap = new HashMap<>();
       }

@@ -56,7 +56,7 @@ public class GatewayManager {
 
   public GatewayManager(SatelliteConfigDTO satelliteConfigDTO, IncomingMessageHandler handler) {
     this.satelliteClient = ClientFactory.createSatelliteClient(satelliteConfigDTO);
-    this.pollInterval = (int)satelliteConfigDTO.getIncomingMessagePollInterval();
+    this.pollInterval = satelliteConfigDTO.getIncomingMessagePollInterval();
     this.handler = handler;
     knownTerminals = new ConcurrentHashMap<>();
     pendingMessages = new ArrayList<>();

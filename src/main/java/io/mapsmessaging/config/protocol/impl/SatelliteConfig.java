@@ -131,6 +131,7 @@ public class SatelliteConfig extends SatelliteConfigDTO implements Config {
       }
       if(deviceInfoUpdateMinutes != dto.getDeviceInfoUpdateMinutes()) {
         deviceInfoUpdateMinutes = dto.getDeviceInfoUpdateMinutes();
+        changed = true;
       }
       if(maxBufferSize != dto.getMaxBufferSize()) {
         maxBufferSize = dto.getMaxBufferSize();

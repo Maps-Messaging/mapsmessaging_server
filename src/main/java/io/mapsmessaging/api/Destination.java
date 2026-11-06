@@ -105,7 +105,8 @@ public class Destination implements BaseDestination {
   }
 
   public Message getRetained() throws IOException {
-    return destinationImpl.getMessage(destinationImpl.getRetainedIdentifier());
+    Long retainedId = destinationImpl.getRetainedIdentifier();
+    return retainedId == null ? null : destinationImpl.getMessage(retainedId);
   }
 
   public Schema getSchema(){

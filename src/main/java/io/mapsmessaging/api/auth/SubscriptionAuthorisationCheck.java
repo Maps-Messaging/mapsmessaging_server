@@ -19,6 +19,10 @@
 
 package io.mapsmessaging.api.auth;
 
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import io.mapsmessaging.MessageDaemon;
 import io.mapsmessaging.api.features.DestinationMode;
 import io.mapsmessaging.api.features.DestinationType;
@@ -33,6 +37,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SubscriptionAuthorisationCheck implements DestinationAuthorisationCheck {
+
+  private static final Logger logger = LoggerFactory.getLogger(SubscriptionAuthorisationCheck.class);
 
   private final Identity identity;
   private final SubscriptionContext subscriptionContext;
@@ -71,7 +77,7 @@ public class SubscriptionAuthorisationCheck implements DestinationAuthorisationC
       return AuthManager.getInstance().hasAllAccess(authRequests);
     }
     catch (Throwable e) {
-      e.printStackTrace();
+      logger.log(ServerLogMessages.SUBSCRIPTION_AUTHORISATION_CHECK_FAILED, name, e);
     }
     return false;
   }

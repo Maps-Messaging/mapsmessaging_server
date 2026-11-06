@@ -33,4 +33,16 @@ public class MavlinkKnownSourceDTO {
   )
   protected VehicleClass vehicleClass;
 
+  @Schema(
+      description = "Overrides the CoT type's classification segment (everything after "
+          + "\"a-<affiliation>-\") for this specific asset, instead of the generic "
+          + "vehicleClass-derived default - for when this asset isn't really representative of "
+          + "its configured vehicleClass (e.g. an unmanned platform sharing vehicleClass: USV "
+          + "with a real manned boat that should render differently). Example: \"S-C-U\" "
+          + "(Sea Surface, Combatant, Unmanned).",
+      example = "S-C-U",
+      nullable = true
+  )
+  protected String cotClassification;
+
 }

@@ -21,18 +21,16 @@ package io.mapsmessaging.config.device;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.device.OneWireBusConfigDTO;
 import io.mapsmessaging.dto.rest.config.device.SerialBusConfigDTO;
-import io.mapsmessaging.dto.rest.config.device.SerialBusDeviceDTO;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SerialDeviceBusConfig extends SerialBusConfigDTO  implements DeviceBusConfig {
+public class SerialDeviceBusConfig extends SerialBusConfigDTO implements DeviceBusConfig {
 
   public SerialDeviceBusConfig(ConfigurationProperties properties) {
     this.name = properties.getProperty("name");
-    this.enabled =properties.getBooleanProperty("enabled", enabled);
+    this.enabled = properties.getBooleanProperty("enabled", enabled);
     setScanTime(properties.getIntProperty("scanTime", scanTime));
     setFilter(properties.getProperty("filter", "ON_CHANGE"));
     setSelector(properties.getProperty("selector", null));
@@ -61,21 +59,19 @@ public class SerialDeviceBusConfig extends SerialBusConfigDTO  implements Device
     if (getFilter() != null) props.put("filter", getFilter());
     if (getSelector() != null) props.put("selector", getSelector());
     List<ConfigurationProperties> deviceList = new ArrayList<>();
-    for (SerialBusDeviceDTO device : this.devices) {
-      if (device instanceof SerialDeviceConfig serialDeviceConfig) {
-        deviceList.add(serialDeviceConfig.toConfigurationProperties());
-      }
-    }
+    this.devices.stream().filter(SerialDeviceConfig.class::isInstance).map(SerialDeviceConfig.class::cast)
+        .map(SerialDeviceConfig::toConfigurationProperties)
+        .forEachOrdered(deviceList::add);
     props.put("config", deviceList);
     return props;
   }
 
   public boolean update(BaseConfigDTO config) {
-    if (!(config instanceof OneWireBusConfig)) {
+    if (!(config instanceof SerialBusConfigDTO)) {
       return false;
     }
 
-    OneWireBusConfigDTO newConfig = (OneWireBusConfigDTO) config;
+    SerialBusConfigDTO newConfig = (SerialBusConfigDTO) config;
     boolean hasChanged = false;
 
     if (this.name == null || !this.name.equals(newConfig.getName())) {

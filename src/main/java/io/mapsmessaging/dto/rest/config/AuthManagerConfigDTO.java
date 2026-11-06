@@ -50,6 +50,15 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
   protected boolean authorisationEnabled = false;
 
   @Schema(
+      description = "Allow a missing or empty username to be treated as the anonymous identity.",
+      example = "false",
+      defaultValue = "false",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = false
+  )
+  protected boolean allowAnonymous = false;
+
+  @Schema(
       description = "Configuration properties for authentication",
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       additionalProperties = Schema.AdditionalPropertiesValue.TRUE,
@@ -252,6 +261,7 @@ public class AuthManagerConfigDTO extends BaseManagerConfigDTO {
     super("AuthManagerConfigDTO");
     this.authenticationEnabled = source.authenticationEnabled;
     this.authorisationEnabled = source.authorisationEnabled;
+    this.allowAnonymous = source.allowAnonymous;
     this.authConfig = source.authConfig == null ? null : Map.copyOf(source.authConfig);
 
     this.minimumPasswordLength = source.minimumPasswordLength;

@@ -46,7 +46,7 @@ public class JetStreamApiManager {
 
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
     for (RequestHandler manager : managers) {
-      if (subject.startsWith(manager.getType())) {
+      if (subject.equals(manager.getType()) || subject.startsWith(manager.getType() + ".")) {
         return manager.process(subject, frame, sessionState);
       }
     }

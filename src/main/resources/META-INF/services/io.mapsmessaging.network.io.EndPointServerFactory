@@ -50,3 +50,5 @@ io.mapsmessaging.network.io.impl.dtls.DTLSEndPointServerFactory
 # Rest based interconnected end points
 #
 io.mapsmessaging.network.protocol.impl.satellite.gateway.io.SatelliteServerFactory
+io.mapsmessaging.network.io.impl.memory.ShmEndPointServerFactory
+io.mapsmessaging.network.io.impl.memory.RdmaEndPointServerFactory

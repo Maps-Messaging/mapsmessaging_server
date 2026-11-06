@@ -21,12 +21,14 @@ package io.mapsmessaging.state.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakServerDTO;
 import io.mapsmessaging.state.config.capability.Authorities;
 import io.mapsmessaging.state.config.capability.PlanTaskType;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
@@ -118,6 +120,52 @@ class TwinManagerConfigTest {
     assertEquals(droneUuid.toString(), savedDroneInfo.getProperty("uuid"));
     assertInstanceOf(ConfigurationProperties.class, savedDroneInfo.get("description"));
     assertInstanceOf(ConfigurationProperties.class, savedDroneInfo.get("capabilities"));
+  }
+
+  @Test
+  void constructor_andWriter_roundTripDroneSpecialization() throws ReflectiveOperationException {
+    UUID droneUuid = UUID.randomUUID();
+    ConfigurationProperties root = new ConfigurationProperties();
+    ConfigurationProperties droneInfo = droneInfoProperties("drone-alpha", droneUuid);
+    ConfigurationProperties specialization = new ConfigurationProperties();
+    ConfigurationProperties surfaceVessel = new ConfigurationProperties();
+    ConfigurationProperties extra = new ConfigurationProperties();
+    ConfigurationProperties parameters = new ConfigurationProperties();
+    parameters.put("vessel_form", "RHIB");
+    extra.put("parameters", parameters);
+    surfaceVessel.put("app11_vessel_type", "NavalVesselTypeEnum_UNKNOWN");
+    surfaceVessel.put("length", 6.0d);
+    surfaceVessel.put("maximum_speed", 12.5d);
+    surfaceVessel.put("extra", extra);
+    specialization.put("$discriminator", "NodeSpecializationTypeEnum_SURFACE_VESSEL");
+    specialization.put("surface_vessel", surfaceVessel);
+    droneInfo.put("specialization", specialization);
+    root.put("droneInfo", List.of(droneInfo));
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    Map<String, Object> loadedSpecialization = config.getDroneInfo().get(0).getSpecialization();
+    assertEquals("NodeSpecializationTypeEnum_SURFACE_VESSEL", loadedSpecialization.get("$discriminator"));
+    Map<?, ?> loadedSurfaceVessel = assertInstanceOf(Map.class, loadedSpecialization.get("surface_vessel"));
+    assertEquals("NavalVesselTypeEnum_UNKNOWN", loadedSurfaceVessel.get("app11_vessel_type"));
+    assertEquals(6.0d, loadedSurfaceVessel.get("length"));
+    Map<?, ?> loadedExtra = assertInstanceOf(Map.class, loadedSurfaceVessel.get("extra"));
+    Map<?, ?> loadedParameters = assertInstanceOf(Map.class, loadedExtra.get("parameters"));
+    assertEquals("RHIB", loadedParameters.get("vessel_form"));
+
+    ConfigurationProperties saved = config.toConfigurationProperties();
+    List<?> savedDroneInfos = assertInstanceOf(List.class, saved.get("droneInfo"));
+    ConfigurationProperties savedDroneInfo = assertInstanceOf(ConfigurationProperties.class, savedDroneInfos.get(0));
+    ConfigurationProperties savedSpecialization = assertInstanceOf(ConfigurationProperties.class, savedDroneInfo.get("specialization"));
+    ConfigurationProperties savedSurfaceVessel = assertInstanceOf(ConfigurationProperties.class, savedSpecialization.get("surface_vessel"));
+    ConfigurationProperties savedExtra = assertInstanceOf(ConfigurationProperties.class, savedSurfaceVessel.get("extra"));
+    ConfigurationProperties savedParameters = assertInstanceOf(ConfigurationProperties.class, savedExtra.get("parameters"));
+
+    assertEquals("NodeSpecializationTypeEnum_SURFACE_VESSEL", savedSpecialization.getProperty("$discriminator"));
+    assertEquals("NavalVesselTypeEnum_UNKNOWN", savedSurfaceVessel.getProperty("app11_vessel_type"));
+    assertEquals(6.0d, savedSurfaceVessel.getDoubleProperty("length", 0.0d));
+    assertEquals(12.5d, savedSurfaceVessel.getDoubleProperty("maximum_speed", 0.0d));
+    assertEquals("RHIB", savedParameters.getProperty("vessel_form"));
   }
 
   @Test
@@ -333,6 +381,58 @@ class TwinManagerConfigTest {
     assertEquals("4817/catl/maps/{protocol}/{twinId}/{messageEnumName}", reloaded.getAdapterConfig().get("stanag").getProperty("topic"));
   }
 
+  @Test
+  void mavlink_known_sources_preserve_keys_and_values_for_single_and_list_forms()
+      throws ReflectiveOperationException {
+    for (boolean singleSource : List.of(true, false)) {
+      ConfigurationProperties source = new ConfigurationProperties();
+      source.put("name", "usv-001");
+      source.put("description", "Stickleback");
+      source.put("systemId", 3);
+      source.put("componentId", 1);
+      source.put("vehicleClass", "USV");
+      ConfigurationProperties mavlink = new ConfigurationProperties();
+      mavlink.put("topic", "/mavlink/3/#");
+      mavlink.put("knownSources", singleSource ? source : List.of(source));
+      ConfigurationProperties root = new ConfigurationProperties();
+      root.put("mavlink", mavlink);
+
+      TwinManagerConfig config = newTwinManagerConfig(root);
+      ConfigurationProperties packed = config.toConfigurationProperties();
+      List<?> mavlinkEntries = assertInstanceOf(List.class, packed.get("mavlink"));
+      ConfigurationProperties packedMavlink =
+          assertInstanceOf(ConfigurationProperties.class, mavlinkEntries.getFirst());
+      assertEquals("/mavlink/3/#", packedMavlink.getProperty("topic"));
+      List<?> knownSources = assertInstanceOf(List.class, packedMavlink.get("knownSources"));
+      ConfigurationProperties packedSource =
+          assertInstanceOf(ConfigurationProperties.class, knownSources.getFirst());
+      assertEquals("Stickleback", packedSource.getProperty("description"));
+      assertEquals("USV", packedSource.getProperty("vehicleClass"));
+      TwinManagerConfig restored = newTwinManagerConfig(packed);
+      assertEquals(3, restored.getMavlink().getFirst().getKnownSources().getFirst().getSystemId());
+      assertEquals(VehicleClass.USV,
+          restored.getMavlink().getFirst().getKnownSources().getFirst().getVehicleClass());
+    }
+  }
+
+  @Test
+  void drone_altitude_preserves_exact_key_and_value_through_round_trip()
+      throws ReflectiveOperationException {
+    ConfigurationProperties drone = droneInfoProperties("drone-altitude", UUID.randomUUID());
+    drone.put("altitudeMeters", 125.5);
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("droneInfo", drone);
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+    ConfigurationProperties packed = config.toConfigurationProperties();
+    List<?> entries = assertInstanceOf(List.class, packed.get("droneInfo"));
+    ConfigurationProperties packedDrone =
+        assertInstanceOf(ConfigurationProperties.class, entries.getFirst());
+    assertEquals(125.5, packedDrone.getDoubleProperty("altitudeMeters", -1.0));
+    TwinManagerConfig restored = newTwinManagerConfig(packed);
+    assertEquals(125.5, restored.getDroneInfo().getFirst().getAltitudeMeters(), 0.0);
+  }
+
   private ConfigurationProperties adapterProperties(String topic, int interval) {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("enabled", true);
@@ -370,6 +470,100 @@ class TwinManagerConfigTest {
     droneInfo.setUuid(uuid);
     droneInfo.setCapabilities(new TaskCapabilities());
     return droneInfo;
+  }
+
+  @Test
+  void tak_additionalServers_areParsedAndInvalidEntriesSkipped() throws ReflectiveOperationException {
+    ConfigurationProperties tak2 = new ConfigurationProperties();
+    tak2.put("hostname", "tak2.ic.example.org");
+    tak2.put("port", 8089);
+    tak2.put("tlsEnabled", true);
+    tak2.put("tlsContext", "TLSv1.3");
+    ConfigurationProperties missingHost = new ConfigurationProperties();
+    missingHost.put("port", 8089);
+    ConfigurationProperties tak = new ConfigurationProperties();
+    tak.put("hostname", "tak.ic.example.org");
+    tak.put("port", 8089);
+    tak.put("additionalServers", List.of(tak2, missingHost));
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("tak", tak);
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    assertEquals(1, config.getTak().getAdditionalServers().size());
+    TakServerDTO server = config.getTak().getAdditionalServers().get(0);
+    assertEquals("tak2.ic.example.org", server.getHostname());
+    assertEquals(8089, server.getPort());
+    assertTrue(server.isTlsEnabled());
+    assertEquals("TLSv1.3", server.getTlsContext());
+    assertNull(server.getKeyStore());
+    assertNull(server.getTrustStore());
+  }
+
+  @Test
+  void tak_single_additional_server_is_parsed_when_the_loader_unwraps_the_list() throws ReflectiveOperationException {
+    // MAPS' YAML loader replaces a list with exactly one entry by that entry.
+    ConfigurationProperties keyStore = new ConfigurationProperties();
+    keyStore.put("type", "PKCS12");
+    keyStore.put("path", "/opt/maps/conf/maps-cot-dist.p12");
+    ConfigurationProperties tak2 = new ConfigurationProperties();
+    tak2.put("hostname", "tak2.ic.example.org");
+    tak2.put("port", 8089);
+    tak2.put("tlsEnabled", true);
+    tak2.put("keyStore", keyStore);
+    ConfigurationProperties tak = new ConfigurationProperties();
+    tak.put("hostname", "tak.ic.example.org");
+    tak.put("port", 8089);
+    tak.put("additionalServers", tak2);
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("tak", tak);
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    assertEquals(1, config.getTak().getAdditionalServers().size());
+    TakServerDTO server = config.getTak().getAdditionalServers().get(0);
+    assertEquals("tak2.ic.example.org", server.getHostname());
+    assertEquals(8089, server.getPort());
+    assertTrue(server.isTlsEnabled());
+    assertNotNull(server.getKeyStore());
+  }
+
+  @Test
+  void tak_withoutAdditionalServers_defaultsToEmptyList() throws ReflectiveOperationException {
+    ConfigurationProperties tak = new ConfigurationProperties();
+    tak.put("hostname", "tak.ic.example.org");
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("tak", tak);
+
+    TwinManagerConfig config = newTwinManagerConfig(root);
+
+    assertTrue(config.getTak().getAdditionalServers().isEmpty());
+    ConfigurationProperties savedTak =
+        assertInstanceOf(ConfigurationProperties.class, config.toConfigurationProperties().get("tak"));
+    assertNull(savedTak.get("additionalServers"));
+  }
+
+  @Test
+  void toConfigurationProperties_writesAdditionalTakServersBack() throws ReflectiveOperationException {
+    ConfigurationProperties tak2 = new ConfigurationProperties();
+    tak2.put("hostname", "tak2.ic.example.org");
+    tak2.put("port", 8089);
+    tak2.put("tlsEnabled", true);
+    ConfigurationProperties tak = new ConfigurationProperties();
+    tak.put("hostname", "tak.ic.example.org");
+    tak.put("additionalServers", List.of(tak2));
+    ConfigurationProperties root = new ConfigurationProperties();
+    root.put("tak", tak);
+
+    ConfigurationProperties saved = newTwinManagerConfig(root).toConfigurationProperties();
+
+    ConfigurationProperties savedTak = assertInstanceOf(ConfigurationProperties.class, saved.get("tak"));
+    List<?> savedServers = assertInstanceOf(List.class, savedTak.get("additionalServers"));
+    assertEquals(1, savedServers.size());
+    ConfigurationProperties savedServer = assertInstanceOf(ConfigurationProperties.class, savedServers.get(0));
+    assertEquals("tak2.ic.example.org", savedServer.getProperty("hostname"));
+    assertEquals(8089, savedServer.getIntProperty("port", 0));
+    assertTrue(savedServer.getBooleanProperty("tlsEnabled", false));
   }
 
   private TwinManagerConfig newTwinManagerConfig(ConfigurationProperties properties)

@@ -45,7 +45,6 @@ public final class DynamicEnumSchemaInjector {
 
     // If your pipeline supports OpenAPI-style nullable, you can keep it,
     // but for config sanity I'd recommend nullable=false when "" is allowed.
-    // propertySchemaNode.put("nullable", false);
 
     return true;
   }

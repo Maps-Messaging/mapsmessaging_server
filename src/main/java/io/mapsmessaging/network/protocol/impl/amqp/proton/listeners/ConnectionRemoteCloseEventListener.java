@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.amqp.proton.listeners;
 
-import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.protocol.impl.amqp.AMQPProtocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import org.apache.qpid.proton.engine.Connection;
@@ -28,7 +27,6 @@ import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.EventType;
 
-import java.io.IOException;
 
 public class ConnectionRemoteCloseEventListener extends BaseEventListener {
 
@@ -41,13 +39,11 @@ public class ConnectionRemoteCloseEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     Connection conn = event.getConnection();
     if (conn.getLocalState() != EndpointState.CLOSED) {
+      // Proton must encode and flush our CLOSE before the underlying transport
+      // and protocol state are destroyed.
       conn.close();
-      try {
-        protocol.close();
-      } catch (IOException e) {
-        protocol.getLogger().log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
-      }
     }
+    engine.requestCloseAfterOutput();
     return true;
   }
 

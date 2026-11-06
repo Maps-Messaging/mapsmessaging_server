@@ -60,15 +60,24 @@ public class MessageStateManagerImpl extends BaseMessageStateManager {
       listener.remove(messageId);
     }
   }
+  @Override
+  public synchronized void expired(long messageId) {
+    super.expired(messageId);
+    for (MessageStateManagerListener listener : listeners) {
+      // A browser's BaseMessageStateManager invalidates its delivery state on
+      // expiry, while ordinary parent ACK retains the existing remove semantics.
+      listener.expired(messageId);
+    }
+  }
   //</editor-fold>
 
 
   //<editor-fold desc="Listener management APIs">
-  public void add(MessageStateManagerListener listener) {
+  public synchronized void add(MessageStateManagerListener listener) {
     listeners.add(listener);
   }
 
-  public void remove(MessageStateManagerListener listener) {
+  public synchronized void remove(MessageStateManagerListener listener) {
     listeners.remove(listener);
   }
   //</editor-fold>

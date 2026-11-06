@@ -4,6 +4,7 @@ import java.util.Map;
 
 public final class JsonSchemaGeneratorMain {
 
+  @SuppressWarnings("java:S106") // This CLI writes generated schemas to stdout and discovery failures to stderr for terminal or redirected use.
   public static void main(String[] args) {
 
     // 1) Construct the runtime generator

@@ -87,7 +87,7 @@ public class PublishListener extends PacketListener {
 
     if (!lookup.startsWith("$") || publish.getDestinationName().toLowerCase().startsWith(DestinationMode.SCHEMA.getNamespace())) {
       try {
-        processValidDestinations(publish, session, lookup, protocol, response, endPoint);
+        processValidDestinations(publish, session, protocol, response, endPoint);
       } catch (ExecutionException e) {
         try {
           protocol.close();
@@ -95,7 +95,7 @@ public class PublishListener extends PacketListener {
           //
         }
       } catch (InterruptedException e) {
-        //ignore
+        Thread.currentThread().interrupt();
       }
     } else {
       return response;
@@ -103,7 +103,7 @@ public class PublishListener extends PacketListener {
     return null;
   }
 
-  private void processValidDestinations(Publish publish, Session session, String lookup, Protocol protocol, MQTTPacket response, EndPoint endPoint)
+  private void processValidDestinations(Publish publish, Session session, Protocol protocol, MQTTPacket response, EndPoint endPoint)
       throws ExecutionException, InterruptedException {
     Message message = createMessage(
         publish.getPayload(),
@@ -113,9 +113,9 @@ public class PublishListener extends PacketListener {
         protocol.getProtocolMessageTransformation(),
         protocol
     );
-    ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
+    ParsedMessage parsed = protocol.parseInboundMessage(publish.getDestinationName(), message);
     if (parsed != null) {
-      lookup = parsed.getDestinationName();
+      String lookup = parsed.getDestinationName();
       message = parsed.getMessage();
       sendMessage(message, lookup, session, publish, protocol, response, endPoint);
     }

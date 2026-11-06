@@ -32,7 +32,7 @@ public class VersionHandler implements PacketHandler {
   @Override
   public boolean processPacket(LoRaProtocol loRaProtocol, Packet packet, int len, Logger logger) throws IOException {
     loRaProtocol.setSentVersion(true);
-    byte minorVersion = packet.get();
+    packet.get(); // Consume the minor version before processing configuration.
     byte[] config = loRaProtocol.getConfigBuffer();
     loRaProtocol.sendCommand(CONFIG, (byte) config.length, config);
     loRaProtocol.setSentConfig(true);

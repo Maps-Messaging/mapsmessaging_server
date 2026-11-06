@@ -27,6 +27,7 @@ import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class StatisticsConfig extends StatisticsConfigDTO implements Config {
 
@@ -67,10 +68,10 @@ public class StatisticsConfig extends StatisticsConfigDTO implements Config {
   public ConfigurationProperties toConfigurationProperties() {
     ConfigurationProperties config = new ConfigurationProperties();
     config.put("eventCount", eventCount);
-    config.put("ignoreList", ignoreList);
-    config.put("keyList", keyList);
+    config.put("ignoreList", ignoreList == null ? "" : String.join(",", ignoreList));
+    config.put("keyList", keyList == null ? "" : String.join(",", keyList));
     config.put("defaultAnalyser", statisticName);
-    return null;
+    return config;
   }
 
   @Override
@@ -81,15 +82,15 @@ public class StatisticsConfig extends StatisticsConfigDTO implements Config {
         eventCount = statisticsConfig.getEventCount();
         change = true;
       }
-      if(!ignoreList.equals(statisticsConfig.getIgnoreList())){
+      if(!Objects.equals(ignoreList, statisticsConfig.getIgnoreList())){
         ignoreList = statisticsConfig.getIgnoreList();
         change = true;
       }
-      if(keyList.equals(statisticsConfig.getKeyList())){
+      if(!Objects.equals(keyList, statisticsConfig.getKeyList())){
         keyList = statisticsConfig.getKeyList();
         change = true;
       }
-      if(!statisticName.equals(statisticsConfig.getStatisticName())){
+      if(!Objects.equals(statisticName, statisticsConfig.getStatisticName())){
         statisticName = statisticsConfig.getStatisticName();
         change = true;
       }

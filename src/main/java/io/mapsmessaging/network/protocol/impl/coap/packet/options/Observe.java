@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.coap.packet.options;
 
+import java.io.IOException;
+
 public class Observe extends BinaryOption {
 
   public Observe() {
@@ -28,6 +30,14 @@ public class Observe extends BinaryOption {
   public Observe(int val) {
     super(Constants.OBSERVE);
     this.value = val;
+  }
+
+  @Override
+  public void update(byte[] data) throws IOException {
+    if (data.length > 3) {
+      throw new IOException("Observe option exceeds three bytes");
+    }
+    super.update(data);
   }
 
   public boolean register(){

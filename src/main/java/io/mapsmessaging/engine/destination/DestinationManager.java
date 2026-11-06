@@ -336,16 +336,10 @@ public class DestinationManager implements DestinationFactory, Agent {
     }
 
     List<DestinationInfo> result = new ArrayList<>(destinations.size());
-    for (DestinationImpl destination : destinations.values()) {
-      if(!destination.getFullyQualifiedNamespace().startsWith("$")) {
-        result.add(
-            new DestinationInfo(
-                destination.getFullyQualifiedNamespace(),
-                destination.getResourceType()
-            )
-        );
-      }
-    }
+    destinations.values().stream()
+        .filter(destination -> !destination.getFullyQualifiedNamespace().startsWith("$"))
+        .map(destination -> new DestinationInfo( destination.getFullyQualifiedNamespace(), destination.getResourceType() ))
+        .forEachOrdered(result::add);
 
     return result;
   }

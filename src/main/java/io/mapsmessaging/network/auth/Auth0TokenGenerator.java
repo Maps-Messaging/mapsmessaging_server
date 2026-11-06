@@ -58,14 +58,15 @@ public class Auth0TokenGenerator implements TokenGenerator {
       String json = ow.writeValueAsString(body);
 
       HttpResponse<String> response;
-      HttpClient client = HttpClient.newHttpClient();
       HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create("https://" + domain + "/oauth/token"))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(json))
             .build();
 
-      response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      try (HttpClient client = HttpClient.newHttpClient()) {
+        response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      }
 
 
       if (response.statusCode() != 200) {

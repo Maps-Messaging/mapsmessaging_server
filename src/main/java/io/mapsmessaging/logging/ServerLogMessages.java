@@ -30,6 +30,22 @@ import lombok.Getter;
 public enum ServerLogMessages implements LogMessage {
 
   //-------------------------------------------------------------------------------------------------------------
+  // <editor-fold desc="Failure diagnostics">
+  MESSAGE_DAEMON_START_FAILED(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "Unexpected error starting the messaging daemon"),
+  AGGREGATOR_DRAIN_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to drain aggregator worker '{}'"),
+  AGGREGATOR_TIMEOUT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to check timeout for aggregator worker '{}'"),
+  SUBSCRIPTION_AUTHORISATION_CHECK_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHORISATION, "Failed to check subscription authorisation for '{}'"),
+  JSON_MAPPER_TRANSFORMATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.TRANSFORMATION, "Failed to apply JSON mapping for source '{}'"),
+  ROUTE_MANAGER_EVALUATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to evaluate connection routes"),
+  MQTT_SUBSCRIBE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to subscribe to MQTT topic '{}'"),
+  MQTT_SN_AUTHENTICATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.AUTHENTICATION, "Failed to process MQTT-SN authentication challenge"),
+  NATS_SUBSCRIBE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to subscribe to NATS subject '{}'"),
+  NMEA_PROTOCOL_CREATE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to create NMEA protocol"),
+  NMEA_PROTOCOL_CLOSE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to close NMEA protocol"),
+  STATS_REPORT_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to send server statistics report"),
+  CONFIG_UPGRADE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to process configuration manager '{}' during upgrade validation"),
+  // </editor-fold>
+
   // <editor-fold desc="File Lock Management">
   LOCKFILE_STALE_HEARTBEAT(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Heartbeat is stale, attempting forced takeover"),
   LOCKFILE_DELETED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Lock file deleted"),
@@ -55,14 +71,14 @@ public enum ServerLogMessages implements LogMessage {
 
   MESSAGE_DAEMON_NO_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "The supplied home directory, {}, does not exist"),
   MESSAGE_DAEMON_HOME_DIRECTORY(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "The home directory has been defined as {}"),
-  MESSAGE_DAEMON_SERVICE(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "\t\tLoaded service {}, {}"),
-  MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Service Manager {} loaded"),
+  MESSAGE_DAEMON_SERVICE(LEVEL.INFO, SERVER_CATEGORY.DAEMON, "\t\tLoaded service {}, {}"),
+  MESSAGE_DAEMON_SERVICE_LOADED(LEVEL.INFO, SERVER_CATEGORY.DAEMON, "Service Manager {} loaded"),
   MESSAGE_DAEMON_EXTENSION_PROTOCOL_NOT_AVAILABLE(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Protocol not available {}"),
   MESSAGE_DAEMON_PROTOCOL_NOT_AVAILABLE(LEVEL.ERROR, SERVER_CATEGORY.DAEMON, "Protocol not available, see stack trace for more details"),
 
   MESSAGE_DAEMON_AGENT_STARTING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Starting {} "),
   MESSAGE_DAEMON_AGENT_STARTED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Started {} took {}ms"),
-  MESSAGE_DAEMON_AGENT_FAILED(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "Failed to start {}, exception {}, system exitting"),
+  MESSAGE_DAEMON_AGENT_FAILED(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "Failed to start {}, system exiting"),
 
   MESSAGE_DAEMON_AGENT_STOPPING(LEVEL.AUDIT, SERVER_CATEGORY.DAEMON, "Stopping {} "),
   MESSAGE_DAEMON_AGENT_STOPPED(LEVEL.WARN, SERVER_CATEGORY.DAEMON, "Stopped {} took {}ms"),
@@ -111,6 +127,8 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="End Point Connection Management">
   END_POINT_CONNECTION_STARTING(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Starting connection manager"),
+  MQTT_REMOTE_SUBSCRIPTION_REJECTED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Remote subscription rejected: topic {}, SUBACK code {}, packet ID {}"),
+  END_POINT_CONNECTION_SUBSCRIPTION_ACK_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Remote subscription acknowledgement failed: {}"),
   END_POINT_CONNECTION_SUBSCRIPTION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to establish a {} subscription in between {} and {} "),
   END_POINT_CONNECTION_CLOSE_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Exception raised while closing end point"),
   END_POINT_CONNECTION_SUBSCRIPTION_ESTABLISHED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Established a {} subscription between {} and {}"),
@@ -363,12 +381,21 @@ public enum ServerLogMessages implements LogMessage {
   ECHO_CLOSE_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "EndPoint was closing but raised an exception"),
   // </editor-fold>
 
+  // <editor-fold desc="CoT Protocol log messages">
+  COT_CONNECTION_CREATED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "CoT passthrough connection created on {}"),
+  COT_SESSION_CREATE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "CoT passthrough session creation failed"),
+  COT_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to publish CoT event to {}"),
+  COT_CONNECTION_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Exception reading from CoT passthrough connection"),
+  COT_CONNECTION_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "CoT passthrough connection closed"),
+  COT_SEND_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to send CoT XML event"),
+  // </editor-fold>
+
   // <editor-fold desc="Stomp Protocol log messages">
   STOMP_STATE_ENGINE_FAILED_COMPLETION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed on frame completion callback"),
   STOMP_STARTING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Starting Stomp Protocol Implementation on {}"),
   STOMP_CLOSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Closing Stomp Implementation {}"),
   STOMP_PUSHED_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Frame for write, {}"),
-  STOMP_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to set maximum buffer size, is not an integer::{}, using default of {}"),
+  STOMP_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, ServerLogMessages.INVALID_MAXIMUM_BUFFER_MESSAGE),
   STOMP_FAILED_CLOSE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed in close"),
   STOMP_PROCESSING_FRAME(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Processing frame {}"),
   STOMP_PROCESSING_FRAME_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Processing frame raised exception, closing session"),
@@ -381,7 +408,7 @@ public enum ServerLogMessages implements LogMessage {
   NATS_STARTING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Starting Nats Protocol Implementation on {}"),
   NATS_CLOSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Closing Nats Implementation {}"),
   NATS_PUSHED_WRITE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Pushed Frame for write, {}"),
-  NATS_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to set maximum buffer size, is not an integer::{}, using default of {}"),
+  NATS_FAILED_MAXIMUM_BUFFER(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, ServerLogMessages.INVALID_MAXIMUM_BUFFER_MESSAGE),
   NATS_FAILED_CLOSE(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed in close"),
   NATS_PROCESSING_FRAME(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Processing frame {}"),
   NATS_PROCESSING_FRAME_EXCEPTION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Processing frame raised exception, closing session"),
@@ -416,7 +443,7 @@ public enum ServerLogMessages implements LogMessage {
   MQTT_ALREADY_CLOSED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Potentially already closed"),
   MQTT_KEEPALIVE_TIMOUT(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Checking for keepalive timeout period of {}"),
   MQTT_DISCONNECT_TIMEOUT(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Disconnecting session since keep alive period has expired with no frames received"),
-  MQTT_BUFFER_SIZE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to set maximum buffer size, is not an integer::{}, using default of {}"),
+  MQTT_BUFFER_SIZE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, ServerLogMessages.INVALID_MAXIMUM_BUFFER_MESSAGE),
   // </editor-fold>
 
   // <editor-fold desc="MQTT 5.0 log messages">
@@ -534,7 +561,7 @@ public enum ServerLogMessages implements LogMessage {
   PROPERTY_MANAGER_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Failed to load property {}"),
   PROPERTY_MANAGER_ENTRY_LOOKUP(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Lookup for {} found {} in {}"),
   PROPERTY_MANAGER_ENTRY_LOOKUP_FAILED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Lookup for {} not found, returning default {}"),
-  PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Configuration for {} failed schema validation at {}"),
+  PROPERTY_MANAGER_ENTRY_SCHEMA_ERROR(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Configuration for {} failed schema validation at {}"),
   // </editor-fold>
 
   //<editor-fold desc="Destination Manager log messages">
@@ -587,6 +614,8 @@ public enum ServerLogMessages implements LogMessage {
   DESTINATION_MANAGER_STOPPING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Shut down started"),
   DESTINATION_MANAGER_CLEARING(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Clear session id {} requested"),
   DESTINATION_MANAGER_DELETING_TEMPORARY_DESTINATION(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "\"Reloaded temp destination {}, now deleting"),
+  DESTINATION_REAPER_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Destination {} reaper failed during {}; retry delayed by at least 5 seconds"),
+  DESTINATION_REAPER_REMOVE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Destination {} failed removing completed message {}; holding for delayed retry"),
   DESTINATION_ERROR_SETTING_SCHEMA(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Error setting schema for destination {}"),
   //</editor-fold>
 
@@ -692,7 +721,7 @@ public enum ServerLogMessages implements LogMessage {
   CONSUL_PROPERTY_MANAGER_STORE(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Storing entry for {}"),
   //</editor-fold>
   //<editor-fold desc="System and Environment property access">
-  CONFIG_PROPERTY_ACCESS(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Getting property {} from system resulted in {}"),
+  CONFIG_PROPERTY_ACCESS(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Getting property {} from system resulted in {}"),
 
   //</editor-fold>
 
@@ -740,6 +769,7 @@ public enum ServerLogMessages implements LogMessage {
   SEMTECH_SENDING_PACKET(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Sending packet {}"),
   SEMTECH_CLOSE(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Closing Protocol"),
   SEMTECH_QUEUE_MESSAGE(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Message queued for delivery {}"),
+  SEMTECH_DROP_UNKNOWN_GATEWAY(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Dropping outbound message for unavailable gateway {}"),
   // </editor-fold>
 
   //<editor-fold desc="Server Discovery, mDNS, log messages">
@@ -803,7 +833,7 @@ public enum ServerLogMessages implements LogMessage {
 
   //<editor-fold desc="Network Interface status log messages">
   NETWORK_MONITOR_STATE_CHANGE(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Network interface {} changed state to {}"),
-  NETWORK_MONITOR_DISCOVERED_DEVICES(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Discovered {} network device as {}"),
+  NETWORK_MONITOR_DISCOVERED_DEVICES(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Discovered {} network device as {}"),
   NETWORK_MONITOR_EXCEPTION(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Network monitor raised exception {}"),
   NETWORK_MONITOR_RESOLVE_ERROR(LEVEL.ERROR, SERVER_CATEGORY.NETWORK, "Failed to resolve host name {} "),
   NETWORK_MONITOR_RESOLVE_SUCCESS(LEVEL.INFO, SERVER_CATEGORY.NETWORK, "Successfully resolved host name {} to {}"),
@@ -821,6 +851,7 @@ public enum ServerLogMessages implements LogMessage {
 
   AUTH_STARTUP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager failed to start up"),
   AUTH_SAVE_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager failed to save initial user configuration"),
+  AUTH_PASSWORD_PERMISSIONS_NOT_RESTRICTED(LEVEL.WARN, SERVER_CATEGORY.AUTHENTICATION, "Unable to restrict bootstrap password file '{}' to owner-only access; continuing with existing permissions"),
   AUTH_STOP_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHENTICATION, "Authentication manager raised exception during stop"),
   AUTH_ADDED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} added"),
   AUTH_DELETED_USER(LEVEL.AUDIT, SERVER_CATEGORY.AUTHENTICATION, "User: {} deleted"),
@@ -852,7 +883,7 @@ public enum ServerLogMessages implements LogMessage {
   LICENSE_SAVED_TO_FILE(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Saved license file to {}"),
   LICENSE_FAILED_SAVED_TO_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to save license file to {}"),
   LICENSE_FAILED_DELETE_FILE(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Failed to delete license file {}"),
-  LICENSE_LOADED(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Loaded license for {} by {}, created {}, valid after {} and till {} with features {}"),
+  LICENSE_LOADED(LEVEL.INFO, SERVER_CATEGORY.LICENSE, "Loaded license for {} by {}, created {}, valid after {} and till {} with features {}"),
   LICENSE_UNKNOWN_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Unknown feature name requested {}"),
   LICENSE_DISABLED_FEATURE_KEY(LEVEL.ERROR, SERVER_CATEGORY.LICENSE, "Feature is not enabled {}"),
 
@@ -967,4 +998,6 @@ public enum ServerLogMessages implements LogMessage {
       this.description = description;
     }
   }
+
+  private static final String INVALID_MAXIMUM_BUFFER_MESSAGE = "Failed to set maximum buffer size, is not an integer::{}, using default of {}";
 }

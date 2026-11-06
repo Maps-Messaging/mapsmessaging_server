@@ -57,6 +57,8 @@ public class SessionState implements CloseHandler, CompletionHandler {
   private final int maxBufferSize;
   private final Logger logger;
   private final Map<String, SubscribedEventManager> activeSubscriptions;
+  private final Map<String, String> destinationSubscriptionAliases;
+  private final Map<String, AtomicInteger> queueGroupCounters;
   private final Map<String, String> destinationMap;
   @Getter
   private final Map<String, List<SubscriptionContext>> subscriptions;
@@ -73,7 +75,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   @Getter
   @Setter
   private Session session;
-  private boolean isValid;
+  private volatile boolean isValid;
   private long requestCounter;
   private State currentState;
   @Getter
@@ -88,6 +90,8 @@ public class SessionState implements CloseHandler, CompletionHandler {
     subscriptions = new ConcurrentHashMap<>();
     logger = protocolImpl.getLogger();
     activeSubscriptions = new LinkedHashMap<>();
+    destinationSubscriptionAliases = new ConcurrentHashMap<>();
+    queueGroupCounters = new ConcurrentHashMap<>();
     session = null;
     isValid = true;
     currentState = new InitialServerState();
@@ -125,11 +129,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean addNamedConsumer(NamedConsumer namedConsumer) {
-    if(!namedConsumers.containsKey(namedConsumer.getName())) {
-      namedConsumers.put(namedConsumer.getName(), namedConsumer);
-      return true;
-    }
-    return false;
+    return namedConsumers.putIfAbsent(namedConsumer.getName(), namedConsumer) == null;
   }
 
   public void sendConnect(String username, String password) {
@@ -153,6 +153,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public boolean send(NatsFrame frame) {
+    if (!isValid) {
+      return false;
+    }
     protocol.writeFrame(frame);
     return true;
   }
@@ -160,7 +163,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
   public void sendPing() {
     if (outstandingPing.incrementAndGet() > 2) {
       ErrFrame errFrame = new ErrFrame("Ping timed out");
-      errFrame.setCompletionHandler(() -> protocol.close());
+      errFrame.setCompletionHandler(protocol::close);
       send(errFrame);
     } else {
       PingFrame pingFrame = new PingFrame();
@@ -171,19 +174,69 @@ public class SessionState implements CloseHandler, CompletionHandler {
 
   public void close() throws IOException {
     isValid = false;
-    if(session != null) {
-      CompletableFuture<Session> future = SessionManager.getInstance().closeAsync(session, false);
+    List<CompletableFuture<Session>> closures = new ArrayList<>();
+    IOException problem = closeConsumers(closures);
+    namedConsumers.clear();
+    jetStreamRequestManager.close();
+    activeSubscriptions.clear();
+    destinationSubscriptionAliases.clear();
+    queueGroupCounters.clear();
+    subscriptions.clear();
+    problem = queueSessionClosure(closures, problem);
+    problem = awaitClosures(closures, problem);
+    if (problem != null) {
+      throw problem;
+    }
+  }
+
+  private IOException closeConsumers(List<CompletableFuture<Session>> closures) {
+    IOException problem = null;
+    for (NamedConsumer consumer : namedConsumers.values()) {
       try {
-        activeSubscriptions.clear();
-        namedConsumers.clear();
-        jetStreamRequestManager.close();
-        subscriptions.clear();
-        future.get();
-      } catch (InterruptedException | ExecutionException e) {
-        Thread.currentThread().interrupt();
-        throw new IOException(e);
+        consumer.close();
+        if (consumer.getMapsSession() != null) {
+          closures.add(io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.DurableConsumerSession.close(
+              this, consumer.getMapsSession()));
+        }
+      } catch (RuntimeException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to clean up JetStream consumer", failed);
+        }
       }
     }
+    return problem;
+  }
+
+  private IOException queueSessionClosure(List<CompletableFuture<Session>> closures, IOException problem) {
+    if (session != null) {
+      try {
+        closures.add(SessionManager.getInstance().closeAsync(session, false));
+      } catch (RuntimeException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to queue NATS session closure", failed);
+        }
+      }
+    }
+    return problem;
+  }
+
+  private IOException awaitClosures(List<CompletableFuture<Session>> closures, IOException problem) {
+    for (CompletableFuture<Session> closing : closures) {
+      try {
+        closing.get();
+      } catch (InterruptedException interrupted) {
+        Thread.currentThread().interrupt();
+        if (problem == null) {
+          problem = new IOException("Interrupted closing NATS session", interrupted);
+        }
+        break;
+      } catch (ExecutionException failed) {
+        if (problem == null) {
+          problem = new IOException("Failed to close NATS session", failed.getCause());
+        }
+      }
+    }
+    return problem;
   }
 
   public void shutdown() {
@@ -220,7 +273,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
       if (isVerbose()) send(new OkFrame());
       return manager;
     } catch (IOException ioe) {
-      ioe.printStackTrace();
+      logger.log(ServerLogMessages.NATS_SUBSCRIBE_FAILED, destination, ioe);
       ErrFrame error = new ErrFrame();
       error.setError("Error encounted subscribing to " + destination+", "+ioe.getMessage());
       send(error);
@@ -228,29 +281,68 @@ public class SessionState implements CloseHandler, CompletionHandler {
     return null;
   }
 
-  public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
+  public SubscribedEventManager subscribeJetStream(String subject, String alias, ClientAcknowledgement acknowledgement, int maxReceive)
+      throws IOException {
+    SubscriptionContextBuilder builder = new SubscriptionContextBuilder(convertSubject(subject), acknowledgement);
+    builder.setAlias(alias);
+    builder.setSync(true);
+    builder.setNoLocalMessages(false);
+    builder.setReceiveMaximum(maxReceive);
+    return createSubscription(builder.build());
+  }
+
+  public synchronized SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
     if (context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }
     List<SubscriptionContext> existing = subscriptions.get(context.getDestinationName());
     if (existing != null) {
       existing.add(context);
-      return activeSubscriptions.get(context.getAlias());
+      String registeredAlias = destinationSubscriptionAliases.get(context.getDestinationName());
+      SubscribedEventManager subscription = activeSubscriptions.get(registeredAlias);
+      activeSubscriptions.put(context.getAlias(), subscription);
+      return subscription;
     }
     existing = new ArrayList<>();
     existing.add(context);
     subscriptions.put(context.getDestinationName(), existing);
     SubscribedEventManager subscription = getSession().addSubscription(context);
     activeSubscriptions.put(context.getAlias(), subscription);
+    destinationSubscriptionAliases.put(context.getDestinationName(), context.getAlias());
     session.resumeState();
     return subscription;
   }
 
-  public void removeSubscription(String subscriptionId) {
-    SubscribedEventManager subscription = activeSubscriptions.remove(subscriptionId);
-    if (subscription != null) {
-      session.removeSubscription(subscriptionId);
+  public synchronized void removeSubscription(String subscriptionId) {
+    for (Map.Entry<String, List<SubscriptionContext>> entry : subscriptions.entrySet()) {
+      String destination = entry.getKey();
+      List<SubscriptionContext> contexts = entry.getValue();
+      if (!contexts.removeIf(context -> subscriptionId.equals(context.getAlias()))) {
+        continue;
+      }
+
+      String registeredAlias = destinationSubscriptionAliases.get(destination);
+      if (contexts.isEmpty()) {
+        subscriptions.remove(destination, contexts);
+        destinationSubscriptionAliases.remove(destination);
+        if (registeredAlias != null) {
+          activeSubscriptions.remove(registeredAlias);
+          session.removeSubscription(registeredAlias);
+        }
+      } else if (!subscriptionId.equals(registeredAlias)) {
+        activeSubscriptions.remove(subscriptionId);
+      }
+      // Keep the original registered alias until the last context is removed.
+      // The underlying MAPS subscription is still registered under that alias.
     }
+  }
+
+  public int nextQueueGroupIndex(String destinationName, String sharedName, int size) {
+    if (size <= 1) {
+      return 0;
+    }
+    String key = destinationName + "\u0000" + sharedName;
+    return Math.floorMod(queueGroupCounters.computeIfAbsent(key, ignored -> new AtomicInteger()).getAndIncrement(), size);
   }
 
   public String getSessionId() {
@@ -292,7 +384,7 @@ public class SessionState implements CloseHandler, CompletionHandler {
       msg = new HMsgFrame(getMaxBufferSize());
       StringBuilder sb = new StringBuilder("NATS/1.0\r\n");
       for (Map.Entry<String, TypedData> entry : message.getDataMap().entrySet()) {
-        sb.append(entry.getKey().replace(" ", "_")).append(": ").append("" + entry.getValue().getData()).append("\r\n");
+        sb.append(entry.getKey().replace(" ", "_")).append(": ").append(String.valueOf(entry.getValue().getData())).append("\r\n");
       }
       sb.append("\r\n");
       ((HMsgFrame) msg).setHeaderBytes(sb.toString().getBytes());

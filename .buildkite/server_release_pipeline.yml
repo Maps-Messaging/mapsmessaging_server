@@ -16,6 +16,8 @@ steps:
       - sudo ./packaging/docker_build_release.sh $(buildkite-agent secret get DOCKER_RELEASE_USERNAME) $(buildkite-agent secret get DOCKER_RELEASE_PASSWORD) $(buildkite-agent secret get AWS_ECR_PASSWORD)
 
 
+    artifact_paths:
+      - "target/license-baseline/**/*"
     agents:
-      queue: "java_build_queue"
+      queue: "java_build_queue_aws"
 

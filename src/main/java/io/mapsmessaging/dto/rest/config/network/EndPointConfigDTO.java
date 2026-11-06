@@ -32,6 +32,8 @@ import lombok.EqualsAndHashCode;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
+    @JsonSubTypes.Type(value = ShmConfigDTO.class, name = "shm"),
+    @JsonSubTypes.Type(value = RdmaConfigDTO.class, name = "rdma"),
     @JsonSubTypes.Type(value = DtlsConfigDTO.class, name = "dtls"),
     @JsonSubTypes.Type(value = LoRaSerialConfigDTO.class, name = "loraSerial"),
     @JsonSubTypes.Type(value = LoRaChipConfigDTO.class, name = "loraDevice"),
@@ -46,6 +48,8 @@ import lombok.EqualsAndHashCode;
     description = "Abstract base class for all endpoint configurations",
     discriminatorProperty = "type",
     discriminatorMapping = {
+        @DiscriminatorMapping(value = "shm", schema = ShmConfigDTO.class),
+        @DiscriminatorMapping(value = "rdma", schema = RdmaConfigDTO.class),
         @DiscriminatorMapping(value = "dtls", schema = DtlsConfigDTO.class),
         @DiscriminatorMapping(value = "loraSerial", schema = LoRaSerialConfigDTO.class),
         @DiscriminatorMapping(value = "loraDevice", schema = LoRaChipConfigDTO.class),
@@ -71,7 +75,7 @@ public class EndPointConfigDTO extends BaseConfigDTO {
 
   @Schema(description = "Type of the endpoint",
       example = "tcp",
-      allowableValues = {"tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial", "satellite", "canbus"},
+      allowableValues = {"shm", "rdma", "tcp", "ssl", "udp", "dtls", "loraDevice", "loraSerial", "serial", "satellite", "canbus"},
       requiredMode = Schema.RequiredMode.REQUIRED
   )
   protected String type;

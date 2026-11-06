@@ -24,10 +24,16 @@ public class SendController {
 
   private final SendPacket sendPacket;
   private int index;
+  private int blockNumber;
+  private int blockSize;
+  private int offset;
 
   public SendController(byte[] buffer, int blockSize){
     sendPacket = new SendPacket(buffer, blockSize);
+    this.blockSize = blockSize;
     index = 0;
+    blockNumber = 0;
+    offset = 0;
   }
 
   public byte[] get(){
@@ -35,19 +41,25 @@ public class SendController {
   }
 
   public int getBlockNumber(){
-    return index;
+    return blockNumber;
   }
 
   public void setBlockNumber(int blockNumber){
+    this.blockNumber = blockNumber;
     index = blockNumber;
+    offset = blockNumber * blockSize;
   }
 
   public void ack(int block){
-    if(block == index)  index++;
+    if (block == blockNumber) {
+      offset += get().length;
+      index++;
+      blockNumber++;
+    }
   }
 
   public boolean isLast(){
-    return index+1 == sendPacket.getSize();
+    return index + 1 == sendPacket.getSize();
   }
 
   public boolean isComplete(){
@@ -56,5 +68,7 @@ public class SendController {
 
   public void resize(int newSize) {
     sendPacket.resize(newSize, index);
+    blockSize = newSize;
+    blockNumber = offset / blockSize;
   }
 }

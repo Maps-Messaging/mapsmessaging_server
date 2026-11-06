@@ -1,0 +1,324 @@
+/*
+ *
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ *
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import io.mapsmessaging.config.NetworkManagerConfig;
+import io.mapsmessaging.config.protocol.impl.MqttSnConfig;
+import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.mqttsn.ConnectOptions;
+import io.mapsmessaging.mqttsn.MqttSnCodec;
+import io.mapsmessaging.mqttsn.PacketType;
+import io.mapsmessaging.mqttsn.QoS;
+import io.mapsmessaging.mqttsn.PublishOptions;
+import io.mapsmessaging.mqttsn.SubscribeOptions;
+import io.mapsmessaging.mqttsn.TopicRef;
+import io.mapsmessaging.mqttsn.protection.ProtectionCodec;
+import io.mapsmessaging.mqttsn.protection.ProtectionEnvelope;
+import io.mapsmessaging.mqttsn.protection.bc.BouncyCastleProtectionProvider;
+import io.mapsmessaging.network.EndPointManager;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v2_0.protection.MqttSn2CryptoProviders;
+import io.mapsmessaging.network.EndPointURLFactory;
+import io.mapsmessaging.network.io.impl.udp.UDPEndPointServerFactory;
+import io.mapsmessaging.test.BaseTestConfig;
+import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.security.KeyStore;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Map;
+import javax.crypto.spec.SecretKeySpec;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+/**
+ * Live secured UDP listener, Authentication keystore, indexed counters and
+ * independent mqtt-sn-2-client wire protection in both directions.
+ */
+class MqttSn2ProtectedLiveUdpInteropTest extends BaseTestConfig {
+  @TempDir(factory = TargetDataTempDirFactory.class) Path root;
+
+  private static final byte[] CLIENT = HexFormat.of().parseHex("0102030405060708");
+  private static final byte[] GATEWAY = HexFormat.of().parseHex("aabbccddeeff0011");
+  private static final char[] STORE_PASS = "interop-store-pass".toCharArray();
+  private static final char[] ENTRY_PASS = "interop-entry-pass".toCharArray();
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, 2, 3, 4, 0x40, 0x41, 0x42, 0x43, 0x44,
+      0x45, 0x46, 0x47, 0x48, 0x49})
+  void securedListenerAcceptsReferenceClientAndProtectsReplies(int scheme) throws Exception {
+    Path directory = root.resolve("scheme-" + scheme);
+    Files.createDirectories(directory);
+    Path keyStoreFile = directory.resolve("keys.jceks");
+    byte[] material = keyBytes(scheme);
+    createKeyStore(keyStoreFile, scheme, material);
+    int port;
+    try (DatagramSocket availablePort = new DatagramSocket(0)) {
+      port = availablePort.getLocalPort();
+    }
+
+    var config = new ConfigurationProperties(Map.of(
+        "protection", new ConfigurationProperties(Map.of(
+            "enabled", true,
+            "senderIdentifier", HexFormat.of().formatHex(GATEWAY),
+            "outboundScheme", scheme,
+            "acceptedSchemes", Integer.toString(scheme),
+            "counterDirectory", directory.resolve("counters").toString(),
+            "keyStore", new ConfigurationProperties(Map.of(
+                "type", "JCEKS", "store", "file",
+                "path", keyStoreFile.toString(),
+                "passphrase", new String(STORE_PASS))),
+            "senderAliases", new ConfigurationProperties(Map.of(
+                HexFormat.of().formatHex(CLIENT) + ":" + scheme, "client-key",
+                HexFormat.of().formatHex(GATEWAY) + ":" + scheme, "gateway-key"))))));
+    var protocolConfig = new MqttSnConfig(config, () -> ENTRY_PASS.clone());
+    // Fail at the precise cryptographic/keystore boundary rather than hiding
+    // an inbound rejection as a generic three-second UDP receive timeout.
+    var keystoreConfig = (ConfigurationProperties)
+        ((ConfigurationProperties) config.get("protection")).get("keyStore");
+    var aliasConfig = (ConfigurationProperties)
+        ((ConfigurationProperties) config.get("protection")).get("senderAliases");
+    Map<String, String> aliases = new java.util.HashMap<>();
+    for (var entry : aliasConfig.getMap().entrySet()) {
+      aliases.put(entry.getKey().toString(), entry.getValue().toString());
+    }
+    var keyResolver = new KeyStoreProtectionKeyResolver(keystoreConfig, aliases, ENTRY_PASS);
+    var provider = new BouncyCastleProtectionProvider(context -> material.clone());
+    byte[] connect = MqttSnCodec.encodeConnect(
+        new ConnectOptions(true, false, false, 1, 60, 0,
+            "secure-" + scheme + "-" + System.nanoTime()));
+    byte[] wrapped = wrap(provider, scheme, 1, connect);
+    try (var preflightCounters = new MqttSn2IndexedCounterStore(
+        directory.resolve("preflight-counters"))) {
+      var preflight = new MqttSn2ProtectionSession(
+          new MqttSn2CryptoProviders(), keyResolver::resolveSecretKey,
+          preflightCounters, java.util.Set.of(scheme), scheme, GATEWAY);
+      byte[] decoded = new byte[connect.length];
+      MqttSn2ProtectionPolicy.Authenticated verified =
+          preflight.receiveAuthenticated(ByteBuffer.wrap(wrapped));
+      verified.plaintext().get(decoded);
+      assertArrayEquals(CLIENT, verified.senderIdentifier(),
+          "Authenticated sender ID must survive protection verification");
+      assertArrayEquals(connect, decoded, "Reference client and keystore-backed server protection must agree");
+      byte[] serverReply = MqttSnCodec.encode(PacketType.PINGRESP, new byte[]{0, 2});
+      var protectedReply = preflight.send(ByteBuffer.wrap(serverReply));
+      byte[] outbound = new byte[protectedReply.remaining()];
+      protectedReply.get(outbound);
+      assertArrayEquals(serverReply, ProtectionCodec.decode(outbound, provider).mqttSnPacket(),
+          "Keystore-backed server outgoing protection must be accepted by the client");
+
+    }
+    EndPointServerConfigDTO endpoint = new EndPointServerConfigDTO();
+    endpoint.setName("mqtt-sn-secure-test-" + scheme);
+    endpoint.setUrl("udp://127.0.0.1:" + port + "/");
+    endpoint.setProtocolConfigs(List.of(protocolConfig));
+    EndPointServerConfigDTO existing = NetworkManagerConfig.getInstance()
+        .getEndPointServerConfigList().stream()
+        .filter(candidate -> candidate.getProtocolConfig("mqtt-sn") != null)
+        .findFirst().orElseThrow();
+    endpoint.setEndPointConfig(existing.getEndPointConfig());
+    endpoint.setAuthenticationRealm(existing.getAuthenticationRealm());
+
+    try (EndPointManager secured = new EndPointManager(
+        EndPointURLFactory.getInstance().create(endpoint.getUrl()),
+        new UDPEndPointServerFactory(), endpoint, null);
+         DatagramSocket client = new DatagramSocket()) {
+      secured.start();
+      client.setSoTimeout(3_000);
+      InetSocketAddress remote = new InetSocketAddress("127.0.0.1", port);
+      send(client, remote, wrapped);
+      byte[] connAckWire = receive(client);
+      var connAck = ProtectionCodec.decode(connAckWire, provider).mqttSnPacket();
+      assertEquals(PacketType.CONNACK, MqttSnCodec.decode(ByteBuffer.wrap(connAck)).type(),
+          "Secured listener must encrypt/authenticate CONNACK scheme " + scheme);
+
+      // Authenticate a second request and response through the same real UDP session.
+      send(client, remote, wrap(provider, scheme, 2, MqttSnCodec.encodePingReq(2)));
+      var ping = ProtectionCodec.decode(receive(client), provider).mqttSnPacket();
+      assertEquals(PacketType.PINGRESP, MqttSnCodec.decode(ByteBuffer.wrap(ping)).type());
+
+      // Complete subscription and data delivery through the protected session.
+      String topic = "v2/secure/" + scheme + "/" + System.nanoTime();
+      send(client, remote, wrap(provider, scheme, 3,
+          MqttSnCodec.encodeSubscribe(new SubscribeOptions(
+              7, TopicRef.filter(topic), 0, false, QoS.AT_MOST_ONCE, false))));
+      var suback = ProtectionCodec.decode(receive(client), provider).mqttSnPacket();
+      assertEquals(PacketType.SUBACK, MqttSnCodec.decode(ByteBuffer.wrap(suback)).type());
+      byte[] payload = ("secure-" + scheme).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+      send(client, remote, wrap(provider, scheme, 4,
+          MqttSnCodec.encodePublish(new PublishOptions(
+              QoS.AT_MOST_ONCE, false, false, 0, TopicRef.name(topic), payload))));
+      var data = ProtectionCodec.decode(receive(client), provider).mqttSnPacket();
+      var publish = MqttSnCodec.decode(ByteBuffer.wrap(data));
+      assertEquals(PacketType.PUBLISH, publish.type());
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(publish).payload());
+
+      // QoS 1 must produce a protected PUBACK and deliver through routing.
+      send(client, remote, wrap(provider, scheme, 5,
+          MqttSnCodec.encodePublish(new PublishOptions(
+              QoS.AT_LEAST_ONCE, false, false, 20, TopicRef.name(topic), payload))));
+      var firstQ1 = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      var secondQ1 = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      java.util.Set<PacketType> q1Types = java.util.Set.of(firstQ1.type(), secondQ1.type());
+      assertEquals(java.util.Set.of(PacketType.PUBACK, PacketType.PUBLISH), q1Types);
+      var qosOneAck = firstQ1.type() == PacketType.PUBACK ? firstQ1 : secondQ1;
+      Integer qosOneReason = MqttSnCodec.decodeAck(qosOneAck).reasonCode();
+      assertTrue(qosOneReason == null || qosOneReason == 0,
+          "QoS1 PUBACK must confirm successful acceptance, actual reason " + qosOneReason);
+      var q1Delivered = firstQ1.type() == PacketType.PUBLISH ? firstQ1 : secondQ1;
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(q1Delivered).payload());
+      assertEquals(QoS.AT_MOST_ONCE, MqttSnCodec.decodePublish(q1Delivered).qos(),
+          "QoS 0 subscription must never receive QoS 1 publication at QoS 1");
+
+      // QoS 2 uses PUBREC/PUBREL/PUBCOMP over authenticated UDP.
+      send(client, remote, wrap(provider, scheme, 6,
+          MqttSnCodec.encodePublish(new PublishOptions(
+              QoS.EXACTLY_ONCE, false, false, 21, TopicRef.name(topic), payload))));
+      var rec = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      assertEquals(PacketType.PUBREC, rec.type());
+      assertEquals(21, MqttSnCodec.decodeAck(rec).packetIdentifier());
+      assertTrue(MqttSnCodec.decodeAck(rec).reasonCode() == null
+              || MqttSnCodec.decodeAck(rec).reasonCode() == 0,
+          "QoS2 PUBREC must signal accepted transaction; actual reason "
+              + MqttSnCodec.decodeAck(rec).reasonCode());
+      send(client, remote, wrap(provider, scheme, 7,
+          MqttSnCodec.encodeAck(PacketType.PUBREL, 21, null)));
+      var firstQ2 = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      byte[] secondQ2Wire;
+      try {
+        secondQ2Wire = receive(client);
+      } catch (SocketTimeoutException missingDelivery) {
+        throw new AssertionError("Protected QoS2 only delivered " + firstQ2.type() + " for scheme " + scheme
+            + " after PUBREL; expected both PUBCOMP and subscribed PUBLISH"
+            + " (packet identifier 21, topic " + topic + ")", missingDelivery);
+      }
+      var secondQ2 = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(secondQ2Wire, provider).mqttSnPacket()));
+      assertEquals(java.util.Set.of(PacketType.PUBCOMP, PacketType.PUBLISH),
+          java.util.Set.of(firstQ2.type(), secondQ2.type()));
+      var q2Delivered = firstQ2.type() == PacketType.PUBLISH ? firstQ2 : secondQ2;
+      assertArrayEquals(payload, MqttSnCodec.decodePublish(q2Delivered).payload());
+      assertEquals(QoS.AT_MOST_ONCE, MqttSnCodec.decodePublish(q2Delivered).qos(),
+          "QoS 0 subscription must cap QoS 2 publication delivery to QoS 0");
+
+      // A retransmitted PUBREL must complete idempotently without another
+      // subscriber delivery, even after the original PUBCOMP has been sent.
+      send(client, remote, wrap(provider, scheme, 8,
+          MqttSnCodec.encodeAck(PacketType.PUBREL, 21, null)));
+      var duplicateCompletion = MqttSnCodec.decode(ByteBuffer.wrap(
+          ProtectionCodec.decode(receive(client), provider).mqttSnPacket()));
+      assertEquals(PacketType.PUBCOMP, duplicateCompletion.type());
+      assertEquals(21, MqttSnCodec.decodeAck(duplicateCompletion).packetIdentifier());
+      client.setSoTimeout(350);
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+      client.setSoTimeout(3_000);
+
+      // Duplicate authenticated sender counter cannot be applied twice.
+      client.setSoTimeout(350);
+      send(client, remote, wrapped);
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+      // Plaintext traffic must also be rejected on this protected session.
+      send(client, remote, MqttSnCodec.encodePingReq(3));
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+      // Cryptographically valid frames from unknown senders must not be accepted.
+      var unknownSender = new ProtectionEnvelope(scheme, 1, new byte[8],
+          new byte[]{7, 8, 9, 10}, new byte[0],
+          ByteBuffer.allocate(4).putInt(8).array(), MqttSnCodec.encodePingReq(6));
+      send(client, remote, ProtectionCodec.encode(unknownSender, provider));
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+
+      // The right sender identity with a different symmetric key also fails.
+      byte[] wrongMaterial = material.clone();
+      wrongMaterial[0] ^= 0x7f;
+      var wrongKeyProvider = new BouncyCastleProtectionProvider(ctx -> wrongMaterial);
+      send(client, remote, wrap(wrongKeyProvider, scheme, 9, MqttSnCodec.encodePingReq(7)));
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+
+      // Corrupt ciphertext/tag must never return an authenticated response.
+      byte[] corrupt = wrap(provider, scheme, 10, MqttSnCodec.encodePingReq(4));
+      corrupt[corrupt.length - 1] ^= 1;
+      send(client, remote, corrupt);
+      assertThrows(SocketTimeoutException.class, () -> receive(client));
+    }
+  }
+
+  private static byte[] wrap(BouncyCastleProtectionProvider provider, int scheme,
+      int counter, byte[] inner) {
+    return ProtectionCodec.encode(new ProtectionEnvelope(scheme, 1, CLIENT,
+        new byte[]{11, 12, 13, 14}, new byte[0],
+        ByteBuffer.allocate(4).putInt(counter).array(), inner), provider);
+  }
+
+  private static byte[] keyBytes(int scheme) {
+    int bytes = switch (scheme) {
+      case 0, 1 -> 32;
+      case 2, 0x40, 0x43, 0x46 -> 16;
+      case 3, 0x41, 0x44, 0x47 -> 24;
+      case 4, 0x42, 0x45, 0x48, 0x49 -> 32;
+      default -> throw new IllegalArgumentException("Unsupported scheme " + scheme);
+    };
+    byte[] key = new byte[bytes];
+    for (int i = 0; i < bytes; i++) key[i] = (byte) (i + 1);
+    return key;
+  }
+
+  private static void createKeyStore(Path file, int scheme, byte[] material) throws Exception {
+    KeyStore store = KeyStore.getInstance("JCEKS");
+    store.load(null, STORE_PASS);
+    String algorithm = switch (scheme) {
+      case 0 -> "HmacSHA256";
+      case 1 -> "HmacSHA3-256";
+      case 0x49 -> "ChaCha20";
+      default -> "AES";
+    };
+    var entry = new KeyStore.SecretKeyEntry(new SecretKeySpec(material, algorithm));
+    var protection = new KeyStore.PasswordProtection(ENTRY_PASS);
+    store.setEntry("client-key", entry, protection);
+    store.setEntry("gateway-key", entry, protection);
+    try (var output = Files.newOutputStream(file)) {
+      store.store(output, STORE_PASS);
+    }
+  }
+
+  private static void send(DatagramSocket socket, InetSocketAddress destination, byte[] data)
+      throws Exception {
+    socket.send(new DatagramPacket(data, data.length, destination));
+  }
+
+  private static byte[] receive(DatagramSocket socket) throws Exception {
+    byte[] buffer = new byte[65535];
+    DatagramPacket datagram = new DatagramPacket(buffer, buffer.length);
+    socket.receive(datagram);
+    return java.util.Arrays.copyOf(datagram.getData(), datagram.getLength());
+  }
+}

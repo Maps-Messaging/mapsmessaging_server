@@ -48,7 +48,11 @@ public class UDPFacadeEndPoint extends EndPoint {
     this.endPoint = endPoint;
     this.fromAddress = fromAddress;
     List<String> end = new ArrayList<>(endPoint.getJMXTypePath());
-    end.remove(end.size() - 1);
+    // Programmatic endpoints may have no JMX parent hierarchy. Do not
+    // fail the UDP client connection when management registration is absent.
+    if (!end.isEmpty()) {
+      end.remove(end.size() - 1);
+    }
 
     String entry = strip("endPointName=" + endPoint.getName());
     end.add(entry);

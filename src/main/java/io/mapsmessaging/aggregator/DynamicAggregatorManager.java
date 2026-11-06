@@ -240,6 +240,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     return copy;
   }
 
+  @SuppressWarnings("java:S1168") // Null denotes no topic match; an empty list denotes a successful match without wildcards.
   private List<String> matchAndExtract(String templateTopic, String destinationTopic) {
     String[] templateTokens = templateTopic.split("/", -1);
     String[] destinationTokens = destinationTopic.split("/", -1);
@@ -262,7 +263,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
       if ("#".equals(templateToken)) {
         StringBuilder tail = new StringBuilder();
         for (int index = destinationIndex; index < destinationTokens.length; index++) {
-          if (tail.length() > 0) {
+          if (!tail.isEmpty()) {
             tail.append('/');
           }
           tail.append(destinationTokens[index]);
@@ -304,10 +305,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
       }
 
       String token = templateTokens[index];
-      if ("+".equals(token)) {
-        resolved.append(wildcardValues.get(wildcardIndex));
-        wildcardIndex++;
-      } else if ("#".equals(token)) {
+      if ("+".equals(token) || "#".equals(token)) {
         resolved.append(wildcardValues.get(wildcardIndex));
         wildcardIndex++;
       } else {

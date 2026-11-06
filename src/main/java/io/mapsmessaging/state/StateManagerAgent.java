@@ -20,6 +20,8 @@
 package io.mapsmessaging.state;
 
 
+import io.mapsmessaging.config.NetworkConnectionManagerConfig;
+import io.mapsmessaging.config.network.EndPointConnectionServerConfig;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.dto.rest.system.Status;
@@ -33,12 +35,14 @@ import io.mapsmessaging.state.adapter.StateMessageAdapterFactory;
 import io.mapsmessaging.state.auditor.AuditorFactory;
 import io.mapsmessaging.state.auditor.StateAuditContext;
 import io.mapsmessaging.state.config.DroneInfoRegistry;
+import io.mapsmessaging.state.config.TakConnectionConfigConverter;
 import io.mapsmessaging.state.config.TwinManagerConfig;
 import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigLoader;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.metrics.TwinMetricsManager;
 import io.mapsmessaging.state.n2k.N2kSession;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.Lifecycle;
@@ -60,6 +64,7 @@ public class StateManagerAgent implements Agent {
   private final Logger logger = LoggerFactory.getLogger(StateManagerAgent.class);
 
   private final List<Lifecycle> lifecycleList = new ArrayList<>();
+  private final List<StateMessageAdapter> stateMessageAdapters = new ArrayList<>();
 
   @Getter
   private final AISN2KManager aisManager;
@@ -101,6 +106,7 @@ public class StateManagerAgent implements Agent {
       takConfig = config.getTak();
       N2KTwinConfig n2KTwinConfig = config.getN2KTwinConfig();
       lifecycleList.add(new SchedulerManager(twinManager));
+      lifecycleList.add(new TwinMetricsManager(twinManager));
       lifecycleList.add(new TakManager(twinManager, takConfig));
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
       loadStateMessageAdapters(config);
@@ -110,6 +116,11 @@ public class StateManagerAgent implements Agent {
       lifecycleList.add(new TwinPublisherManager(twinManager, config.getPublish()));
       aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig());
       lifecycleList.add(aisManager);
+      List<EndPointConnectionServerConfig> migrationList = TakConnectionConfigConverter.convert(config.getTak());
+      if(!migrationList.isEmpty()) {
+        NetworkConnectionManagerConfig networkConnectionManagerConfig = ConfigurationManager.getInstance().getConfiguration(NetworkConnectionManagerConfig.class);
+        networkConnectionManagerConfig.getEndPointServerConfigList().addAll(migrationList);
+      }
     } else {
       aisManager = null;
     }
@@ -137,12 +148,22 @@ public class StateManagerAgent implements Agent {
       Optional<StateMessageAdapter> optionalAdapter = adapterFactory.create(context);
       if (optionalAdapter.isPresent()) {
         StateMessageAdapter adapter = optionalAdapter.get();
+        stateMessageAdapters.add(adapter);
         lifecycleList.add(adapter);
         adapter.getRestApiPackageList();
         restApiPackageList.addAll(adapter.getRestApiPackageList());
       }
     }
 
+  }
+
+  public <T extends StateMessageAdapter> Optional<T> getStateMessageAdapter(Class<T> adapterType) {
+    for (StateMessageAdapter adapter : stateMessageAdapters) {
+      if (adapterType.isInstance(adapter)) {
+        return Optional.of(adapterType.cast(adapter));
+      }
+    }
+    return Optional.empty();
   }
 
   @Override
@@ -161,8 +182,13 @@ public class StateManagerAgent implements Agent {
   public synchronized void stop() {
     logger.log(STATE_MANAGER_STOP);
     try {
-      for (Lifecycle lifecycle : lifecycleList) {
-        lifecycle.start();
+      for (int index = lifecycleList.size() - 1; index >= 0; index--) {
+        Lifecycle lifecycle = lifecycleList.get(index);
+        try {
+          lifecycle.stop();
+        } catch (RuntimeException exception) {
+          logger.log(STATE_MANAGER_COMPONENT_STOP_FAILED, lifecycle.getClass().getName(), exception);
+        }
       }
     } finally {
       logger.log(STATE_MANAGER_STOPPED);

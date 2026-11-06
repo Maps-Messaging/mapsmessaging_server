@@ -41,7 +41,7 @@ public class SessionTokenHandler {
   private static final Algorithm algorithm = Algorithm.HMAC256(MessageDaemon.getInstance().getTokenSecret());
   private static final String TOKEN_NAME = "maps_access_token";
   private static final String USERNAME = "username";
-  private static final int maxInactiveInterval = 600;
+  private static final int MAX_INACTIVE_INTERVAL = 600;
   private static final int TOKEN_LIFETIME = 15 * 60; // 15 minutes
   private static final long TOKEN_EXPIRATION_THRESHOLD = 2L * 60L * 1000L;
 
@@ -101,7 +101,7 @@ public class SessionTokenHandler {
 
     HttpSession session = httpRequest.getSession(true);
     session.setAttribute("name", name);
-    session.setMaxInactiveInterval(maxInactiveInterval);
+    session.setMaxInactiveInterval(MAX_INACTIVE_INTERVAL);
     session.setAttribute(USERNAME, username);
     session.setAttribute("subject", subject);
     session.setAttribute("uuid", uuid);

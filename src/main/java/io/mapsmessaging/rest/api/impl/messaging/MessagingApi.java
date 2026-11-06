@@ -361,9 +361,9 @@ public class MessagingApi extends BaseRestApi {
     if (consumeRequestDTO.getDestination() == null || consumeRequestDTO.getDestination().isEmpty()) {
       Map<String, Integer> depth = messageListener.subscriptionDepth();
       List<SubscriptionDepth> depths = new ArrayList<>();
-      for (Map.Entry<String, Integer> entry : depth.entrySet()) {
-        depths.add(new SubscriptionDepth(entry.getValue(), entry.getKey()));
-      }
+      depth.entrySet().stream()
+          .map(entry -> new SubscriptionDepth(entry.getValue(), entry.getKey()))
+          .forEachOrdered(depths::add);
       return new SubscriptionDepthResponse(depths);
     } else {
 

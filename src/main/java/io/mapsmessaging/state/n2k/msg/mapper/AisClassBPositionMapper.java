@@ -49,10 +49,11 @@ public class AisClassBPositionMapper {
     report.setLongitude(droneTwin.getGeoPosition().getLongitude());
     report.setLatitude(droneTwin.getGeoPosition().getLatitude());
 
-    report.setPositionAccuracy(
-        config.getPositionAccuracy() != null
-            ? config.getPositionAccuracy()
-            : (Boolean.TRUE.equals(droneTwin.getGpsValid()) ? 1L : 0L));
+    if (config.getPositionAccuracy() != null) {
+      report.setPositionAccuracy(config.getPositionAccuracy());
+    } else {
+      report.setPositionAccuracy(Boolean.TRUE.equals(droneTwin.getGpsValid()) ? 1L : 0L);
+    }
     report.setRaim(config.getRaim());
     report.setTimeStamp(toSecondOfMinute(droneTwin.getNavigationUpdatedAt()));
 

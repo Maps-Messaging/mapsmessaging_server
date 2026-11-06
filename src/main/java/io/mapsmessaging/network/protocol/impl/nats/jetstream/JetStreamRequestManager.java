@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.nats.jetstream;
 
+import com.google.gson.JsonParser;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
@@ -30,11 +31,15 @@ import lombok.Setter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.nio.charset.StandardCharsets;
 
 public class JetStreamRequestManager {
   private final JetStreamApiManager jetStreamApiManager;
+  private final AtomicLong apiRequests = new AtomicLong();
+  private final AtomicLong apiErrors = new AtomicLong();
 
-  private Map<String, String> subscriptionId = new ConcurrentHashMap<>();
+  private final Map<String, String> subscriptionId = new ConcurrentHashMap<>();
 
   @Getter
   @Setter
@@ -48,50 +53,108 @@ public class JetStreamRequestManager {
     subscriptionId.clear();
   }
 
-  public void registerSid(String key, String sid){
-    subscriptionId.put(key, sid);
+  public void registerSid(String subscriptionPattern, String sid) {
+    if (subscriptionPattern != null && sid != null) {
+      subscriptionId.put(subscriptionPattern, sid);
+    }
   }
 
-  public String getSid(String reply){
-    for(Map.Entry<String, String> entry : subscriptionId.entrySet()){
-      if(reply.startsWith(entry.getKey())){
-        return entry.getValue();
+  public void unregisterSid(String sid) {
+    subscriptionId.entrySet().removeIf(entry -> entry.getValue().equals(sid));
+  }
+
+  public String getSid(String reply) {
+    if (reply == null || reply.isEmpty()) {
+      return "";
+    }
+    String mostSpecific = "";
+    String sid = "";
+    for (Map.Entry<String, String> entry : subscriptionId.entrySet()) {
+      if (entry.getKey().length() > mostSpecific.length() && matchesInbox(entry.getKey(), reply)) {
+        mostSpecific = entry.getKey();
+        sid = entry.getValue();
       }
     }
-    return "";
+    return sid;
+  }
+
+  private static boolean matchesInbox(String subscription, String reply) {
+    if (subscription.equals(reply)) {
+      return true;
+    }
+    int wildcard = subscription.lastIndexOf('.');
+    if (wildcard <= 0) {
+      return false;
+    }
+    String token = subscription.substring(wildcard + 1);
+    String prefix = subscription.substring(0, wildcard + 1);
+    if (!reply.startsWith(prefix)) {
+      return false;
+    }
+    String remaining = reply.substring(prefix.length());
+    if (remaining.isEmpty()) {
+      return false;
+    }
+    return ">".equals(token) || ("*".equals(token) && !remaining.contains("."));
   }
 
   public boolean isJetStreamRequest(PayloadFrame frame) {
     String subject = frame.getSubject();
     return (subject != null && (
-        subject.startsWith("$JS")
-            || subject.startsWith("$KV")
-            || subject.startsWith("$O")));
+        subject.startsWith("$JS.")
+            || subject.startsWith("$KV.")
+            || subject.startsWith("$O.")));
+  }
+
+  public long getApiRequests() {
+    return apiRequests.get();
+  }
+
+  public long getApiErrors() {
+    return apiErrors.get();
   }
 
   public NatsFrame process(PayloadFrame frame, SessionState sessionState) throws IOException {
     String subject = frame.getSubject();
-
-    if (subject.startsWith("$JS.")) {
-      if (!sessionState.getProtocol().getNatsConfig().isEnableStreams()) {
-        return new ErrFrame("Streams are disabled");
-      }
-      return jetStreamApiManager.process(subject, frame, sessionState);
-    } else if (subject.startsWith("$KV.")) {
-      if (!sessionState.getProtocol().getNatsConfig().isEnableKeyValues()) {
-        return new ErrFrame("Key Values are disabled");
-      }
-      return new ErrFrame("KeyValue handler not yet implemented");
-
-    } else if (subject.startsWith("$O.")) {
-      if (!sessionState.getProtocol().getNatsConfig().isEnableObjectStore()) {
-        return new ErrFrame("Object Store is disabled");
-      }
-      return new ErrFrame("ObjectStore handler not yet implemented");
-
-    } else {
-      return new ErrFrame("Unknown JetStream request: " + subject);
+    boolean isApi = subject.startsWith("$JS.API.");
+    if (isApi) {
+      apiRequests.incrementAndGet();
     }
+
+    NatsFrame response;
+    if (subject.startsWith("$JS.")) {
+      if (sessionState.getProtocol().getNatsConfig().isEnableStreams()) {
+        response = jetStreamApiManager.process(subject, frame, sessionState);
+      } else {
+        response = new ErrFrame("Streams are disabled");
+      }
+    } else if (subject.startsWith("$KV.")) {
+      response = new ErrFrame(sessionState.getProtocol().getNatsConfig().isEnableKeyValues()
+          ? "KeyValue handler not yet implemented" : "Key Values are disabled");
+    } else if (subject.startsWith("$O.")) {
+      response = new ErrFrame(sessionState.getProtocol().getNatsConfig().isEnableObjectStore()
+          ? "ObjectStore handler not yet implemented" : "Object Store is disabled");
+    } else {
+      response = new ErrFrame("Unknown JetStream request: " + subject);
+    }
+
+    if (isApi && isError(response)) {
+      apiErrors.incrementAndGet();
+    }
+    return response;
   }
 
+  private boolean isError(NatsFrame frame) {
+    if (frame instanceof ErrFrame) {
+      return true;
+    }
+    if (frame instanceof PayloadFrame payload && payload.getPayload() != null) {
+      try {
+        return JsonParser.parseString(new String(payload.getPayload(), StandardCharsets.UTF_8)).getAsJsonObject().has("error");
+      } catch (RuntimeException ignored) {
+        return false;
+      }
+    }
+    return false;
+  }
 }

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.hardware.device.handler.serial;
 
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import com.fazecast.jSerialComm.SerialPort;
 import io.mapsmessaging.config.device.SerialDeviceBusConfig;
 import io.mapsmessaging.devices.DeviceController;
@@ -60,7 +62,7 @@ public class SerialDeviceBusHandler extends BusHandler {
             SerialDeviceController controller = serialBusManager.mount(serialDeviceConfig.getName(), new Serial(port));
             map.put(portName, controller);
           } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(ServerLogMessages.DEVICE_MANAGER_MOUNT_FAILED, portName, e);
           }
         }
       }

@@ -82,8 +82,7 @@ public class ConnectedState implements State {
 
       // Rebroadcast since these SHOULD ONLY be sent once and receiving them again implies lost
       // packet
-      case MQTT_SNPacket.CONNECT:
-      case MQTT_SNPacket.WILLMSG:
+      case MQTT_SNPacket.CONNECT, MQTT_SNPacket.WILLMSG:
         return lastResponse;
 
       default:

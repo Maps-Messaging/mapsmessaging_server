@@ -34,6 +34,8 @@ import java.util.List;
 
 public class GenericPx4UgvModel extends GenericPx4UxvModel implements UgvModel {
 
+  private static final String MISSION_ITEM_PREFIX = "Mission item ";
+
   public static final String MODEL_NAME = "generic-px4-ugv";
 
   public GenericPx4UgvModel() {
@@ -86,19 +88,19 @@ public class GenericPx4UgvModel extends GenericPx4UxvModel implements UgvModel {
       issues.add(
           new PlanValidationIssue(
               UxvOperation.BUILD_MISSION,
-              "Mission item " + index + " type " + item.type() + " is not supported by this PX4 UGV model"));
+              MISSION_ITEM_PREFIX + index + " type " + item.type() + " is not supported by this PX4 UGV model"));
     }
 
     if (item.speedMetersPerSecond() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " speedMetersPerSecond is not currently mapped by this PX4 UGV model"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " speedMetersPerSecond is not currently mapped by this PX4 UGV model"));
     }
 
     if (item.altitudeMeters() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " altitudeMeters is not currently mapped by this PX4 UGV model"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " altitudeMeters is not currently mapped by this PX4 UGV model"));
     }
 
     if (item.depthMeters() != null) {
-      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, "Mission item " + index + " depthMeters is not valid for a UGV model"));
+      issues.add(new PlanValidationIssue(UxvOperation.BUILD_MISSION, MISSION_ITEM_PREFIX + index + " depthMeters is not valid for a UGV model"));
     }
   }
 

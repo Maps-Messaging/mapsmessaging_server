@@ -17,9 +17,9 @@ public class TransformationConfigFactory {
     }
     if (value instanceof List<?> list) {
       List<TransformationConfigDTO> results = new ArrayList<>();
-      for (Object entry : list) {
-        results.add(loadSingle(entry));
-      }
+      list.stream()
+          .map(entry -> loadSingle(entry))
+          .forEachOrdered(results::add);
       return results;
     }
     return List.of(loadSingle(value));

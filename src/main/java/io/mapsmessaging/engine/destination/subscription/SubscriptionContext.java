@@ -245,14 +245,15 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   public boolean isSync() {return flags.get(SYNC_FLAG);}
 
   @Override
+  @SuppressWarnings("java:S9354") // QualityOfService enum levels range from -1 to 3, so their subtraction cannot overflow.
   public int compareTo(SubscriptionContext lhs) {
     return lhs.qualityOfService.getLevel() - qualityOfService.getLevel();
   }
 
   @Override
   public boolean equals(Object lhs) {
-    if (lhs instanceof SubscriptionContext) {
-      return ((SubscriptionContext) lhs).qualityOfService == qualityOfService;
+    if (lhs instanceof SubscriptionContext matchedSubscriptionContext) {
+      return (matchedSubscriptionContext).qualityOfService == qualityOfService;
     }
     return false;
   }

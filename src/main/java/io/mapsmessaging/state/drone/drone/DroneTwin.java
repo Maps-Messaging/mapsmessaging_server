@@ -23,6 +23,7 @@ import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateS
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.state.config.AltitudeMode;
+import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
@@ -37,6 +38,7 @@ import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +101,7 @@ public class DroneTwin extends EntityTwin {
   @ToString.Exclude
   @EqualsAndHashCode.Exclude
   @Getter(AccessLevel.NONE)
-  private transient final AtomicReference<MavlinkEventListSender> activeMavlinkSender = new AtomicReference<>();
+  private final transient AtomicReference<MavlinkEventListSender> activeMavlinkSender = new AtomicReference<>();
 
   @Schema(description = "Decoded autopilot information for the vehicle.", nullable = true)
   private AutopilotState autopilotState;
@@ -119,11 +121,52 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Current mission execution state.", example = "ACTIVE", nullable = true)
   private String missionState;
 
+  @Schema(description = "Latest outbound MAVLink transmission snapshot, retained after completion.")
+  @SuppressWarnings("java:S3077") // MavlinkTransmissionState publishes immutable snapshots; volatile publishes its replacement.
+  private volatile io.mapsmessaging.state.mavlink.sender.MavlinkTransmissionState missionTransmission;
+
+  @Schema(description = "Latest STANAG task upload retry state, retained after completion.")
+  // Extension callers own the map and its values; the server only publishes/replaces the reference.
+  @SuppressWarnings("java:S3077")
+  private volatile Map<String, Object> taskTransmission;
+
   @Schema(description = "Vehicle heading in degrees.", example = "182.4", nullable = true)
   private Double headingDegrees;
 
   @Schema(description = "Course over ground in degrees.", example = "180.0", nullable = true)
   private Double courseOverGroundDegrees;
+
+  @Schema(
+      description = "Camera or mount pitch in degrees reported by MAVLink MOUNT_STATUS.",
+      example = "-12.34",
+      nullable = true)
+  private Double cameraPitchDegrees;
+
+  @Schema(
+      description = "Camera or mount roll in degrees reported by MAVLink MOUNT_STATUS.",
+      example = "2.5",
+      nullable = true)
+  private Double cameraRollDegrees;
+
+  @Schema(
+      description =
+          "Camera or mount bearing in degrees clockwise from North, derived from MAVLink MOUNT_STATUS pointing_c.",
+      example = "359.5",
+      nullable = true)
+  private Double cameraBearingDegrees;
+
+  @Schema(
+      description = "Raw MAVLink MAV_MOUNT_MODE value reported by MOUNT_STATUS.",
+      example = "2",
+      nullable = true)
+  private Integer cameraMountMode;
+
+  @Schema(
+      description = "Timestamp of the most recent MAVLink MOUNT_STATUS camera orientation update.",
+      example = "2026-09-18T16:30:00Z",
+      nullable = true)
+  private Instant cameraOrientationUpdatedAt;
+
 
   @Schema(description = "Ground speed in meters per second.", example = "14.8", nullable = true)
   private Double groundSpeedMetersPerSecond;
@@ -224,6 +267,12 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Open map to define description data", nullable = true)
   private Map<String, Object> description = new HashMap<>();
 
+  @Schema(description = "Open map for protocol-specific node specialization metadata.", nullable = true)
+  private Map<String, Object> specialization = new HashMap<>();
+
+  @Schema(description = "External data products this node offers (a camera page, a stream).", nullable = true)
+  private List<DataProductConfig> dataProducts = new ArrayList<>();
+
   @Schema(description = "Timestamp of the last readiness evaluation.", example = "2026-05-26T05:50:00Z", nullable = true)
   private Instant readinessUpdatedAt;
 
@@ -286,7 +335,11 @@ public class DroneTwin extends EntityTwin {
   @JsonIgnore
   @Schema(hidden = true)
   public boolean registerMavlinkSender(MavlinkEventListSender sender) {
-    return activeMavlinkSender.compareAndSet(null, Objects.requireNonNull(sender, "sender must not be null"));
+    if (!activeMavlinkSender.compareAndSet(null, Objects.requireNonNull(sender, "sender must not be null"))) {
+      return false;
+    }
+    missionTransmission = sender.getTransmissionState();
+    return true;
   }
 
   @JsonIgnore

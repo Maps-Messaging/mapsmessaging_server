@@ -27,6 +27,7 @@ import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.MQTT_SNProtocol;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.MQTT_SNPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.PubAck;
+import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.packet.ReasonCodes;
 import io.mapsmessaging.network.protocol.impl.mqtt_sn.v1_2.state.StateEngine;
 
 public class PubAckListener extends PacketListener {
@@ -34,13 +35,23 @@ public class PubAckListener extends PacketListener {
   @Override
   public MQTT_SNPacket handlePacket(MQTT_SNPacket mqttPacket, Session session, EndPoint endPoint, Protocol protocol, StateEngine stateEngine) throws MalformedException {
     PubAck pubAck = (PubAck) mqttPacket;
-    stateEngine.sendNextPublish();
-    PacketIdentifierMap mapping = ((MQTT_SNProtocol) protocol).getPacketIdManager().completePacketId(pubAck.getMessageId());
+    if (pubAck.getStatus() != ReasonCodes.SUCCESS) {
+      throw new MalformedException("PUBLISH rejected: " + pubAck.getStatus());
+    }
+    MQTT_SNProtocol mqttSn = (MQTT_SNProtocol) protocol;
+    PacketIdentifierMap outstanding = mqttSn.getPacketIdManager().receivedPacket(pubAck.getMessageId());
+    if (outstanding != null && (mqttSn.getPacketIdManager().isAwaitingPubComp(pubAck.getMessageId())
+        || outstanding.getSubscription() == null
+        || mqttSn.getPacketIdManager().getPacketQos(pubAck.getMessageId()) != 1)) {
+      throw new MalformedException("No QoS 1 PUBLISH outstanding for Packet Identifier " + pubAck.getMessageId());
+    }
+    PacketIdentifierMap mapping = mqttSn.getPacketIdManager().completePacketId(pubAck.getMessageId());
     if (mapping != null) {
       mapping.getSubscription().ackReceived(mapping.getMessageId());
     } else {
       throw new MalformedException("No such Packet Identifier found " + pubAck.getMessageId());
     }
+    stateEngine.sendNextPublish();
     return null;
   }
 }

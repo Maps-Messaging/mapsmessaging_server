@@ -44,8 +44,12 @@ public class PacketFactory {
     if (packet.available() < 2) {
       throw new EndOfBufferException("Need at least 2 bytes for a valid MQTT packet");
     }
+    int frameStart = packet.position();
     byte fixedHeader = packet.get();
     long remainingLen = MQTTPacket.readVariableInt(packet);
+    long frameSize = (packet.position() - frameStart) + remainingLen;
+    long readBufferSize = protocolImpl.getEndPoint().getConfig().getEndPointConfig().getServerReadBufferSize();
+    MqttFrameSizeValidator.validate(frameSize, readBufferSize);
 
     int packetId = (fixedHeader >> 4) & 0xf;
     if (packet.available() < remainingLen) {

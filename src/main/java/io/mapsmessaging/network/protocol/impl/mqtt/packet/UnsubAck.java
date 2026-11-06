@@ -38,6 +38,10 @@ public class UnsubAck extends MQTTPacket {
     this.packetId = readShort(packet);
   }
 
+  public int getPacketId() {
+    return packetId;
+  }
+
   @Override
   public String toString() {
     return "MQTT UnsubAck[Packet Id:" + packetId + "]";

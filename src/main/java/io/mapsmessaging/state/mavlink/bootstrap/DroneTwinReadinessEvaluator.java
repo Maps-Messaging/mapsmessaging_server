@@ -169,11 +169,7 @@ public class DroneTwinReadinessEvaluator {
       return false;
     }
 
-    if (missingStates.contains(DroneTwinMissingState.STALE_POWER)) {
-      return false;
-    }
-
-    return !missingStates.contains(DroneTwinMissingState.MISSING_CAPABILITIES);
+    return !missingStates.contains(DroneTwinMissingState.STALE_POWER);
   }
 
   private DroneTwinReadinessState determineReadinessState(

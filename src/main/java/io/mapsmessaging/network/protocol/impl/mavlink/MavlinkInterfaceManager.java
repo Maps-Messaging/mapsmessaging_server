@@ -52,6 +52,9 @@ import java.util.Locale;
 
 public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnectionManager {
 
+  private static final String MAVLINK_NAME = "mavlink";
+
+
   private static final Logger logger = LoggerFactory.getLogger(MavlinkInterfaceManager.class);
 
   private final SelectorTask selectorTask;
@@ -63,7 +66,10 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
 
   public MavlinkInterfaceManager(EndPoint endPoint) throws IOException {
     this.endPoint = endPoint;
-    mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig("mavlink");
+    mavlinkConfig = (MavlinkConfig) endPoint.getConfig().getProtocolConfig(MAVLINK_NAME);
+    if(mavlinkConfig == null) {
+      throw new IOException("Mavlink config not found");
+    }
     long timeout = mavlinkConfig.getIdleSessionTimeout();
     currentSessions = new MavLinkSessionManager<>(timeout);
     selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), endPoint.isUDP());
@@ -117,24 +123,34 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
   }
 
   private void workThroughPackets(List<byte[]> packets, Packet packet, SocketAddress fromAddress, boolean forwardedSource) throws IOException {
-    for(byte[] data:packets) {
-      writeTlog(data);
-      int systemId = MavlinkFrameExtractor.getSystemId(data);
-      if (!isAllowedSystem(systemId)) {
-        if (!forwardedSource) {
-          forwardPacket(data);
-        }
-      }
-      else {
-        MavlinkDeviceKey key = buildKey(packet, systemId);
-        UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
-        if (state != null && state.getContext() != null) {
-          state.getContext().processRawFrame(data, fromAddress.toString());
-          if (!forwardedSource) {
-            forwardPacket(data);
-          }
-        }
-      }
+    for (byte[] data : packets) {
+      processFrame(data, packet, fromAddress, forwardedSource);
+    }
+  }
+
+  private void processFrame(byte[] data, Packet packet, SocketAddress fromAddress, boolean forwardedSource) throws IOException {
+    writeTlog(data);
+    int systemId = MavlinkFrameExtractor.getSystemId(data);
+    int componentId = MavlinkFrameExtractor.getComponentId(data);
+    if (systemId == 0 || componentId == 0) {
+      return;
+    }
+    if (!isAllowedSystem(systemId)) {
+      forwardUnlessForwarded(data, forwardedSource);
+      return;
+    }
+
+    MavlinkDeviceKey key = buildKey(packet, systemId);
+    UDPSessionState<MavlinkProtocol> state = findOrCreate(key);
+    if (state != null && state.getContext() != null) {
+      state.getContext().processRawFrame(data, fromAddress.toString());
+      forwardUnlessForwarded(data, forwardedSource);
+    }
+  }
+
+  private void forwardUnlessForwarded(byte[] data, boolean forwardedSource) {
+    if (!forwardedSource) {
+      forwardPacket(data);
     }
   }
 
@@ -239,7 +255,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
 
   @Override
   public String getVersion() {
-    return "1.0";
+    return "1/2";
   }
 
   @Override
@@ -253,7 +269,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
 
   private static String toSafeFileName(String value) {
     if (value == null || value.isBlank()) {
-      return "mavlink";
+      return MAVLINK_NAME;
     }
 
     StringBuilder safe = new StringBuilder(value.length());
@@ -283,7 +299,7 @@ public class MavlinkInterfaceManager implements SelectorCallback, MavlinkConnect
     }
 
     if (start == end) {
-      return "mavlink";
+      return MAVLINK_NAME;
     }
 
     return safe.substring(start, end);

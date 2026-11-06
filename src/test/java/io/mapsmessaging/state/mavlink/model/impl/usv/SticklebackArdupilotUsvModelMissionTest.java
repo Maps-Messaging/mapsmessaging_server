@@ -62,7 +62,7 @@ class SticklebackArdupilotUsvModelMissionTest {
     assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, item.getFrame());
     assertEquals(594_340_790, item.getLatitude());
     assertEquals(247_474_870, item.getLongitude());
-    assertEquals((float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS, item.getAltitude());
+    assertEquals(0.0f, item.getAltitude());
     assertEquals(1.5f, item.getParam1());
     assertEquals(6.0f, item.getParam2());
     assertEquals(270.0f, item.getParam4());
@@ -74,7 +74,7 @@ class SticklebackArdupilotUsvModelMissionTest {
 
     assertEquals(1, item.getMissionSequence());
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_LOITER_UNLIM, item.getCommand());
-    assertEquals((float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS, item.getAltitude());
+    assertEquals(0.0f, item.getAltitude());
     assertEquals(40.0f, item.getParam3());
     assertTrue(Float.isNaN(item.getParam4()));
   }
@@ -85,7 +85,7 @@ class SticklebackArdupilotUsvModelMissionTest {
 
     assertEquals(1, item.getMissionSequence());
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_LOITER_TIME, item.getCommand());
-    assertEquals((float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS, item.getAltitude());
+    assertEquals(0.0f, item.getAltitude());
     assertEquals(2.5f, item.getParam1());
     assertEquals(45.0f, item.getParam3());
     assertTrue(Float.isNaN(item.getParam4()));
@@ -106,6 +106,29 @@ class SticklebackArdupilotUsvModelMissionTest {
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP, jump.getCommand());
     assertEquals(1.0f, jump.getParam1());
     assertEquals(2.0f, jump.getParam2());
+  }
+
+
+  @Test
+  void repeatingUsvRouteCanJumpToSuffixAfterHomePlaceholder() {
+    MissionPlan missionPlan =
+        MissionPlan.repeatIndefinitely(
+            List.of(
+                waypoint(59.434079d, 24.747487d),
+                waypoint(59.434179d, 24.747587d),
+                waypoint(59.434279d, 24.747687d),
+                waypoint(59.434379d, 24.747787d)),
+            2);
+
+    UxvModelCommandSet commandSet = model.buildMission(CONTEXT, missionPlan);
+
+    MavlinkMissionItemInt jump = item(commandSet, 5);
+    assertEquals(5, jump.getMissionSequence());
+    assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP, jump.getCommand());
+    assertEquals(3.0f, jump.getParam1());
+    assertEquals(
+        MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP_REPEAT_FOREVER,
+        (int) jump.getParam2());
   }
 
   @Test
@@ -142,25 +165,27 @@ class SticklebackArdupilotUsvModelMissionTest {
                             null,
                             null,
                             null,
-                            10.0d,
-                            null))))
-            .valid());
-
-    assertFalse(
-        model
-            .validateMission(
-                new MissionPlan(
-                    List.of(
-                        new PlanItem(
-                            PlanItemType.WAYPOINT,
-                            new GeoPosition(59.434079d, 24.747487d, null, null),
-                            null,
-                            null,
-                            null,
-                            null,
                             null,
                             2.0d))))
             .valid());
+  }
+
+  @Test
+  void acceptsFiniteResolvedAltitude() {
+    PlanItem waypoint =
+        new PlanItem(
+            PlanItemType.WAYPOINT,
+            new GeoPosition(59.434079d, 24.747487d, null, null),
+            null,
+            null,
+            null,
+            null,
+            10.0d,
+            null);
+    MissionPlan missionPlan = new MissionPlan(List.of(waypoint));
+
+    assertTrue(model.validateMission(missionPlan).valid());
+    assertEquals(10.0f, item(model.buildMission(CONTEXT, missionPlan), 1).getAltitude());
   }
 
   private static PlanItem waypoint(double latitude, double longitude) {

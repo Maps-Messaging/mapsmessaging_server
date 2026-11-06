@@ -19,72 +19,60 @@
 
 package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream;
 
-import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.consumer.NamedConsumer;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
 
+/**
+ * The standard v1 JetStream acknowledgement subject contains only wire metadata.
+ * MAPS resource identifiers and subscription ownership are deliberately kept in NamedConsumer.
+ */
 @Getter
-@AllArgsConstructor
 @ToString
 public class TransactionSubject {
+
   private final String stream;
   private final String consumer;
-  private final int deliverySequence;
-  private final int destinationIndex;
-  private final long messageId;
+  private final long deliverySequence;
+  private final long streamSequence;
+  private final long consumerSequence;
   private final long timestamp;
-  private final String token;
+  private final long pending;
 
-  public TransactionSubject(NamedConsumer consumer, String destinationName, long messageId) {
-    long hashCode = 0xffffffffffffffffL & destinationName.hashCode();
-    this.stream = consumer.getStreamName();
-    this.consumer = consumer.getName();
-    this.deliverySequence = 1;
-    this.destinationIndex = findDestinationIndex(consumer, destinationName);
-    this.messageId = messageId;
-    this.timestamp = System.nanoTime();
-    this.token = ""+hashCode;
+  public TransactionSubject(String stream, String consumer, long deliverySequence, long streamSequence,
+                            long consumerSequence, long timestamp, long pending) {
+    if (stream == null || stream.isBlank() || consumer == null || consumer.isBlank()
+        || deliverySequence <= 0 || streamSequence <= 0 || consumerSequence <= 0
+        || timestamp < 0 || pending < 0) {
+      throw new IllegalArgumentException("Invalid JetStream ACK metadata");
+    }
+    this.stream = stream;
+    this.consumer = consumer;
+    this.deliverySequence = deliverySequence;
+    this.streamSequence = streamSequence;
+    this.consumerSequence = consumerSequence;
+    this.timestamp = timestamp;
+    this.pending = pending;
   }
 
   public static TransactionSubject parse(String subject) {
-    String[] parts = subject.split("\\.");
-    if (parts.length != 9 || !"$JS".equals(parts[0]) || !"ACK".equals(parts[1])) {
-      throw new IllegalArgumentException("Invalid ACK subject: " + subject);
+    if (subject == null) {
+      throw new IllegalArgumentException("Null ACK subject");
     }
-    return new TransactionSubject(
-        parts[2],
-        parts[3],
-        Integer.parseInt(parts[4]),
-        Integer.parseInt(parts[5]),
-        Long.parseLong(parts[6]),
-        Long.parseLong(parts[7]),
-        parts[8]
-    );
+    String[] tokens = subject.split("\\.", -1);
+    if (tokens.length != 9 || !"$JS".equals(tokens[0]) || !"ACK".equals(tokens[1])) {
+      throw new IllegalArgumentException("Invalid JetStream ACK subject: " + subject);
+    }
+    try {
+      return new TransactionSubject(tokens[2], tokens[3], Long.parseLong(tokens[4]),
+          Long.parseLong(tokens[5]), Long.parseLong(tokens[6]), Long.parseLong(tokens[7]),
+          Long.parseLong(tokens[8]));
+    } catch (NumberFormatException exception) {
+      throw new IllegalArgumentException("Invalid numeric JetStream ACK metadata", exception);
+    }
   }
 
   public String toSubject() {
-    return String.join(".",
-        "$JS",
-        "ACK",
-        stream,
-        consumer,
-        String.valueOf(deliverySequence),
-        String.valueOf(destinationIndex),
-        String.valueOf(messageId),
-        String.valueOf(timestamp),
-        token
-    );
+    return "$JS.ACK." + stream + "." + consumer + "." + deliverySequence
+        + "." + streamSequence + "." + consumerSequence + "." + timestamp + "." + pending;
   }
-
-  private int findDestinationIndex(NamedConsumer consumer, String destinationName) {
-    String lookup = consumer.getStreamName()+"/"+destinationName;
-    for(int x=0;x<consumer.getStreams().size();x++){
-      if(consumer.getStreams().get(x).getDestination().getFullyQualifiedNamespace().equals(lookup)){
-        return x;
-      }
-    }
-    return Integer.MAX_VALUE;
-  }
-
 }

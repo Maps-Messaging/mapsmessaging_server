@@ -33,4 +33,9 @@ public class TakStatus {
 
   @Schema(description = "Reason for the current status.", example = "updated")
   private String reason;
+
+  @Schema(description = "Standard CoT readiness flag - many TAK clients render false as a visibly "
+      + "degraded icon (e.g. dimmed or struck through) without changing affiliation or type.",
+      example = "false", nullable = true)
+  private Boolean readiness;
 }

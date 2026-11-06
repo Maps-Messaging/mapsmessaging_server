@@ -60,16 +60,16 @@ public final class TestAvroSchemas {
     try {
       Schema schema = new Schema.Parser().parse(SCHEMA_JSON);
 
-      GenericRecord record = new GenericData.Record(schema);
-      record.put("id", "abc");
-      record.put("count", 123);
-      record.put("active", true);
+      GenericRecord eventRecord = new GenericData.Record(schema);
+      eventRecord.put("id", "abc");
+      eventRecord.put("count", 123);
+      eventRecord.put("active", true);
 
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       BinaryEncoder encoder = EncoderFactory.get().binaryEncoder(out, null);
 
       GenericDatumWriter<GenericRecord> writer = new GenericDatumWriter<>(schema);
-      writer.write(record, encoder);
+      writer.write(eventRecord, encoder);
       encoder.flush();
 
       return out.toByteArray();

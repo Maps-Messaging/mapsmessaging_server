@@ -89,7 +89,8 @@ class MqttAuthSaslTest extends MQTTBaseTest {
   @ParameterizedTest
   @MethodSource("mqttGetAuthUrls")
   void testInvalidUser(int version, String protocol) throws Exception {
-    SaslClient saslClient = setForSasl(null, "admin", "Bad Password");
+    String invalidUser = "invalid-" + UUID.randomUUID();
+    SaslClient saslClient = setForSasl(null, invalidUser, "Bad Password");
     boolean isSsl = protocol.equalsIgnoreCase("ssl") || protocol.equalsIgnoreCase("wss");
     Mqtt5EnhancedAuthMechanism mqtt5EnhancedAuthMechanism = new Mqtt5SaslAuth(saslClient);
     Mqtt5ClientBuilder builder = MqttClient.builder()
@@ -102,24 +103,17 @@ class MqttAuthSaslTest extends MQTTBaseTest {
       builder.sslConfig(getConfig());
     }
     Mqtt5AsyncClient client = builder.buildAsync();
-    try {
-      client.connect().join();
-    } catch (CompletionException e) {
-      Throwable cause = e.getCause();
-      if(cause instanceof Mqtt5ConnAckException){
-        Assertions.assertTrue( cause.getMessage().contains("BAD_USER_NAME_OR_PASSWORD"));
-      }
-      else{
-        Assertions.fail("Should have logged bad username or password");
-      }
-    }
+    CompletionException exception = Assertions.assertThrows(CompletionException.class, () -> client.connect().join());
+    Throwable cause = exception.getCause();
+    Assertions.assertInstanceOf(Mqtt5ConnAckException.class, cause);
+    Assertions.assertTrue(cause.getMessage().contains("BAD_USER_NAME_OR_PASSWORD"));
   }
 
   @DisplayName("Test unknown authentication mechanism")
   @ParameterizedTest
   @MethodSource("mqttGetAuthUrls")
   void testInvalidMechanism(int version, String protocol) throws Exception {
-    SaslClient saslClient = setForSasl(null, "admin", "Bad Password");
+    SaslClient saslClient = setForSasl(null, "admin", getPassword("admin"));
     boolean isSsl = protocol.equalsIgnoreCase("ssl") || protocol.equalsIgnoreCase("wss");
     Mqtt5EnhancedAuthMechanism mqtt5EnhancedAuthMechanism = new Mqtt5SaslAuth(saslClient, true);
     Mqtt5ClientBuilder builder = MqttClient.builder()
@@ -132,17 +126,10 @@ class MqttAuthSaslTest extends MQTTBaseTest {
       builder.sslConfig(getConfig());
     }
     Mqtt5AsyncClient client = builder.buildAsync();
-    try {
-      client.connect().join();
-    } catch (CompletionException e) {
-      Throwable cause = e.getCause();
-      if(cause instanceof Mqtt5ConnAckException){
-        Assertions.assertTrue( cause.getMessage().contains("BAD_AUTHENTICATION_METHOD"));
-      }
-      else{
-        Assertions.fail("Should have logged bad username or password");
-      }
-    }
+    CompletionException exception = Assertions.assertThrows(CompletionException.class, () -> client.connect().join());
+    Throwable cause = exception.getCause();
+    Assertions.assertInstanceOf(Mqtt5ConnAckException.class, cause);
+    Assertions.assertTrue(cause.getMessage().contains("BAD_AUTHENTICATION_METHOD"));
   }
 
 

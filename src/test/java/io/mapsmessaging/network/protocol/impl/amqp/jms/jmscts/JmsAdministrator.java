@@ -21,7 +21,6 @@ package io.mapsmessaging.network.protocol.impl.amqp.jms.jmscts;
 
 import io.mapsmessaging.utilities.ResourceList;
 import jakarta.jms.JMSException;
-import jakarta.jms.XATopicConnectionFactory;
 import java.io.FileInputStream;
 import java.util.Collection;
 import java.util.Properties;
@@ -32,7 +31,7 @@ import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import org.junit.jupiter.api.Assertions;
 
-public class JmsAdministrator {//implements Administrator {
+public class JmsAdministrator {
 
   private final NamingException ex;
   private Context context;
@@ -51,9 +50,9 @@ public class JmsAdministrator {//implements Administrator {
         }
       }
       con = new InitialContext(properties);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      error = new NamingException(ex.getMessage());
+    } catch (Exception failure) {
+      failure.printStackTrace();
+      error = new NamingException(failure.getMessage());
     }
     context = con;
     ex = error;
@@ -82,7 +81,6 @@ public class JmsAdministrator {//implements Administrator {
   }
 
   public String getXATopicConnectionFactory() {
-    XATopicConnectionFactory factory;
     return "XAQTopicConnectionFactory";
   }
 
@@ -150,6 +148,7 @@ public class JmsAdministrator {//implements Administrator {
       getContext().lookup(name);
       exists = true;
     } catch (NameNotFoundException ignore) {
+      // A missing JNDI binding means the destination does not exist.
     } catch (Exception exception) {
       JMSException error = new JMSException(exception.getMessage());
       error.setLinkedException(exception);

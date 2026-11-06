@@ -28,6 +28,10 @@ import java.util.*;
 
 public class LintEngine {
 
+  private static final String NUMERIC_CONSTRAINT_MISSING_KEY = "NUMERIC_CONSTRAINT_MISSING";
+  private static final String STRING_ENUM_ALLOWABLE_VALUES_MISSING_KEY = "STRING_ENUM_ALLOWABLE_VALUES_MISSING";
+
+
   private static final Set<String> WEAK_EXAMPLES = Set.of(
       "type",
       "string",
@@ -324,11 +328,12 @@ public class LintEngine {
     boolean hasPattern = schema.pattern() != null && !schema.pattern().isBlank();
 
     if (!hasFormat && !hasPattern) {
-      String expected = looksLikeUrl
-          ? "uri"
-          : looksLikeMime
-          ? "media-type"
-          : "hostname";
+      String expected;
+      if (looksLikeUrl) {
+        expected = "uri";
+      } else {
+        expected = looksLikeMime ? "media-type" : "hostname";
+      }
 
       issues.add(issue(
           LintSeverity.WARN,
@@ -352,7 +357,7 @@ public class LintEngine {
   ) {
     List<LintIssue> issues = new ArrayList<>();
 
-    if (isIgnored(field, "STRING_ENUM_ALLOWABLE_VALUES_MISSING")) {
+    if (isIgnored(field, STRING_ENUM_ALLOWABLE_VALUES_MISSING_KEY)) {
       return issues;
     }
 
@@ -408,7 +413,7 @@ public class LintEngine {
           configName,
           rootDtoName,
           path,
-          "STRING_ENUM_ALLOWABLE_VALUES_MISSING",
+          STRING_ENUM_ALLOWABLE_VALUES_MISSING_KEY,
           "String field looks like an enum but has no @Schema(allowableValues=...)"
       ));
       return issues;
@@ -421,7 +426,7 @@ public class LintEngine {
           configName,
           rootDtoName,
           path,
-          "STRING_ENUM_ALLOWABLE_VALUES_MISSING",
+          STRING_ENUM_ALLOWABLE_VALUES_MISSING_KEY,
           "String field looks like an enum but @Schema(allowableValues=...) is missing/empty"
       ));
     } else {
@@ -499,7 +504,7 @@ public class LintEngine {
   ) {
     List<LintIssue> issues = new ArrayList<>();
 
-    if (isIgnored(field, "NUMERIC_CONSTRAINT_MISSING")) {
+    if (isIgnored(field, NUMERIC_CONSTRAINT_MISSING_KEY)) {
       return issues;
     }
 
@@ -509,7 +514,7 @@ public class LintEngine {
           configName,
           rootDtoName,
           path,
-          "NUMERIC_CONSTRAINT_MISSING",
+          NUMERIC_CONSTRAINT_MISSING_KEY,
           "Numeric field missing @Schema constraints (minimum/maximum, allowableValues, or multipleOf)"
       ));
       return issues;
@@ -528,7 +533,7 @@ public class LintEngine {
           configName,
           rootDtoName,
           path,
-          "NUMERIC_CONSTRAINT_MISSING",
+          NUMERIC_CONSTRAINT_MISSING_KEY,
           "Numeric field must define minimum/maximum, allowableValues, or multipleOf"
       ));
     }

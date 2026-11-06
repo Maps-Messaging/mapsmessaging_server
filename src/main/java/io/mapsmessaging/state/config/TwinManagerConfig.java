@@ -21,10 +21,12 @@ package io.mapsmessaging.state.config;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.ConfigManager;
+import io.mapsmessaging.config.network.KeyStoreConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
+import io.mapsmessaging.dto.rest.config.protocol.impl.TakServerDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.state.config.capability.*;
 import io.mapsmessaging.state.config.geospatial.GeoSpatialConfigSupport;
@@ -39,6 +41,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, ConfigManager {
 
+  private static final String TRUST_STORE = "trustStore";
+  private static final String KEY_STORE = "keyStore";
+  private static final String TLS_CONTEXT = "tlsContext";
+  private static final String TLS_ENABLED = "tlsEnabled";
+  private static final String HOSTNAME = "hostname";
+  private static final String SPECIALIZATION = "specialization";
+  private static final String ALTITUDE_METERS = "altitudeMeters";
+  private static final String DESCRIPTION = "description";
+  private static final String GEOSPATIAL_KEY = "geospatial";
+  private static final String TOPIC = "topic";
+  private static final String ENABLED = "enabled";
+  private static final String DRONE_INFO = "droneInfo";
+  private static final String VEHICLE_CLASS = "vehicleClass";
+  private static final String PUBLISH_KEY = "publish";
+  private static final String MAVLINK_KEY = "mavlink";
+  private static final String KNOWN_SOURCES = "knownSources";
   private static final String STATE_ADAPTERS_CONFIG_KEY = "stateAdapters";
 
   private TwinManagerConfig(ConfigurationProperties properties) {
@@ -51,32 +69,43 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if (properties.containsKey("tak")) {
       ConfigurationProperties takProps = (ConfigurationProperties) properties.get("tak");
       TakProtocolDTO takProtocolDTO = new TakProtocolDTO();
-      takProtocolDTO.setHostname(takProps.getProperty("hostname", null));
+      takProtocolDTO.setHostname(takProps.getProperty(HOSTNAME, null));
       takProtocolDTO.setPort(takProps.getIntProperty("port", takProtocolDTO.getPort()));
       takProtocolDTO.setSharedConnection(takProps.getBooleanProperty("sharedConnection", takProtocolDTO.isSharedConnection()));
-      takProtocolDTO.setTopic(takProps.getProperty("topic", null));
+      takProtocolDTO.setTopic(takProps.getProperty(TOPIC, null));
+      takProtocolDTO.setTlsEnabled(takProps.getBooleanProperty(TLS_ENABLED, takProtocolDTO.isTlsEnabled()));
+      takProtocolDTO.setTlsContext(takProps.getProperty(TLS_CONTEXT, takProtocolDTO.getTlsContext()));
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) takProps.get(KEY_STORE);
+      if (keyStoreProps != null) {
+        takProtocolDTO.setKeyStore(new KeyStoreConfig(keyStoreProps));
+      }
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) takProps.get(TRUST_STORE);
+      if (trustStoreProps != null) {
+        takProtocolDTO.setTrustStore(new KeyStoreConfig(trustStoreProps));
+      }
+      takProtocolDTO.setAdditionalServers(parseAdditionalTakServers(takProps.get("additionalServers")));
       this.tak = takProtocolDTO;
     }
 
-    if (properties.containsKey("geospatial")) {
-      this.geospatial = GeoSpatialConfigSupport.parse(properties.get("geospatial"));
+    if (properties.containsKey(GEOSPATIAL_KEY)) {
+      this.geospatial = GeoSpatialConfigSupport.parse(properties.get(GEOSPATIAL_KEY));
     }
 
-    if (properties.containsKey("publish")) {
-      ConfigurationProperties publishProps = (ConfigurationProperties) properties.get("publish");
+    if (properties.containsKey(PUBLISH_KEY)) {
+      ConfigurationProperties publishProps = (ConfigurationProperties) properties.get(PUBLISH_KEY);
       TwinPublishConfigDTO publishConfig = new TwinPublishConfigDTO();
-      publishConfig.setEnabled(publishProps.getBooleanProperty("enabled", publishConfig.isEnabled()));
+      publishConfig.setEnabled(publishProps.getBooleanProperty(ENABLED, publishConfig.isEnabled()));
       publishConfig.setTopicTemplate(publishProps.getProperty("topicTemplate", publishConfig.getTopicTemplate()));
       publishConfig.setPublishRateMs(publishProps.getLongProperty("publishRateMs", publishConfig.getPublishRateMs()));
       this.publish = publishConfig;
     }
 
-    if (properties.containsKey("droneInfo")) {
-      this.droneInfo = parseDroneInfos(properties.get("droneInfo"));
+    if (properties.containsKey(DRONE_INFO)) {
+      this.droneInfo = parseDroneInfos(properties.get(DRONE_INFO));
     }
 
-    if (properties.containsKey("mavlink")) {
-      this.mavlink = parseMavlinkConfigs(properties.get("mavlink"));
+    if (properties.containsKey(MAVLINK_KEY)) {
+      this.mavlink = parseMavlinkConfigs(properties.get(MAVLINK_KEY));
     }
 
     if (properties.containsKey(STATE_ADAPTERS_CONFIG_KEY)) {
@@ -86,10 +115,10 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     n2KTwinConfig = new N2KTwinConfig();
     if (properties.containsKey("n2k")) {
       ConfigurationProperties n2kProps = (ConfigurationProperties) properties.get("n2k");
-      n2KTwinConfig.setEnable(n2kProps.getBooleanProperty("enabled", n2KTwinConfig.isEnable()));
-      n2KTwinConfig.setTopic(n2kProps.getProperty("topic", n2KTwinConfig.getTopic()));
+      n2KTwinConfig.setEnable(n2kProps.getBooleanProperty(ENABLED, n2KTwinConfig.isEnable()));
+      n2KTwinConfig.setTopic(n2kProps.getProperty(TOPIC, n2KTwinConfig.getTopic()));
       n2KTwinConfig.setName(n2kProps.getProperty("name", n2KTwinConfig.getName()));
-      n2KTwinConfig.setVehicleClass(n2kProps.getProperty("vehicleClass", n2KTwinConfig.getVehicleClass()));
+      n2KTwinConfig.setVehicleClass(n2kProps.getProperty(VEHICLE_CLASS, n2KTwinConfig.getVehicleClass()));
       n2KTwinConfig.setPublishMavlinkDrones(n2kProps.getBooleanProperty("publishMavlinkDrones", n2KTwinConfig.isPublishMavlinkDrones()));
       if (n2kProps.containsKey("ais")) {
         Object aisConfig = n2kProps.get("ais");
@@ -136,31 +165,34 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     if (this.tak != null) {
       ConfigurationProperties takProps = new ConfigurationProperties();
-      takProps.put("hostname", this.tak.getHostname());
+      takProps.put(HOSTNAME, this.tak.getHostname());
       takProps.put("port", this.tak.getPort());
       takProps.put("sharedConnection", this.tak.isSharedConnection());
-      takProps.put("topic", this.tak.getTopic());
+      takProps.put(TOPIC, this.tak.getTopic());
+      if (this.tak.getAdditionalServers() != null && !this.tak.getAdditionalServers().isEmpty()) {
+        takProps.put("additionalServers", toAdditionalTakServerProperties(this.tak.getAdditionalServers()));
+      }
       props.put("tak", takProps);
     }
 
     if (this.geospatial != null && this.geospatial.getAreas() != null && !this.geospatial.getAreas().isEmpty()) {
-      props.put("geospatial", GeoSpatialConfigSupport.toConfigurationProperties(this.geospatial));
+      props.put(GEOSPATIAL_KEY, GeoSpatialConfigSupport.toConfigurationProperties(this.geospatial));
     }
 
     if (this.publish != null) {
       ConfigurationProperties publishProps = new ConfigurationProperties();
-      publishProps.put("enabled", this.publish.isEnabled());
+      publishProps.put(ENABLED, this.publish.isEnabled());
       publishProps.put("topicTemplate", this.publish.getTopicTemplate());
       publishProps.put("publishRateMs", this.publish.getPublishRateMs());
-      props.put("publish", publishProps);
+      props.put(PUBLISH_KEY, publishProps);
     }
 
     if (this.droneInfo != null && !this.droneInfo.isEmpty()) {
-      props.put("droneInfo", toDroneInfoConfigurationProperties(this.droneInfo));
+      props.put(DRONE_INFO, toDroneInfoConfigurationProperties(this.droneInfo));
     }
 
     if (this.mavlink != null && !this.mavlink.isEmpty()) {
-      props.put("mavlink", toMavlinkConfigurationProperties(this.mavlink));
+      props.put(MAVLINK_KEY, toMavlinkConfigurationProperties(this.mavlink));
     }
 
     if (this.adapterConfig != null && !this.adapterConfig.isEmpty()) {
@@ -169,10 +201,10 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
     if (shouldWriteN2kConfiguration()) {
       ConfigurationProperties n2kProps = new ConfigurationProperties();
-      n2kProps.put("enabled", this.n2KTwinConfig.isEnable());
-      n2kProps.put("topic", this.n2KTwinConfig.getTopic());
+      n2kProps.put(ENABLED, this.n2KTwinConfig.isEnable());
+      n2kProps.put(TOPIC, this.n2KTwinConfig.getTopic());
       n2kProps.put("name", this.n2KTwinConfig.getName());
-      n2kProps.put("vehicleClass", this.n2KTwinConfig.getVehicleClass());
+      n2kProps.put(VEHICLE_CLASS, this.n2KTwinConfig.getVehicleClass());
       n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
 
       if (n2KTwinConfig.getAis() != null) {
@@ -289,6 +321,61 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
   }
 
+  private List<TakServerDTO> parseAdditionalTakServers(Object value) {
+    List<TakServerDTO> servers = new ArrayList<>();
+    // The YAML loader replaces a one-entry list with that entry, so a single additional server
+    // arrives as ConfigurationProperties, not as a List.
+    List<?> entries;
+    if (value instanceof List<?> list) {
+      entries = list;
+    } else if (value instanceof ConfigurationProperties single) {
+      entries = List.of(single);
+    } else {
+      return servers;
+    }
+    for (Object entry : entries) {
+      if (!(entry instanceof ConfigurationProperties serverProps)) {
+        continue;
+      }
+      TakServerDTO server = new TakServerDTO();
+      server.setHostname(serverProps.getProperty(HOSTNAME, null));
+      server.setPort(serverProps.getIntProperty("port", server.getPort()));
+      server.setTlsEnabled(serverProps.getBooleanProperty(TLS_ENABLED, server.isTlsEnabled()));
+      server.setTlsContext(serverProps.getProperty(TLS_CONTEXT, server.getTlsContext()));
+      ConfigurationProperties keyStoreProps = (ConfigurationProperties) serverProps.get(KEY_STORE);
+      if (keyStoreProps != null) {
+        server.setKeyStore(new KeyStoreConfig(keyStoreProps));
+      }
+      ConfigurationProperties trustStoreProps = (ConfigurationProperties) serverProps.get(TRUST_STORE);
+      if (trustStoreProps != null) {
+        server.setTrustStore(new KeyStoreConfig(trustStoreProps));
+      }
+      if (server.getHostname() != null && !server.getHostname().isBlank() && server.getPort() > 0) {
+        servers.add(server);
+      }
+    }
+    return servers;
+  }
+
+  private List<ConfigurationProperties> toAdditionalTakServerProperties(List<TakServerDTO> servers) {
+    List<ConfigurationProperties> values = new ArrayList<>();
+    for (TakServerDTO server : servers) {
+      ConfigurationProperties serverProps = new ConfigurationProperties();
+      serverProps.put(HOSTNAME, server.getHostname());
+      serverProps.put("port", server.getPort());
+      serverProps.put(TLS_ENABLED, server.isTlsEnabled());
+      serverProps.put(TLS_CONTEXT, server.getTlsContext());
+      if (server.getKeyStore() instanceof Config keyStore) {
+        serverProps.put(KEY_STORE, keyStore.toConfigurationProperties());
+      }
+      if (server.getTrustStore() instanceof Config trustStore) {
+        serverProps.put(TRUST_STORE, trustStore.toConfigurationProperties());
+      }
+      values.add(serverProps);
+    }
+    return values;
+  }
+
   private List<MavlinkTwinConfigDTO> parseMavlinkConfigs(Object value) {
     List<MavlinkTwinConfigDTO> configs = new ArrayList<>();
 
@@ -308,11 +395,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
   private MavlinkTwinConfigDTO parseMavlinkConfig(ConfigurationProperties properties) {
     MavlinkTwinConfigDTO config = new MavlinkTwinConfigDTO();
     config.setName(properties.getProperty("name", config.getName()));
-    config.setTopic(properties.getProperty("topic", config.getTopic()));
+    config.setTopic(properties.getProperty(TOPIC, config.getTopic()));
     config.setDialectName(properties.getProperty("dialectName", config.getDialectName()));
 
-    if (properties.containsKey("knownSources")) {
-      config.setKnownSources(parseKnownSources(properties.get("knownSources")));
+    if (properties.containsKey(KNOWN_SOURCES)) {
+      config.setKnownSources(parseKnownSources(properties.get(KNOWN_SOURCES)));
     }
 
     return config;
@@ -328,11 +415,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       return knownSources;
     }
 
-    for (Object entry : entries) {
-      if (entry instanceof ConfigurationProperties sourceProps) {
-        knownSources.add(parseKnownSource(sourceProps));
-      }
-    }
+    entries.stream().filter(ConfigurationProperties.class::isInstance).map(ConfigurationProperties.class::cast)
+        .map(this::parseKnownSource)
+        .forEachOrdered(knownSources::add);
 
     return knownSources;
   }
@@ -340,10 +425,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
   private MavlinkKnownSourceDTO parseKnownSource(ConfigurationProperties properties) {
     MavlinkKnownSourceDTO knownSource = new MavlinkKnownSourceDTO();
     knownSource.setName(properties.getProperty("name", knownSource.getName()));
-    knownSource.setDescription(properties.getProperty("description", knownSource.getDescription()));
+    knownSource.setDescription(properties.getProperty(DESCRIPTION, knownSource.getDescription()));
     knownSource.setSystemId(properties.getIntProperty("systemId", knownSource.getSystemId()));
     knownSource.setComponentId(properties.getIntProperty("componentId", knownSource.getComponentId()));
-    knownSource.setVehicleClass(parseVehicleClass(properties.getProperty("vehicleClass", null), knownSource.getVehicleClass()));
+    knownSource.setVehicleClass(parseVehicleClass(properties.getProperty(VEHICLE_CLASS, null), knownSource.getVehicleClass()));
+    knownSource.setCotClassification(properties.getProperty("cotClassification", null));
     return knownSource;
   }
 
@@ -357,11 +443,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       return droneInfos;
     }
 
-    for (Object entry : entries) {
-      if (entry instanceof ConfigurationProperties sourceProps) {
-        droneInfos.add(parseDroneInfo(sourceProps));
-      }
-    }
+    entries.stream().filter(ConfigurationProperties.class::isInstance).map(ConfigurationProperties.class::cast)
+        .map(this::parseDroneInfo)
+        .forEachOrdered(droneInfos::add);
 
     return droneInfos;
   }
@@ -382,8 +466,8 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setSurveyRadiusMeters(readOptionalPositiveDouble(properties, "surveyRadiusMeters"));
     droneInfo.setArrivalToleranceMeters(readOptionalPositiveDouble(properties, "arrivalToleranceMeters"));
     droneInfo.setAltitudeMode(parseAltitudeMode(properties.getProperty("altitudeMode", null), droneInfo.getAltitudeMode()));
-    if (properties.containsKey("altitudeMeters")) {
-      double altitudeMeters = properties.getDoubleProperty("altitudeMeters", Double.NaN);
+    if (properties.containsKey(ALTITUDE_METERS)) {
+      double altitudeMeters = properties.getDoubleProperty(ALTITUDE_METERS, Double.NaN);
       if (!Double.isFinite(altitudeMeters)) {
         throw new IllegalArgumentException("altitudeMeters must be a finite value");
       }
@@ -394,10 +478,16 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setCancelAction(parseTerminalAction(properties.getProperty("cancelAction", null), legacyStopAction));
     droneInfo.setMissionEndAction(parseTerminalAction(properties.getProperty("missionEndAction", null), droneInfo.getMissionEndAction()));
     droneInfo.setMissionTimeoutAction(parseTerminalAction(properties.getProperty("missionTimeoutAction", null), droneInfo.getMissionTimeoutAction()));
-    if (properties.get("description") instanceof ConfigurationProperties descriptionProperties) {
+    if (properties.get(DESCRIPTION) instanceof ConfigurationProperties descriptionProperties) {
       droneInfo.setDescription(descriptionProperties.getMap());
-    } else if (properties.get("description") instanceof Map<?, ?> descriptionMap) {
+    } else if (properties.get(DESCRIPTION) instanceof Map<?, ?> descriptionMap) {
       droneInfo.setDescription(toStringObjectMap(descriptionMap));
+    }
+
+    if (properties.get(SPECIALIZATION) instanceof ConfigurationProperties specializationProperties) {
+      droneInfo.setSpecialization(toNestedStringObjectMap(specializationProperties.getMap()));
+    } else if (properties.get(SPECIALIZATION) instanceof Map<?, ?> specializationMap) {
+      droneInfo.setSpecialization(toNestedStringObjectMap(specializationMap));
     }
 
     droneInfo.setDataProducts(
@@ -477,7 +567,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
 
       if (droneInfo.getAltitudeMeters() != null
           && Double.isFinite(droneInfo.getAltitudeMeters())) {
-        properties.put("altitudeMeters", droneInfo.getAltitudeMeters());
+        properties.put(ALTITUDE_METERS, droneInfo.getAltitudeMeters());
       }
 
       if (droneInfo.getMessageEncoding() != null) {
@@ -500,7 +590,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       properties.put("batteryCapacityHours", droneInfo.getBatteryCapacityHours());
 
       if (droneInfo.getDescription() != null && !droneInfo.getDescription().isEmpty()) {
-        properties.put("description", new ConfigurationProperties(new LinkedHashMap<>(droneInfo.getDescription())));
+        properties.put(DESCRIPTION, new ConfigurationProperties(new LinkedHashMap<>(droneInfo.getDescription())));
+      }
+
+      if (droneInfo.getSpecialization() != null && !droneInfo.getSpecialization().isEmpty()) {
+        properties.put(SPECIALIZATION, toConfigurationProperties(droneInfo.getSpecialization()));
       }
 
       if (!droneInfo.getDataProducts().isEmpty()) {
@@ -529,7 +623,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
         properties.put("identifier", dataProduct.getIdentifier());
       }
       if (dataProduct.getDescription() != null) {
-        properties.put("description", dataProduct.getDescription());
+        properties.put(DESCRIPTION, dataProduct.getDescription());
       }
       if (dataProduct.getUri() != null) {
         properties.put("uri", dataProduct.getUri());
@@ -563,6 +657,57 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     return target;
+  }
+
+  private Map<String, Object> toNestedStringObjectMap(Map<?, ?> source) {
+    Map<String, Object> target = new LinkedHashMap<>();
+
+    for (Map.Entry<?, ?> entry : source.entrySet()) {
+      if (entry.getKey() instanceof String key) {
+        target.put(key, normaliseConfigurationValue(entry.getValue()));
+      }
+    }
+
+    return target;
+  }
+
+  private Object normaliseConfigurationValue(Object value) {
+    if (value instanceof ConfigurationProperties properties) {
+      return toNestedStringObjectMap(properties.getMap());
+    }
+    if (value instanceof Map<?, ?> map) {
+      return toNestedStringObjectMap(map);
+    }
+    if (value instanceof List<?> list) {
+      List<Object> values = new ArrayList<>(list.size());
+      list.stream()
+          .map(this::normaliseConfigurationValue)
+          .forEachOrdered(values::add);
+      return values;
+    }
+    return value;
+  }
+
+  private ConfigurationProperties toConfigurationProperties(Map<String, Object> source) {
+    ConfigurationProperties properties = new ConfigurationProperties();
+    for (Map.Entry<String, Object> entry : source.entrySet()) {
+      properties.put(entry.getKey(), toConfigurationValue(entry.getValue()));
+    }
+    return properties;
+  }
+
+  private Object toConfigurationValue(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      return toConfigurationProperties(toNestedStringObjectMap(map));
+    }
+    if (value instanceof List<?> list) {
+      List<Object> values = new ArrayList<>(list.size());
+      list.stream()
+          .map(this::toConfigurationValue)
+          .forEachOrdered(values::add);
+      return values;
+    }
+    return value;
   }
 
   private TaskCapabilities parseTaskCapabilities(Object value) {
@@ -748,11 +893,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     for (MavlinkTwinConfigDTO config : configs) {
       ConfigurationProperties properties = new ConfigurationProperties();
       properties.put("name", config.getName());
-      properties.put("topic", config.getTopic());
+      properties.put(TOPIC, config.getTopic());
       properties.put("dialectName", config.getDialectName());
 
       if (config.getKnownSources() != null && !config.getKnownSources().isEmpty()) {
-        properties.put("knownSources", toKnownSourceConfigurationProperties(config.getKnownSources()));
+        properties.put(KNOWN_SOURCES, toKnownSourceConfigurationProperties(config.getKnownSources()));
       }
 
       values.add(properties);
@@ -767,12 +912,15 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     for (MavlinkKnownSourceDTO knownSource : knownSources) {
       ConfigurationProperties properties = new ConfigurationProperties();
       properties.put("name", knownSource.getName());
-      properties.put("description", knownSource.getDescription());
+      properties.put(DESCRIPTION, knownSource.getDescription());
       properties.put("systemId", knownSource.getSystemId());
       properties.put("componentId", knownSource.getComponentId());
 
       if (knownSource.getVehicleClass() != null) {
-        properties.put("vehicleClass", knownSource.getVehicleClass().name());
+        properties.put(VEHICLE_CLASS, knownSource.getVehicleClass().name());
+      }
+      if (knownSource.getCotClassification() != null) {
+        properties.put("cotClassification", knownSource.getCotClassification());
       }
 
       values.add(properties);

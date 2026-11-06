@@ -75,8 +75,8 @@ public class LoRaEndPointServer extends EndPointServer implements SerialPortList
   public void start() throws IOException {
     ProtocolImplFactory protocolImplFactory = protocolFactory.getBoundedProtocol();
     LoRaDevice loRaDevice = LoRaDeviceManager.getInstance().getDevice(getUrl());
-    if (loRaDevice instanceof LoRaChipDevice) {
-      LoRaEndPoint endPoint = new LoRaEndPoint((LoRaChipDevice) loRaDevice, gatewayId, this, managerMBean);
+    if (loRaDevice instanceof LoRaChipDevice matchedLoRaChipDevice) {
+      LoRaEndPoint endPoint = new LoRaEndPoint(matchedLoRaChipDevice, gatewayId, this, managerMBean);
       InetSocketAddress socketAddress = (InetSocketAddress) endPoint.getSocketAddress(0xff);
       InterfaceInformation interfaceInformation = new LoRaInterfaceInformation(endPoint.getDatagramSize(), socketAddress.getAddress());
       protocolImplFactory.create(endPoint, interfaceInformation);
@@ -126,7 +126,7 @@ public class LoRaEndPointServer extends EndPointServer implements SerialPortList
 
   @Override
   public void unbind(SerialPort port) throws IOException {
-    if (loRaProtocol == null) {
+    if (loRaProtocol != null) {
       loRaProtocol.getEndPoint().close();
       loRaProtocol = null;
     }

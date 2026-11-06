@@ -37,8 +37,8 @@ public class MessageTranslatorFactory {
     if (annotations != null) {
       maps = annotations.getValue();
       Object type = maps.get(Symbol.getSymbol("x-opt-jms-msg-type"));
-      if (type instanceof Byte) {
-        messageType = MessageTypes.getInstance((Byte) type);
+      if (type instanceof Byte matchedByte) {
+        messageType = MessageTypes.getInstance(matchedByte);
       }
     }
     return messageType.getMessageTranslator();

@@ -38,6 +38,9 @@ import java.util.Map;
 @Schema(description = "State/Twin Manager Configuration DTO")
 public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
 
+  private static final String COT_ADAPTER_CONFIG_KEY = "cot";
+  private static final String COT_MAPPINGS_CONFIG_KEY = "mappings";
+
   @Schema(
       description = "Time in milliseconds after which a twin is considered disconnected if no updates are received.",
       example = "5000",
@@ -123,6 +126,28 @@ public class TwinManagerConfigDTO extends BaseManagerConfigDTO {
 
   public TwinManagerConfigDTO() {
     super("TwinManagerConfigDTO");
+  }
+
+  @Schema(
+      description = "CoT source namespace mappings and CoT-only defaults stored under stateAdapters.cot.mappings."
+  )
+  public List<CotConfigDTO> getCot() {
+    ConfigurationProperties cotConfig = adapterConfig.get(COT_ADAPTER_CONFIG_KEY);
+    if (cotConfig == null) {
+      return List.of();
+    }
+    return CotConfigSupport.parse(cotConfig.get(COT_MAPPINGS_CONFIG_KEY));
+  }
+
+  public void setCot(List<CotConfigDTO> cot) {
+    if (cot == null || cot.isEmpty()) {
+      adapterConfig.remove(COT_ADAPTER_CONFIG_KEY);
+      return;
+    }
+
+    ConfigurationProperties cotConfig = new ConfigurationProperties();
+    cotConfig.put(COT_MAPPINGS_CONFIG_KEY, CotConfigSupport.toConfigurationProperties(cot));
+    adapterConfig.put(COT_ADAPTER_CONFIG_KEY, cotConfig);
   }
 
   @Override

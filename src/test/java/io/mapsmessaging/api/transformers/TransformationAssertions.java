@@ -22,7 +22,6 @@ package io.mapsmessaging.api.transformers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.message.Message;
-import io.mapsmessaging.network.protocol.Protocol;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;

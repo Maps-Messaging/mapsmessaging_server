@@ -49,14 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 class SemtechViaUdpTest extends BaseTestConfig {
 
-  /**
-   * Adjust to whatever namespace/topic your Semtech UDP listener publishes to.
-   * Examples:
-   *  - "/semtech/#"
-   *  - "/lora/semtech/#"
-   *  - "/udp/semtech/#"
-   */
-  private static final String SUBSCRIBE_TOPIC = "/semtech/#";
+  private static final String SUBSCRIBE_TOPIC = "/semtech/inbound/#";
 
   private static final String UDP_HOST = "127.0.0.1";
   private static final int UDP_PORT = 1700;

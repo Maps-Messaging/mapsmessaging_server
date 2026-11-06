@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.io;
 
 import java.net.SocketAddress;
+import java.io.IOException;
 
 public interface ServerPacket {
 
@@ -28,4 +29,15 @@ public interface ServerPacket {
   void complete();
 
   SocketAddress getFromAddress();
+
+  /** Datagram write hook. False means the packet was deferred or retired without being sent. */
+  default boolean writeTo(EndPoint endPoint, Packet packet) throws IOException {
+    endPoint.sendPacket(packet);
+    complete();
+    return true;
+  }
+
+  default void failed(IOException failure) {
+    // Most packet types rely on their existing protocol retry/timeout handling.
+  }
 }

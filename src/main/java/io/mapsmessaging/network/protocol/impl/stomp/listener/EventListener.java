@@ -72,6 +72,7 @@ public abstract class EventListener implements FrameListener {
           error.setContent(("No known transaction found " + event.getTransaction()).getBytes());
           error.setContentType("text/plain");
           event.setReceipt(null);
+          engine.send(error);
         } else {
           transaction.add(destination, message);
         }

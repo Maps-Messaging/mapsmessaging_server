@@ -103,7 +103,7 @@ class MessageManagerTest {
 
     Assertions.assertTrue(removed);
     Assertions.assertEquals(1, manager.size());
-    Assertions.assertEquals(8L, manager.getNext(100L));
+    Assertions.assertEquals(Long.valueOf(8L), manager.getNext(100L));
   }
 
   @Test
@@ -134,8 +134,8 @@ class MessageManagerTest {
     boolean deleted = manager.delete(200L);
     Assertions.assertTrue(deleted);
 
-    long next = manager.getNext(200L);
-    Assertions.assertEquals(-1L, next);
+    Long next = manager.getNext(200L);
+    Assertions.assertNull(next);
 
     Assertions.assertEquals(List.of(100L), manager.getBucketIds());
   }
@@ -179,7 +179,23 @@ class MessageManagerTest {
     // If you expect size() to change here, this test should enforce it (and code must change).
     Assertions.assertEquals(3, manager.size());
 
-    Assertions.assertEquals(-1L, manager.getNext(100L));
+    Assertions.assertNull(manager.getNext(100L));
+  }
+
+  @Test
+  void getNextReturnsSignedIdsWithoutConfusingMinusOneWithAbsence() {
+    MessageManager manager = new MessageManager(new BitSetFactoryImpl(8192));
+    manager.register(100L, newMessage(0L));
+    manager.register(100L, newMessage(-1L));
+    manager.register(100L, newMessage(Long.MIN_VALUE));
+    Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), manager.getNext(100L));
+    Assertions.assertTrue(manager.remove(100L, Long.MIN_VALUE));
+    Assertions.assertEquals(Long.valueOf(-1L), manager.getNext(100L));
+    Assertions.assertTrue(manager.remove(100L, -1L));
+    Assertions.assertEquals(Long.valueOf(0L), manager.getNext(100L));
+    Assertions.assertTrue(manager.remove(100L, 0L));
+    Assertions.assertNull(manager.getNext(100L));
+    Assertions.assertNull(manager.getNext(999L));
   }
 
   @Test
@@ -228,8 +244,8 @@ class MessageManagerTest {
     boolean removed = manager.remove(200L, 2L);
     Assertions.assertTrue(removed);
 
-    long next = manager.getNext(200L);
-    Assertions.assertEquals(-1L, next);
+    Long next = manager.getNext(200L);
+    Assertions.assertNull(next);
 
     // Intended behaviour: bucket 200 removed, bucket 100 remains.
     Assertions.assertEquals(List.of(100L), manager.getBucketIds());

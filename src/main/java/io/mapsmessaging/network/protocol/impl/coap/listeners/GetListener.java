@@ -39,8 +39,7 @@ public class GetListener extends Listener {
   @Override
   public BasePacket handle(BasePacket request, CoapProtocol protocol) throws IOException {
     switch(request.getType()){
-      case CON:
-      case NON:
+      case CON, NON:
         return handleGetRequest(request, protocol);
 
       case ACK:
@@ -50,7 +49,7 @@ public class GetListener extends Listener {
         break;
 
       case RST:
-        protocol.close();
+        break;
     }
     return null;
   }
@@ -123,8 +122,10 @@ public class GetListener extends Listener {
       Context subscriptionContext = protocol.getSubscriptionState().create(path, request);
       subscriptionContext.setSubscribedEventManager(session.addSubscription(context));
       return null;
-    } catch (Exception exception) {
+    } catch (InterruptedException exception) {
       Thread.currentThread().interrupt();
+      return request.buildAckResponse(Code.INTERNAL_SERVER_ERROR);
+    } catch (Exception exception) {
       return request.buildAckResponse(Code.INTERNAL_SERVER_ERROR);
     }
   }

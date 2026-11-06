@@ -44,6 +44,7 @@ public abstract class HPayloadFrame extends PayloadFrame {
     super(maxBufferSize);
   }
 
+  @Override
   protected PayloadFrame copy(PayloadFrame frame) {
     HPayloadFrame hframe = (HPayloadFrame) super.copy(frame);
     hframe.header = header;

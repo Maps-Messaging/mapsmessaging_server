@@ -49,7 +49,7 @@ public class MessageHandler  extends JetStreamFrameHandler {
     }
 
     String[] parts = subject.split("\\.");
-    if (parts.length < 6) {
+    if (parts.length != 7) {
       return buildError(TYPE,"Invalid MSG.NEXT subject", replyTo, sessionState);
     }
 
@@ -63,21 +63,62 @@ public class MessageHandler  extends JetStreamFrameHandler {
     if(!consumer.getStreamName().equals(stream)){
       return buildError(TYPE,"Consumer '" + consumerName + "' not bound to stream "+stream, replyTo, sessionState);
     }
-    NextRequest request = gson.fromJson(json, NextRequest.class);
+    NextRequest request = json == null ? new NextRequest() : gson.fromJson(json, NextRequest.class);
+    if (request == null || request.getBatch() <= 0) {
+      return buildError(TYPE, "Invalid MSG.NEXT batch", replyTo, sessionState);
+    }
 
-    for (int i = 0; i < request.getBatch(); i++) {
-      MessageEvent msg = consumer.getNextMessage();
-      if (msg != null) {
-        PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), msg.getDestinationName());
-        TransactionSubject replyToSubject = new TransactionSubject(consumer, msg.getDestinationName(), msg.getMessage().getIdentifier());
+    deliverNext(consumer, replyTo, sessionState, request.getBatch(), request.isNo_wait());
+    return null;
+  }
 
-        payloadFrame.setReplyTo(replyToSubject.toSubject());
-        payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
-        sessionState.send(payloadFrame);
-      } else if (!request.isNo_wait()) {
-        break;
+  public int deliverNext(NamedConsumer consumer, String replyTo, SessionState sessionState, int batch, boolean noWait) throws IOException {
+    int delivered = 0;
+    boolean stopped = false;
+    for (int i = 0; i < batch && !stopped; i++) {
+      DeliveryResult result = deliverOne(consumer, replyTo, sessionState, noWait);
+      stopped = result == DeliveryResult.STOPPED;
+      if (result == DeliveryResult.DELIVERED) {
+        delivered++;
       }
     }
-    return null;
+    return delivered;
+  }
+
+  private DeliveryResult deliverOne(NamedConsumer consumer, String replyTo, SessionState sessionState, boolean noWait)
+      throws IOException {
+    MessageEvent msg = consumer.getNextMessage(noWait);
+    if (msg == null) {
+      return DeliveryResult.STOPPED;
+    }
+    String destinationName = msg.getDestinationName();
+    if (consumer.terminateIfMaxDelivered(destinationName, msg.getMessage().getIdentifier())) {
+      return DeliveryResult.SKIPPED;
+    }
+    String prefix = consumer.getStreamName() + "/";
+    String publishedSubject = destinationName.startsWith(prefix) ? destinationName.substring(prefix.length()) : destinationName;
+    PayloadFrame payloadFrame = sessionState.buildPayloadFrame(msg.getMessage(), publishedSubject);
+    TransactionSubject acknowledgement = consumer.recordDelivery(destinationName, msg.getMessage());
+    if (acknowledgement == null) {
+      consumer.rollbackUnregistered(destinationName, msg.getMessage().getIdentifier());
+      throw new IOException("Unable to register pending JetStream delivery");
+    }
+    payloadFrame.setSubject(replyTo);
+    payloadFrame.setReplyTo(acknowledgement.toSubject());
+    payloadFrame.setSubscriptionId(sessionState.getJetStreamRequestManager().getSid(replyTo));
+    try {
+      if (!sessionState.send(payloadFrame)) {
+        consumer.rollbackUnsent(acknowledgement);
+        return DeliveryResult.STOPPED;
+      }
+    } catch (RuntimeException failure) {
+      consumer.rollbackUnsent(acknowledgement);
+      throw failure;
+    }
+    return DeliveryResult.DELIVERED;
+  }
+
+  private enum DeliveryResult {
+    DELIVERED, SKIPPED, STOPPED
   }
 }

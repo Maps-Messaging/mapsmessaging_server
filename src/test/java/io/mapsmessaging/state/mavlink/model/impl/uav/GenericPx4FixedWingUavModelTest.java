@@ -147,7 +147,7 @@ class GenericPx4FixedWingUavModelTest {
   }
 
   @Test
-  void planItemAltitudeOverrideUsesMslFrame() {
+  void planItemAltitudeOverrideUsesRelativeFrame() {
     MavlinkMissionItemInt item =
         onlyMissionItem(
             new MissionPlan(
@@ -159,7 +159,9 @@ class GenericPx4FixedWingUavModelTest {
                         null,
                         150.0d))));
 
-    assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_INT, item.getFrame());
+    assertEquals(
+        MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
+        item.getFrame());
     assertEquals(150.0f, item.getAltitude());
   }
 

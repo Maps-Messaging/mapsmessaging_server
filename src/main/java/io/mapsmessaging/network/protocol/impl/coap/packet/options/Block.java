@@ -62,6 +62,9 @@ public class Block extends Option {
     else {
       byte last = packed[packed.length - 1]; // Get the flags from the end
       sizeEx = last & 0b111;
+      if (sizeEx == 7) {
+        throw new IOException("SZX 7 is reserved for UDP CoAP blockwise transfers");
+      }
       more = (last & 0b01000) != 0;
       number = (last & 0xff) >> 4;
       for (int x = 1; x < packed.length; x++) {

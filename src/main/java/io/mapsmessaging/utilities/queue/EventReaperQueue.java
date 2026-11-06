@@ -39,6 +39,10 @@ public class EventReaperQueue {
     localQueue.clear();
   }
 
+  public synchronized boolean isEmpty() {
+    return localQueue.isEmpty();
+  }
+
   public synchronized void add(long id) {
     localQueue.add(id);
   }

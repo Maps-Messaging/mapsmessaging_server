@@ -22,12 +22,15 @@ package io.mapsmessaging.network.io.connection.route;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
 import io.mapsmessaging.network.route.link.LinkMetrics;
+import io.mapsmessaging.network.protocol.Protocol;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.OptionalDouble;
 
 public class Metrics implements LinkMetrics {
+  private static final double BYTES_PER_MIB = 1024.0 * 1024.0;
+
   private final EndPointConnection endPointConnection;
   private long lastUpdate;
   private long lastThroughput;
@@ -65,28 +68,39 @@ public class Metrics implements LinkMetrics {
   @Override
   public OptionalDouble getThroughputMibPerSecond() {
     EndPoint endPoint = getEndPoint();
-    if(endPoint == null){
+    if (endPoint == null) {
       return OptionalDouble.empty();
     }
 
-    long total = endPoint.getEndPointStatus().getReadBytesTotal() +endPoint.getEndPointStatus().getWriteBytesTotal();
-    if(lastUpdate == 0){
-      lastUpdate = System.currentTimeMillis();
+    long now = System.currentTimeMillis();
+    long total = endPoint.getEndPointStatus().getReadBytesTotal() + endPoint.getEndPointStatus().getWriteBytesTotal();
+    if (lastUpdate == 0) {
+      lastUpdate = now;
       lastThroughput = total;
+      return OptionalDouble.empty();
     }
-    long throughput = (total - lastThroughput) / ((System.currentTimeMillis() - lastUpdate)/1000);
-    lastThroughput = System.currentTimeMillis();
-    return OptionalDouble.of(throughput);
+
+    long elapsedMillis = now - lastUpdate;
+    if (elapsedMillis <= 0) {
+      return OptionalDouble.empty();
+    }
+
+    long bytesTransferred = total - lastThroughput;
+    lastUpdate = now;
+    lastThroughput = total;
+
+    double elapsedSeconds = elapsedMillis / 1000.0;
+    return OptionalDouble.of((bytesTransferred / BYTES_PER_MIB) / elapsedSeconds);
   }
 
   @Override
   public Instant getLastUpdated() {
-    if(getEndPoint() == null){
+    EndPoint endPoint = getEndPoint();
+    if (endPoint == null) {
       return Instant.now();
     }
-    EndPoint endPoint = getEndPoint();
     long last = Math.max(endPoint.getLastRead(), endPoint.getLastWrite());
-    return Instant.ofEpochSecond(last);
+    return Instant.ofEpochMilli(last);
   }
 
   @Override
@@ -95,9 +109,7 @@ public class Metrics implements LinkMetrics {
   }
 
   private EndPoint getEndPoint() {
-    if(endPointConnection.getProtocol() == null){
-      return null;
-    }
-    return endPointConnection.getProtocol().getEndPoint();
+    Protocol protocol = endPointConnection.getProtocol();
+    return protocol == null ? null : protocol.getEndPoint();
   }
 }

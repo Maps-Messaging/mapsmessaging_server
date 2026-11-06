@@ -47,7 +47,6 @@ import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.selector.model.ModelStore;
 import io.mapsmessaging.state.StateManagerAgent;
-import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.service.Service;
@@ -234,7 +233,7 @@ public class SubSystemManager {
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
-    addToMap(750, 750, new AggregatorManager());
+    addToMap(750, 250, new AggregatorManager());
 
     if(featureManager.isEnabled("management.restApi")) {
       RestApiServerManager restApiServerManager = new RestApiServerManager();
@@ -321,9 +320,9 @@ public class SubSystemManager {
 
   public List<SubSystemStatusDTO> getSubSystemStatus() {
     List<SubSystemStatusDTO> list = new ArrayList<>();
-    for(AgentOrder agent:agentMap.values()){
-      list.add(agent.getAgent().getStatus());
-    }
+    agentMap.values().stream()
+        .map(agent -> agent.getAgent().getStatus())
+        .forEachOrdered(list::add);
     return list;
   }
 

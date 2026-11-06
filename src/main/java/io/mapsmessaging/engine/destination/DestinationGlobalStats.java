@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 
 public class DestinationGlobalStats {
-  private final String MESSAGES = "Messages";
+  private static final String MESSAGES = "Messages";
 
   //<editor-fold desc="Global Statistic fields">
   private final LongAdder totalRetained = new LongAdder();

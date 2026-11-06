@@ -45,16 +45,17 @@ public class SimpleStreamHandler implements StreamHandler {
   @Override
   public int parseInput(InputStream input, Packet packet) throws IOException {
     int totalRead = 0;
-    int available = Math.min(input.available(), inBuffer.length);
-    packet.getRawBuffer().clear();
-    while (available != 0) {
+    int available = Math.min(input.available(), Math.min(inBuffer.length, packet.available()));
+    while (available > 0) {
       int read = input.read(inBuffer, 0, available);
       if (read > 0) {
         packet.put(inBuffer, 0, read);
         totalRead += read;
-        available = Math.min(input.available(), inBuffer.length);
+        available = Math.min(input.available(), Math.min(inBuffer.length, packet.available()));
       } else if (read < 0) {
         throw new IOException("Stream has been closed");
+      } else {
+        break;
       }
     }
     return totalRead;
@@ -62,16 +63,11 @@ public class SimpleStreamHandler implements StreamHandler {
 
   @Override
   public int parseOutput(OutputStream output, Packet packet) throws IOException {
-    int available = packet.available();
-    int total = available;
-    while (available > outBuffer.length) {
-      packet.get(outBuffer, 0, available);
-      output.write(outBuffer, 0, available);
-      available = packet.available();
-    }
-    if (available > 0) {
-      packet.get(outBuffer, 0, available);
-      output.write(outBuffer, 0, available);
+    int total = packet.available();
+    while (packet.hasRemaining()) {
+      int chunk = Math.min(packet.available(), outBuffer.length);
+      packet.get(outBuffer, 0, chunk);
+      output.write(outBuffer, 0, chunk);
     }
     output.flush();
     return total;

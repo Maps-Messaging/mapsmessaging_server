@@ -28,6 +28,15 @@ public interface MavlinkAcknowledgementHandler {
 
   Acknowledgement acknowledge(MavlinkMessage sentMessage, MavlinkPacket receivedMessage);
 
+  default TimeoutAction timeoutAction(MavlinkMessage sentMessage) {
+    return TimeoutAction.RETRY_MESSAGE;
+  }
+
+  default long acknowledgementTimeoutMillis(
+      MavlinkMessage sentMessage, long defaultTimeoutMillis) {
+    return defaultTimeoutMillis;
+  }
+
   record Acknowledgement(Action action, int index, String reason) {
 
     public Acknowledgement {
@@ -42,12 +51,24 @@ public interface MavlinkAcknowledgementHandler {
       return new Acknowledgement(Action.WAIT, -1, null);
     }
 
+    public static Acknowledgement waitForMore(String reason) {
+      return new Acknowledgement(Action.WAIT, -1, reason);
+    }
+
     public static Acknowledgement advance() {
       return new Acknowledgement(Action.ADVANCE, -1, null);
     }
 
     public static Acknowledgement sendIndex(int index) {
       return new Acknowledgement(Action.SEND_INDEX, index, null);
+    }
+
+    public static Acknowledgement restart(int index, String reason) {
+      return new Acknowledgement(Action.RESTART, index, reason);
+    }
+
+    public static Acknowledgement retryTransaction(String reason) {
+      return new Acknowledgement(Action.RETRY_TRANSACTION, -1, reason);
     }
 
     public static Acknowledgement complete() {
@@ -64,7 +85,14 @@ public interface MavlinkAcknowledgementHandler {
     WAIT,
     ADVANCE,
     SEND_INDEX,
+    RESTART,
+    RETRY_TRANSACTION,
     COMPLETE,
     FAIL
+  }
+
+  enum TimeoutAction {
+    RETRY_MESSAGE,
+    RETRY_TRANSACTION
   }
 }

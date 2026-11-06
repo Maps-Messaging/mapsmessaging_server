@@ -26,7 +26,7 @@ public record PlanValidationIssue(
         String message) {
 
     public PlanValidationIssue {
-        operation = Objects.requireNonNull(operation, "operation must not be null");
-        message = Objects.requireNonNull(message, "message must not be null");
+        Objects.requireNonNull(operation, "operation must not be null");
+        Objects.requireNonNull(message, "message must not be null");
     }
 }

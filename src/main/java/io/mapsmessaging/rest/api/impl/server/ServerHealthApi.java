@@ -199,7 +199,8 @@ public class ServerHealthApi extends ServerBaseRestApi {
       try {
         Thread.sleep(1000);
       } catch (InterruptedException exception) {
-        throw new RuntimeException(exception);
+        Thread.currentThread().interrupt();
+        return;
       }
       MessageDaemon.getInstance().stop(exitCode);
     };

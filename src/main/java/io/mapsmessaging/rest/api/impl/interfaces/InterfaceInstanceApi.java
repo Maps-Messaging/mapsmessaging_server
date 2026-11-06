@@ -52,6 +52,9 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/server/interface/{endpoint}")
 public class InterfaceInstanceApi extends BaseInterfaceApi {
 
+  private static final String INVALID_ENDPOINT_ID = "Invalid endpoint id";
+  private static final String ENDPOINT_NOT_FOUND = "Endpoint not found";
+
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
@@ -80,7 +83,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           ),
           @ApiResponse(
               responseCode = "404",
-              description = "Endpoint not found",
+              description = ENDPOINT_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           )
       }
@@ -91,7 +94,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     UUID endpointId = parseEndpointId(endpoint);
     if (endpointId == null) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid endpoint id"))
+          .entity(new StatusResponse(INVALID_ENDPOINT_ID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -113,7 +116,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     }
 
     return Response.status(Response.Status.NOT_FOUND)
-        .entity(new StatusResponse("Endpoint not found"))
+        .entity(new StatusResponse(ENDPOINT_NOT_FOUND))
         .type(MediaType.APPLICATION_JSON)
         .build();
   }
@@ -147,7 +150,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           ),
           @ApiResponse(
               responseCode = "404",
-              description = "Endpoint not found",
+              description = ENDPOINT_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           )
       }
@@ -158,7 +161,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     UUID endpointId = parseEndpointId(endpoint);
     if (endpointId == null) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid endpoint id"))
+          .entity(new StatusResponse(INVALID_ENDPOINT_ID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -172,7 +175,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     EndPointManager endPointManager = findEndPointManager(endpointId);
     if (endPointManager == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("Endpoint not found"))
+          .entity(new StatusResponse(ENDPOINT_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -225,7 +228,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           ),
           @ApiResponse(
               responseCode = "404",
-              description = "Endpoint not found",
+              description = ENDPOINT_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           )
       }
@@ -236,7 +239,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     UUID endpointId = parseEndpointId(endpoint);
     if (endpointId == null) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid endpoint id"))
+          .entity(new StatusResponse(INVALID_ENDPOINT_ID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -255,7 +258,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     }
 
     return Response.status(Response.Status.NOT_FOUND)
-        .entity(new StatusResponse("Endpoint not found"))
+        .entity(new StatusResponse(ENDPOINT_NOT_FOUND))
         .type(MediaType.APPLICATION_JSON)
         .build();
   }
@@ -297,7 +300,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           ),
           @ApiResponse(
               responseCode = "404",
-              description = "Endpoint not found",
+              description = ENDPOINT_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           ),
           @ApiResponse(
@@ -313,7 +316,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     UUID endpointId = parseEndpointId(endpoint);
     if (endpointId == null) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid endpoint id"))
+          .entity(new StatusResponse(INVALID_ENDPOINT_ID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -336,7 +339,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     EndPointManager endPointManager = findEndPointManager(endpointId);
     if (endPointManager == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("Endpoint not found"))
+          .entity(new StatusResponse(ENDPOINT_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -373,7 +376,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
           ),
           @ApiResponse(
               responseCode = "404",
-              description = "Endpoint not found",
+              description = ENDPOINT_NOT_FOUND,
               content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))
           )
       }
@@ -384,7 +387,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     UUID endpointId = parseEndpointId(endpoint);
     if (endpointId == null) {
       return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new StatusResponse("Invalid endpoint id"))
+          .entity(new StatusResponse(INVALID_ENDPOINT_ID))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }
@@ -398,7 +401,7 @@ public class InterfaceInstanceApi extends BaseInterfaceApi {
     EndPointManager endPointManager = findEndPointManager(endpointId);
     if (endPointManager == null) {
       return Response.status(Response.Status.NOT_FOUND)
-          .entity(new StatusResponse("Endpoint not found"))
+          .entity(new StatusResponse(ENDPOINT_NOT_FOUND))
           .type(MediaType.APPLICATION_JSON)
           .build();
     }

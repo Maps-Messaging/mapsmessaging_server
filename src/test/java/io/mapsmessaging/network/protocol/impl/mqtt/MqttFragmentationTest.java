@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.dto.rest.config.network.EndPointServerConfigDTO;
+import io.mapsmessaging.dto.rest.config.network.impl.TcpConfigDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
@@ -77,6 +79,11 @@ class MqttFragmentationTest {
     private MqttPacketProcessor() {
       MQTTProtocol protocol = mock(MQTTProtocol.class);
       EndPoint endPoint = mock(EndPoint.class);
+      TcpConfigDTO transportConfig = new TcpConfigDTO();
+      transportConfig.setServerReadBufferSize(1024L * 1024L);
+      EndPointServerConfigDTO serverConfig = new EndPointServerConfigDTO();
+      serverConfig.setEndPointConfig(transportConfig);
+      when(endPoint.getConfig()).thenReturn(serverConfig);
       when(protocol.getEndPoint()).thenReturn(endPoint);
       when(endPoint.isClient()).thenReturn(false);
       when(protocol.getMaximumBufferSize()).thenReturn(1024L * 1024L);

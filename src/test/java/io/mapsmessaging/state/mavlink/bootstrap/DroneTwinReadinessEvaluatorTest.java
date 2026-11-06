@@ -188,16 +188,17 @@ class DroneTwinReadinessEvaluatorTest {
   }
 
   @Test
-  void missing_capabilities_is_capability_partial() {
+  void missing_capabilities_is_degraded_but_does_not_block_commands() {
     DroneTwin twin = readyTwin();
     twin.getAutopilotState().setCapabilities(null);
 
     DroneTwinReadinessResult result = evaluate(twin);
 
     assertTrue(result.isRegistrationReady());
-    assertFalse(result.isCommandReady());
-    assertEquals(DroneTwinReadinessState.CAPABILITY_PARTIAL, result.getReadinessState());
+    assertTrue(result.isCommandReady());
+    assertEquals(DroneTwinReadinessState.COMMAND_READY, result.getReadinessState());
     assertTrue(result.getMissingStates().contains(DroneTwinMissingState.MISSING_CAPABILITIES));
+    assertTrue(result.getDegradedStates().contains(DroneTwinMissingState.MISSING_CAPABILITIES));
   }
 
   @Test

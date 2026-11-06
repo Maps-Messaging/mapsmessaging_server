@@ -24,6 +24,7 @@ public enum StatusCode {
   SUCCESS_QOS_1(1, "Successful subscription at QoS:1"),
   SUCCESS_QOS_2(2, "Successful subscription at QoS:2"),
   NO_MATCHING_SUBSCRIBERS(0x10, "There are currently no matching subscribers on this topic"),
+  NO_SUBSCRIPTION_EXISTED(0x11, "No subscription existed for the topic filter"),
   CONTINUE_AUTHENTICATION(0x18, "Continue authentication"),
   UNSPECIFIED_ERROR(0x80, "Unknown error or unexpected error occurred"),
   MALFORMED_PACKET(0x81, "Received a malformed packet"),

@@ -21,6 +21,7 @@ package io.mapsmessaging.aggregator.aggregate;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;
@@ -36,9 +37,12 @@ import java.util.*;
 
 public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
+  private static final String PAYLOAD_BASE64_KEY = "payloadBase64";
+
+
   private static final String JSON_CONTENT_TYPE = "application/json";
 
-  private final Gson gson = new Gson();
+  private final Gson gson = new GsonBuilder().serializeNulls().create();
 
   @Override
   public String getName() {
@@ -87,7 +91,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
 
     byte[] opaqueData = message.getOpaqueData();
     if (opaqueData == null) {
-      entry.put("payloadBase64", null);
+      entry.put(PAYLOAD_BASE64_KEY, null);
       return entry;
     }
 
@@ -105,17 +109,18 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
           Map<String, Object> map = gson.fromJson(json, type);
           entry.put("payload", map);
         } catch (IOException e) {
-          entry.put("payloadBase64", Base64.getEncoder().encodeToString(opaqueData));
+          entry.put(PAYLOAD_BASE64_KEY, Base64.getEncoder().encodeToString(opaqueData));
           // log it
         }
       }
       else {
-        entry.put("payloadBase64", Base64.getEncoder().encodeToString(opaqueData));
+        entry.put(PAYLOAD_BASE64_KEY, Base64.getEncoder().encodeToString(opaqueData));
       }
     }
     return entry;
   }
 
+  @SuppressWarnings("java:S1168") // Null denotes absent or conflicting correlation data; an empty byte array is a distinct value.
   private static byte[] computeCommonCorrelationData(Message[] contributions) {
     byte[] candidate = null;
 
@@ -142,6 +147,7 @@ public class EnvelopeAggregationStrategy implements AggregationStrategy {
     return candidate;
   }
 
+  @SuppressWarnings("java:S1168") // Null denotes absent common metadata and preserves the aggregate message contract.
   private static Map<String, TypedData> computeCommonDataMap(Message[] contributions) {
     Message firstMessage = firstNonNull(contributions);
     if (firstMessage == null) {

@@ -79,4 +79,23 @@ class GenericPx4UavModelTest {
     assertEquals(MavlinkMissionItemFactory.MAV_FRAME_GLOBAL_TERRAIN_ALT, guidedWaypoint.getFrame());
     assertEquals(35.0f, guidedWaypoint.getAltitude());
   }
+
+  @Test
+  void repositionUsesRelativeFrameForExplicitAltitude() {
+    GenericPx4UavModel model = new GenericPx4UavModel();
+    GeoPosition position = new GeoPosition(-33.8688d, 151.2093d, 120.0d, null);
+
+    UxvModelCommandSet commandSet =
+        model.reposition(CONTEXT, new RepositionRequest(position, null, null, 70.0d));
+
+    MavlinkCommandInt reposition =
+        assertInstanceOf(MavlinkCommandInt.class, commandSet.messages().get(0));
+    assertEquals(MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, reposition.getFrame());
+    assertEquals(70.0f, reposition.getAltitude());
+
+    MavlinkMissionItem guidedWaypoint =
+        assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(2));
+    assertEquals(MavlinkMissionItemFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT, guidedWaypoint.getFrame());
+    assertEquals(70.0f, guidedWaypoint.getAltitude());
+  }
 }

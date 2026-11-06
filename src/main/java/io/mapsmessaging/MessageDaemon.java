@@ -75,6 +75,9 @@ import static io.mapsmessaging.logging.ServerLogMessages.MESSAGE_DAEMON_STARTUP_
  */
 public class MessageDaemon {
 
+  private static final String SERVER_ID_PROPERTY = "SERVER_ID";
+
+
   @Getter
   private static FileLockManager lockManager;
 
@@ -155,7 +158,7 @@ public class MessageDaemon {
     if (serverId != null) {
       uniqueId = serverId;
     } else {
-      uniqueId = SystemProperties.getInstance().getProperty("SERVER_ID", generateUniqueId());
+      uniqueId = SystemProperties.getInstance().getProperty(SERVER_ID_PROPERTY, generateUniqueId());
       instanceConfig.setServerName(uniqueId);
       instanceConfig.saveState();
       logger.log(MESSAGE_DAEMON_STARTUP_BOOTSTRAP, uniqueId);
@@ -250,6 +253,7 @@ public class MessageDaemon {
    * @return null
    * @throws IOException if an I/O error occurs during the initialization steps
    */
+  @SuppressWarnings("java:S106") // Startup configuration failures must reach stderr even if logging configuration or file output is unavailable.
   public Integer start() throws IOException {
 
     ConfigurationManager.getInstance().initialise(uniqueId);
@@ -368,7 +372,7 @@ public class MessageDaemon {
    * @return The unique identifier for the MessageDaemon instance.
    */
   private String generateUniqueId() {
-    String env = SystemProperties.getInstance().getProperty("SERVER_ID", SystemProperties.getInstance().getEnvProperty("SERVER_ID"));
+    String env = SystemProperties.getInstance().getProperty(SERVER_ID_PROPERTY, SystemProperties.getInstance().getEnvProperty(SERVER_ID_PROPERTY));
     if (env != null) {
       return env;
     }
@@ -389,7 +393,7 @@ public class MessageDaemon {
     return subSystemManager.getSubSystemStatus();
   }
 
-  @SuppressWarnings("java:S106") // we use system.err here since we have not actually been able to start up yet
+  @SuppressWarnings("java:S106") // Environment and lock-acquisition failures must reach stderr before daemon logging configuration is loaded.
   public static void main(String[] args) throws IOException, InterruptedException {
     String directoryPath = MapsEnvironment.getMapsData();
     if (directoryPath.isEmpty()) {
@@ -421,14 +425,15 @@ public class MessageDaemon {
       lockManager.setOnShutdown(instance::stop);
       instance.start();
     } catch (Exception e) {
-      e.printStackTrace();
-      System.err.println("Unexpected error: " + e.getMessage());
+      System.err.println("Unexpected error starting the messaging daemon: " + e.getMessage());
+      LoggerFactory.getLogger(MessageDaemon.class).log(ServerLogMessages.MESSAGE_DAEMON_START_FAILED, e);
       lockManager.shutdown();
       lockManager.close();
     }
   }
 
   public String getRestServerUrl() {
-    return subSystemManager.getRestApiServerManager().getBaseUri();
+    RestApiServerManager restApiServerManager = subSystemManager.getRestApiServerManager();
+    return restApiServerManager != null ? restApiServerManager.getBaseUri() : null;
   }
 }

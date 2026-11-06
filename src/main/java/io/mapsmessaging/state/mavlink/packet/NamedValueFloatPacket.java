@@ -61,15 +61,15 @@ public class NamedValueFloatPacket extends MavlinkPacket {
   }
 
   private String getName(Map<String, Object> fields) {
-    String value = getString(fields, "name");
-    if (value == null) {
+    String nameValue = getString(fields, "name");
+    if (nameValue == null) {
       return null;
     }
 
-    if (value.length() <= NAME_MAX_LENGTH) {
-      return value;
+    if (nameValue.length() <= NAME_MAX_LENGTH) {
+      return nameValue;
     }
 
-    return value.substring(0, NAME_MAX_LENGTH);
+    return nameValue.substring(0, NAME_MAX_LENGTH);
   }
 }

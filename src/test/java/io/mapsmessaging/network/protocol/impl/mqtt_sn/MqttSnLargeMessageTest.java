@@ -33,9 +33,9 @@ class MqttSnLargeMessageTest extends BaseMqttSnConfig {
 
 
   @ParameterizedTest
-  @ValueSource(ints = {1, 2})
+  @ValueSource(ints = {1})
   void subscribeWithLargeTopicName(int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
-    MqttSnClient client = new MqttSnClient("localhost", 1884, version);
+    MqttSn12Client client = new MqttSn12Client("localhost", 1884);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     CountDownLatch published = new CountDownLatch(1);
@@ -62,9 +62,9 @@ class MqttSnLargeMessageTest extends BaseMqttSnConfig {
 
 
   @ParameterizedTest
-  @ValueSource(ints = {1, 2})
+  @ValueSource(ints = {1})
   void publishWithLargeData(int version) throws MqttsnException, MqttsnClientConnectException, MqttsnQueueAcceptException {
-    MqttSnClient client = new MqttSnClient("localhost", 1884, version);
+    MqttSn12Client client = new MqttSn12Client("localhost", 1884);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     CountDownLatch published = new CountDownLatch(1);

@@ -24,6 +24,8 @@ import io.mapsmessaging.geospatial.GeoSpatialAreaRegistry;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.state.auditor.StateAuditContext;
+import io.mapsmessaging.state.drone.drone.DroneTwin;
+import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.LinkState;
 import lombok.Getter;
 
@@ -36,6 +38,9 @@ import java.util.function.Consumer;
 import static io.mapsmessaging.state.logging.StateLogMessages.*;
 
 public class TwinManager {
+
+  private static final String TWIN_ID_REQUIRED = "twinId must not be null";
+
 
   private final ConcurrentHashMap<String, EntityTwin> twins = new ConcurrentHashMap<>();
   private final CopyOnWriteArrayList<TwinObserver> observers = new CopyOnWriteArrayList<>();
@@ -105,6 +110,7 @@ public class TwinManager {
     return Collections.unmodifiableCollection(twins.values());
   }
 
+  @SuppressWarnings("java:S2445") // Twin initialization, updates and publication coordinate on the same EntityTwin monitor.
   public EntityTwin registerTwin(EntityTwin twin, TwinUpdateContext context) {
     Objects.requireNonNull(twin, "twin must not be null");
     Objects.requireNonNull(twin.getTwinId(), "twin.twinId must not be null");
@@ -142,7 +148,7 @@ public class TwinManager {
   }
 
   public Optional<EntityTwin> removeTwin(String twinId, TwinUpdateContext context) {
-    Objects.requireNonNull(twinId, "twinId must not be null");
+    Objects.requireNonNull(twinId, TWIN_ID_REQUIRED);
 
     EntityTwin removed = twins.remove(twinId);
     if (removed != null) {
@@ -153,7 +159,7 @@ public class TwinManager {
   }
 
   public Optional<EntityTwin> updateTwin(String twinId, Consumer<EntityTwin> updater, TwinUpdateContext context) {
-    Objects.requireNonNull(twinId, "twinId must not be null");
+    Objects.requireNonNull(twinId, TWIN_ID_REQUIRED);
     Objects.requireNonNull(updater, "updater must not be null");
 
     EntityTwin twin = twins.get(twinId);
@@ -180,7 +186,7 @@ public class TwinManager {
                                                  TwinRelationship relationship,
                                                  TwinUpdateContext context) {
 
-    Objects.requireNonNull(twinId, "twinId must not be null");
+    Objects.requireNonNull(twinId, TWIN_ID_REQUIRED);
     Objects.requireNonNull(relationship, "relationship must not be null");
 
     EntityTwin twin = twins.get(twinId);
@@ -219,7 +225,7 @@ public class TwinManager {
                                                  String relationshipType,
                                                  TwinUpdateContext context) {
 
-    Objects.requireNonNull(twinId, "twinId must not be null");
+    Objects.requireNonNull(twinId, TWIN_ID_REQUIRED);
 
     EntityTwin twin = twins.get(twinId);
     if (twin == null) {
@@ -251,6 +257,21 @@ public class TwinManager {
     }
     logger.log(TWIN_RELATIONSHIP_REMOVED, twinId, sourceTwinId, targetTwinId, relationshipType);
     return Optional.of(twin);
+  }
+
+  public void notifyDetectionEvent(
+      DroneTwin source, DetectionEvent event, TwinUpdateContext context) {
+    if (source == null || event == null) {
+      return;
+    }
+
+    for (TwinObserver observer : observers) {
+      try {
+        observer.onDetectionEvent(source, event, context);
+      } catch (Throwable ignore) {
+        logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
+      }
+    }
   }
 
   public int getTwinCountByStatus(TwinLifecycleStatus status) {
@@ -293,6 +314,10 @@ public class TwinManager {
     List<String> expiredIds = new ArrayList<>();
 
     for (EntityTwin twin : twins.values()) {
+      if (TwinType.CONTACT.equals(twin.getTwinType())
+          || twin.getRetentionPolicy() == TwinRetentionPolicy.PERSISTENT) {
+        continue;
+      }
       long ageMillis = ageMillis(effectiveNow, twin.getLastSeenAt());
       if (ageMillis >= retentionTimeoutMillis) {
         expiredIds.add(twin.getTwinId());

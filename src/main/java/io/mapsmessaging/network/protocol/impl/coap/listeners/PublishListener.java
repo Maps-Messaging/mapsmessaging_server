@@ -36,7 +36,6 @@ import io.mapsmessaging.network.protocol.impl.coap.packet.options.*;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -51,13 +50,13 @@ public abstract class PublishListener extends  Listener {
       code = Code.DELETED;
     }
     boolean process = canProcess(destination, request);
+    if (isDelete || process) {
+      destination.storeMessage(build(request, protocol));
+    }
     if (request.getType().equals(TYPE.CON)) {
       BasePacket response = request.buildAckResponse(code);
       response.setCode(process ? code : Code.PRECONDITION_FAILED);
       protocol.sendResponse(response);
-    }
-    if (isDelete || process) {
-      destination.storeMessage(build(request, protocol));
     }
   }
 
@@ -99,21 +98,40 @@ public abstract class PublishListener extends  Listener {
 
   private boolean handleBlock(BasePacket request, String path, OptionSet optionSet, CoapProtocol protocol) {
     Block block = (Block) optionSet.getOption(BLOCK1);
-    BlockReceiveState blockReceiveState = protocol.getBlockReceiveMonitor().registerOrGet(block, path);
-    blockReceiveState.getReceivePacket().add(block.getNumber(), request.getPayload());
-    if (request.getType().equals(TYPE.CON)) {
-      BasePacket response = request.buildAckResponse(Code.CONTINUE);
-      try {
-        protocol.sendResponse(response);
-      } catch (IOException e) {
+    byte[] payload = request.getPayload();
+    int blockSize = 1 << (block.getSizeEx() + 4);
+    boolean valid = payload != null && payload.length <= blockSize && (!block.isMore() || payload.length == blockSize);
+    BlockReceiveState blockReceiveState = null;
+    if (valid) {
+      blockReceiveState = protocol.getBlockReceiveMonitor().registerOrGet(block, path);
+      valid = blockReceiveState.getReceivePacket().add(block.getNumber(), payload);
+    }
+    if (!valid) {
+      if (request.getType().equals(TYPE.CON)) {
         try {
-          protocol.close();
-        } catch (IOException ex) {
-          // We are closing
+          protocol.sendResponse(request.buildAckResponse(Code.REQUEST_ENTITY_INCOMPLETE));
+        } catch (IOException e) {
+          try {
+            protocol.close();
+          } catch (IOException ex) {
+            // We are closing
+          }
         }
       }
+      return false;
     }
     if (block.isMore()) {
+      if (request.getType().equals(TYPE.CON)) {
+        try {
+          protocol.sendResponse(request.buildAckResponse(Code.CONTINUE));
+        } catch (IOException e) {
+          try {
+            protocol.close();
+          } catch (IOException ex) {
+            // We are closing
+          }
+        }
+      }
       return false;
     }
     protocol.getBlockReceiveMonitor().complete(path);
@@ -189,11 +207,10 @@ public abstract class PublishListener extends  Listener {
   private List<byte[]> extractTags(Message message){
     List<byte[]> etags = new ArrayList<>();
     Map<String, TypedData> map = message.getDataMap();
-    for(Entry<String, TypedData> entry:map.entrySet()){
-      if(entry.getKey().startsWith("etag_")){
-        etags.add((byte[])entry.getValue().getData());
-      }
-    }
+    map.entrySet().stream()
+        .filter(entry -> entry.getKey().startsWith("etag_"))
+        .map(entry -> (byte[])entry.getValue().getData())
+        .forEachOrdered(etags::add);
     return etags;
   }
 

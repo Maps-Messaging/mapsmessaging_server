@@ -54,11 +54,12 @@ public class StreamNamesHandler extends JetStreamFrameHandler {
   private String buildInfo(JsonObject json) {
     List<StreamEntry> entries = NamespaceManager.getInstance().getStreamEntries();
 
-    int offset = json.has("offset") ? json.get("offset").getAsInt() : 0;
-    int limit = json.has("limit") ? json.get("limit").getAsInt() : 1024;
+    int offset = json != null && json.has("offset") ? json.get("offset").getAsInt() : 0;
+    int limit = json != null && json.has("limit") ? json.get("limit").getAsInt() : 1024;
 
-    offset = Math.max(0, Math.min(offset, entries.size()));
-    int toIndex = Math.min(offset + limit, entries.size());
+    offset = Math.clamp(offset, 0, entries.size());
+    limit = Math.clamp(limit, 1, 1024);
+    int toIndex = offset + Math.min(limit, entries.size() - offset);
 
     List<String> names = entries.subList(offset, toIndex).stream()
         .map(e -> e.getConfig().getName())

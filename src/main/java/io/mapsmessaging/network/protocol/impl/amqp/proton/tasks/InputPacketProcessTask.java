@@ -23,6 +23,7 @@ package io.mapsmessaging.network.protocol.impl.amqp.proton.tasks;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
+import io.mapsmessaging.network.protocol.impl.amqp.proton.AmqpInboundFrameValidator;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.SaslManager;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.listeners.EventListenerFactory;
 import org.apache.qpid.proton.engine.Collector;
@@ -40,9 +41,11 @@ public class InputPacketProcessTask extends PacketTask {
   private final Packet incomingPacket;
   private final SaslManager saslManager;
   private final Connection connection;
+  private final ProtonEngine engine;
 
   public InputPacketProcessTask(ProtonEngine engine, Packet packet) {
     super(engine);
+    this.engine = engine;
     this.incomingPacket = packet;
     collector = engine.getCollector();
     saslManager = engine.getSaslManager();
@@ -52,9 +55,36 @@ public class InputPacketProcessTask extends PacketTask {
 
   @Override
   public Boolean call() throws Exception {
-    pushDataIntoEngine();
-    protocol.registerRead();
-    return true;
+    try {
+      engine.getInboundFrameValidator().validate(
+          incomingPacket.getRawBuffer(), saslManager.isDone());
+      pushDataIntoEngine();
+    } catch (AmqpInboundFrameValidator.UnsupportedVersion version) {
+      sendSupportedHeader(version.supportedHeader());
+      closeConnection();
+    } catch (IOException malformed) {
+      // Invalid input must not leave the AMQP socket alive. Transport processing
+      // may already have produced an error response, but the connection must close.
+      closeConnection();
+    }
+    if (!protocol.isClosed()) {
+      protocol.registerRead();
+    }
+    return !protocol.isClosed();
+  }
+
+  private void sendSupportedHeader(byte[] bytes) throws IOException {
+    Packet header = new Packet(ByteBuffer.wrap(bytes));
+    while (header.hasRemaining()) {
+      int written = protocol.getEndPoint().sendPacket(header);
+      if (written <= 0) {
+        throw new IOException("Unable to send AMQP supported protocol header");
+      }
+    }
+  }
+
+  private void closeConnection() throws IOException {
+    protocol.close();
   }
 
   private void processBuffers() {
@@ -78,21 +108,23 @@ public class InputPacketProcessTask extends PacketTask {
 
 
   private void pushDataIntoEngine() throws IOException {
+    boolean transportFailed = false;
     while (incomingPacket.hasRemaining()) {
       processBuffers();
       TransportResult result = transport.processInput();
-      isInSasl();
       if (!result.isOk()) {
         if (result.getException() != null) {
           protocol.getLogger().log(ServerLogMessages.AMQP_ENGINE_TRANSPORT_EXCEPTION, result.getErrorDescription(), result.getException());
         }
-      } else {
-        handleEvents();
+        transportFailed = true;
+        break;
       }
+      isInSasl();
+      handleEvents();
     }
     processOutput();
-    if (!incomingPacket.hasRemaining()) {
-      incomingPacket.clear();
+    if (transportFailed || engine.isCloseAfterOutput()) {
+      closeConnection();
     }
   }
 

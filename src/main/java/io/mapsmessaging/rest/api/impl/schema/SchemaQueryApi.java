@@ -59,7 +59,12 @@ import static io.mapsmessaging.rest.api.Constants.URI_PATH;
 @Path(URI_PATH + "/server/schemas")
 public class SchemaQueryApi extends BaseRestApi {
 
+  private static final String SCHEMA_JSON_MEDIA_TYPE = "application/schema+json";
+
+
   private static final String RESOURCE = "schemas";
+  private static final io.mapsmessaging.rest.api.pagination.PaginationService SCHEMA_PAGINATION =
+      new io.mapsmessaging.rest.api.pagination.PaginationService();
 
   @DELETE
   @Path("/{schemaId}")
@@ -470,10 +475,59 @@ public class SchemaQueryApi extends BaseRestApi {
             .toList();
 
     List<SchemaConfigDTO> schemaList = new ArrayList<>();
-    for(SchemaConfig schemaConfig : schemas) {
-      schemaList.add(SchemaConfigDtoMapper.toDto(schemaConfig));
-    }
+    schemas.stream()
+        .map(SchemaConfigDtoMapper::toDto)
+        .forEachOrdered(schemaList::add);
     return Response.ok(schemaList.toArray(new SchemaConfigDTO[0]), MediaType.APPLICATION_JSON).build();
+  }
+
+  @GET
+  @Path("/page")
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(
+      summary = "Get a cursor-paged list of schemas",
+      description = "Returns schemas ordered by immutable unique ID. Cursors expire after 30 minutes and are invalidated by server restart. Changes between requests are observed using keyset semantics.",
+      responses = {
+          @ApiResponse(responseCode = "200", description = "A page of schemas",
+              content = @Content(mediaType = "application/json",
+                  schema = @Schema(implementation = io.mapsmessaging.rest.api.pagination.PageResponse.class))),
+          @ApiResponse(responseCode = "400", description = "Invalid pageSize, filter or cursor",
+              content = @Content(mediaType = "application/json", schema = @Schema(implementation = StatusResponse.class))),
+          @ApiResponse(responseCode = "403", description = "Access denied")
+      }
+  )
+  public Response getSchemaPage(@QueryParam("filter") String filter,
+                                @QueryParam("pageSize") @DefaultValue("100") int pageSize,
+                                @QueryParam("cursor") String cursor,
+                                @jakarta.ws.rs.core.Context jakarta.ws.rs.core.SecurityContext securityContext) {
+    hasAccess(RESOURCE);
+    ParserExecutor parser;
+    try {
+      parser = (filter != null && !filter.isEmpty()) ? SelectorParser.compile(filter) : null;
+    } catch (ParseException exception) {
+      return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse("Invalid filter: " + exception.getMessage())).build();
+    }
+
+    String principal = securityContext != null && securityContext.getUserPrincipal() != null
+        ? securityContext.getUserPrincipal().getName() : "";
+    String scope = RESOURCE + ":" + principal + ":" + (filter == null ? "" : filter);
+    try {
+      List<SchemaConfig> visible = SchemaManager.getInstance().getAll().stream()
+          .filter(schemaConfig -> parser == null || parser.evaluate(schemaConfig))
+          .toList();
+      io.mapsmessaging.rest.api.pagination.PageResponse<SchemaConfig> page =
+          SCHEMA_PAGINATION.page(visible, SchemaConfig::getUniqueId,
+              new io.mapsmessaging.rest.api.pagination.PageRequest(pageSize, cursor), scope);
+      io.mapsmessaging.rest.api.pagination.PageResponse<SchemaConfigDTO> response =
+          new io.mapsmessaging.rest.api.pagination.PageResponse<>(
+              page.entries().stream().map(SchemaConfigDtoMapper::toDto).toList(),
+              page.nextCursor(), page.hasMore());
+      return Response.ok(response, MediaType.APPLICATION_JSON).build();
+    } catch (IllegalArgumentException exception) {
+      return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+          .entity(new StatusResponse(exception.getMessage())).build();
+    }
   }
 
   @GET
@@ -621,9 +675,9 @@ public class SchemaQueryApi extends BaseRestApi {
 
   private List<String> convertToId(List<SchemaConfig> configs) {
     List<String> data = new ArrayList<>();
-    for (SchemaConfig config : configs) {
-      data.add(config.getUniqueId());
-    }
+    configs.stream()
+        .map(SchemaConfig::getUniqueId)
+        .forEachOrdered(data::add);
     return data;
   }
 
@@ -633,13 +687,13 @@ public class SchemaQueryApi extends BaseRestApi {
     }
     String format = (schemaConfig.getFormat() == null) ? "" : schemaConfig.getFormat().toLowerCase(Locale.ROOT);
     return switch (format) {
-      case "json" -> "application/schema+json";
+      case "json" -> SCHEMA_JSON_MEDIA_TYPE;
       case "protobuf" -> "application/x-protobuf";
       case "avro" -> "application/avro+json";
       case "xml" -> "application/xml";
       case "cbor" -> "application/cddl";
-      case "messagepack", "msgpack" -> "application/schema+json";
-      case "csv" -> "application/schema+json";
+      case "messagepack", "msgpack" -> SCHEMA_JSON_MEDIA_TYPE;
+      case "csv" -> SCHEMA_JSON_MEDIA_TYPE;
       case "native", "raw" -> "application/octet-stream";
       default -> "application/octet-stream";
     };

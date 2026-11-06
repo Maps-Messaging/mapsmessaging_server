@@ -23,58 +23,55 @@ import io.mapsmessaging.configuration.ConfigurationProperties;
 
 public class N2KAisConfig extends N2KAisConfigDTO {
 
+  private static final String PGN_129039 = "pgn129039";
+  private static final String PGN_129040 = "pgn129040";
+  private static final String PGN_129809 = "pgn129809";
+  private static final String PGN_129810 = "pgn129810";
+
   public N2KAisConfig(ConfigurationProperties config) {
-    if (config.containsKey("pgn129039")) {
-      ConfigurationProperties pgn129039Properties = (ConfigurationProperties) config.get("pgn129039");
+    if (config.containsKey(PGN_129039)) {
+      ConfigurationProperties pgn129039Properties = (ConfigurationProperties) config.get(PGN_129039);
       this.pgn129039 = new N2KPgnTransmitConfig(pgn129039Properties);
     }
 
-    if (config.containsKey("pgn129040")) {
-      ConfigurationProperties pgn129040Properties = (ConfigurationProperties) config.get("pgn129040");
+    if (config.containsKey(PGN_129040)) {
+      ConfigurationProperties pgn129040Properties = (ConfigurationProperties) config.get(PGN_129040);
       this.pgn129040 = new N2KPgnTransmitConfig(pgn129040Properties);
     }
 
-    if (config.containsKey("pgn129809")) {
-      ConfigurationProperties pgn129809Properties = (ConfigurationProperties) config.get("pgn129809");
+    if (config.containsKey(PGN_129809)) {
+      ConfigurationProperties pgn129809Properties = (ConfigurationProperties) config.get(PGN_129809);
       this.pgn129809 = new N2KPgnTransmitConfig(pgn129809Properties);
     }
 
-    if (config.containsKey("pgn129810")) {
-      ConfigurationProperties pgn129810Properties = (ConfigurationProperties) config.get("pgn129810");
+    if (config.containsKey(PGN_129810)) {
+      ConfigurationProperties pgn129810Properties = (ConfigurationProperties) config.get(PGN_129810);
       this.pgn129810 = new N2KPgnTransmitConfig(pgn129810Properties);
     }
   }
 
   public boolean update(N2KAisConfigDTO newConfig) {
     boolean hasChanged = false;
-    if (pgn129039 == null && newConfig.getPgn129039() != null) {
-      pgn129039 = newConfig.getPgn129039();
-      hasChanged = true;
-    } else if (pgn129039 != null && !pgn129039.equals(newConfig.getPgn129039())) {
+    if ((pgn129039 == null && newConfig.getPgn129039() != null)
+        || (pgn129039 != null && !pgn129039.equals(newConfig.getPgn129039()))) {
       pgn129039 = newConfig.getPgn129039();
       hasChanged = true;
     }
 
-    if (pgn129040 == null && newConfig.getPgn129040() != null) {
-      pgn129040 = newConfig.getPgn129040();
-      hasChanged = true;
-    } else if (pgn129040 != null && !pgn129040.equals(newConfig.getPgn129040())) {
+    if ((pgn129040 == null && newConfig.getPgn129040() != null)
+        || (pgn129040 != null && !pgn129040.equals(newConfig.getPgn129040()))) {
       pgn129040 = newConfig.getPgn129040();
       hasChanged = true;
     }
 
-    if (pgn129809 == null && newConfig.getPgn129809() != null) {
-      pgn129809 = newConfig.getPgn129809();
-      hasChanged = true;
-    } else if (pgn129809 != null && !pgn129809.equals(newConfig.getPgn129809())) {
+    if ((pgn129809 == null && newConfig.getPgn129809() != null)
+        || (pgn129809 != null && !pgn129809.equals(newConfig.getPgn129809()))) {
       pgn129809 = newConfig.getPgn129809();
       hasChanged = true;
     }
 
-    if (pgn129810 == null && newConfig.getPgn129810() != null) {
-      pgn129810 = newConfig.getPgn129810();
-      hasChanged = true;
-    } else if (pgn129810 != null && !pgn129810.equals(newConfig.getPgn129810())) {
+    if ((pgn129810 == null && newConfig.getPgn129810() != null)
+        || (pgn129810 != null && !pgn129810.equals(newConfig.getPgn129810()))) {
       pgn129810 = newConfig.getPgn129810();
       hasChanged = true;
     }
@@ -89,19 +86,19 @@ public class N2KAisConfig extends N2KAisConfigDTO {
     ConfigurationProperties properties = new ConfigurationProperties();
 
     if (config.getPgn129039() != null) {
-      properties.put("pgn129039", toConfigurationProperties(config.getPgn129039()));
+      properties.put(PGN_129039, toConfigurationProperties(config.getPgn129039()));
     }
 
     if (config.getPgn129040() != null) {
-      properties.put("pgn129040", toConfigurationProperties(config.getPgn129040()));
+      properties.put(PGN_129040, toConfigurationProperties(config.getPgn129040()));
     }
 
     if (config.getPgn129809() != null) {
-      properties.put("pgn129809", toConfigurationProperties(config.getPgn129809()));
+      properties.put(PGN_129809, toConfigurationProperties(config.getPgn129809()));
     }
 
     if (config.getPgn129810() != null) {
-      properties.put("pgn129810", toConfigurationProperties(config.getPgn129810()));
+      properties.put(PGN_129810, toConfigurationProperties(config.getPgn129810()));
     }
 
     return properties;

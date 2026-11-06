@@ -293,6 +293,7 @@ public final class MavlinkMissionItemIntFactory {
     validateCoordinate(position.getLongitude(), -180.0d, 180.0d, "Longitude");
     validateAltitude(position.getAltitudeMslMeters(), "MSL altitude");
     validateAltitude(position.getAltitudeAglMeters(), "AGL altitude");
+    validateAltitude(position.getAltitudeRelativeMeters(), "relative altitude");
   }
 
   private static void validateCoordinate(Double value, double minimum, double maximum, String name) {

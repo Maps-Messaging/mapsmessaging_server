@@ -111,6 +111,21 @@ public class PublishListener5 extends PacketListener5 {
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) throws MalformedException {
     Publish5 publish = (Publish5) mqttPacket;
+    if (!endPoint.isClient()
+        && publish.getProperties().get(MessagePropertyFactory.SUBSCRIPTION_IDENTIFIER) != null) {
+      // MQTT-3.3.4-6: Subscription Identifier is server-to-client PUBLISH only.
+      // Keep the property legal when this instance is acting as an MQTT client.
+      ((MQTT5Protocol) protocol).setClosing(true);
+      Disconnect5 error = new Disconnect5(StatusCode.PROTOCOL_ERROR);
+      error.setCallback(() -> SimpleTaskScheduler.getInstance().schedule(() -> {
+        try {
+          protocol.close();
+        } catch (IOException e) {
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        }
+      }, 100, TimeUnit.MILLISECONDS));
+      return error;
+    }
     PublishMonitorPacket5 response = null;
     if (publish.getQos().equals(QualityOfService.AT_LEAST_ONCE)) {
       response = new PubAck5(publish.getPacketId(), StatusCode.SUCCESS);
@@ -199,7 +214,7 @@ public class PublishListener5 extends PacketListener5 {
                 publish.getQos(),
                 protocol.getProtocolMessageTransformation(),
                 protocol);
-        ParsedMessage parsed = protocol.parseInboundMessage(lookup, message);
+        ParsedMessage parsed = protocol.parseInboundMessage(destinationName, message);
         int sent = 0;
         if(parsed != null){
           lookup = parsed.getDestinationName();

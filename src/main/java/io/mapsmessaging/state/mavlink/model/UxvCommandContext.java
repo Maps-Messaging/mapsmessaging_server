@@ -31,6 +31,6 @@ public record UxvCommandContext(
         int sequence) {
 
     public UxvCommandContext {
-        vehicleId = Objects.requireNonNull(vehicleId, "vehicleId must not be null");
+        Objects.requireNonNull(vehicleId, "vehicleId must not be null");
     }
 }

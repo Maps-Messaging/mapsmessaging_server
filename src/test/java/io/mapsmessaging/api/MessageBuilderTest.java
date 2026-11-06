@@ -25,11 +25,60 @@ import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransform
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class MessageBuilderTest {
+
+  @Test
+  void setMeta_transfersMutableMapWithoutCopy() {
+    Map<String, String> supplied = new LinkedHashMap<>();
+    supplied.put("source", "value");
+
+    Message message = new MessageBuilder().setMeta(supplied).build();
+
+    Assertions.assertSame(supplied, message.getMeta());
+    Assertions.assertEquals("value", message.getMeta().get("source"));
+  }
+
+  @Test
+  void setMeta_rejectsImmutableMapWhenValidationEnabled() {
+    Assertions.assertTrue(Boolean.getBoolean("maps.message.meta.validate"),
+        "The test JVM must enable metadata validation");
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> new MessageBuilder().setMeta(Map.of("key", "value")));
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> new MessageBuilder().setMeta(Collections.unmodifiableMap(new LinkedHashMap<>())));
+    MessageBuilder builder = new MessageBuilder().setMeta(new LinkedHashMap<>());
+    Assertions.assertThrows(IllegalArgumentException.class,
+        () -> builder.setMeta(Map.of("merged", "value")));
+  }
+
+  @Test
+  void setMeta_validationRestoresOriginalContents() {
+    Map<String, String> supplied = new LinkedHashMap<>();
+    supplied.put("__maps_meta_validation__", "existing");
+    supplied.put("key", "value");
+    Map<String, String> expected = new LinkedHashMap<>(supplied);
+
+    MessageBuilder builder = new MessageBuilder().setMeta(supplied);
+
+    Assertions.assertSame(supplied, builder.getMeta());
+    Assertions.assertEquals(expected, supplied);
+    Assertions.assertIterableEquals(expected.keySet(), supplied.keySet());
+  }
+
+  @Test
+  void messageWithNullMetadataRetainsMutations() {
+    Message message = new MessageBuilder().build();
+    Map<String, String> metadata = message.getMeta();
+    metadata.put("added", "value");
+
+    Assertions.assertSame(metadata, message.getMeta());
+    Assertions.assertEquals("value", message.getMeta().get("added"));
+  }
 
   @Test
   void setMeta_mergesWhenBothNonNull() {
@@ -137,6 +186,7 @@ class MessageBuilderTest {
     Message original = new MessageBuilder()
         .setCreation(creation)
         .setSchemaId("schema-id")
+        .setResponseTopic("reply/topic")
         .setMeta(meta)
         .setDataMap(dataMap)
         .build();
@@ -145,6 +195,7 @@ class MessageBuilderTest {
 
     Assertions.assertEquals(creation, copy.getCreation());
     Assertions.assertEquals("schema-id", copy.getSchemaId());
+    Assertions.assertEquals("reply/topic", copy.getResponseTopic());
     Assertions.assertNotSame(original.getMeta(), copy.getMeta());
     Assertions.assertNotSame(original.getDataMap(), copy.getDataMap());
 
@@ -152,5 +203,54 @@ class MessageBuilderTest {
     copy.getDataMap().put("copy-data", new TypedData("copy"));
     Assertions.assertFalse(original.getMeta().containsKey("copy-meta"));
     Assertions.assertFalse(original.getDataMap().containsKey("copy-data"));
+  }
+
+  @Test
+  void copyConstructor_preservesNullResponseTopic() {
+    Message original = new MessageBuilder().build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertNull(copy.getResponseTopic());
+  }
+
+  @Test
+  void copyConstructor_preservesAbsoluteExpiryAndDelay() {
+    Message original = new MessageBuilder().setExpiry(120_000).setDelayed(2_000).build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertTrue(Math.abs(copy.getExpiry() - original.getExpiry()) <= 50);
+    Assertions.assertTrue(Math.abs(copy.getDelayed() - original.getDelayed()) <= 50);
+  }
+
+  @Test
+  void copyConstructor_preservesAbsoluteExpiryWithoutDelay() {
+    Message original = new MessageBuilder().setExpiry(120_000).build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertTrue(Math.abs(copy.getExpiry() - original.getExpiry()) <= 50);
+    Assertions.assertEquals(0, copy.getDelayed());
+  }
+
+  @Test
+  void copyConstructor_preservesAbsoluteDelayWithoutExpiry() {
+    Message original = new MessageBuilder().setDelayed(2_000).build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertEquals(0, copy.getExpiry());
+    Assertions.assertTrue(Math.abs(copy.getDelayed() - original.getDelayed()) <= 50);
+  }
+
+  @Test
+  void copyConstructor_preservesAbsentExpiryAndDelay() {
+    Message original = new MessageBuilder().build();
+
+    Message copy = new MessageBuilder(original).build();
+
+    Assertions.assertEquals(0, copy.getExpiry());
+    Assertions.assertEquals(0, copy.getDelayed());
   }
 }

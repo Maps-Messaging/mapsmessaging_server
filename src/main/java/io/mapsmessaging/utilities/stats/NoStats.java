@@ -36,7 +36,7 @@ public class NoStats implements Stats{
 
   @Override
   public void reset() {
-
+    // Statistics are disabled; there is no state to reset.
   }
 
   @Override
@@ -56,11 +56,11 @@ public class NoStats implements Stats{
 
   @Override
   public void add(long value) {
-
+    // Statistics are disabled; values are not accumulated.
   }
 
   @Override
   public void subtract(long value) {
-
+    // Statistics are disabled; values are not accumulated.
   }
 }

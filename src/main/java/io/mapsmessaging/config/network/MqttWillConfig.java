@@ -74,8 +74,8 @@ public class MqttWillConfig extends MqttWillConfigDTO implements Config {
         hasChanged = true;
       }
 
-      if (!Objects.equals(payloadEncoding, mqttWillConfigDTO.getPayload())) {
-        payloadEncoding = mqttWillConfigDTO.getPayload();
+      if (!Objects.equals(payloadEncoding, mqttWillConfigDTO.getPayloadEncoding())) {
+        payloadEncoding = mqttWillConfigDTO.getPayloadEncoding();
         hasChanged = true;
       }
       if (qos != mqttWillConfigDTO.getQos()) {

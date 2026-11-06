@@ -3,7 +3,9 @@ package io.mapsmessaging.network.io.connection.state;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
+import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 
 import java.io.IOException;
@@ -121,21 +123,40 @@ public class StateMonitor implements Runnable {
   }
 
   private void closeStaleEndpoint(State state, long duration) {
+    EndPoint endpoint = resolveEndPoint();
     logger.log(
         ServerLogMessages.STATE_MONITOR_CLOSING_STALE_ENDPOINT,
-        connection.getEndPoint(),
+        endpoint,
         state.getName(),
         duration);
 
-    if (connection.getEndPoint() != null) {
+    state.cancel();
+    if (connection.getState() != state) {
+      return;
+    }
+
+    endpoint = resolveEndPoint();
+    if (endpoint != null) {
       try {
-        connection.getEndPoint().close();
+        endpoint.close();
       } catch (IOException exception) {
-        logger.log(ServerLogMessages.STATE_MONITOR_ENDPOINT_CLOSE_EXCEPTION, connection.getEndPoint(), exception);
+        logger.log(ServerLogMessages.STATE_MONITOR_ENDPOINT_CLOSE_EXCEPTION, endpoint, exception);
       }
     }
 
-    connection.handleCloseEndPoint(connection.getEndPoint());
+    if (connection.getState() == state) {
+      connection.handleCloseEndPoint(endpoint);
+    }
+  }
+
+  private EndPoint resolveEndPoint() {
+    EndPoint endpoint = connection.getEndPoint();
+    if (endpoint != null) {
+      return endpoint;
+    }
+
+    Protocol protocol = connection.getProtocol();
+    return protocol == null ? null : protocol.getEndPoint();
   }
 
   @Override

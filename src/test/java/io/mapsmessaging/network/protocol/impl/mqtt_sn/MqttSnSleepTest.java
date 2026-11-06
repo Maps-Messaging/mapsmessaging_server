@@ -50,8 +50,8 @@ class MqttSnSleepTest extends BaseTestConfig {
     AtomicLong publishCount = new AtomicLong(0);
     AtomicLong receiveCounter = new AtomicLong(0);
 
-    MqttSnClient sleepy = new MqttSnClient( "localhost", 1884, version);
-    MqttSnClient hyper = new MqttSnClient("localhost", 1884, version);
+    MqttSn12Client sleepy = new MqttSn12Client("localhost", 1884);
+    MqttSn12Client hyper = new MqttSn12Client("localhost", 1884);
 
     hyper.connect(120, true);
     sleepy.connect(120, true);
@@ -134,8 +134,8 @@ class MqttSnSleepTest extends BaseTestConfig {
     AtomicLong publishCount = new AtomicLong(0);
     AtomicLong receiveCounter = new AtomicLong(0);
 
-    MqttSnClient sleepy = new MqttSnClient("localhost", 1884, version);
-    MqttSnClient hyper = new MqttSnClient("localhost", 1884, version);
+    MqttSn12Client sleepy = new MqttSn12Client("localhost", 1884);
+    MqttSn12Client hyper = new MqttSn12Client("localhost", 1884);
 
     hyper.connect(120, true);
     sleepy.connect(120, true);

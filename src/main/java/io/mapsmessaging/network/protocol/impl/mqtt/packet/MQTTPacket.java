@@ -25,6 +25,9 @@ import io.mapsmessaging.network.protocol.EndOfBufferException;
 import lombok.Getter;
 
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
 public abstract class MQTTPacket implements ServerPacket {
@@ -56,20 +59,21 @@ public abstract class MQTTPacket implements ServerPacket {
   public static long readVariableInt(Packet packet)
       throws MalformedException, EndOfBufferException {
     long value = 0;
-    byte encoded;
-    int counter = 0;
-    do {
+    for (int index = 0; index < 4; index++) {
       if (packet.available() == 0) {
         throw new EndOfBufferException("Ran off the buffer reading variable int");
       }
-      encoded = packet.get();
-      value += ((encoded & 0x7FL) << (7L * counter));
-      if (counter > 4) {
-        throw new MalformedException();
+      int encoded = packet.get() & 0xff;
+      value |= (long) (encoded & 0x7f) << (7 * index);
+      if ((encoded & 0x80) == 0) {
+        // MQTT 5 section 1.5.5 requires the shortest possible encoding.
+        if (index > 0 && (encoded & 0x7f) == 0) {
+          throw new MalformedException("Non-minimal MQTT Variable Byte Integer encoding");
+        }
+        return value;
       }
-      counter++;
-    } while ((encoded & 0x80) != 0);
-    return value;
+    }
+    throw new MalformedException("MQTT Variable Byte Integer exceeds four bytes");
   }
 
   public static void writeVariableInt(Packet packet, long val) {
@@ -95,29 +99,36 @@ public abstract class MQTTPacket implements ServerPacket {
   }
 
   public static String readRemainingString(Packet packet) throws MalformedException {
-    String str = new String(readRemaining(packet, packet.available()), StandardCharsets.UTF_8);
-    if (str.chars().anyMatch(c -> c == 0)) {
-      throw new MalformedException("UTF-8 String must not contain U+0000 characters [MQTT-1.5.3-2]");
-    }
-    return str;
+    return decodeUtf8(readRemaining(packet, packet.available()));
   }
 
   public static String readUTF8(Packet packet) throws MalformedException {
-    String result = "";
-    if (packet.available() >= 2) {
-      int len = readShort(packet);
-      if (packet.available() >= len) {
-        byte[] str = new byte[len];
-        packet.get(str, 0, len);
-        result = new String(str, StandardCharsets.UTF_8);
-        if (result.chars().anyMatch(c -> c == 0)) {
-          throw new MalformedException("UTF-8 String must not contain U+0000 characters [MQTT-1.5.3-2]");
-        }
-      } else {
-        throw new MalformedException("Packet truncated");
-      }
+    if (packet.available() < 2) {
+      throw new MalformedException("MQTT UTF-8 string length is truncated");
     }
-    return result;
+    int len = readShort(packet);
+    if (packet.available() < len) {
+      throw new MalformedException("Packet truncated");
+    }
+    byte[] bytes = new byte[len];
+    packet.get(bytes, 0, len);
+    return decodeUtf8(bytes);
+  }
+
+  private static String decodeUtf8(byte[] bytes) throws MalformedException {
+    try {
+      String text = StandardCharsets.UTF_8.newDecoder()
+          .onMalformedInput(CodingErrorAction.REPORT)
+          .onUnmappableCharacter(CodingErrorAction.REPORT)
+          .decode(ByteBuffer.wrap(bytes))
+          .toString();
+      if (text.indexOf('\0') >= 0) {
+        throw new MalformedException("UTF-8 String must not contain U+0000 characters [MQTT-1.5.3-2]");
+      }
+      return text;
+    } catch (CharacterCodingException malformed) {
+      throw new MalformedException("Invalid MQTT UTF-8 encoded string");
+    }
   }
 
   public static void writeUTF8(Packet packet, String string) {

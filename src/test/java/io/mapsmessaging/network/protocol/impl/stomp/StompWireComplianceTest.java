@@ -157,6 +157,33 @@ class StompWireComplianceTest extends StompBaseTest {
     }
   }
 
+
+  @Test
+  void normalisesStompHeaderWhitespaceOnIncomingSend() throws Exception {
+    // MAPS compatibility exception: surrounding whitespace is trimmed at the first ':'.
+    String destination = "/topic/stomp-trim-" + UUID.randomUUID();
+    try (RawStompConnection subscriber = new RawStompConnection(8674);
+        RawStompConnection publisher = new RawStompConnection(8674)) {
+      subscriber.connect("1.2", "0,0");
+      assertEquals("CONNECTED", subscriber.readFrame().command());
+      subscribe(subscriber, destination, "trim-sub", "auto");
+
+      publisher.connect("1.2", "0,0");
+      assertEquals("CONNECTED", publisher.readFrame().command());
+
+      String frame = "SEND\n destination :  " + destination
+          + "  \n trace-id :  spaced value  \ncontent-length:7\n\npayload\0";
+      publisher.sendBytes(frame.getBytes(StandardCharsets.UTF_8));
+
+      RawStompConnection.StompFrame message = subscriber.readFrame();
+      assertEquals("MESSAGE", message.command());
+      assertEquals(destination, message.headers().get("destination"));
+      assertEquals("spaced value", message.headers().get("trace-id"));
+      assertEquals("trim-sub", message.headers().get("subscription"));
+      assertEquals("payload", message.bodyText());
+    }
+  }
+
   private void subscribe(
       RawStompConnection connection,
       String destination,

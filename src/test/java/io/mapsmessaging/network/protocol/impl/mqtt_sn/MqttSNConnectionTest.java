@@ -34,7 +34,7 @@ class MqttSNConnectionTest extends BaseMqttSnConfig {
   @ParameterizedTest
   @MethodSource("createVersionStream")
   void connectWithOutFlags(int version) throws MqttsnException, MqttsnClientConnectException {
-    MqttSnClient client = new MqttSnClient( "localhost", 1884, version);
+    MqttSn12Client client = new MqttSn12Client("localhost", 1884);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     client.disconnect();
@@ -46,7 +46,7 @@ class MqttSNConnectionTest extends BaseMqttSnConfig {
   void connectWithWillFlags(int version) throws MqttsnClientConnectException, MqttsnException, InterruptedException {
     TopicPath tp = new TopicPath("willTopic");
     WillDataImpl details = new WillDataImpl(tp, "This is my last will and stuff".getBytes(StandardCharsets.UTF_8), 1, true);
-    MqttSnClient client = new MqttSnClient("localhost", 1884, version);
+    MqttSn12Client client = new MqttSn12Client("localhost", 1884);
     client.connect(50, true);
     Assertions.assertTrue(client.isConnected());
     client.setWillData(details);
@@ -60,7 +60,7 @@ class MqttSNConnectionTest extends BaseMqttSnConfig {
   @ParameterizedTest
   @MethodSource("createVersionStream")
   void connectWaitForKeepalive(int version) throws MqttsnException, MqttsnClientConnectException, InterruptedException {
-    MqttSnClient client = new MqttSnClient("localhost", 1884, version);
+    MqttSn12Client client = new MqttSn12Client("localhost", 1884);
     client.connect(10, true);
     long end = System.currentTimeMillis() + 20000;
     while (end > System.currentTimeMillis()) {

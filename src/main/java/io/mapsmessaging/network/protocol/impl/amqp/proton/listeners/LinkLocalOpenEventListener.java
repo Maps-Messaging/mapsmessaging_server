@@ -46,8 +46,8 @@ public class LinkLocalOpenEventListener extends BaseEventListener {
   public boolean handleEvent(Event event) {
     // Check to see if we update the credit
     Link link = event.getLink();
-    if (link instanceof Receiver) {
-      topUp((Receiver) link);
+    if (link instanceof Receiver matchedReceiver) {
+      topUp(matchedReceiver);
     }
     return true;
   }
@@ -77,8 +77,7 @@ public class LinkLocalOpenEventListener extends BaseEventListener {
   protected void getSelector(Source source, SubscriptionContextBuilder contextBuilder) {
     if (source.getFilter() != null) {
       Object filter = source.getFilter().get(Symbol.getSymbol("jms-selector"));
-      if (filter instanceof DescribedType) {
-        DescribedType decoder = (DescribedType) filter;
+      if (filter instanceof DescribedType decoder) {
         String selector = decoder.getDescribed().toString();
         if (selector != null) {
           contextBuilder.setSelector(selector);

@@ -22,20 +22,22 @@ package io.mapsmessaging.network.protocol.impl.mqtt5.listeners;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.protocol.Protocol;
-import io.mapsmessaging.network.protocol.impl.mqtt.PacketIdentifierMap;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.MQTTPacket5;
 import io.mapsmessaging.network.protocol.impl.mqtt5.packet.SubAck5;
+import io.mapsmessaging.network.protocol.impl.mqtt5.packet.StatusCode;
 
 public class SubAckListener5 extends PacketListener5 {
 
   @Override
   public MQTTPacket5 handlePacket(MQTTPacket5 mqttPacket, Session session, EndPoint endPoint, Protocol protocol) {
     SubAck5 subAck = (SubAck5) mqttPacket;
-    PacketIdentifierMap mapping = ((MQTT5Protocol) protocol).getPacketIdManager().completePacketId(subAck.getPacketId());
-    if (mapping != null) {
-      mapping.getSubscription().ackReceived(mapping.getMessageId());
+    StatusCode[] result = subAck.getResult();
+    int[] codes = new int[result.length];
+    for (int index = 0; index < result.length; index++) {
+      codes[index] = Byte.toUnsignedInt(result[index].getValue());
     }
+    ((MQTT5Protocol) protocol).getRemoteSubscriptionTracker().acknowledge(subAck.getPacketId(), codes);
     return null;
   }
 }

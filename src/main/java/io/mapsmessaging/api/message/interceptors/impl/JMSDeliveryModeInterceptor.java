@@ -30,8 +30,7 @@ public class JMSDeliveryModeInterceptor implements Interceptor {
       case AT_MOST_ONCE:
         return "NON_PERSISTENT";
 
-      case AT_LEAST_ONCE:
-      case EXACTLY_ONCE:
+      case AT_LEAST_ONCE, EXACTLY_ONCE:
       default:
         return "PERSISTENT";
     }

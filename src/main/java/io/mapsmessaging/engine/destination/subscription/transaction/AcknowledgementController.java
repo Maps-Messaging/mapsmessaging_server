@@ -46,7 +46,7 @@ public interface AcknowledgementController {
 
   boolean canSend();
 
-  long messageSent();
+  Long messageSent();
 
   void clear();
 }

@@ -24,8 +24,8 @@ public record GeoViolation(
     String reason) {
 
   public GeoViolation {
-    type = Objects.requireNonNull(type, "type must not be null");
-    areaName = Objects.requireNonNull(areaName, "areaName must not be null");
-    reason = Objects.requireNonNull(reason, "reason must not be null");
+    Objects.requireNonNull(type, "type must not be null");
+    Objects.requireNonNull(areaName, "areaName must not be null");
+    Objects.requireNonNull(reason, "reason must not be null");
   }
 }

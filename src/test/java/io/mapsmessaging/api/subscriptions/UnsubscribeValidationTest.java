@@ -19,23 +19,34 @@
 
 package io.mapsmessaging.api.subscriptions;
 
-import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.Destination;
+import io.mapsmessaging.api.MessageAPITest;
+import io.mapsmessaging.api.MessageBuilder;
+import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.MessageListener;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionContextBuilder;
+import io.mapsmessaging.api.SubscribedEventManager;
+import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.session.FakeProtocol;
 import io.mapsmessaging.network.ProtocolClientConnection;
 import io.mapsmessaging.test.WaitForState;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import javax.security.auth.login.LoginException;
-import lombok.NonNull;
-import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import lombok.NonNull;
+import lombok.SneakyThrows;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
+import javax.security.auth.login.LoginException;
 
 class UnsubscribeValidationTest extends MessageAPITest implements MessageListener {
 
@@ -43,7 +54,6 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
   void topicUnsubscribeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, true, false);
-
   }
 
   @Test
@@ -53,14 +63,35 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
   void topicDisconnectEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, false, false);
-
   }
 
   @Test
   void queueDisconnectEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
-    eventCleanUpTest(testInfo.getTestMethod().get().getName(), "queue/queue1", true, false, false);
+    String name = testInfo.getTestMethod().get().getName();
+    try (QueueCleanupTrace trace = QueueCleanupTrace.start("queue/queue1")) {
+      try {
+        eventCleanUpTest(name, "queue/queue1", true, false, false);
+      } finally {
+        // Preserve the original assertion/exception even if a concurrent snapshot or file write fails.
+        try {
+          trace.captureFinalState();
+          md.getDestinationManager().find("queue/queue1").get(2, TimeUnit.SECONDS).traceCleanupState("TEST-FINAL-DESTINATION");
+        } catch (Exception diagnosticFailure) {
+          if (diagnosticFailure instanceof InterruptedException) {
+            Thread.currentThread().interrupt();
+          }
+          QueueCleanupTrace.record("queue/queue1", "SNAPSHOT-FAILED", -1, diagnosticFailure.toString());
+        }
+        Path tracePath = Path.of("target", "queue-cleanup-debug", name + "-" + System.currentTimeMillis() + ".log");
+        try {
+          trace.writeTo(tracePath);
+          System.err.println("Queue cleanup trace: " + tracePath.toAbsolutePath());
+        } catch (IOException diagnosticFailure) {
+          diagnosticFailure.printStackTrace(System.err);
+        }
+      }
+    }
   }
-
 
   void topicResumeEventCleanUp(TestInfo testInfo) throws LoginException, IOException {
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "topic/topic1", false, false, true);
@@ -71,17 +102,16 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
     eventCleanUpTest(testInfo.getTestMethod().get().getName(), "queue/queue1", true, false, true);
   }
 
-
   @SneakyThrows
   public void eventCleanUpTest(String name, String destinationName, boolean isQueue, boolean unsubscribe, boolean resumeSession) throws LoginException, IOException {
-    SessionContextBuilder scb1 = new SessionContextBuilder(name+"_1", new ProtocolClientConnection(new FakeProtocol(this)));
+    SessionContextBuilder scb1 = new SessionContextBuilder(name + "_1", new ProtocolClientConnection(new FakeProtocol(this)));
     scb1.setReceiveMaximum(1); // ensure it is low
     scb1.setSessionExpiry(2); // 2 seconds, more than enough time
     scb1.setPersistentSession(true); // store the details
 
     Session delayedSession1 = createSession(scb1, this);
 
-    SessionContextBuilder scb2 = new SessionContextBuilder(name+"_2", new ProtocolClientConnection(new FakeProtocol(this)));
+    SessionContextBuilder scb2 = new SessionContextBuilder(name + "_2", new ProtocolClientConnection(new FakeProtocol(this)));
     scb2.setReceiveMaximum(1); // ensure it is low
     scb2.setSessionExpiry(2); // 2 seconds, more than enough time
     scb2.setPersistentSession(true); // store the details
@@ -89,7 +119,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
     Session publisher = createSession(name, 60, 60, false, this);
     DestinationType destinationType = DestinationType.TOPIC;
-    if(isQueue){
+    if (isQueue) {
       destinationType = DestinationType.QUEUE;
     }
     Destination destination = publisher.findDestination(destinationName, destinationType).get();
@@ -100,21 +130,21 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
     SubscribedEventManager subscription = delayedSession1.addSubscription(context);
     Assertions.assertNotNull(subscription);
 
-    for(int x=0;x<EVENT_COUNT;x++) {
+    for (int x = 0; x < EVENT_COUNT; x++) {
       MessageBuilder messageBuilder = new MessageBuilder();
-      messageBuilder.setOpaqueData(("Hi There "+x).getBytes());
+      messageBuilder.setOpaqueData(("Hi There " + x).getBytes());
       messageBuilder.storeOffline(true);
       messageBuilder.setQoS(QualityOfService.AT_LEAST_ONCE);
       destination.storeMessage(messageBuilder.build());
 
       // Add a second subscription 1/2 way through
-      if(x == EVENT_COUNT/2){
+      if (x == EVENT_COUNT / 2) {
         context = createContext(destinationName, ClientAcknowledgement.INDIVIDUAL, QualityOfService.AT_LEAST_ONCE, 1);
         SubscribedEventManager subscription2 = delayedSession2.addSubscription(context);
         Assertions.assertNotNull(subscription2);
       }
     }
-    if(resumeSession){
+    if (resumeSession) {
       // This should put BOTH sessions into hibernate BUT NOT lose any events
       close(delayedSession1);
       close(delayedSession2);
@@ -129,7 +159,7 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
 
     // At this point we should have a large number of events pending for the subscription, so let's unsubscribe and see
     Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
-    if(unsubscribe) {
+    if (unsubscribe) {
       delayedSession1.removeSubscription(destinationName);
       if (isQueue) {
         Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
@@ -137,33 +167,36 @@ class UnsubscribeValidationTest extends MessageAPITest implements MessageListene
         Assertions.assertEquals(EVENT_COUNT / 2 - 1, destination.getStoredMessages());
       }
     }
+    QueueCleanupTrace.record(destinationName, "TEST-DISCONNECT-BEGIN", -1);
     close(delayedSession1);
     close(delayedSession2);
-    if(isQueue) {
+    QueueCleanupTrace.record(destinationName, "TEST-DISCONNECT-END", -1);
+    if (isQueue) {
       // Since we auto store events on queues, the only way to remove them is to deliver and ack them
       Assertions.assertEquals(EVENT_COUNT, destination.getStoredMessages());
       context = createContext(destinationName, ClientAcknowledgement.AUTO, QualityOfService.AT_LEAST_ONCE, 10);
       subscription = publisher.addSubscription(context);
       Assertions.assertNotNull(subscription);
+      QueueCleanupTrace.record(destinationName, "TEST-DRAIN-SUBSCRIBED", -1);
       WaitForState.waitFor(2, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
     }
 
     WaitForState.waitFor(7, TimeUnit.SECONDS, () -> destination.getStoredMessages() == 0);
+    QueueCleanupTrace.record(destinationName, "TEST-DRAIN-END", -1, "stored", destination.getStoredMessages());
     Assertions.assertEquals(0, destination.getStoredMessages());
     close(publisher);
   }
 
-  private SubscriptionContext createContext(String destinationName,ClientAcknowledgement clientAcknowledgement,  QualityOfService qos, int receiveMax){
+  private SubscriptionContext createContext(String destinationName, ClientAcknowledgement clientAcknowledgement, QualityOfService qos, int receiveMax) {
     SubscriptionContextBuilder subContextBuilder2 = new SubscriptionContextBuilder(destinationName, clientAcknowledgement);
     subContextBuilder2.setReceiveMaximum(receiveMax);
     subContextBuilder2.setQos(qos);
     return subContextBuilder2.build();
-
-
   }
 
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
+    QueueCleanupTrace.record(messageEvent.getDestinationName(), "TEST-CALLBACK", messageEvent.getMessage().getIdentifier());
     messageEvent.getCompletionTask().run();
   }
 }

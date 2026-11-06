@@ -27,6 +27,11 @@ public class SessionExpiryInterval extends IntegerMessageProperty {
     super(MessagePropertyFactory.SESSION_EXPIRY_INTERVAL, "SessionExpiryInterval");
   }
 
+  public SessionExpiryInterval(long expiry) {
+    this();
+    setExpiry(expiry);
+  }
+
   @Override
   public MessageProperty instance() {
     return new SessionExpiryInterval();

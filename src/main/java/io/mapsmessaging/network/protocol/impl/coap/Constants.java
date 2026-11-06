@@ -43,6 +43,7 @@ public class Constants {
 
   // Counters
   public static final int MAX_RETRANSMIT = 4;
+  public static final long EXCHANGE_LIFETIME_MILLIS = 247_000L;
 
   private Constants() {
   }

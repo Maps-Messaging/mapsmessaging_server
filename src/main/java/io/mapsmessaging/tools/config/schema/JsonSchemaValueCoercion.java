@@ -43,9 +43,9 @@ public final class JsonSchemaValueCoercion {
     }
 
     List<JsonNode> coercedValues = new ArrayList<>(enumValues.size());
-    for (String enumValue : enumValues) {
-      coercedValues.add(coerceValue(enumValue, schemaScalarType));
-    }
+    enumValues.stream()
+        .map(enumValue -> coerceValue(enumValue, schemaScalarType))
+        .forEachOrdered(coercedValues::add);
     return coercedValues;
   }
 

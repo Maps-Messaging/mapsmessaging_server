@@ -32,10 +32,10 @@ public class ChatGPTSelectorClient {
         .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(fullPrompt)))
         .build();
 
-    HttpClient client = HttpClient.newHttpClient();
-    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-    return extractContent(response.body());
+    try (HttpClient client = HttpClient.newHttpClient()) {
+      HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+      return extractContent(response.body());
+    }
   }
 
   private String buildPrompt(String schema, String contextHint) {

@@ -38,9 +38,7 @@ public class CoapConfig extends CoapConfigDTO implements Config {
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
-    if (config instanceof CoapConfigDTO) {
-      CoapConfigDTO newConfig = (CoapConfigDTO) config;
-
+    if (config instanceof CoapConfigDTO newConfig) {
       // Check each field and update if necessary
       if (this.maxBlockSize != newConfig.getMaxBlockSize()) {
         this.maxBlockSize = newConfig.getMaxBlockSize();

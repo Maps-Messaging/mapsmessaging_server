@@ -34,16 +34,13 @@ public class TypeFactory {
       case "Height":
         return new HeightType(iterator.next(), iterator.next());
 
-      case "String":
-      case "char":
+      case "String", "char":
         return new StringType(iterator.next());
 
-      case "long":
-      case "int":
+      case "long", "int":
         return new LongType(iterator.next());
 
-      case "double":
-      case "float":
+      case "double", "float":
         return new DoubleType(iterator.next());
 
       case "boolean":

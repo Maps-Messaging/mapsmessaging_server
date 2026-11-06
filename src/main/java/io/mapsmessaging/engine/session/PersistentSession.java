@@ -47,11 +47,73 @@ public class PersistentSession extends SessionImpl{
     sessionDetails = storeLookup.getSessionDetails(context);
     context.setUniqueId(sessionDetails.getUniqueId());
     storeName = storeLookup.getDataPath() + "/" + sessionDetails.getUniqueId() + ".bin";
+    deliveryStateCoordinator.setPath(Paths.get(storeName.replaceFirst("\\.bin$", ".packet-ids")));
+    if (context.isResetState()) {
+      // Clean Start retires any snapshot from the previous incarnation,
+      // even if this session never accesses a topic alias.
+      try {
+        Files.deleteIfExists(Paths.get(storeName.replaceFirst("\\.bin$", ".aliases")));
+        Files.deleteIfExists(Paths.get(storeName.replaceFirst("\\.bin$", ".packet-ids")));
+      } catch (IOException error) {
+        throw new java.io.UncheckedIOException("Unable to reset session delivery and alias state", error);
+      }
+    }
     if(context.isResetState() || sessionDetails.getSubscriptionContextList().isEmpty()){ // this will delete it and recreate
       sessionDetails.getSubscriptionContextList().clear(); // ensure it is clear
       saveState();
     }
   }
+  @Override
+  public synchronized io.mapsmessaging.storage.alias.TopicAliasRegistry getOrCreateTopicAliasRegistry(
+      int maximum) throws IOException {
+    if (aliasRegistry != null) {
+      return aliasRegistry;
+    }
+    io.mapsmessaging.storage.alias.FileAliasSnapshotPersistence persistence =
+        new io.mapsmessaging.storage.alias.FileAliasSnapshotPersistence(
+            java.nio.file.Path.of(storeName.replaceFirst("\\.bin$", ".aliases")));
+    io.mapsmessaging.storage.alias.TopicAliasRegistry candidate =
+        new io.mapsmessaging.storage.alias.TopicAliasRegistry(maximum,
+            io.mapsmessaging.storage.alias.TopicAliasRegistry.PersistenceMode.SESSION_PERSISTENT,
+            persistence);
+    // A Clean Start replaces old session metadata. The old snapshot is not reusable.
+    if (getContext().isResetState()) {
+      persistence.delete();
+    }
+    candidate.load();
+    // The session record must exist even when there are no subscriptions.
+    // Otherwise restart enumeration would orphan an alias-only session.
+    if (!Files.isRegularFile(Paths.get(storeName))) {
+      try (FileOutputStream output = new FileOutputStream(storeName)) {
+        sessionDetails.save(output);
+      }
+    }
+    aliasRegistry = attachTopicAliasRegistry(candidate);
+    return aliasRegistry;
+  }
+
+  private io.mapsmessaging.storage.alias.TopicAliasRegistry aliasRegistry;
+
+  @Override
+  @SuppressWarnings("java:S2095") // Ownership transfers to SessionImpl; failures close the candidate below.
+  protected io.mapsmessaging.storage.delivery.PacketIdStore createPacketIdStore(int maximum) throws IOException {
+    io.mapsmessaging.storage.delivery.PacketIdStore candidate = io.mapsmessaging.storage.delivery.PacketIdStore.open(
+        Paths.get(storeName.replaceFirst("\\.bin$", ".packet-ids")), maximum,
+        io.mapsmessaging.storage.delivery.PacketIdStore.Durability.BATCHED);
+    try {
+      // Delivery-only sessions must remain discoverable after restart and eligible for expiry.
+      if (!Files.isRegularFile(Paths.get(storeName))) {
+        try (FileOutputStream output = new FileOutputStream(storeName)) {
+          sessionDetails.save(output);
+        }
+      }
+      return candidate;
+    } catch (IOException | RuntimeException error) {
+      try { candidate.close(); } catch (IOException closeError) { error.addSuppressed(closeError); }
+      throw error;
+    }
+  }
+
   @Override
   public void setExpiryTime(long expiry) {
     super.setExpiryTime(expiry);
@@ -76,7 +138,9 @@ public class PersistentSession extends SessionImpl{
   }
 
   private void saveState(){
-    if(sessionDetails.getSubscriptionContextList().isEmpty()){
+    if(sessionDetails.getSubscriptionContextList().isEmpty()
+        && !Files.isRegularFile(Paths.get(storeName.replaceFirst("\\.bin$", ".packet-ids")))
+        && !Files.isRegularFile(Paths.get(storeName.replaceFirst("\\.bin$", ".aliases")))){
       try{
         Files.deleteIfExists(Paths.get(storeName));
       } catch (IOException ioException) {

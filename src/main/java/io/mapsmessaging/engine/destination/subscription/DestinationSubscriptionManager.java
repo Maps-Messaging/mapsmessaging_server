@@ -111,12 +111,13 @@ public class DestinationSubscriptionManager implements Subscribable {
 
   @Override
   public boolean expired(long messageIdentifier) {
+    boolean handled = false;
     for (Subscribable subscribable : subscriptions.values()) {
       if (subscribable.expired(messageIdentifier)) {
-        return true;
+        handled = true;
       }
     }
-    return false;
+    return handled;
   }
 
 

@@ -31,8 +31,15 @@ public class SharedSubscriptionTask extends EngineTask {
   private final AcknowledgementController acknowledgementController;
   private final long messageId;
   private final boolean ack;
+  private final Runnable deliveryCleanup;
 
   public SharedSubscriptionTask(SharedSubscription sharedSubscription, AcknowledgementController acknowledgementController, long messageId, final boolean ack) {
+    this(sharedSubscription, acknowledgementController, messageId, ack, () -> { });
+  }
+
+  public SharedSubscriptionTask(SharedSubscription sharedSubscription, AcknowledgementController acknowledgementController,
+      long messageId, boolean ack, Runnable deliveryCleanup) {
+    this.deliveryCleanup = deliveryCleanup;
     this.sharedSubscription = sharedSubscription;
     this.acknowledgementController = acknowledgementController;
     this.messageId = messageId;
@@ -42,6 +49,7 @@ public class SharedSubscriptionTask extends EngineTask {
   @Override
   public Response taskCall() {
     if (ack) {
+      deliveryCleanup.run();
       acknowledgementController.ack(messageId);
       sharedSubscription.ackReceived(messageId);
     } else {

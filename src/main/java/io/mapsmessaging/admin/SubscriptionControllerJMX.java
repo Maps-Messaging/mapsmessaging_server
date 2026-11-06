@@ -66,6 +66,6 @@ public class SubscriptionControllerJMX {
 
   @JMXBeanOperation(name = "Close", description = "Closes and clears all state for this session")
   public void closeSession() {
-    MessageDaemon.getInstance().getSubSystemManager().getSessionManager().closeSubscriptionController(subscription);
+    MessageDaemon.getInstance().getSubSystemManager().getSessionManager().close(subscription.getSessionId(), false);
   }
 }

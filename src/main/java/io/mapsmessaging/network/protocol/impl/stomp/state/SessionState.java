@@ -164,6 +164,9 @@ public class SessionState implements CloseHandler, CompletionHandler {
   }
 
   public SubscribedEventManager createSubscription(SubscriptionContext context) throws IOException {
+    if (activeSubscriptions.containsKey(context.getAlias())) {
+      throw new StompProtocolException("Duplicate STOMP subscription id: " + context.getAlias());
+    }
     if (context.getFilter().startsWith("/queue") || context.getFilter().startsWith("queue")) {
       getSession().findDestination(context.getFilter(), DestinationType.QUEUE);
     }

@@ -45,8 +45,12 @@ public abstract class JetStreamFrameHandler extends BaseStreamApiHandler {
 
 
   protected NatsFrame buildError(String type, String message, String replyTo, SessionState sessionState) {
+    return buildError(type, 404, message, replyTo, sessionState);
+  }
+
+  protected NatsFrame buildError(String type, int code, String message, String replyTo, SessionState sessionState) {
     JsonObject err = new JsonObject();
-    err.addProperty("code", 404);
+    err.addProperty("code", code);
     err.addProperty("description", message);
 
     JsonObject root = new JsonObject();

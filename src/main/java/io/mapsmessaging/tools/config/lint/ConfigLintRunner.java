@@ -52,7 +52,6 @@ public class ConfigLintRunner {
     ServiceLoader<ConfigManager> loader = ServiceLoader.load(ConfigManager.class);
 
     List<ConfigLintConfigResult> configs = new ArrayList<>();
-    List<LintIssue> allIssues = new ArrayList<>();
 
     for (ConfigManager manager : loader) {
       String configName = resolveConfigName(manager);
@@ -67,7 +66,6 @@ public class ConfigLintRunner {
             "ROOT_DTO_NOT_FOUND",
             "Could not resolve root DTO by walking superclasses to BaseConfigDTO from " + managerClass.getName()
         );
-        allIssues.add(issue);
         configs.add(new ConfigLintConfigResult(configName, null, List.of(issue)));
         continue;
       }
@@ -77,7 +75,6 @@ public class ConfigLintRunner {
 
       List<LintIssue> issuesForConfig = walker.lint(configName, rootDtoClass);
 
-      allIssues.addAll(issuesForConfig);
       configs.add(new ConfigLintConfigResult(configName, rootDtoClass.getName(), issuesForConfig));
     }
 
@@ -108,7 +105,7 @@ public class ConfigLintRunner {
     ConfigLintSummary summary = ConfigLintSummary.from(filteredAllIssues);
 
     ConfigLintReport report = new ConfigLintReport(
-        OffsetDateTime.now().toString(),
+        OffsetDateTime.now(java.time.ZoneId.systemDefault()).toString(),
         filteredConfigs,
         summary
     );

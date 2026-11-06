@@ -34,6 +34,7 @@ public final class GlobalPositionPacket extends MavlinkPacket {
   private final double latitude;
   private final double longitude;
   private final double altitudeMeters;
+  private final double relativeAltitudeMeters;
 
   private final double vx;
   private final double vy;
@@ -50,6 +51,7 @@ public final class GlobalPositionPacket extends MavlinkPacket {
     this.latitude = getDouble(fields, "lat") / 1e7;
     this.longitude = getDouble(fields, "lon") / 1e7;
     this.altitudeMeters = getDouble(fields, "alt") / 1000.0;
+    this.relativeAltitudeMeters = getDouble(fields, "relative_alt") / 1000.0;
 
     this.vx = getDouble(fields, "vx") / 100.0;
     this.vy = getDouble(fields, "vy") / 100.0;

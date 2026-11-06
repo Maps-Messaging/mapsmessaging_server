@@ -132,7 +132,7 @@ public class SessionDetails extends PersistentObject {
 
   private Identity readIdentity(InputStream inputStream) throws IOException {
     int hasIdentity = inputStream.read();
-    Identity identity = null;
+    Identity loadedIdentity = null;
     if(hasIdentity == 1){
       UUID id = UUID.fromString(readString(inputStream));
       String username = readString(inputStream);
@@ -149,9 +149,9 @@ public class SessionDetails extends PersistentObject {
         groups.add(readGroup(inputStream));
       }
 
-      identity = new Identity(id, username, attributes, groups);
+      loadedIdentity = new Identity(id, username, attributes, groups);
     }
-    return identity;
+    return loadedIdentity;
   }
 
   private  void saveIdentity(OutputStream outputStream, Identity ident) throws IOException {

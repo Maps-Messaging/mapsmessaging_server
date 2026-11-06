@@ -20,12 +20,17 @@
 package io.mapsmessaging.state.n2k.listener;
 
 import com.google.gson.JsonObject;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import io.mapsmessaging.state.logging.StateLogMessages;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 
 import java.util.Set;
 
 public class N2kJsonDispatcher {
+
+  private static final Logger logger = LoggerFactory.getLogger(N2kJsonDispatcher.class);
 
   private static final Set<Integer> IGNORED_PGNS = Set.of(
       N2kPgns.ISO_REQUEST,
@@ -45,7 +50,7 @@ public class N2kJsonDispatcher {
     N2kJsonListener listener = listeners.getListener(pgn);
     if (listener == null) {
       if (!IGNORED_PGNS.contains(pgn)) {
-        System.err.println("No listener for " + pgn + " with " + packet);
+        logger.log(StateLogMessages.N2K_MESSAGE_IGNORED_NO_LISTENER, pgn, packet);
       }
       return;
     }

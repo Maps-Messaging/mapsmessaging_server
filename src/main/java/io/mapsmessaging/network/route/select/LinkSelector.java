@@ -33,8 +33,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalDouble;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static io.mapsmessaging.logging.ServerLogMessages.EVALUATION_RESULT;
 import static io.mapsmessaging.logging.ServerLogMessages.EXCEPTION_DURING_EVALUATION;
@@ -58,6 +63,9 @@ public class LinkSelector implements Runnable {
   @Getter
   private final LinkSwitcher linkSwitcher;
   private final Deque<Instant> recentSwitchTimes;
+  private final Map<LinkId, Instant> availableSince = new HashMap<>();
+  private final ConcurrentLinkedQueue<LinkStateChangedEvent> stateChanges = new ConcurrentLinkedQueue<>();
+  private LinkId establishingLink;
   private volatile Instant lastSwitchTime;
   private volatile Instant lastEvaluationTime;
 
@@ -88,12 +96,24 @@ public class LinkSelector implements Runnable {
     }
   }
 
-  public SelectionResult evaluateOnce() {
+  public void onLinkStateChanged(LinkStateChangedEvent event) {
+    if (event != null) {
+      stateChanges.add(event);
+    }
+  }
+
+  public synchronized SelectionResult evaluateOnce() {
     Instant now = Instant.now();
+    updateAvailability(now);
     Link currentLink = linkSwitcher.getCurrentLink();
 
     Candidate currentCandidate = score(currentLink);
-    java.util.Optional<Candidate> bestOptional = findBestCandidateOptional();
+    if (currentLink != null && currentLink.getLinkId().equals(establishingLink)
+        && (currentLink.getState() == LinkState.CONNECTING || currentLink.getState() == LinkState.ESTABLISHING)) {
+      return new SelectionResult(now, currentLink.getLinkId(), currentCandidate.cost,
+          currentLink.getLinkId(), currentCandidate.cost, false, "awaiting-establishment");
+    }
+    java.util.Optional<Candidate> bestOptional = findBestCandidateOptional(now);
     if (bestOptional.isEmpty()) {
       // No eligible candidates — hold current without throwing
       return new SelectionResult(
@@ -128,6 +148,7 @@ public class LinkSelector implements Runnable {
 
       boolean switched = linkSwitcher.switchTo(bestCandidate.link, mustFailover ? "hard-failover" : "hysteresis-improvement");
       if (switched) {
+        establishingLink = bestCandidate.link.getLinkId();
         this.lastSwitchTime = now;
         addSwitchTime(now);
         return new SelectionResult(
@@ -163,38 +184,64 @@ public class LinkSelector implements Runnable {
     );
   }
 
-  private java.util.Optional<Candidate> findBestCandidateOptional() {
+  private java.util.Optional<Candidate> findBestCandidateOptional(Instant now) {
     return linkRepository
         .getAllLinks()
         .stream()
-        .filter(this::isLinkEligible)
+        .filter(link -> isLinkEligible(link, now))
         .map(this::score)
         .min(java.util.Comparator.comparingDouble(c -> c.cost));
   }
 
 
-// Inside LinkSelector
-
-  private boolean isLinkEligible(io.mapsmessaging.network.route.link.Link link) {
-    if (link == null) return false;
-
-    io.mapsmessaging.network.route.link.LinkState state = link.getState();
-    io.mapsmessaging.network.route.link.Link current = linkSwitcher.getCurrentLink();
-    boolean isCurrent = current != null && current.getLinkId().equals(link.getLinkId());
-
-    // Current link may be ESTABLISHING or CONNECTED; never FAILED/DISCONNECTED
-    if (isCurrent) {
-      if (state == io.mapsmessaging.network.route.link.LinkState.FAILED) return false;
-      if (state == io.mapsmessaging.network.route.link.LinkState.DISCONNECTED) return false;
-      return (state == io.mapsmessaging.network.route.link.LinkState.ESTABLISHING
-          || state == io.mapsmessaging.network.route.link.LinkState.CONNECTED);
+  private void updateAvailability(Instant now) {
+    LinkStateChangedEvent event;
+    while ((event = stateChanges.poll()) != null) {
+      if (event.newState() == LinkState.CONNECTED || event.newState() == LinkState.HOLDING) {
+        availableSince.putIfAbsent(event.linkId(), event.eventTime());
+      } else {
+        availableSince.remove(event.linkId());
+        if (event.linkId().equals(establishingLink)
+            && event.newState() != LinkState.CONNECTING && event.newState() != LinkState.ESTABLISHING) {
+          establishingLink = null;
+        }
+      }
     }
-
-    // Candidates must be HOLDING or CONNECTED (not CONNECTING/ESTABLISHING/DISCONNECTED/FAILED)
-    return (state == io.mapsmessaging.network.route.link.LinkState.HOLDING ||
-        state == io.mapsmessaging.network.route.link.LinkState.CONNECTED);
+    Set<LinkId> present = new HashSet<>();
+    for (Link link : linkRepository.getAllLinks()) {
+      present.add(link.getLinkId());
+      LinkState state = link.getState();
+      if (state == LinkState.CONNECTED || state == LinkState.HOLDING) {
+        availableSince.putIfAbsent(link.getLinkId(), now);
+      } else {
+        availableSince.remove(link.getLinkId());
+      }
+      if (link.getLinkId().equals(establishingLink)
+          && state != LinkState.CONNECTING && state != LinkState.ESTABLISHING) {
+        establishingLink = null;
+      }
+    }
+    availableSince.keySet().retainAll(present);
   }
 
+  private boolean isLinkEligible(Link link, Instant now) {
+    if (link == null) {
+      return false;
+    }
+    LinkState state = link.getState();
+    if (state == LinkState.CONNECTED) {
+      return true;
+    }
+    Link current = linkSwitcher.getCurrentLink();
+    if (state == LinkState.ESTABLISHING) {
+      return current != null && current.getLinkId().equals(link.getLinkId());
+    }
+    if (state != LinkState.HOLDING) {
+      return false;
+    }
+    Instant since = availableSince.get(link.getLinkId());
+    return since != null && Duration.between(since, now).compareTo(selectionPolicy.getEstablishmentWarmup()) >= 0;
+  }
 
   private Candidate score(Link link) {
     if (link == null) {

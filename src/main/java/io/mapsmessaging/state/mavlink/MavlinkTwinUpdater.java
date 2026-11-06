@@ -20,11 +20,13 @@
 package io.mapsmessaging.state.mavlink;
 
 import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_STATE_TWIN_CREATED;
+import static io.mapsmessaging.state.logging.StateLogMessages.MAVLINK_TASK_COMPLETION_GATES_DISABLED;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.mavlink.ProcessedFrame;
+import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.VehicleClass;
@@ -44,13 +46,26 @@ import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
+import io.mapsmessaging.state.metrics.FeedActivityRegistry;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.LongAdder;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 public class MavlinkTwinUpdater implements AutoCloseable {
+
+  private static final String MAVLINK_NAME = "mavlink";
+
+
+  private static final String COMPLETE_TASK_ON_ARRIVAL_TOLERANCE_ATTRIBUTE =
+      "completeTaskOnArrivalTolerance";
+  private static final String COMPLETE_TASK_ON_AUTO_TO_LOITER_ATTRIBUTE =
+      "completeTaskOnAutoToLoiter";
+  private static final String TAK_VIDEO_URLS_ATTRIBUTE = "tak.videoUrls";
 
   private final Logger logger = LoggerFactory.getLogger(MavlinkTwinUpdater.class);
 
@@ -58,16 +73,44 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   private final ListenerManager listenerManager;
   private final MavlinkDroneMonitor droneMonitor;
   private final AtomicBoolean closed;
+  private final MavlinkIntegrationJMX integrationJMX;
+
+  // Metrics, exposed to Grafana via the JMX->Prometheus exporter (see MavlinkIntegrationJMX).
+  private final LongAdder messagesProcessedCount = new LongAdder();
+  private volatile long lastMessageAtMillis = 0L;
+  private final String feedName;
+
+  /** Feed name prefix in {@link FeedActivityRegistry}: one MAVLink feed per integration source. */
+  public static final String FEED_PREFIX = "mavlink:";
+  private final LongAdder twinsCreatedCount = new LongAdder();
+  private final LongAdder classificationOverrideCount = new LongAdder();
 
   public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager) {
-    this(twinManager, listenerManager, (MavlinkBootstrapEventPublisher) null);
+    this(twinManager, listenerManager, null, MAVLINK_NAME);
   }
 
-  public MavlinkTwinUpdater(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull ListenerManager listenerManager, MavlinkBootstrapEventPublisher bootstrapEventPublisher) {
+  public MavlinkTwinUpdater(
+      @NonNull @NotNull TwinManager twinManager,
+      @NonNull @NotNull ListenerManager listenerManager,
+      MavlinkBootstrapEventPublisher bootstrapEventPublisher) {
+    this(twinManager, listenerManager, bootstrapEventPublisher, MAVLINK_NAME);
+  }
+
+  public MavlinkTwinUpdater(
+      @NonNull @NotNull TwinManager twinManager,
+      @NonNull @NotNull ListenerManager listenerManager,
+      MavlinkBootstrapEventPublisher bootstrapEventPublisher,
+      String integrationSource) {
     this.twinManager = twinManager;
     this.listenerManager = listenerManager;
-    this.droneMonitor = new MavlinkDroneMonitor(twinManager, new DroneTwinReadinessEvaluator(), new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()), bootstrapEventPublisher);
+    this.droneMonitor = new MavlinkDroneMonitor(
+        twinManager,
+        new DroneTwinReadinessEvaluator(),
+        new MavlinkBootstrapStateEngine(new MavlinkBootstrapProfile()),
+        bootstrapEventPublisher);
     this.closed = new AtomicBoolean();
+    this.integrationJMX = new MavlinkIntegrationJMX(this, integrationSource);
+    this.feedName = FEED_PREFIX + integrationSource;
     twinManager.addObserver(droneMonitor);
   }
 
@@ -80,6 +123,8 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     this.listenerManager = Objects.requireNonNull(listenerManager, "listenerManager must not be null");
     this.droneMonitor = Objects.requireNonNull(droneMonitor, "droneMonitor must not be null");
     this.closed = new AtomicBoolean();
+    this.integrationJMX = new MavlinkIntegrationJMX(this, MAVLINK_NAME);
+    this.feedName = FEED_PREFIX + MAVLINK_NAME;
     twinManager.addObserver(droneMonitor);
   }
 
@@ -87,6 +132,9 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     if (closed.get()) {
       return;
     }
+    messagesProcessedCount.increment();
+    lastMessageAtMillis = System.currentTimeMillis();
+    FeedActivityRegistry.recordActivity(feedName);
 
     String twinId = buildTwinId(env, knownSource);
     droneMonitor.beginTwinUpdate(twinId);
@@ -96,10 +144,11 @@ public class MavlinkTwinUpdater implements AutoCloseable {
           twinId,
           twinToUpdate -> {
             if (twinToUpdate instanceof DroneTwin drone) {
-              drone.setSystemId(env.getFrame().getSystemId());
-              drone.setComponentId(env.getFrame().getComponentId());
+              drone.setSystemId(knownSource.getSystemId());
+              drone.setComponentId(knownSource.getComponentId());
               updateTwinResponseTopic(twinToUpdate, context.getResponseTopic());
               drone.setUniqueOutboundIdentifier(context.getUniqueOutboundIdentifier());
+              applyTaskCompletionConfiguration(drone, droneInfo);
               updateMessageFreshness(drone, packet, context);
             }
           },
@@ -113,7 +162,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
         if (sender != null) {
           sender.onMavlinkMessage(packet);
         }
-        applyModelDetectionEvent(droneTwin, packet);
+        applyModelDetectionEvent(droneTwin, packet, context, droneInfo);
       }
     } finally {
       droneMonitor.endTwinUpdate(twinId, context);
@@ -123,6 +172,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   @Override
   public void close() {
     if (closed.compareAndSet(false, true)) {
+      integrationJMX.close();
       droneMonitor.close();
     }
   }
@@ -139,7 +189,11 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
   }
 
-  private void applyModelDetectionEvent(DroneTwin droneTwin, MavlinkPacket packet) {
+  private void applyModelDetectionEvent(
+      DroneTwin droneTwin,
+      MavlinkPacket packet,
+      TwinUpdateContext context,
+      DroneInfoDTO droneInfo) {
     String modelName = droneTwin.getModelName();
     if (modelName == null || modelName.isBlank()) {
       return;
@@ -149,10 +203,31 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       UxvModel uxvModel = ModelManager.getInstance().getRequiredModel(modelName);
       if (uxvModel != null) {
         Optional<DetectionEvent> detectionEvent = uxvModel.interpretDetection(droneTwin, packet);
-        detectionEvent.ifPresent(event -> applyDetectionEvent(droneTwin, event));
+        detectionEvent.ifPresent(
+            event -> {
+              attachVideoUrls(event, droneInfo);
+              applyDetectionEvent(droneTwin, event, context);
+            });
       }
     } catch (IllegalArgumentException e) {
       // no such model, ignore
+    }
+  }
+
+  private void attachVideoUrls(DetectionEvent event, DroneInfoDTO droneInfo) {
+    if (event == null || droneInfo == null) {
+      return;
+    }
+
+    List<String> urls = new ArrayList<>();
+    for (DataProductConfig dataProduct : droneInfo.getDataProducts()) {
+      if (dataProduct == null || dataProduct.getUri() == null || dataProduct.getUri().isBlank()) {
+        continue;
+      }
+      urls.add(dataProduct.getUri().trim());
+    }
+    if (!urls.isEmpty()) {
+      event.addAttribute(TAK_VIDEO_URLS_ATTRIBUTE, List.copyOf(urls));
     }
   }
 
@@ -167,7 +242,20 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
   }
 
-  private void applyDetectionEvent(DroneTwin droneTwin, DetectionEvent event) {
+  private void applyTaskCompletionConfiguration(
+      DroneTwin droneTwin,
+      DroneInfoDTO droneInfo
+  ) {
+    droneTwin.getAttributes().put(
+        COMPLETE_TASK_ON_ARRIVAL_TOLERANCE_ATTRIBUTE,
+        Boolean.toString(droneInfo.isCompleteTaskOnArrivalTolerance()));
+    droneTwin.getAttributes().put(
+        COMPLETE_TASK_ON_AUTO_TO_LOITER_ATTRIBUTE,
+        Boolean.toString(droneInfo.isCompleteTaskOnAutoToLoiter()));
+  }
+
+  private void applyDetectionEvent(
+      DroneTwin droneTwin, DetectionEvent event, TwinUpdateContext context) {
     if (!isValidDetectionEvent(event)) {
       return;
     }
@@ -175,9 +263,20 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     DroneContactManager contactManager = droneTwin.getContactManager();
 
     switch (event.getEventType()) {
-      case DETECTED, UPDATED -> upsertContact(contactManager, event);
+      case DETECTED, UPDATED -> {
+        upsertContact(contactManager, event);
+        if (isPublishableDetectionEvent(event)) {
+          twinManager.notifyDetectionEvent(droneTwin, event, context);
+        }
+      }
       case LOST -> removeContact(contactManager, event);
     }
+  }
+
+  private boolean isPublishableDetectionEvent(DetectionEvent event) {
+    return event.getPosition() != null
+        && event.getTtlMillis() != null
+        && event.getTtlMillis() > 0;
   }
 
   private boolean isValidDetectionEvent(DetectionEvent event) {
@@ -200,26 +299,45 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   }
 
   private EntityTwin createTwin(String twinId, ProcessedFrame env, TwinUpdateContext context, MavlinkKnownSourceDTO knownSource, DroneInfoDTO droneInfo) {
+    twinsCreatedCount.increment();
     DroneTwin droneTwin = new DroneTwin(twinId, droneInfo.getUuid());
     droneTwin.setVehicleClass(resolveVehicleClass(knownSource));
-    droneTwin.setDescriptionString(resolveDescription(twinId, env, knownSource));
+    if (knownSource.getCotClassification() != null && !knownSource.getCotClassification().isBlank()) {
+      // See CotEventPolicy.COT_CLASSIFICATION_ATTRIBUTE - overrides the vehicleClass-derived
+      // CoT classification for this specific asset (e.g. distinguishing it from another asset
+      // sharing the same vehicleClass that isn't actually the same kind of thing).
+      droneTwin.getAttributes().put("cotClassification", knownSource.getCotClassification());
+      classificationOverrideCount.increment();
+    }
+    droneTwin.setDescriptionString(resolveDescription(env, knownSource));
     droneTwin.setCallSign(resolveCallSign(twinId, knownSource));
     droneTwin.setDisplayName(resolveDisplayName(twinId, knownSource));
-    droneTwin.setSystemId(env.getFrame().getSystemId());
-    droneTwin.setComponentId(env.getFrame().getComponentId());
+    droneTwin.setSystemId(knownSource.getSystemId());
+    droneTwin.setComponentId(knownSource.getComponentId());
     droneTwin.setModelName(droneInfo.getModelName());
     droneTwin.setAltitudeMode(droneInfo.getAltitudeMode());
     droneTwin.setAltitudeMeters(droneInfo.getAltitudeMeters());
     droneTwin.setSurveyRadiusMeters(droneInfo.getSurveyRadiusMeters());
     droneTwin.setArrivalToleranceMeters(droneInfo.getArrivalToleranceMeters());
-    if (droneInfo.getStopAction() != null) {
-      droneTwin.setStopAction(droneInfo.getStopAction());
+    applyTaskCompletionConfiguration(droneTwin, droneInfo);
+    if (!droneInfo.isCompleteTaskOnArrivalTolerance()
+        && !droneInfo.isCompleteTaskOnAutoToLoiter()) {
+      logger.log(MAVLINK_TASK_COMPLETION_GATES_DISABLED, twinId);
+    }
+    if (droneInfo.getCancelAction() != null) {
+      droneTwin.setStopAction(droneInfo.getCancelAction());
     } else {
       droneTwin.setStopAction(StopActionEnum.STOP);
     }
     if (droneInfo.getCapabilities() != null) {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
       droneTwin.setDescription(droneInfo.getDescription());
+    }
+    if (droneInfo.getSpecialization() != null) {
+      droneTwin.setSpecialization(droneInfo.getSpecialization());
+    }
+    if (!droneInfo.getDataProducts().isEmpty()) {
+      droneTwin.setDataProducts(droneInfo.getDataProducts());
     }
 
     if (droneInfo.getBatteryCapacityHours() > 0) {
@@ -249,12 +367,15 @@ public class MavlinkTwinUpdater implements AutoCloseable {
   }
 
   private String resolveDescription(
-      String twinId,
       ProcessedFrame env,
       MavlinkKnownSourceDTO knownSource
   ) {
     if (knownSource != null && knownSource.getDescription() != null && !knownSource.getDescription().isBlank()) {
       return knownSource.getDescription();
+    }
+
+    if (knownSource != null) {
+      return "MAVLink system " + knownSource.getSystemId() + " component " + knownSource.getComponentId();
     }
 
     return "MAVLink system " + env.getFrame().getSystemId() + " component " + env.getFrame().getComponentId();
@@ -290,5 +411,25 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
 
     return "mavlink-" + env.getFrame().getSystemId() + ":" + env.getFrame().getComponentId();
+  }
+
+  // --- Metrics, read by MavlinkIntegrationJMX. ---
+
+  long getMessagesProcessedCount() {
+    return messagesProcessedCount.sum();
+  }
+
+  /** -1 if no MAVLink message has been processed yet. */
+  long getLastMessageAgeMillis() {
+    long at = lastMessageAtMillis;
+    return at == 0L ? -1L : System.currentTimeMillis() - at;
+  }
+
+  long getTwinsCreatedCount() {
+    return twinsCreatedCount.sum();
+  }
+
+  long getClassificationOverrideCount() {
+    return classificationOverrideCount.sum();
   }
 }

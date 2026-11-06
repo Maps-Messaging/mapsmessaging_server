@@ -23,6 +23,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
+import io.mapsmessaging.network.protocol.impl.mqtt.packet.MqttFrameSizeValidator;
 import io.mapsmessaging.network.protocol.impl.mqtt5.MQTT5Protocol;
 
 public class PacketFactory5 {
@@ -47,8 +48,12 @@ public class PacketFactory5 {
       throw new EndOfBufferException("Need at least 2 bytes for a valid MQTT packet");
     }
 
+    int frameStart = packet.position();
     byte fixedHeader = packet.get();
     long remainingLen = MQTTPacket.readVariableInt(packet);
+    long frameSize = (packet.position() - frameStart) + remainingLen;
+    long readBufferSize = protocolImpl.getEndPoint().getConfig().getEndPointConfig().getServerReadBufferSize();
+    MqttFrameSizeValidator.validate(frameSize, readBufferSize);
 
     int packetId = (fixedHeader >> 4) & 0xf;
     if (packet.available() < remainingLen) {

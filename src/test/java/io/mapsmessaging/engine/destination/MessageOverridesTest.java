@@ -138,6 +138,7 @@ class MessageOverridesTest {
 
     Assertions.assertEquals("x", updated.getDataMap().get("d1").getData());
     Assertions.assertEquals(42L, updated.getDataMap().get("d2").getData());
+    Assertions.assertEquals("resp/topic", updated.getResponseTopic());
     Assertions.assertFalse(message.getMeta().containsKey("m2"));
     Assertions.assertFalse(message.getDataMap().containsKey("d2"));
   }

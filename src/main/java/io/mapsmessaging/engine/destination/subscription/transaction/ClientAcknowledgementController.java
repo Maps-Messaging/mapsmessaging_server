@@ -49,8 +49,8 @@ public class ClientAcknowledgementController implements AcknowledgementControlle
   }
 
   @Override
-  public long messageSent() {
-    return -1;
+  public Long messageSent() {
+    return null;
   }
 
   @Override

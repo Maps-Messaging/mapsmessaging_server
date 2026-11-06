@@ -33,14 +33,23 @@ public class WillTopic extends MQTT_SNPacket {
 
   public WillTopic(Packet packet, int length) {
     super(WILLTOPIC);
-    flags = packet.get();
-    byte[] topicBuffer = new byte[length - 3];
-    packet.get(topicBuffer, 0, topicBuffer.length);
-    topic = new String(topicBuffer);
+    if (length == 2) {
+      topic = null;
+    } else {
+      flags = packet.get();
+      byte[] topicBuffer = new byte[length - 3];
+      packet.get(topicBuffer, 0, topicBuffer.length);
+      topic = new String(topicBuffer);
+    }
   }
 
   @Override
   public int packFrame(Packet packet) {
+    if (topic == null) {
+      int len = packLength(packet, 2);
+      packet.put((byte) WILLTOPIC);
+      return len;
+    }
     int len = packLength(packet, 3 + topic.length());
     packet.put((byte) WILLTOPIC);
     packet.put(flags);

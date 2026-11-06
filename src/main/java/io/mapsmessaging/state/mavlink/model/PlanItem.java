@@ -35,6 +35,6 @@ public record PlanItem(
         Double depthMeters) {
 
     public PlanItem {
-        type = Objects.requireNonNull(type, "type must not be null");
+        Objects.requireNonNull(type, "type must not be null");
     }
 }

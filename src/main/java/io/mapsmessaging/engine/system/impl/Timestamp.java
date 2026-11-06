@@ -40,7 +40,7 @@ public class Timestamp extends SystemTopic {
 
   @Override
   protected Message generateMessage() {
-    return getMessage(LocalDateTime.now().toString().getBytes());
+    return getMessage(LocalDateTime.now(java.time.ZoneId.systemDefault()).toString().getBytes());
   }
 
   @Override

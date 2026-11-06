@@ -36,7 +36,7 @@ class SimpleBufferBasedStompIT extends SimpleBufferBasedTest {
   @Timeout(value = 600, unit = TimeUnit.SECONDS)
   @DisplayName("Send Stomp frame single character at a time")
   void simpleCharByCharTest() throws IOException,  URISyntaxException {
-    simpleByteWriteTest(1);
+    simpleByteWrite("/input.txt", 0x0, 1, "localhost", 8674, TOTAL_FRAMES);
   }
 
 

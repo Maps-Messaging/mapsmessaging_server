@@ -37,11 +37,6 @@ public class EmptyListener extends Listener {
         break;
 
       case RST:
-        try {
-          protocol.close();
-        } catch (IOException e) {
-          //
-        }
         break;
 
       case CON:

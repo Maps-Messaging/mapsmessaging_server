@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.io.connection.route;
 
+import io.mapsmessaging.logging.ServerLogMessages;
+
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.connection.EndPointConnection;
@@ -116,22 +118,23 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
 
   @Override
   public boolean switchTo(Link nextLink, String reason) {
-    if(currentLink.get() != nextLink) {
-      EndPointLink endPointLink = (EndPointLink) nextLink;
-      if(!endPointLink.getEndPointConnection().getState().getName().equals("Established")) {
-        logger.log(SWITCH_REQUESTED, nextLink.getLinkId(), reason);
-        endPointLink.getEndPointConnection().scheduleState(new Establishing(endPointLink.getEndPointConnection()));
-      }
-      if(currentLink.get() != null){
-        EndPointLink link = (EndPointLink) currentLink.get();
-        if(link.getState().equals(LinkState.CONNECTED)) {
-          link.getEndPointConnection().scheduleState(new Hold(link.getEndPointConnection()));
-        }
-      }
-      currentLink.set(endPointLink);
-      return true;
+    EndPointLink next = (EndPointLink) nextLink;
+    EndPointLink previous = (EndPointLink) currentLink.get();
+    State nextState = next.getEndPointConnection().getState();
+    boolean holding = "Holding".equals(nextState.getName());
+    boolean established = "Established".equals(nextState.getName());
+    if ((!holding && !established) || (previous == next && !holding)) {
+      return false;
     }
-    return false;
+    if (!established) {
+      logger.log(SWITCH_REQUESTED, nextLink.getLinkId(), reason);
+      next.getEndPointConnection().scheduleState(new Establishing(next.getEndPointConnection()));
+    }
+    if (previous != null && previous != next && previous.getState() == LinkState.CONNECTED) {
+      previous.getEndPointConnection().scheduleState(new Hold(previous.getEndPointConnection()));
+    }
+    currentLink.set(next);
+    return true;
   }
 
   @Override
@@ -140,6 +143,7 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
     EndPointConnection connection =  newState.getEndPointConnection();
     Link link = routeList.getLink(connection);
     LinkStateChangedEvent event = new LinkStateChangedEvent(link.getLinkId(), oldState.getLinkState(), newState.getLinkState(), Instant.now());
+    selector.onLinkStateChanged(event);
     orchestrator.onLinkStateChanged(event);
   }
 
@@ -150,7 +154,7 @@ public class RouteManager implements LinkSwitcher, StateChangeListener {
       }
       selector.evaluateOnce();
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.log(ServerLogMessages.ROUTE_MANAGER_EVALUATION_FAILED, e);
     }
   }
 

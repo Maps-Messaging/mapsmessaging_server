@@ -125,22 +125,37 @@ public class LicenseController {
 
     for (File installedFile : files) {
       String edition = extractEdition(installedFile.getName());
+      LicenseManager manager = getLicenseManager(edition.toUpperCase());
+      if (manager == null) {
+        logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
+        continue;
+      }
+
+      License license = null;
       try {
-        LicenseManager manager = getLicenseManager(edition.toUpperCase());
-        if (manager != null) {
-          logger.log(ServerLogMessages.LICENSE_LOADING, edition);
-          if (!processLicense(manager.load(), licenseList)) {
-            logger.log(ServerLogMessages.LICENSE_UNINSTALLING, edition);
-            if (!installedFile.delete()) {
-              logger.log(ServerLogMessages.LICENSE_FAILED_DELETE_FILE, installedFile.getAbsolutePath());
-            }
-            manager.uninstall();
-          }
-        } else {
-          logger.log(ServerLogMessages.LICENSE_MANAGER_NOT_FOUND, edition);
-        }
+        logger.log(ServerLogMessages.LICENSE_LOADING, edition);
+        license = manager.load();
       } catch (IllegalArgumentException | LicenseManagementException e) {
+        // The *_installed marker exists but the key material behind it isn't loadable - e.g. it
+        // lived under a path that doesn't survive a container recreate, or was otherwise removed
+        // out from under the marker. Fall through and treat this exactly like the expired/invalid
+        // license case below: drop the stale marker so a subsequent installLicenses() pass can
+        // actually (re)install a freshly fetched license instead of silently skipping it forever
+        // because installLicenses() only checks whether the marker file exists, not whether the
+        // license it once pointed to is still loadable.
         logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition, e);
+      }
+
+      if (!processLicense(license, licenseList)) {
+        logger.log(ServerLogMessages.LICENSE_UNINSTALLING, edition);
+        if (!installedFile.delete()) {
+          logger.log(ServerLogMessages.LICENSE_FAILED_DELETE_FILE, installedFile.getAbsolutePath());
+        }
+        try {
+          manager.uninstall();
+        } catch (IllegalArgumentException | LicenseManagementException e) {
+          logger.log(ServerLogMessages.LICENSE_FAILED_LOADING, edition, e);
+        }
       }
     }
     return licenseList;

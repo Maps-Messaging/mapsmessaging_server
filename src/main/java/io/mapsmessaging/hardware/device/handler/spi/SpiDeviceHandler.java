@@ -33,10 +33,12 @@ public class SpiDeviceHandler extends DeviceHandler {
     return "spi";
   }
 
+  @Override
   public int getBusNumber(){
     return 0;
   }
 
+  @Override
   public int getDeviceAddress(){
     return 0;
   }

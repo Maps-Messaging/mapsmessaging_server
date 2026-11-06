@@ -31,6 +31,7 @@ import java.util.Map;
 
 public class Frame implements ServerPacket {
 
+  private static final byte CR = 0xD;
   private static final byte LF = 0xA;
   private static final int MAX_HEADER_BYTES = 8 * 1024;
   private static final byte[] END_OF_LINE = {0xD, 0xA};
@@ -84,8 +85,16 @@ public class Frame implements ServerPacket {
 
   String getHeaderLine(Packet packet) throws IOException {
     int position = packet.position();
+    byte preceding = 0;
     while (packet.hasRemaining()) {
-      if (packet.get() == LF) {
+      byte current = packet.get();
+      if (preceding == CR && current != LF) {
+        throw new IOException("WebSocket HTTP upgrade lines must end with CRLF");
+      }
+      if (current == LF) {
+        if (preceding != CR) {
+          throw new IOException("WebSocket HTTP upgrade lines must end with CRLF");
+        }
         int lineLength = packet.position() - position;
         enforceHeaderLimit(lineLength);
         headerBytes += lineLength;
@@ -94,6 +103,7 @@ public class Frame implements ServerPacket {
         packet.get(value);
         return new String(value, StandardCharsets.ISO_8859_1);
       }
+      preceding = current;
       enforceHeaderLimit(packet.position() - position);
     }
     packet.position(position);

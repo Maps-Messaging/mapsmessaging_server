@@ -39,7 +39,11 @@ public class WillTopicUpdateListener extends PacketListener {
     WillTopicUpdate willTopicUpdate = (WillTopicUpdate) mqttPacket;
     ReasonCodes status = ReasonCodes.SUCCESS;
     WillTask task = session.getWillTask();
-    if (task == null) {
+    if (willTopicUpdate.getTopic() == null) {
+      if (task != null) {
+        task.cancel();
+      }
+    } else if (task == null) {
       WillDetails willDetails = new WillDetails();
       willDetails.setSessionId(session.getName());
       willDetails.setDestination(willTopicUpdate.getTopic());
@@ -51,13 +55,9 @@ public class WillTopicUpdateListener extends PacketListener {
       willDetails.setMsg( MessageOverrides.createMessageBuilder(protocol.getProtocolConfig().getMessageDefaults(), messageBuilder).build());
       session.updateWillTopic(willDetails);
     } else {
-      if (willTopicUpdate.getTopic() == null) {
-        task.cancel();
-      } else {
-        task.updateQoS(willTopicUpdate.getQoS());
-        task.updateRetainFlag(willTopicUpdate.isRetain());
-        task.updateTopic(willTopicUpdate.getTopic());
-      }
+      task.updateQoS(willTopicUpdate.getQoS());
+      task.updateRetainFlag(willTopicUpdate.isRetain());
+      task.updateTopic(willTopicUpdate.getTopic());
     }
     return new WillTopicResponse(status);
   }

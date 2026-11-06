@@ -45,17 +45,14 @@ public abstract class VariableByteMessageProperty extends MessageProperty {
 
   @Override
   public int getSize() {
-    int size = 0;
-    if (value < 0x7F) {
-      size++;
-    } else if (value > 0x7f && value < 0xff7f) {
-      size += 2;
-    } else if (value > 0xff7f && value < 0xffff7f) {
-      size += 3;
-    } else {
-      size += 4;
+    if (value <= 127) {
+      return 1;
+    } else if (value <= 16_383) {
+      return 2;
+    } else if (value <= 2_097_151) {
+      return 3;
     }
-    return size;
+    return 4;
   }
 
   @Override

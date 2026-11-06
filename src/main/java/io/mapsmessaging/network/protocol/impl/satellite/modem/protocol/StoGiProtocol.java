@@ -761,7 +761,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
     try {
       Transaction tx = session.startTransaction(topic+"-"+System.nanoTime());
       session.findDestination(destinationName, DestinationType.TOPIC)
-          .thenAccept(destination -> {
+          .thenAccept(resolvedDestination -> {
             if (topic == null) {
               return;
             }
@@ -774,7 +774,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
                     this
                 );
                 if (parserExecutor == null || parserExecutor.evaluate(message)) {
-                  tx.add(destination, message);
+                  tx.add(resolvedDestination, message);
                 }
               }
               tx.commit();

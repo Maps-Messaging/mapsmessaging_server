@@ -26,6 +26,7 @@ import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.SessionManager;
 import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.features.DestinationType;
@@ -75,11 +76,15 @@ import static io.mapsmessaging.logging.ServerLogMessages.CANAEROSPACE_PROTOCOL_P
 
 public class CanaerospaceProtocol extends Protocol {
 
+  private static final String PROTOCOL_NAME = "canaerospace";
+
+
   private final Logger logger = LoggerFactory.getLogger(CanaerospaceProtocol.class);
 
   private final MessageFormatter formatter;
   private final Session session;
   private final InboundProcessor inboundProcessor;
+  private boolean closed;
   private final String topicTemplate;
   private final String rawTopicTemplate;
   private final boolean parseToJson;
@@ -143,6 +148,7 @@ public class CanaerospaceProtocol extends Protocol {
 
     inboundProcessor = new InboundProcessor(this);
     Thread thread = new Thread(inboundProcessor, "canaerospace-inbound-" + endPoint.getName());
+    thread.setDaemon(true);
     thread.start();
 
     logger.log(CANAEROSPACE_PROTOCOL_CREATED_AND_BOUND, endPoint.getName());
@@ -150,9 +156,22 @@ public class CanaerospaceProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    super.close();
-    inboundProcessor.close();
-    endPoint.close();
+    synchronized (this) {
+      if (closed) {
+        return;
+      }
+      closed = true;
+    }
+    if (inboundProcessor != null) {
+      inboundProcessor.close();
+    }
+    try {
+      if (session != null) {
+        SessionManager.getInstance().close(session, false);
+      }
+    } finally {
+      super.close();
+    }
     logger.log(CANAEROSPACE_PROTOCOL_CLOSING, endPoint.getName());
   }
 
@@ -209,15 +228,22 @@ public class CanaerospaceProtocol extends Protocol {
   }
 
   public boolean processPacket(CanFrame frame, JsonObject json) {
+    if (json == null) {
+      publishRawFrame(frame);
+      return true;
+    }
+
     String messageName = mapCanIdToName.get(frame.canIdentifier());
     if (messageName == null) {
       messageName = extractMessageName(json);
-      mapCanIdToName.put(frame.canIdentifier(), messageName);
+      if (messageName != null && !messageName.isEmpty()) {
+        mapCanIdToName.put(frame.canIdentifier(), messageName);
+      }
     }
 
     MessageBuilder messageBuilder = new MessageBuilder();
     Map<String, String> metadata = new HashMap<>();
-    metadata.put("protocol", "canaerospace");
+    metadata.put("protocol", PROTOCOL_NAME);
     metadata.put("version", getVersion());
     metadata.put("sessionId", session.getName());
     metadata.put("time_ms", Long.toString(System.currentTimeMillis()));
@@ -253,7 +279,7 @@ public class CanaerospaceProtocol extends Protocol {
 
   @Override
   public String getName() {
-    return "canaerospace";
+    return PROTOCOL_NAME;
   }
 
   @Override
@@ -299,7 +325,7 @@ public class CanaerospaceProtocol extends Protocol {
 
   private void publishRawFrame(CanFrame frame) {
     Map<String, String> metadata = new HashMap<>();
-    metadata.put("protocol", "canaerospace");
+    metadata.put("protocol", PROTOCOL_NAME);
     metadata.put("version", getVersion());
     metadata.put("sessionId", session.getName());
     metadata.put("time_ms", Long.toString(System.currentTimeMillis()));
@@ -308,9 +334,10 @@ public class CanaerospaceProtocol extends Protocol {
 
     Message message = new MessageBuilder()
         .setOpaqueData(rawData)
-        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setQoS(qos)
         .setMeta(metadata)
         .setRetain(false)
+        .storeOffline(storeOffline)
         .setContentType("application/octet-stream")
         .build();
 
@@ -318,11 +345,11 @@ public class CanaerospaceProtocol extends Protocol {
   }
 
   private String extractMessageName(JsonObject json) {
-    if (json == null || !json.has("canaerospace") || !json.get("canaerospace").isJsonObject()) {
+    if (json == null || !json.has(PROTOCOL_NAME) || !json.get(PROTOCOL_NAME).isJsonObject()) {
       return null;
     }
 
-    JsonObject canAerospaceObject = json.getAsJsonObject("canaerospace");
+    JsonObject canAerospaceObject = json.getAsJsonObject(PROTOCOL_NAME);
     if (!canAerospaceObject.has("name") || canAerospaceObject.get("name").isJsonNull()) {
       return null;
     }

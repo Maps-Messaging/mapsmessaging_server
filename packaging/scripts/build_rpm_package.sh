@@ -123,7 +123,7 @@ upload_new_package() {
   cd packaging/rpmbuild/RPMS/noarch || exit
   echo ${PACKAGE_FILE}
   ls -lsa ${PACKAGE_FILE}
-  curl -v  \
+  curl  \
    -u $USER:$PASSWORD  \
    -F "yum.asset=@${PACKAGE_FILE}" \
    -F "yum.asset.filename=${PACKAGE_FILE}" \

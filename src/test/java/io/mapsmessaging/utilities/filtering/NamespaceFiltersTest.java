@@ -30,6 +30,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class NamespaceFiltersTest {
 
   @Test
+  void null_configuration_has_no_namespace_filters() {
+    NamespaceFilters filters = new NamespaceFilters(null);
+    assertTrue(filters.getAllFilters().isEmpty());
+    assertNull(filters.findMatch("/topic"));
+  }
+
+  @Test
   void findMatchShouldReturnNullWhenEmpty() {
     NamespaceFilters filters = new NamespaceFilters();
 

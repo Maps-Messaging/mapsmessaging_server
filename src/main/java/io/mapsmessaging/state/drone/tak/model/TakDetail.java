@@ -21,11 +21,10 @@ package io.mapsmessaging.state.drone.tak.model;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -53,6 +52,20 @@ public class TakDetail {
   @Schema(description = "Link health metadata.")
   private TakLinkState mapsLink;
 
+  @Schema(description = "When true, request that the receiving TAK client persists this event locally.")
+  private Boolean archive;
+
+  @Schema(description = "Marker tint as a signed 32-bit ARGB value.", example = "-65536")
+  private Integer colorArgb;
+
+  @Schema(description = "Custom icon override: {iconsetUuid}/{group}/{filename}, resolved against "
+      + "an iconset the receiving TAK client has locally imported. WinTAK/ATAK only - not "
+      + "rendered by WebTAK.", example = "8ed4bdba4a2ff2972685f3420274f87cc8e2d7547ba7262bce94d8991e7f7a9b/cyber_icons/exploit_64x64.png")
+  private String usericonIconsetPath;
+
   @ArraySchema(arraySchema = @Schema(description = "Relationship links to other TAK entities."))
   private List<TakLink> links = new ArrayList<>();
+
+  @Schema(description = "Video feeds the client can play from this marker.")
+  private List<TakVideo> videos = new ArrayList<>();
 }

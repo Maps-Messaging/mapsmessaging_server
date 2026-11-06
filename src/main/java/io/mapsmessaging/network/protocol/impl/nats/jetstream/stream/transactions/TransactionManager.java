@@ -42,6 +42,7 @@ public class TransactionManager extends RequestHandler {
   }
 
 
+  @Override
   public NatsFrame process(String subject, PayloadFrame frame, SessionState sessionState) throws IOException {
     for (JetStreamFrameHandler handler : handlers) {
       if (subject.startsWith(handler.getName())) {

@@ -21,11 +21,11 @@ package io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handler
 
 import com.google.gson.JsonObject;
 import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.engine.destination.DestinationStats;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.NatsFrame;
 import io.mapsmessaging.network.protocol.impl.nats.frames.PayloadFrame;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamFrameHandler;
+import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.JetStreamStorageUsage;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.data.StreamConfig;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.data.StreamInfoResponse;
 import io.mapsmessaging.network.protocol.impl.nats.jetstream.stream.api.handlers.data.StreamState;
@@ -62,7 +62,7 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
     return response;
   }
 
-  private String buildInfo(String subject) {
+  private String buildInfo(String subject) throws IOException {
     StreamInfoList streamInfoList = NamespaceManager.getInstance().getStream(subject);
     if (streamInfoList == null) {
       return noStreamsError();
@@ -72,8 +72,8 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
     return gson.toJson(streamInfoResponse);
   }
 
-  private void packResponse(StreamInfoResponse response, StreamInfoList streamInfoList) {
-    buildState(response, streamInfoList);
+  void packResponse(StreamInfoResponse response, StreamInfoList streamInfoList) throws IOException {
+    response.setState(buildState(response, streamInfoList));
     response.setConfig(buildConfig(streamInfoList));
   }
 
@@ -81,27 +81,27 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
     StreamConfig streamConfig = new StreamConfig();
     streamConfig.setName(streamInfoList.getName());
     List<String> subjects = new ArrayList<>();
-    for (StreamInfo info : streamInfoList.getSubjects()) {
-      subjects.add(info.getSubject());
-    }
+    streamInfoList.getSubjects().stream()
+        .map(StreamInfo::getSubject)
+        .forEachOrdered(subjects::add);
     streamConfig.setSubjects(subjects);
-    streamConfig.setStorage("maps");
+    streamConfig.setStorage(streamInfoList.getSubjects().stream().anyMatch(info -> info.getDestination().isPersistent()) ? "file" : "memory");
     return streamConfig;
   }
 
-  private StreamState buildState(StreamInfoResponse response, StreamInfoList list) {
+  private StreamState buildState(StreamInfoResponse response, StreamInfoList list) throws IOException {
     StreamState aggregateState = new StreamState();
 
     long totalMessages = 0;
-    long firstSeq = Long.MAX_VALUE;
+    long totalBytes = 0;
     long lastSeq = 0;
     int totalConsumers = 0;
 
     Date created = new Date(System.currentTimeMillis());
     for (StreamInfo info : list.getSubjects()) {
       DestinationImpl destination = info.getDestination();
-      DestinationStats stats = destination.getStats();
-      totalMessages += stats.getStoredMessages();
+      totalMessages += destination.getStoredMessages();
+      totalBytes += JetStreamStorageUsage.sampledPhysicalBytes(destination);
       totalConsumers += destination.getSubscriptionStates().size();
       Date destDate = destination.getResourceProperties().getDate();
       if (destDate != null && destDate.before(created)) {
@@ -111,8 +111,8 @@ public class StreamInfoHandler extends JetStreamFrameHandler {
 
     response.setCreated(created.toInstant());
     aggregateState.setMessages(totalMessages);
-    aggregateState.setBytes(-1);
-    aggregateState.setFirst_seq(firstSeq == Long.MAX_VALUE ? 1 : firstSeq);
+    aggregateState.setBytes(totalBytes);
+    aggregateState.setFirst_seq(totalMessages == 0 ? 0 : 1);
     aggregateState.setLast_seq(lastSeq);
     aggregateState.setConsumer_count(totalConsumers);
     return aggregateState;

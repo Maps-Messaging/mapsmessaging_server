@@ -35,12 +35,16 @@ public class MavlinkBootstrapProfile {
 
   private final Duration retryInterval;
   private final Duration timeout;
+  private final Duration recoveryRetryInterval;
+  private final Duration backgroundRetryInterval;
   private final int maximumRetries;
   private final Map<DroneTwinMissingState, MavlinkBootstrapRequestDefinition> requestDefinitions;
 
   public MavlinkBootstrapProfile() {
     this.retryInterval = Duration.ofSeconds(2);
     this.timeout = Duration.ofSeconds(15);
+    this.recoveryRetryInterval = Duration.ofSeconds(15);
+    this.backgroundRetryInterval = Duration.ofMinutes(1);
     this.maximumRetries = 3;
     this.requestDefinitions = new EnumMap<>(DroneTwinMissingState.class);
 

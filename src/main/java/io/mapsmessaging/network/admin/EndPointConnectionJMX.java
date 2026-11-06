@@ -43,7 +43,6 @@ public class EndPointConnectionJMX implements HealthMonitor {
   public EndPointConnectionJMX(List<String> parent, EndPointConnection connection) {
     this.connection = connection;
     typePath = new ArrayList<>(parent);
-  //  typePath.add("connection=" + connection.getProperties().getProperty("direction"));
     mbean = JMXManager.getInstance().register(this, typePath);
   }
 

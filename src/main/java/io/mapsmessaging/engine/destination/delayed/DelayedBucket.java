@@ -45,9 +45,8 @@ public class DelayedBucket {
     return delayedMessageState.remove(messageIdentifier);
   }
 
-  public long peek() {
-    Long val = delayedMessageState.peek();
-    return val == null? -1: val;
+  public Long peek() {
+    return delayedMessageState.peek();
   }
 
   public @NonNull @NotNull Queue<Long> getQueue() {

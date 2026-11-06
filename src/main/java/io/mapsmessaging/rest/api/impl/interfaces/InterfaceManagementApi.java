@@ -126,11 +126,9 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
     }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     List<EndPointManager> filteredManagers = new ArrayList<>();
-    for(EndPointManager endPointManager : endPointManagers) {
-      if(!endPointManager.getProtocols().toLowerCase().contains("echo")) {
-        filteredManagers.add(endPointManager);
-      }
-    }
+    endPointManagers.stream()
+        .filter(endPointManager -> !endPointManager.getProtocols().toLowerCase().contains("echo"))
+        .forEachOrdered(filteredManagers::add);
     ParserExecutor parser2 = parser;
     InterfaceInfoDTO[] protocols =
         filteredManagers.stream()
@@ -302,11 +300,9 @@ public class InterfaceManagementApi extends BaseInterfaceApi {
     }
     List<EndPointManager> endPointManagers = MessageDaemon.getInstance().getSubSystemManager().getNetworkManager().getAll();
     List<EndPointManager> filteredManagers = new ArrayList<>();
-    for(EndPointManager endPointManager : endPointManagers) {
-      if(!endPointManager.getProtocols().toLowerCase().contains("echo")) {
-        filteredManagers.add(endPointManager);
-      }
-    }
+    endPointManagers.stream()
+        .filter(endPointManager -> !endPointManager.getProtocols().toLowerCase().contains("echo"))
+        .forEachOrdered(filteredManagers::add);
     ParserExecutor parser2 = parser;
     InterfaceStatusDTO[] list =
         filteredManagers.stream()

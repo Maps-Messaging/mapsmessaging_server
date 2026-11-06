@@ -64,6 +64,7 @@ public abstract class PayloadFrame extends NatsFrame {
     return false;
   }
 
+  @Override
   public void parseFrame(Packet packet) throws IOException {
     int start = packet.position();
     try {
@@ -97,6 +98,7 @@ public abstract class PayloadFrame extends NatsFrame {
         throw new NatsProtocolException("Invalid MSG frame header: " + line);
       }
       subject = parts[0];
+      validatePublishSubject(subject);
       subscriptionId = parts[1];
       if (parts.length == 3) {
         replyTo = null;
@@ -110,6 +112,7 @@ public abstract class PayloadFrame extends NatsFrame {
         throw new NatsProtocolException("Invalid PUB frame header: " + line);
       }
       subject = parts[0];
+      validatePublishSubject(subject);
       subscriptionId = null;
       if (parts.length == 2) {
         replyTo = null;
@@ -122,6 +125,17 @@ public abstract class PayloadFrame extends NatsFrame {
 
     if (payloadSize > maxBufferSize) {
       throw new NatsProtocolException("Payload size exceeds max buffer size");
+    }
+  }
+
+  private void validatePublishSubject(String value) throws NatsProtocolException {
+    if (value.isEmpty()
+        || value.startsWith(".")
+        || value.endsWith(".")
+        || value.contains("..")
+        || value.indexOf('*') >= 0
+        || value.indexOf('>') >= 0) {
+      throw new NatsProtocolException("Invalid Subject");
     }
   }
 

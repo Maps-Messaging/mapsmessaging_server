@@ -237,7 +237,7 @@ public class RestApiServerManager implements Agent {
       throw new IllegalArgumentException("The URI path, of the URI " + uri + ", must be non-null, present and start with a '/'");
     }
 
-    path = String.format("/%s", (UriComponent.decodePath(uri.getPath(), true).get(1)).toString());
+    path = "/" + (UriComponent.decodePath(uri.getPath(), true).get(1)).toString();
     WebappContext context = new WebappContext("GrizzlyContext", path);
     ServletRegistration registration = context.addServlet(servlet.getClass().getName(), servlet);
     context.addListener(new SessionTracker());

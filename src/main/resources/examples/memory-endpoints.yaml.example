@@ -1,0 +1,59 @@
+# Example entries only: not loaded automatically. Add the required entries to
+# NetworkManager.data (listeners) or NetworkConnectionManager.data (outbound).
+# JDK 25 native transports require --enable-native-access=ALL-UNNAMED.
+# Unix: create the control socket parent with owner-only traversal permissions.
+# Windows: localAddress is a local pipe name, e.g. maps-mqtt, rather than a path.
+# Native shared-memory peers must run under the same OS account.
+
+# Unsecured shared-memory listener. Messaging authentication remains independent.
+- name: Local MQTT
+  url: shm://localhost:0
+  protocol: mqtt
+  auth: default
+  endPoint:
+    localAddress: /run/user/1000/maps/mqtt.sock
+    nativeSharedMemory: true
+    slotSize: 65536
+    slotCount: 256
+    maxConnections: 64
+    maxPendingConnections: 64
+    maxNegotiations: 16
+    handshakeTimeoutMillis: 5000
+    readinessPollMicros: 1000
+    memorySecurity:
+      enabled: false
+
+# Secured RDMA listener. RDMA requires rdma-core and a usable RDMA interface.
+# Apply the same memorySecurity block to a shared-memory entry to secure SHM.
+- name: Protected RDMA MQTT
+  url: rdma://192.0.2.10:7471
+  protocol: mqtt
+  auth: default
+  endPoint:
+    handshakeTimeoutMillis: 5000
+    memorySecurity:
+      enabled: true
+      identity: server-a
+      protection: AES_256_GCM  # Also CHACHA20_POLY1305 or HMAC_SHA_256 (integrity only).
+      keyPassword: replace-with-private-key-entry-password
+      keyStore:
+        type: PKCS12
+        path: /etc/maps/identities.p12
+        passphrase: replace-with-store-password
+        alias: server-a-signing
+      trustStore:
+        type: PKCS12
+        path: /etc/maps/trusted-peers.p12
+        passphrase: replace-with-trust-store-password
+      trustedPeers:
+        server-b:
+          - alias: server-b-current
+          - alias: server-b-next
+
+# Outbound endpoints use the same endPoint fields in NetworkConnectionManager.
+# For a secure peer, use its own identity/key alias and pin the listener identity.
+# Existing protocol credentials, links and reconnect settings apply as usual.
+# Native shared memory uses the same localAddress at both ends.
+# RDMA without transport security uses memorySecurity.enabled: false.
+# Provision identities/pins with the authentication library before enabling security.
+# No keys are generated or peers enrolled automatically; failure never downgrades.

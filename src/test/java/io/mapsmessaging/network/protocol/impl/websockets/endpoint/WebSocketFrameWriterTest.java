@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.mapsmessaging.network.io.Packet;
 import java.io.ByteArrayOutputStream;
@@ -124,6 +125,40 @@ class WebSocketFrameWriterTest {
     assertEquals(0x04, frame[2] & 0xFF);
     assertEquals(0x9F, frame[3] & 0xFF);
     assertEquals(payload.length + 4, frame.length);
+  }
+
+  @Test
+  void closeDiscardsQueuedApplicationFramesButFinishesInProgressFrame() throws IOException {
+    ByteArrayOutputStream output = new ByteArrayOutputStream();
+    int[] calls = {0};
+    WebSocketFrameWriter writer = new WebSocketFrameWriter(packet -> {
+      calls[0]++;
+      if (calls[0] <= 2) {
+        return 0;
+      }
+      int count = packet.available();
+      byte[] value = new byte[count];
+      packet.get(value);
+      output.writeBytes(value);
+      return count;
+    });
+
+    assertEquals(0, writer.writeBinary(
+        new Packet(ByteBuffer.wrap("first".getBytes(StandardCharsets.US_ASCII)))));
+    assertEquals(0, writer.writeBinary(
+        new Packet(ByteBuffer.wrap("second".getBytes(StandardCharsets.US_ASCII)))));
+    assertTrue(writer.writeControl(WebSocketFrameDecoder.CLOSE,
+        new byte[] {0x03, (byte) 0xE8}));
+
+    assertArrayEquals(new byte[] {
+        (byte) 0x82, 0x05, 'f', 'i', 'r', 's', 't',
+        (byte) 0x88, 0x02, 0x03, (byte) 0xE8
+    }, output.toByteArray());
+    assertFalse(writer.hasPendingApplicationData());
+    assertThrows(IOException.class,
+        () -> writer.writeBinary(new Packet(ByteBuffer.wrap(new byte[] {1}))));
+    assertThrows(IOException.class,
+        () -> writer.writeControl(WebSocketFrameDecoder.PONG, new byte[] {1}));
   }
 
   private static final class PartialThenBlockedSink implements WebSocketFrameWriter.PacketSink {

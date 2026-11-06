@@ -41,6 +41,11 @@ io.mapsmessaging.network.protocol.impl.nats.NatsProtocolFactory
 io.mapsmessaging.network.protocol.impl.nmea.NMEAProtocolFactory
 
 #
+# Cursor-on-Target (TAK) raw XML passthrough ingest
+#
+io.mapsmessaging.network.protocol.impl.cot.CotProtocolFactory
+
+#
 # OrbComm based protocols to support Satellite communications
 #
 io.mapsmessaging.network.protocol.impl.satellite.modem.protocol.StoGiProtocolFactory

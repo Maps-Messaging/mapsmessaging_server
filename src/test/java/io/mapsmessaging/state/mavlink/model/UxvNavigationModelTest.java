@@ -343,9 +343,6 @@ class UxvNavigationModelTest {
   }
 
   private static float expectedAltitude(AbstractMissionUxvModel model, GeoPosition position) {
-    if (model instanceof SticklebackArdupilotUsvModel) {
-      return (float) SticklebackArdupilotUsvModel.MAX_ALTITUDE_METERS;
-    }
     return position.getPreferredAltitudeMeters() == null ? 0.0f : position.getPreferredAltitudeMeters().floatValue();
   }
 

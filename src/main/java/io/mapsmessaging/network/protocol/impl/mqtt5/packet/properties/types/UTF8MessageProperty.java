@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt5.packet.properties.types;
 
+import java.nio.charset.StandardCharsets;
+
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MQTTPacket;
 import io.mapsmessaging.network.protocol.impl.mqtt.packet.MalformedException;
@@ -44,7 +46,7 @@ public abstract class UTF8MessageProperty extends MessageProperty {
 
   @Override
   public int getSize() {
-    return 2 + value.length();
+    return 2 + value.getBytes(StandardCharsets.UTF_8).length;
   }
 
   @Override

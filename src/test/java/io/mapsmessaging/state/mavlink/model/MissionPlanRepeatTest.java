@@ -53,6 +53,37 @@ class MissionPlanRepeatTest {
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP_REPEAT_FOREVER, (int) jump.getParam2());
   }
 
+
+  @Test
+  void repeatIndefinitelyCanStartAtLogicalSuffix() {
+    GenericPx4UavModel model = new GenericPx4UavModel();
+    MissionPlan plan =
+        MissionPlan.repeatIndefinitely(
+            List.of(WAYPOINT, WAYPOINT, WAYPOINT), 1);
+
+    UxvModelCommandSet commandSet = model.buildMission(CONTEXT, plan);
+
+    assertTrue(plan.repeats());
+    assertEquals(1, plan.repeatStartIndex());
+    MavlinkMissionItemInt jump =
+        (MavlinkMissionItemInt) commandSet.messages().get(3);
+    assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP, jump.getCommand());
+    assertEquals(1.0f, jump.getParam1());
+    assertEquals(
+        MavlinkMissionItemIntFactory.MAV_CMD_DO_JUMP_REPEAT_FOREVER,
+        (int) jump.getParam2());
+  }
+
+  @Test
+  void repeatStartIndexMustAddressARealMissionItem() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> MissionPlan.repeatIndefinitely(List.of(WAYPOINT), -1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> MissionPlan.repeatIndefinitely(List.of(WAYPOINT), 1));
+  }
+
   @Test
   void finiteIterationsAddFiniteJumpCount() {
     GenericPx4UavModel model = new GenericPx4UavModel();

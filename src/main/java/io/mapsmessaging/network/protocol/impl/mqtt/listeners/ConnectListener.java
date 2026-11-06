@@ -55,6 +55,19 @@ public class ConnectListener extends BaseConnectionListener {
     }
     Connect connect = (Connect) mqttPacket;
     ConnAck connAck = new ConnAck();
+    if (!connect.hasSupportedProtocolLevel()) {
+      // MQTT-3.1.2-2: return CONNACK 0x01, then close the connection.
+      // ServerPacket.complete() runs after the frame has been fully written.
+      connAck.setResponseCode(ConnAck.INVALID_PROTOCOL);
+      connAck.setCallback(() -> {
+        try {
+          endPoint.close();
+        } catch (IOException e) {
+          logger.log(ServerLogMessages.END_POINT_CLOSE_EXCEPTION, e);
+        }
+      });
+      return connAck;
+    }
 
     boolean strict = checkStrict(connect, protocol);
 
@@ -85,13 +98,14 @@ public class ConnectListener extends BaseConnectionListener {
         handleSessionException(connAck, protocol);
       } else {
         try {
-          setupConnAck(session, connAck);
+          protocol.setSession(session);
+          setupConnAck(session, connAck, protocol);
           protocol.registerRead();
           protocol.sendFrame(connAck);
           if(connAck.getCallback() != null) {
             connAck.getCallback().run();
           }
-        } catch (IOException e) {
+        } catch (IOException | java.io.UncheckedIOException e) {
           handleSessionException(connAck, protocol);
         }
       }
@@ -99,10 +113,14 @@ public class ConnectListener extends BaseConnectionListener {
   }
 
 
-  private void setupConnAck(Session session, ConnAck connAck) {
+  private void setupConnAck(Session session, ConnAck connAck, MQTTProtocol protocol) {
     connAck.setResponseCode(ConnAck.SUCCESS);
     connAck.setRestoredFlag(session.isRestored());
-    connAck.setCallback(session::resumeState);
+    connAck.setCallback(() -> {
+      protocol.recoverOutgoingDeliveries().thenRun(() -> {
+        if (protocol.isDeliverySessionActive(session)) session.resumeState();
+      });
+    });
   }
 
   private CompletableFuture<Session> constructSession(EndPoint endPoint, Protocol protocol, String sessionId, Connect connect) {

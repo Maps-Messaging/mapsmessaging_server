@@ -61,6 +61,7 @@ class MavlinkBootstrapStateEngineTest {
         DroneTwinMissingState.MISSING_GLOBAL_POSITION,
         DroneTwinMissingState.MISSING_BATTERY_STATE
     );
+    result.setBlockingStates(EnumSet.of(DroneTwinMissingState.MISSING_GLOBAL_POSITION));
 
     List<MavlinkBootstrapEvent> events = stateEngine.update(droneTwin, result, contextAt(0));
 
@@ -82,7 +83,7 @@ class MavlinkBootstrapStateEngineTest {
   }
 
   @Test
-  void unchanged_partial_state_waits_for_the_full_retry_interval() {
+  void unchanged_blocking_state_waits_for_the_fast_retry_interval() {
     DroneTwinReadinessResult result = result(
         DroneTwinReadinessState.HEALTH_PARTIAL,
         false,
@@ -96,36 +97,44 @@ class MavlinkBootstrapStateEngineTest {
   }
 
   @Test
-  void missing_autopilot_version_and_capabilities_share_one_request() {
+  void missing_autopilot_version_and_capabilities_share_one_background_request() {
     DroneTwinReadinessResult result = result(
-        DroneTwinReadinessState.CAPABILITY_PARTIAL,
-        false,
+        DroneTwinReadinessState.COMMAND_READY,
+        true,
         DroneTwinMissingState.MISSING_AUTOPILOT_VERSION,
         DroneTwinMissingState.MISSING_CAPABILITIES
     );
 
     List<MavlinkBootstrapEvent> initialRequests = requests(stateEngine.update(droneTwin, result, contextAt(0)));
-    List<MavlinkBootstrapEvent> retryRequests = requests(stateEngine.update(droneTwin, result, contextAt(2)));
+    List<MavlinkBootstrapEvent> earlyRetryRequests = requests(stateEngine.update(droneTwin, result, contextAt(2)));
+    List<MavlinkBootstrapEvent> backgroundRetryRequests = requests(stateEngine.update(droneTwin, result, contextAt(60)));
 
     assertEquals(1, initialRequests.size());
     assertEquals(AUTOPILOT_VERSION, initialRequests.getFirst().getMavlinkMessageId());
     assertEquals(MavlinkBootstrapRequestType.REQUEST_MESSAGE, initialRequests.getFirst().getRequestType());
-    assertEquals(1, retryRequests.size());
-    assertEquals(AUTOPILOT_VERSION, retryRequests.getFirst().getMavlinkMessageId());
+    assertTrue(earlyRetryRequests.isEmpty());
+    assertEquals(1, backgroundRetryRequests.size());
+    assertEquals(AUTOPILOT_VERSION, backgroundRetryRequests.getFirst().getMavlinkMessageId());
   }
 
   @Test
-  void missing_capabilities_alone_requests_autopilot_version() {
-    DroneTwinReadinessResult result = result(DroneTwinReadinessState.CAPABILITY_PARTIAL, false, DroneTwinMissingState.MISSING_CAPABILITIES);
+  void missing_capabilities_alone_is_background_and_does_not_require_command_not_ready() {
+    DroneTwinReadinessResult result = result(
+        DroneTwinReadinessState.COMMAND_READY,
+        true,
+        DroneTwinMissingState.MISSING_CAPABILITIES
+    );
 
     List<MavlinkBootstrapEvent> emittedRequests = requests(stateEngine.update(droneTwin, result, contextAt(0)));
 
     assertEquals(1, emittedRequests.size());
     assertEquals(AUTOPILOT_VERSION, emittedRequests.getFirst().getMavlinkMessageId());
+    assertTrue(requests(stateEngine.update(droneTwin, result, contextAt(59))).isEmpty());
+    assertEquals(1, requests(stateEngine.update(droneTwin, result, contextAt(60))).size());
   }
 
   @Test
-  void retries_exhaust_then_timeout_once_without_sleeps() {
+  void blocking_retries_exhaust_fast_budget_then_continue_recovery_after_timeout() {
     DroneTwinReadinessResult result = result(
         DroneTwinReadinessState.HEALTH_PARTIAL,
         false,
@@ -137,13 +146,18 @@ class MavlinkBootstrapStateEngineTest {
     assertEquals(1, requests(stateEngine.update(droneTwin, result, contextAt(4))).size());
     assertTrue(stateEngine.update(droneTwin, result, contextAt(6)).isEmpty());
 
-    List<MavlinkBootstrapEvent> timedOut = stateEngine.update(droneTwin, result, contextAt(15));
-    assertEquals(1, timedOut.size());
-    assertEquals(MavlinkBootstrapEventType.BOOTSTRAP_TIMED_OUT, timedOut.get(0).getEventType());
-    assertEquals(DroneTwinMissingState.MISSING_BATTERY_STATE, timedOut.get(0).getMissingState());
-    assertTrue(timedOut.get(0).getReason().contains("MISSING_BATTERY_STATE"));
+    List<MavlinkBootstrapEvent> timedOutAndRecovery = stateEngine.update(droneTwin, result, contextAt(15));
+    assertEquals(1, requests(timedOutAndRecovery).size());
+    assertTrue(timedOutAndRecovery.stream().anyMatch(event -> event.getEventType() == MavlinkBootstrapEventType.BOOTSTRAP_TIMED_OUT));
+    assertTrue(timedOutAndRecovery.stream()
+        .filter(event -> event.getEventType() == MavlinkBootstrapEventType.BOOTSTRAP_TIMED_OUT)
+        .findFirst()
+        .orElseThrow()
+        .getReason()
+        .contains("MISSING_BATTERY_STATE"));
 
-    assertTrue(stateEngine.update(droneTwin, result, contextAt(16)).isEmpty());
+    assertTrue(requests(stateEngine.update(droneTwin, result, contextAt(16))).isEmpty());
+    assertEquals(1, requests(stateEngine.update(droneTwin, result, contextAt(30))).size());
   }
 
   @Test
@@ -160,8 +174,8 @@ class MavlinkBootstrapStateEngineTest {
     assertTrue(stateEngine.update(droneTwin, batteryMissing, contextAt(6)).isEmpty());
 
     DroneTwinReadinessResult batteryRecovered = result(
-        DroneTwinReadinessState.CAPABILITY_PARTIAL,
-        false,
+        DroneTwinReadinessState.COMMAND_READY,
+        true,
         DroneTwinMissingState.MISSING_CAPABILITIES
     );
     stateEngine.update(droneTwin, batteryRecovered, contextAt(7));
@@ -196,7 +210,7 @@ class MavlinkBootstrapStateEngineTest {
   }
 
   @Test
-  void command_ready_completes_once_and_late_regression_does_not_reopen_requests() {
+  void command_ready_marks_complete_only_when_no_background_metadata_is_missing() {
     DroneTwinReadinessResult ready = result(DroneTwinReadinessState.COMMAND_READY, true);
 
     List<MavlinkBootstrapEvent> initialEvents = stateEngine.update(droneTwin, ready, contextAt(0));
@@ -206,17 +220,17 @@ class MavlinkBootstrapStateEngineTest {
 
     assertTrue(stateEngine.update(droneTwin, ready, contextAt(1)).isEmpty());
 
-    DroneTwinReadinessResult latePartial = result(
-        DroneTwinReadinessState.HEALTH_PARTIAL,
-        false,
-        DroneTwinMissingState.MISSING_BATTERY_STATE
+    DroneTwinReadinessResult lateMetadataGap = result(
+        DroneTwinReadinessState.COMMAND_READY,
+        true,
+        DroneTwinMissingState.MISSING_CAPABILITIES
     );
-    List<MavlinkBootstrapEvent> lateEvents = stateEngine.update(droneTwin, latePartial, contextAt(2));
+    List<MavlinkBootstrapEvent> lateEvents = stateEngine.update(droneTwin, lateMetadataGap, contextAt(2));
 
-    assertEquals(1, lateEvents.size());
-    assertEquals(MavlinkBootstrapEventType.READINESS_CHANGED, lateEvents.get(0).getEventType());
-    assertTrue(requests(lateEvents).isEmpty());
+    assertEquals(1, requests(lateEvents).size());
     assertFalse(lateEvents.stream().anyMatch(event -> event.getEventType() == MavlinkBootstrapEventType.BOOTSTRAP_COMPLETED));
+    assertTrue(requests(stateEngine.update(droneTwin, lateMetadataGap, contextAt(61))).isEmpty());
+    assertEquals(1, requests(stateEngine.update(droneTwin, lateMetadataGap, contextAt(62))).size());
   }
 
   @Test
@@ -271,6 +285,7 @@ class MavlinkBootstrapStateEngineTest {
         DroneTwinMissingState.MISSING_GLOBAL_POSITION,
         DroneTwinMissingState.MISSING_BATTERY_STATE
     );
+    batteryAndPositionMissing.setBlockingStates(EnumSet.of(DroneTwinMissingState.MISSING_GLOBAL_POSITION));
     List<MavlinkBootstrapEvent> events = stateEngine.update(droneTwin, batteryAndPositionMissing, contextAt(16));
 
     assertEquals(1, requests(events).size());

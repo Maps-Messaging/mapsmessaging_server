@@ -494,8 +494,7 @@ public class JsonInstanceGenerator {
     }
 
     // Avoid endpoint values for stability
-    double v = min + (random.nextDouble() * (max - min));
-    return v;
+    return min + (random.nextDouble() * (max - min));
   }
 
   private JsonNode invalidEnumValue(String type) {

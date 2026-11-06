@@ -48,6 +48,9 @@ public class Publish extends MQTT_SNPacket implements BasePublish {
   public Publish(Packet packet, int length) throws IOException {
     super(PUBLISH);
     flags = packet.get();
+    if (getTopicIdType() == LONG_TOPIC_NAME) {
+      throw new IOException("Reserved MQTT-SN 1.2 TopicIdType");
+    }
     topicId = MQTTPacket.readShort(packet);
     messageId = MQTTPacket.readShort(packet);
     message = new byte[packet.available()];
@@ -64,6 +67,10 @@ public class Publish extends MQTT_SNPacket implements BasePublish {
     MQTTPacket.writeShort(packet, messageId);
     packet.put(message);
     return len;
+  }
+
+  public void setDup(boolean duplicate) {
+    flags = (byte) (duplicate ? flags | 0x80 : flags & ~0x80);
   }
 
   public boolean dup() {

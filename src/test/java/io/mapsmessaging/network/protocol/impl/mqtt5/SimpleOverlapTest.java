@@ -132,76 +132,83 @@ class SimpleOverlapTest extends MQTTBaseTest {
     });
     String[] topics = {"overlap/topic1", "overlap/topic2", "overlap/topic3"};
     client.connect(options);
-    //
-    // Create 3 topics
-    subscribe(client, "overlap/topic1", counter, QoS);
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 1));
+    try {
+      //
+      // Create 3 topics
+      subscribe(client, "overlap/topic1", QoS);
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 1));
 
-    subscribe(client, "overlap/topic2", counter, QoS);
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 2));
+      subscribe(client, "overlap/topic2", QoS);
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 2));
 
-    subscribe(client, "overlap/topic3", counter, QoS);
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 3));
+      subscribe(client, "overlap/topic3", QoS);
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 3));
 
-    //
-    // Create the wildcard subscription
-    subscribe(client, "overlap/#", counter, QoS);
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 3));
+      //
+      // Create the wildcard subscription
+      subscribe(client, "overlap/#", QoS);
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 3));
 
-    //
-    // Unsubscribe from 2
-    client.unsubscribe("overlap/topic2");
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 3));
+      //
+      // Unsubscribe from 2
+      client.unsubscribe("overlap/topic2");
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 3));
 
-    client.unsubscribe("overlap/topic3");
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 3));
+      client.unsubscribe("overlap/topic3");
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 3));
 
-    //
-    // Unsubscribe from the first topic
-    client.unsubscribe("overlap/topic1");
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 3));
+      //
+      // Unsubscribe from the first topic
+      client.unsubscribe("overlap/topic1");
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 3));
 
-    //
-    // Unsubscribe from the wildcard
-    client.unsubscribe("overlap/#");
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 0));
+      //
+      // Unsubscribe from the wildcard
+      client.unsubscribe("overlap/#");
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 0));
 
-    //
-    // Now subscribe to the wildcard
-    subscribe(client, "overlap/#", counter, QoS);
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 3));
+      //
+      // Now subscribe to the wildcard
+      subscribe(client, "overlap/#", QoS);
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 3));
 
-    subscribe(client, "overlap/topic1", counter, QoS);
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 3));
+      subscribe(client, "overlap/topic1", QoS);
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 3));
 
-    client.unsubscribe("overlap/#");
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 1));
+      client.unsubscribe("overlap/#");
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 1));
 
-    client.unsubscribe("overlap/topic1");
-    publish(client, topics, QoS);
-    Assertions.assertTrue(waitFor(counter, 0));
-    client.disconnect();
-    client.close();
+      client.unsubscribe("overlap/topic1");
+      publish(client, topics, QoS);
+      Assertions.assertTrue(waitFor(counter, 0));
+    } finally {
+      try {
+        if (client.isConnected()) {
+          client.disconnect();
+        }
+      } finally {
+        client.close();
+      }
+    }
   }
 
 
-  private void subscribe(MqttClient mqttClient, String topic, AtomicInteger counter, int QoS) throws MqttException {
+  private void subscribe(MqttClient mqttClient, String topic, int QoS) throws MqttException {
     MqttSubscription[] subscriptions = new MqttSubscription[1];
-    IMqttMessageListener[] listeners = new IMqttMessageListener[1];
     subscriptions[0] = new MqttSubscription(topic, QoS);
-    listeners[0] = (s, mqttMessage) -> counter.incrementAndGet();
-    mqttClient.subscribe(subscriptions, listeners);
+    mqttClient.subscribe(subscriptions);
+
   }
 
 

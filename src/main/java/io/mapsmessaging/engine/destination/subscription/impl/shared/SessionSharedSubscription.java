@@ -19,7 +19,11 @@
 
 package io.mapsmessaging.engine.destination.subscription.impl.shared;
 
+import io.mapsmessaging.engine.destination.QueueCleanupTrace;
+import io.mapsmessaging.engine.session.DeliveryStateCoordinator;
 import io.mapsmessaging.api.message.Message;
+import io.mapsmessaging.api.SubscribedEventManager;
+import java.io.UncheckedIOException;
 import io.mapsmessaging.dto.rest.session.SubscriptionStateDTO;
 import io.mapsmessaging.engine.destination.subscription.OutstandingEventDetails;
 import io.mapsmessaging.engine.destination.subscription.Subscription;
@@ -45,6 +49,10 @@ public class SessionSharedSubscription extends Subscription {
   private final AcknowledgementController acknowledgementController;
   private final MessageDeliveryCompletionTask completionTask;
   private final String sessionId;
+  private final String deliveryKey;
+  private volatile boolean flowControlBlocked;
+  @SuppressWarnings("java:S3077") // Volatile safely publishes the reference; coordinator operations synchronize internally.
+  private volatile io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator;
 
   public SessionSharedSubscription(
       SharedSubscription sharedSubscription,
@@ -54,25 +62,31 @@ public class SessionSharedSubscription extends Subscription {
       AcknowledgementController acknowledgementController) {
     super(sessionImpl, context);
     this.sessionId = sessionId;
+    this.deliveryKey = SubscribedEventManager.deliveryKey(context, sharedSubscription.getDestinationImpl().getFullyQualifiedNamespace());
     this.sharedSubscription = sharedSubscription;
     this.acknowledgementController = acknowledgementController;
+    this.flowControlBlocked = false;
     completionTask = new MessageDeliveryCompletionTask(sharedSubscription, acknowledgementController);
   }
 
   @Override
   public void cancel() throws IOException {
+    traceCleanupState("CANCEL-BEGIN");
+    clearDeliveryMappings();
+    releaseProtocolSendSlot();
     List<OutstandingEventDetails> outstandingEvents = new ArrayList<>(acknowledgementController.getOutstanding());
     for (OutstandingEventDetails outstandingEvent : outstandingEvents) {
+      QueueCleanupTrace.record(getName(), "CANCEL-ROLLBACK", outstandingEvent.getId(), sessionId);
       sharedSubscription.handleTransaction(false, outstandingEvent.getId());
     }
     sharedSubscription.removeSession(sessionImpl);
+    traceCleanupState("CANCEL-END");
   }
 
   @Override
   public void close() throws IOException {
     cancel();
   }
-
 
   @Override
   public void delete() throws IOException {
@@ -81,14 +95,18 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void hibernate() {
+    traceCleanupState("HIBERNATE-BEGIN");
+    releaseProtocolSendSlot();
     for (OutstandingEventDetails outstanding : acknowledgementController.getOutstanding()) {
+      QueueCleanupTrace.record(getName(), "HIBERNATE-ROLLBACK", outstanding.getId(), sessionId);
       sharedSubscription.getAcknowledgementController().rollback(outstanding.getId());
     }
+    traceCleanupState("HIBERNATE-END");
   }
 
   @Override
   public boolean expired(long messageIdentifier) {
-    // Should be done via the main subscription
+    clearDeliveryMapping(messageIdentifier);
     return false;
   }
 
@@ -120,6 +138,47 @@ public class SessionSharedSubscription extends Subscription {
 
   public boolean canSend() {
     return acknowledgementController.canSend();
+  }
+
+  boolean canAttemptSend() {
+    return !flowControlBlocked && sessionImpl != null && canSend();
+  }
+
+  boolean tryAcquireProtocolSendSlot(Message message) {
+    SessionImpl session = sessionImpl;
+    if (session == null) {
+      flowControlBlocked = false;
+      return false;
+    }
+    ClientConnection clientConnection = session.getClientConnection();
+    if (clientConnection == null) {
+      flowControlBlocked = false;
+      return true;
+    }
+
+    flowControlBlocked = true;
+    if (clientConnection.tryAcquireSendSlot(this, message)) {
+      flowControlBlocked = false;
+      return true;
+    }
+    return false;
+  }
+
+  void releaseProtocolSendSlot() {
+    SessionImpl session = sessionImpl;
+    if (session != null) {
+      ClientConnection clientConnection = session.getClientConnection();
+      if (clientConnection != null) {
+        clientConnection.releaseSendSlot(this);
+      }
+    }
+    flowControlBlocked = false;
+  }
+
+  @Override
+  public void resumeDelivery() {
+    flowControlBlocked = false;
+    sharedSubscription.schedule();
   }
 
   @Override
@@ -176,7 +235,59 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void ackReceived(long messageId) {
-    sharedSubscription.getDestinationImpl().submit(new SharedSubscriptionTask(sharedSubscription, acknowledgementController, messageId, true));
+    sharedSubscription.getDestinationImpl().submit(new SharedSubscriptionTask(sharedSubscription, acknowledgementController, messageId, true, () -> clearDeliveryMapping(messageId)));
+  }
+
+  @Override
+  public String getDeliveryKey() {
+    return deliveryKey;
+  }
+
+  public void clearDeliveryMapping(long messageId) {
+    try {
+      if (sessionImpl != null) {
+        sessionImpl.clearPacketIdMapping(getDeliveryKey(), messageId);
+      } else {
+        DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
+        if (coordinator != null) {
+          coordinator.retirePending(getDeliveryKey(), messageId);
+        }
+      }
+    } catch (IOException error) {
+      throw new UncheckedIOException("Unable to retire shared delivery packet identifier", error);
+    }
+  }
+
+  private void clearDeliveryMappings() throws IOException {
+    if (sessionImpl != null) {
+      sessionImpl.clearPacketIdMappings(getDeliveryKey());
+    } else {
+      DeliveryStateCoordinator coordinator = deliveryStateCoordinator;
+      if (coordinator != null) {
+        coordinator.retireAll(getDeliveryKey());
+      }
+    }
+  }
+
+  @Override
+  public void setDeliveryStateCoordinator(io.mapsmessaging.engine.session.DeliveryStateCoordinator coordinator) {
+    deliveryStateCoordinator = coordinator;
+  }
+
+  @Override
+  public void setDeliveryJournalPath(java.nio.file.Path path) {
+    DeliveryStateCoordinator coordinator = new DeliveryStateCoordinator();
+    coordinator.setPath(path);
+    setDeliveryStateCoordinator(coordinator);
+  }
+
+  @Override
+  public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(long messageId) {
+    return submitRecoveredAcknowledgement(sharedSubscription.getDestinationImpl(), () -> {
+      new SharedSubscriptionTask(sharedSubscription, acknowledgementController, messageId, true,
+          () -> clearDeliveryMapping(messageId)).taskCall();
+      sharedSubscription.expired(messageId);
+    });
   }
 
   @Override
@@ -197,6 +308,11 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void sendMessage(Message message) {
+    if (QueueCleanupTrace.isEnabled(getName())) {
+      QueueCleanupTrace.record(getName(), "SEND", message.getIdentifier(), "session", sessionId,
+          "closed", sessionImpl.isClosed(), "hibernating", hibernating, "controller", System.identityHashCode(acknowledgementController),
+          "ackType", acknowledgementController.getType());
+    }
     String name = "";
     String endpoint = "";
     String version = "";
@@ -217,6 +333,22 @@ public class SessionSharedSubscription extends Subscription {
     message.setBound(true);
     sessionImpl.getMessageCallback().sendMessage(sharedSubscription.getDestinationImpl(), this, message, completionTask);
     ThreadContext.clearMap();
+  }
+
+  /** Keep removed consumers inspectable by the diagnostic test after their expiry callback. */
+  public void traceCleanupState(String stage) {
+    if (QueueCleanupTrace.isEnabled(getName())) {
+      try {
+        SessionImpl session = sessionImpl;
+        QueueCleanupTrace.record(getName(), stage, -1, "session", sessionId, "attached", session != null,
+            "closed", session != null && session.isClosed(), "hibernating", hibernating, "blocked", flowControlBlocked,
+            "controller", System.identityHashCode(acknowledgementController), "ackType", acknowledgementController.getType(),
+            "credit", acknowledgementController.getMaxOutstanding(), "outstanding", acknowledgementController.getOutstanding());
+        sharedSubscription.traceCleanupState(stage + "-SHARED");
+      } catch (RuntimeException diagnosticFailure) {
+        QueueCleanupTrace.record(getName(), "SNAPSHOT-FAILED", -1, stage, diagnosticFailure.toString());
+      }
+    }
   }
 
   @Override

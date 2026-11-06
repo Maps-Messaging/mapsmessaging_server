@@ -78,6 +78,10 @@ public class PersistentSessionManager {
     return persistentMap.get(id);
   }
 
+  SessionDetails removeSessionDetails(String sessionId){
+    return persistentMap.remove(sessionId);
+  }
+
 
   public Map<String, SubscriptionContext> getSubscriptionContextMap(String sessionId, boolean isPersistent) {
     Map<String, SubscriptionContext> map = new LinkedHashMap<>();
@@ -101,7 +105,12 @@ public class PersistentSessionManager {
         boolean delete = false;
         try (FileInputStream fileInputStream = new FileInputStream(child)) {
           SessionDetails details = new SessionDetails(fileInputStream);
-          if(!details.getSubscriptionContextList().isEmpty()){
+          // Alias-only and delivery-only sessions must be restored and expired/cleaned normally.
+          if (!details.getSubscriptionContextList().isEmpty()
+              || (details.getUniqueId() != null && Files.isRegularFile(
+                  new File(dataPath, details.getUniqueId() + ".aliases").toPath()))
+              || (details.getUniqueId() != null && Files.isRegularFile(
+                  new File(dataPath, details.getUniqueId() + ".packet-ids").toPath()))) {
             persistentMap.put(details.getSessionName(), details);
             if(details.isNeedsUpdating()){
               updateFileToNewVersion(details, child);

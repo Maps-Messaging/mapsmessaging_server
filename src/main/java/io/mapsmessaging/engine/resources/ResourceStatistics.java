@@ -55,11 +55,11 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
       future = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(this, 10, 10, TimeUnit.SECONDS);
 
       io.mapsmessaging.storage.Statistics statistics = resource.getStatistics();
-      if (statistics instanceof CacheStatistics) {
+      if (statistics instanceof CacheStatistics matchedCacheStatistics) {
         cacheStats.add(new CacheHitStats(create(type,ACCUMULATOR.DIFF, "Cache Hits", "Hits/second")));
         cacheStats.add(new CacheMissStats(create(type,ACCUMULATOR.DIFF, "Cache Miss", "Hits/second")));
         cacheStats.add(new CacheSizeStats(create(type,ACCUMULATOR.DIFF, "Cache Size", "Entries")));
-        statistics = ((CacheStatistics) statistics).getStorageStatistics();
+        statistics = (matchedCacheStatistics).getStorageStatistics();
       }
 
       if (statistics instanceof MemoryTierStatistics) {
@@ -134,14 +134,13 @@ public class ResourceStatistics extends Statistics implements AutoCloseable, Run
   public void run() {
     io.mapsmessaging.storage.Statistics actualStats = resource.getStatistics();
     if (actualStats != null) {
-      if (actualStats instanceof CacheStatistics) {
-        CacheStatistics cacheStatistics = (CacheStatistics) actualStats;
+      if (actualStats instanceof CacheStatistics cacheStatistics) {
         processCacheStatistics(cacheStatistics);
         actualStats = cacheStatistics.getStorageStatistics();
       }
-      if (actualStats instanceof MemoryTierStatistics) {
-        processTierStatistics((MemoryTierStatistics) actualStats);
-        actualStats = ((MemoryTierStatistics) actualStats).getFileStatistics();
+      if (actualStats instanceof MemoryTierStatistics matchedMemoryTierStatistics) {
+        processTierStatistics(matchedMemoryTierStatistics);
+        actualStats = (matchedMemoryTierStatistics).getFileStatistics();
       }
       processStoreStatistics((StorageStatistics) actualStats);
     }
