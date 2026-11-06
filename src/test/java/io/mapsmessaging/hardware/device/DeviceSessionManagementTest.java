@@ -229,7 +229,7 @@ class DeviceSessionManagementTest {
   }
 
   private static DeviceSessionManagement configuredSession(SchemaConfig schema, Destination destination) {
-    return configuredSession(schema, destination, UUID.randomUUID());
+    return configuredSession(schema, destination, schema == null ? UUID.randomUUID() : UUID.fromString(schema.getUniqueId()));
   }
 
   private static DeviceSessionManagement configuredSession(SchemaConfig schema, Destination destination, UUID deviceUuid) {
