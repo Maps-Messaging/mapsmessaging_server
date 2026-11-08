@@ -123,6 +123,57 @@ class MavlinkTransactionManagerTest {
   }
 
   @Test
+  void cancellationRequestStopsOnlyTheMatchingActiveTransaction() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submitNative(request("cancel-topic", packet(76)), "127.0.0.1:14550");
+      JsonObject cancellation = new JsonObject();
+      cancellation.addProperty("transactionId", "cancel-topic");
+      manager.cancelRequest(cancellation, "/127.0.0.1:14550");
+
+      assertEquals("CANCELLED", statuses.getLast().get("status").getAsString());
+      assertEquals("cancel-topic", statuses.getLast().get("transactionId").getAsString());
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
+  void malformedCancellationRequestDoesNotStopActiveTransaction() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submitNative(request("cancel-topic", packet(76)), "127.0.0.1:14550");
+      JsonObject malformed = new JsonObject();
+      malformed.addProperty("transactionId", "cancel-topic");
+      malformed.addProperty("operation", "CANCEL");
+      manager.cancelRequest(malformed, "127.0.0.1:14550");
+
+      assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
+  void cancellationFromDifferentPeerCannotStopActiveTransaction() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submitNative(request("cancel-topic", packet(76)), "127.0.0.1:14550");
+      JsonObject cancellation = new JsonObject();
+      cancellation.addProperty("transactionId", "cancel-topic");
+      manager.cancelRequest(cancellation, "127.0.0.2:14550");
+
+      assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
   void nonMatchingConcurrentTransactionIsRejected() {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
