@@ -78,6 +78,23 @@ class MavlinkProtocolFlowCoverageTest {
   }
 
   @Test
+  void optInTransactionUsesProtocolManagerButPreservesEngineCompletion() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Runnable completion = mock(Runnable.class);
+
+    fixture.protocol.sendMessage(event(
+        "ID#42#127.0.0.1:14550",
+        "{\"transactionId\":\"command-1\",\"operation\":\"COMMAND\",\"messages\":[]}",
+        completion));
+
+    verify(manager).submit(any(JsonObject.class), eq("127.0.0.1:14550"));
+    verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
+    verify(completion).run();
+  }
+
+  @Test
   void validOutboundMessageOverridesSequenceAndWritesFrame() throws Exception {
     Fixture fixture = fixture();
     byte[] frame = new byte[]{1, 2, 3, 4};
