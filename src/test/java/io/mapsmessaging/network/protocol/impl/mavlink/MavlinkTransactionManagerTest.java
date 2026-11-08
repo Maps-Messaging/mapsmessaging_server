@@ -368,6 +368,90 @@ class MavlinkTransactionManagerTest {
     }
   }
 
+  @Test
+  void conflictingActiveTransactionIdIsRejectedWithoutTransmitting() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submit(request("collision", "COMMAND", packet(76)), "127.0.0.1:14550");
+      JsonObject other = packet(76);
+      other.getAsJsonObject("payload").addProperty("command", 401);
+      manager.submit(request("collision", "COMMAND", other), "127.0.0.1:14550");
+      assertEquals(1, sent.size());
+      assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
+      assertTrue(statuses.getLast().get("reason").getAsString().contains("different request"));
+    }
+  }
+
+  @Test
+  void conflictingCompletedTransactionIdIsRejectedWithoutTransmitting() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submit(request("collision", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
+      JsonObject changed = packet(76);
+      changed.getAsJsonObject("payload").addProperty("command", 401);
+      manager.submit(request("collision", "COMMAND", changed), "127.0.0.1:14550");
+      assertEquals(1, sent.size());
+      assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void udpResponseMustMatchOriginalPeerEvenWithMatchingSystemIds() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
+        (message, destination) -> sent.add(message.deepCopy()), (topic, status) -> statuses.add(status.deepCopy()),
+        "/status", 1, 255, 190, true)) {
+      manager.submit(request("peer-check", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)), "127.0.0.2:14550");
+      assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)), "127.0.0.1:14550");
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void invalidAckTargetAndMissionTypeCannotCompleteUpload() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject count = packet(44);
+      count.getAsJsonObject("payload").addProperty("count", 1);
+      JsonObject item = packet(73);
+      item.getAsJsonObject("payload").addProperty("seq", 0);
+      manager.submit(request("wrong-target", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "target_system", 17, "mission_type", 0)));
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 1)));
+      assertEquals(1, sent.size());
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 1)));
+      assertEquals("UPLOADING", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void cancelledTransactionIgnoresLateAckAndDoesNotCompleteNewCommand() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submit(request("cancel-one", "COMMAND", packet(76)), "127.0.0.1:14550");
+      JsonObject cancel = new JsonObject();
+      cancel.addProperty("transactionId", "cancel-one");
+      cancel.addProperty("operation", "CANCEL");
+      manager.submit(cancel, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
+      assertEquals("CANCELLED", statuses.getLast().get("status").getAsString());
+      manager.submit(request("cancel-one", "COMMAND", packet(76)), "127.0.0.1:14550");
+      assertEquals("CANCELLED", statuses.getLast().get("status").getAsString());
+      assertEquals(1, sent.size());
+    }
+  }
+
   private static void triggerTimeout(MavlinkTransactionManager manager) throws Exception {
     Field activeField = MavlinkTransactionManager.class.getDeclaredField("active");
     activeField.setAccessible(true);
