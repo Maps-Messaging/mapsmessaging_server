@@ -123,21 +123,38 @@ class MavlinkTransactionManagerTest {
   }
 
   @Test
-  void commandTimeoutDoesNotRepeatPossiblyNonIdempotentCommand() throws Exception {
+  void commandAckLossRetriesCommandLongWithIncreasingConfirmationAndBoundedAttempts() throws Exception {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("command-no-replay", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submit(request("command-retry", "COMMAND", packet(76)), "127.0.0.1:14550");
+      for (int attempt = 1; attempt <= MavlinkTransactionManager.DEFAULT_MAX_RETRIES; attempt++) {
+        triggerTimeout(manager);
+        assertEquals(attempt, sent.getLast().getAsJsonObject("payload").get("confirmation").getAsInt());
+      }
+      triggerTimeout(manager);
+      assertEquals(MavlinkTransactionManager.DEFAULT_MAX_RETRIES + 1, sent.size());
+      assertEquals("TIMED_OUT", statuses.getLast().get("status").getAsString());
+      assertEquals(MavlinkTransactionManager.DEFAULT_MAX_RETRIES, statuses.getLast().get("retryCount").getAsInt());
+    }
+  }
+
+  @Test
+  void inProgressCommandIsNeverRetransmittedWhenProgressStops() throws Exception {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submit(request("command-progress", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 5)));
       triggerTimeout(manager);
       assertEquals(1, sent.size());
       assertEquals("TIMED_OUT", statuses.getLast().get("status").getAsString());
-      assertEquals(0, statuses.getLast().get("retryCount").getAsInt());
       assertTrue(statuses.getLast().get("reason").getAsString().contains("unknown"));
     }
   }
 
   @Test
-  void missionRetryClearsRequestedItemsAndStartsNewHandshake() throws Exception {
+  void lostMissionRequestRetriesLastItemAndKeepsTransferProgress() throws Exception {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
@@ -149,18 +166,15 @@ class MavlinkTransactionManagerTest {
       item1.getAsJsonObject("payload").addProperty("seq", 1);
       manager.submit(request("mission-retry", "MISSION_UPLOAD", count, item0, item1), "127.0.0.1:14550");
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
-      assertEquals(1, statuses.getLast().get("requestedItems").getAsInt());
-
       triggerTimeout(manager);
       assertEquals(3, sent.size());
-      assertEquals(44, sent.getLast().getAsJsonObject("header").get("messageId").getAsInt());
-      assertEquals(0, statuses.getLast().get("requestedItems").getAsInt());
+      assertEquals(73, sent.getLast().getAsJsonObject("header").get("messageId").getAsInt());
+      assertEquals(0, sent.getLast().getAsJsonObject("payload").get("seq").getAsInt());
+      assertEquals(1, statuses.getLast().get("requestedItems").getAsInt());
 
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 1, "mission_type", 0)));
-      assertEquals(3, sent.size());
       manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
-      assertEquals("FAILED", statuses.getLast().get("status").getAsString());
-      assertEquals(0, statuses.getLast().get("requestedItems").getAsInt());
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
     }
   }
 
@@ -283,6 +297,74 @@ class MavlinkTransactionManagerTest {
       manager.submit(request("send-failed", "COMMAND", packet(76)), "127.0.0.1:14550");
       assertEquals("FAILED", statuses.getLast().get("status").getAsString());
       assertTrue(statuses.getLast().get("reason").getAsString().contains("simulated endpoint failure"));
+    }
+  }
+
+  @Test
+  void duplicateActiveEngineSubmissionDoesNotResendCommand() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = request("same-id", "COMMAND", packet(76));
+      manager.submit(command, "127.0.0.1:14550");
+      manager.submit(command, "127.0.0.1:14550");
+      assertEquals(1, sent.size());
+      assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void duplicateCompletedEngineSubmissionReplaysResultWithoutResending() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = request("done-id", "COMMAND", packet(76));
+      manager.submit(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
+      manager.submit(command, "127.0.0.1:14550");
+      assertEquals(1, sent.size());
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void outOfRangeAndOutOfOrderRequestsDoNotFailRecoverableUpload() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject count = packet(44);
+      count.getAsJsonObject("payload").addProperty("count", 2);
+      JsonObject first = packet(73);
+      first.getAsJsonObject("payload").addProperty("seq", 0);
+      JsonObject second = packet(73);
+      second.getAsJsonObject("payload").addProperty("seq", 1);
+      manager.submit(request("out-of-order", "MISSION_UPLOAD", count, first, second), "127.0.0.1:14550");
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 17, "mission_type", 0)));
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 13, "mission_type", 0)));
+      assertEquals(1, sent.size());
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 1, "mission_type", 0)));
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void finalMissionAckLossResendsLastRequestedItem() throws Exception {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject count = packet(44);
+      count.getAsJsonObject("payload").addProperty("count", 1);
+      JsonObject item = packet(73);
+      item.getAsJsonObject("payload").addProperty("seq", 0);
+      manager.submit(request("final-ack-lost", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      triggerTimeout(manager);
+      assertEquals(3, sent.size());
+      assertEquals(73, sent.getLast().getAsJsonObject("header").get("messageId").getAsInt());
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
     }
   }
 
