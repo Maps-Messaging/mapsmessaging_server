@@ -93,7 +93,7 @@ The transaction-manager tests cover acknowledgements, target and peer matching, 
 ## Compatibility / limitations
 
 - Legacy packet send and telemetry publication are unchanged.
-- The twin can observe protocol transaction-status events through its optional status-topic subscription; its existing telemetry and legacy sender behaviour remain intact. STANAG still depends on `MavlinkEventListSender` pending [MSG-434](https://mapsmessaging.atlassian.net/browse/MSG-434).
+- The twin can observe protocol transaction-status events through its optional status-topic subscription; existing telemetry handling is unchanged. The legacy twin-owned MAVLink sender and ACK handlers have been removed. STANAG submits commands and mission plans through the messaging engine using protocol-owned transactions.
 - Protocol transactions are connection-local and do not survive connection teardown/restart.
 - The response-topic/correlation format for existing messages is unchanged; the optional `statusTopic` is a separate transaction event destination.
 - Server compilation, integration and real-drone validation are required before declaring snapshot integration compatible.
