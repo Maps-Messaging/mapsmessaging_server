@@ -40,6 +40,8 @@ final class MavlinkTransaction {
   int attempts;
   int retries;
   String fingerprint;
+  JsonObject lastSent;
+  JsonObject lastResponse;
   boolean commandInProgress;
   boolean commandAccepted;
   boolean missionCurrentSeen;
