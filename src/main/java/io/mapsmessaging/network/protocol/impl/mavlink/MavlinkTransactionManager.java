@@ -45,8 +45,9 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -103,14 +104,23 @@ final class MavlinkTransactionManager implements AutoCloseable {
   }
 
   synchronized void submit(JsonObject request, String destination) {
-    String id = text(request, "transactionId", null);
-    String topic = text(request, "statusTopic", defaultStatusTopic);
-    if (id == null || id.isBlank()) {
-      reject(topic, id, null, destination, "Missing transactionId");
+    String id = null;
+    String topic = defaultStatusTopic;
+    String operation = null;
+    String fingerprint;
+    try {
+      id = text(request, "transactionId", null);
+      topic = text(request, "statusTopic", defaultStatusTopic);
+      operation = text(request, "operation", "");
+      fingerprint = "CANCEL".equals(operation) ? null : fingerprint(request, destination);
+    } catch (RuntimeException exception) {
+      reject(topic, id, operation, destination, "Invalid transaction request: " + exception.getMessage());
       return;
     }
-    String operation = text(request, "operation", "");
-    String fingerprint = "CANCEL".equals(operation) ? null : fingerprint(request, destination);
+    if (id == null || id.isBlank()) {
+      reject(topic, id, operation, destination, "Missing transactionId");
+      return;
+    }
     if (active != null && active.id.equals(id) && !"CANCEL".equals(operation)) {
       if (!active.fingerprint.equals(fingerprint)) {
         reject(topic, id, operation, destination, "Transaction ID reused with different request");
@@ -124,7 +134,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       if ("CANCEL".equals(operation)) {
         reject(topic, id, operation, destination, "Transaction already completed");
       } else if (!previous.fingerprint().equals(fingerprint)) {
-        publish(topic, id, "REJECTED", "Transaction ID reused with different request", 0, 0, 0, operation, 0, 0, 0);
+        reject(topic, id, operation, destination, "Transaction ID reused with different request");
       } else {
         publish(previous.topic(), id, previous.status(), previous.reason(), previous.attempts(), previous.retries(), previous.requested(),
             previous.operation(), previous.system(), previous.component(), previous.total());
@@ -132,10 +142,10 @@ final class MavlinkTransactionManager implements AutoCloseable {
       return;
     }
     if ("CANCEL".equals(operation)) {
-      if (active != null && active.id.equals(id)) {
+      if (active != null && active.id.equals(id) && samePeer(active.destination, destination)) {
         finish(active, "CANCELLED", "Cancelled by requester");
       } else {
-        reject(topic, id, operation, destination, "No matching active transaction");
+        reject(topic, id, operation, destination, "No matching active transaction for destination");
       }
       return;
     }
@@ -228,8 +238,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
 
   synchronized void onFrame(ProcessedFrame received, String sourceAddress) {
     Transaction transaction = active;
-    if (transaction == null || !received.isValid()
-        || (verifySourceAddress && !Objects.equals(transaction.destination, sourceAddress))) {
+    if (transaction == null || received == null || !received.isValid()
+        || (verifySourceAddress && !samePeer(transaction.destination, sourceAddress))) {
       return;
     }
     int sourceSystem = received.getFrame().getSystemId();
@@ -335,6 +345,11 @@ final class MavlinkTransactionManager implements AutoCloseable {
       finish(transaction, "TIMED_OUT", "Command progress stopped; outcome unknown");
       return;
     }
+    if ("MISSION_UPLOAD".equals(transaction.operation) && !transaction.requested.isEmpty()) {
+      // The vehicle requests mission items; do not transmit an unsolicited item after requests stop.
+      finish(transaction, "TIMED_OUT", "Mission request or final acknowledgement not received; upload outcome unknown");
+      return;
+    }
     transaction.retries++;
     logger.log(MAVLINK_TRANSACTION_RETRYING, transaction.id, transaction.retries, DEFAULT_MAX_RETRIES, transaction.operation, transaction.destination);
     publish(transaction, "RETRYING", null);
@@ -342,10 +357,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
       JsonObject payload = transaction.messages.getFirst().getAsJsonObject("payload");
       payload.addProperty("confirmation", integer(payload, "confirmation", 0) + 1);
     }
-    // Mission items are sent only on vehicle requests. If the next request or final ACK is lost,
-    // resend the last requested item, allowing the autopilot to request it again or finish.
-    // Before the first request, retry MISSION_COUNT.
-    send(transaction, "MISSION_UPLOAD".equals(transaction.operation) && transaction.requested.isEmpty() ? 0 : transaction.lastIndex);
+    // Before the first vehicle request, retry MISSION_COUNT. Never send an unsolicited mission item.
+    send(transaction, "MISSION_UPLOAD".equals(transaction.operation) ? 0 : transaction.lastIndex);
   }
 
   private void finish(Transaction transaction, String status, String reason) {
@@ -455,6 +468,32 @@ final class MavlinkTransactionManager implements AutoCloseable {
     if (active != null) {
       finish(active, "CLOSED", "MAVLink connection closed");
     }
+  }
+
+  private static boolean samePeer(String expected, String actual) {
+    if (expected == null || actual == null) {
+      return Objects.equals(expected, actual);
+    }
+    return normalisePeer(expected).equals(normalisePeer(actual));
+  }
+
+  private static String normalisePeer(String address) {
+    String value = address.trim();
+    int portSeparator = value.lastIndexOf(':');
+    if (portSeparator < 0) {
+      return value.toLowerCase(Locale.ROOT);
+    }
+    String host = value.substring(0, portSeparator);
+    int hostSeparator = host.lastIndexOf('/');
+    if (hostSeparator >= 0 && hostSeparator < host.length() - 1) {
+      host = host.substring(hostSeparator + 1);
+    } else if (host.startsWith("/")) {
+      host = host.substring(1);
+    }
+    if (host.startsWith("[") && host.endsWith("]")) {
+      host = host.substring(1, host.length() - 1);
+    }
+    return host.toLowerCase(Locale.ROOT) + value.substring(portSeparator);
   }
 
   private static String fingerprint(JsonObject request, String destination) {
