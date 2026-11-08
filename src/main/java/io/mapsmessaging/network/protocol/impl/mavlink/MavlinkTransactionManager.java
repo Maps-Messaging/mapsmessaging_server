@@ -31,8 +31,12 @@ import io.mapsmessaging.state.mavlink.messages.MavlinkMissionCount;
 import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
 import io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
@@ -71,17 +75,24 @@ final class MavlinkTransactionManager implements AutoCloseable {
   private final int targetSystem;
   private final int localSystem;
   private final int localComponent;
+  private final boolean verifySourceAddress;
   private final Map<String, TerminalResult> recentResults = new LinkedHashMap<>();
   private Transaction active;
   private boolean closed;
 
   MavlinkTransactionManager(WireSender wireSender, StatusPublisher statusPublisher, String defaultStatusTopic, int targetSystem, int localSystem, int localComponent) {
+    this(wireSender, statusPublisher, defaultStatusTopic, targetSystem, localSystem, localComponent, false);
+  }
+
+  MavlinkTransactionManager(WireSender wireSender, StatusPublisher statusPublisher, String defaultStatusTopic, int targetSystem, int localSystem,
+      int localComponent, boolean verifySourceAddress) {
     this.wireSender = Objects.requireNonNull(wireSender);
     this.statusPublisher = Objects.requireNonNull(statusPublisher);
     this.defaultStatusTopic = defaultStatusTopic;
     this.targetSystem = targetSystem;
     this.localSystem = localSystem;
     this.localComponent = localComponent;
+    this.verifySourceAddress = verifySourceAddress;
   }
 
   synchronized void submit(JsonObject request, String destination) {
@@ -92,14 +103,21 @@ final class MavlinkTransactionManager implements AutoCloseable {
       return;
     }
     String operation = text(request, "operation", "");
+    String fingerprint = "CANCEL".equals(operation) ? null : fingerprint(request, destination);
     if (active != null && active.id.equals(id) && !"CANCEL".equals(operation)) {
-      publish(active, active.status, null);
+      if (!active.fingerprint.equals(fingerprint)) {
+        publish(topic, id, "REJECTED", "Transaction ID reused with different request", 0, 0, 0, operation, 0, 0, 0);
+      } else {
+        publish(active, active.status, null);
+      }
       return;
     }
     TerminalResult previous = recentResults.get(id);
     if (previous != null) {
       if ("CANCEL".equals(operation)) {
         publish(topic, id, "REJECTED", "Transaction already completed", 0, 0, 0, operation, 0, 0, 0);
+      } else if (!previous.fingerprint().equals(fingerprint)) {
+        publish(topic, id, "REJECTED", "Transaction ID reused with different request", 0, 0, 0, operation, 0, 0, 0);
       } else {
         publish(previous.topic(), id, previous.status(), previous.reason(), previous.attempts(), previous.retries(), previous.requested(),
             previous.operation(), previous.system(), previous.component(), previous.total());
@@ -125,6 +143,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
 
     try {
       Transaction transaction = prepare(request, destination, topic, id, operation);
+      transaction.fingerprint = fingerprint;
       active = transaction;
       publish(transaction, "QUEUED", null);
       send(transaction, 0);
@@ -197,8 +216,13 @@ final class MavlinkTransactionManager implements AutoCloseable {
   }
 
   synchronized void onFrame(ProcessedFrame received) {
+    onFrame(received, null);
+  }
+
+  synchronized void onFrame(ProcessedFrame received, String sourceAddress) {
     Transaction transaction = active;
-    if (transaction == null || !received.isValid()) {
+    if (transaction == null || !received.isValid()
+        || (verifySourceAddress && !Objects.equals(transaction.destination, sourceAddress))) {
       return;
     }
     int sourceSystem = received.getFrame().getSystemId();
@@ -325,7 +349,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
     int total = transaction.messages.size() - ("MISSION_UPLOAD".equals(transaction.operation) ? 1 : 0);
     recentResults.put(transaction.id, new TerminalResult(transaction.topic, status, reason, transaction.attempts, transaction.retries,
-        transaction.requested.cardinality(), transaction.operation, transaction.system, transaction.component, total));
+        transaction.requested.cardinality(), transaction.operation, transaction.system, transaction.component, total, transaction.fingerprint));
     if (recentResults.size() > MAX_RECENT_RESULTS) {
       recentResults.remove(recentResults.keySet().iterator().next());
     }
@@ -404,8 +428,17 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
   }
 
+  private static String fingerprint(JsonObject request, String destination) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      return HexFormat.of().formatHex(digest.digest((destination + "\n" + request).getBytes(StandardCharsets.UTF_8)));
+    } catch (NoSuchAlgorithmException exception) {
+      throw new IllegalStateException("SHA-256 digest is unavailable", exception);
+    }
+  }
+
   private record TerminalResult(String topic, String status, String reason, int attempts, int retries, int requested, String operation, int system,
-      int component, int total) {
+      int component, int total, String fingerprint) {
   }
 
   private static final class Transaction {
@@ -425,6 +458,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     private int lastIndex;
     private int attempts;
     private int retries;
+    private String fingerprint;
     private boolean commandInProgress;
     private String status = "QUEUED";
 
