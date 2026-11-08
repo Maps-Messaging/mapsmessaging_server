@@ -150,7 +150,7 @@ public class MavlinkProtocol extends Protocol {
     transactionManager = new MavlinkTransactionManager(this::sendTransactionFrame, this::publishTransactionStatus,
         outboundTopicName == null ? null : outboundTopicName + "/transactions", key.getSystemId(),
         mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getSystemId() : 0,
-        mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getComponentId() : 0);
+        mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getComponentId() : 0, endPoint.isUDP());
     if (mavlinkConfig.hasLocalMavlinkIdentity()) {
       SocketAddress heartbeatAddress = endPoint.isUDP() ? parseSocketAddress(endPoint.getRemoteSocketAddress()) : null;
       heartbeatEmitter = new MavlinkHeartbeatEmitter(sequenceCounter, endPoint, mavlinkConfig, heartbeatAddress);
@@ -315,7 +315,7 @@ public class MavlinkProtocol extends Protocol {
       }
     }
     if (transactionManager != null) {
-      transactionManager.onFrame(env);
+      transactionManager.onFrame(env, socketAddress);
     }
     processStreamTracker(env);
     handleEvent(env, raw, socketAddress);
