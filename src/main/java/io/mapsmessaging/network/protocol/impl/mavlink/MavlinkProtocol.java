@@ -295,22 +295,17 @@ public class MavlinkProtocol extends Protocol {
       detectedDialect = true;
       if (env.getFields().containsKey("autopilot")) {
         int val = (int) env.getFields().get("autopilot");
-        try {
-          switch (val) {
-            case MAV_AUTOPILOT_ARDUPILOTMEGA:
-              mavlinkEventFactory = MavlinkInterfaceManager.loadDialect("ardupilot/all");
-              break;
-
-            case MAV_AUTOPILOT_PX4:
-              mavlinkEventFactory = MavlinkInterfaceManager.loadDialect("common");
-              break;
-
-            default:
-              // Unknown or unsupported autopilot
-              break;
+        String selectedDialect = switch (val) {
+          case MAV_AUTOPILOT_ARDUPILOTMEGA -> "ardupilot/all";
+          case MAV_AUTOPILOT_PX4 -> "common";
+          default -> null;
+        };
+        if (selectedDialect != null) {
+          try {
+            mavlinkEventFactory = MavlinkInterfaceManager.loadDialect(selectedDialect);
+          } catch (IOException e) {
+            logger.log(MAVLINK_DIALECT_FAILED_TO_LOAD, selectedDialect, e);
           }
-        } catch (IOException e) {
-          logger.log(MAVLINK_DIALECT_FAILED_TO_LOAD, mavlinkConfig.getDialectName(), e);
         }
       }
     }
