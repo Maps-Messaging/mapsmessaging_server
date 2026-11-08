@@ -851,6 +851,57 @@ class MavlinkTransactionManagerTest {
     }
   }
 
+  @Test
+  void inProgressSetCurrentMissionCompletesOnMatchingMissionCurrent() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(76);
+      command.getAsJsonObject("payload").addProperty("command", 224);
+      command.getAsJsonObject("payload").addProperty("param1", 4);
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 224, "result", 5)));
+      assertEquals("IN_PROGRESS", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(42, 1, 1, Map.of("seq", 4)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void nativeCommandIntReceivesItsMatchingAcknowledgement() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(75);
+      command.getAsJsonObject("payload").addProperty("command", 400);
+      manager.submitNative(command, "127.0.0.1:14550");
+      assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void nativeMissionWrapperPreservesCallerTransactionId() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject request = new JsonObject();
+      request.addProperty("transactionId", "plan-native-1");
+      JsonArray messages = new JsonArray();
+      JsonObject item = packet(73);
+      item.getAsJsonObject("payload").addProperty("seq", 0);
+      messages.add(item);
+      request.add("messages", messages);
+      manager.submitNative(request, "127.0.0.1:14550");
+      assertEquals("plan-native-1", statuses.getLast().get("transactionId").getAsString());
+      assertEquals(44, sent.getFirst().getAsJsonObject("header").get("messageId").getAsInt());
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
   private static void triggerTimeout(MavlinkTransactionManager manager) throws Exception {
     Object transaction = activeTransaction(manager);
     invokeTimeout(manager, transaction, transactionGeneration(transaction));
