@@ -50,6 +50,12 @@ public class MavlinkTwinConfigDTO {
   private String topic;
 
   @Schema(
+      description = "Optional exact MAVLink transaction-status topic for updating the twin's observed protocol state. Blank disables the subscription.",
+      example = "/protocol/mavlink/vehicle/outbound/transactions"
+  )
+  private String transactionStatusTopic;
+
+  @Schema(
       description = "MAVLink dialect name or dialect file path. If omitted, the default/common dialect is used.",
       example = "common"
   )
