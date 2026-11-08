@@ -617,6 +617,46 @@ class MavlinkTransactionManagerTest {
     }
   }
 
+  @Test
+  void completedTransactionCacheEvictsOldestEntryAfterOneHundredTwentyEightResults() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      for (int index = 0; index < 129; index++) {
+        manager.submit(request("packet-" + index, "PACKET", packet(0)), "127.0.0.1:14550");
+      }
+      assertEquals(129, sent.size());
+
+      manager.submit(request("packet-128", "PACKET", packet(0)), "127.0.0.1:14550");
+      assertEquals(129, sent.size());
+      assertEquals("SENT", statuses.getLast().get("status").getAsString());
+
+      manager.submit(request("packet-0", "PACKET", packet(0)), "127.0.0.1:14550");
+      assertEquals(130, sent.size());
+      assertEquals("SENT", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void missionNegativeAcknowledgementResultsDoNotReportSuccess() {
+    for (int result : new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15}) {
+      List<JsonObject> sent = new ArrayList<>();
+      List<JsonObject> statuses = new ArrayList<>();
+      try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+        JsonObject count = packet(44);
+        count.getAsJsonObject("payload").addProperty("count", 1);
+        JsonObject item = packet(73);
+        item.getAsJsonObject("payload").addProperty("seq", 0);
+        manager.submit(request("mission-error-" + result, "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+        manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+        manager.onFrame(inbound(47, 1, 1, Map.of("type", result, "mission_type", 0)));
+
+        assertEquals("FAILED", statuses.getLast().get("status").getAsString(), "MISSION_ACK result " + result);
+        assertEquals(2, sent.size());
+      }
+    }
+  }
+
   private static void triggerTimeout(MavlinkTransactionManager manager) throws Exception {
     Object transaction = activeTransaction(manager);
     invokeTimeout(manager, transaction, transactionGeneration(transaction));
