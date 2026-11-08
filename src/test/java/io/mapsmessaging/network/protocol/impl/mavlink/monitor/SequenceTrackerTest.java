@@ -98,6 +98,60 @@ class SequenceTrackerTest {
   }
 
   @Test
+  void delayedPacketDoesNotMoveSequenceBaselineBackward() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    tracker.accept(11);
+    SequenceResult delayed = tracker.accept(9);
+    SequenceResult next = tracker.accept(12);
+
+    assertEquals(SequenceStatus.OUT_OF_ORDER, delayed.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(11, next.getPreviousSequenceNumber());
+    assertEquals(12, next.getExpectedSequenceNumber());
+    assertEquals(0, next.getLostPackets());
+  }
+
+  @Test
+  void duplicatePacketDoesNotMoveSequenceBaseline() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(20);
+    SequenceResult duplicate = tracker.accept(20);
+    SequenceResult next = tracker.accept(21);
+
+    assertEquals(SequenceStatus.OUT_OF_ORDER, duplicate.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(20, next.getPreviousSequenceNumber());
+  }
+
+  @Test
+  void delayedPacketAcrossSequenceWrapDoesNotCreateFalseLoss() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(254);
+    tracker.accept(255);
+    tracker.accept(0);
+    SequenceResult delayed = tracker.accept(254);
+    SequenceResult next = tracker.accept(1);
+
+    assertEquals(SequenceStatus.OUT_OF_ORDER, delayed.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(0, next.getPreviousSequenceNumber());
+    assertEquals(0, next.getLostPackets());
+  }
+
+  @Test
+  void largeForwardJumpStillReportsReset() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult reset = tracker.accept(50);
+    SequenceResult next = tracker.accept(51);
+
+    assertEquals(SequenceStatus.RESET, reset.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(50, next.getPreviousSequenceNumber());
+  }
+
+  @Test
   void sequenceWrapFrom255ToZeroIsOk() {
     SequenceTracker tracker = new SequenceTracker();
     tracker.accept(255);
