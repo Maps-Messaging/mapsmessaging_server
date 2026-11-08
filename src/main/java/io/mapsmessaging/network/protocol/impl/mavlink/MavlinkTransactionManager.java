@@ -26,6 +26,7 @@ import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_SEN
 import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_STATUS_PUBLISH_FAILED;
 import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_TIMED_OUT;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -74,6 +75,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
   }
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkTransactionManager.class);
+  private static final Gson AUDIT_GSON = new Gson();
   private static final int MAX_RECENT_RESULTS = 128;
 
   private final WireSender wireSender;
@@ -172,7 +174,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
         reject(topic, id, operation, destination, "Transaction ID reused with different request");
       } else {
         publish(previous.topic(), id, previous.status(), previous.reason(), previous.attempts(), previous.retries(), previous.requested(),
-            previous.operation(), previous.system(), previous.component(), previous.total());
+            previous.operation(), previous.system(), previous.component(), previous.total(), previous.lastSent(), previous.lastResponse());
       }
       return;
     }
@@ -349,6 +351,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     if ("COMMAND".equals(transaction.operation)) {
       if (transaction.expectedMissionSequence >= 0 && id == 42
           && integer(received.getFields(), "seq", -1) == transaction.expectedMissionSequence) {
+        transaction.lastResponse = responseEvidence(received);
         transaction.missionCurrentSeen = true;
         if (transaction.commandAccepted || transaction.commandInProgress) {
           finish(transaction, "COMPLETED", null);
@@ -356,6 +359,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
         return;
       }
       if (transaction.requestedMessageId >= 0 && id == transaction.requestedMessageId) {
+        transaction.lastResponse = responseEvidence(received);
         transaction.requestedMessageSeen = true;
         if (transaction.commandAccepted || transaction.commandInProgress) {
           finish(transaction, "COMPLETED", null);
@@ -368,6 +372,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
           || !ackTargetMatches(received, transaction)) {
         return;
       }
+      transaction.lastResponse = responseEvidence(received);
       int result = integer(received.getFields(), "result", -1);
       if (result == 5) {
         transaction.commandInProgress = true;
@@ -401,6 +406,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       if (transaction.requested.isEmpty() && sequence != 0) {
         return;
       }
+      transaction.lastResponse = responseEvidence(received);
       send(transaction, sequence + 1);
       if (active == transaction) {
         transaction.requested.set(sequence);
@@ -408,6 +414,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       }
     } else if (id == MavlinkMessageIds.MISSION_ACK && ackTargetMatches(received, transaction)
         && integer(received.getFields(), "mission_type", 0) == transaction.missionType) {
+      transaction.lastResponse = responseEvidence(received);
       int result = integer(received.getFields(), "type", -1);
       if (result == 13) { // MAV_MISSION_INVALID_SEQUENCE: out-of-order requests are recoverable.
         scheduleTimeout(transaction);
@@ -433,6 +440,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
   private void send(MavlinkTransaction transaction, int index) {
     try {
       wireSender.send(transaction.messages.get(index).deepCopy(), transaction.destination);
+      transaction.lastSent = transaction.messages.get(index).deepCopy();
       transaction.lastIndex = index;
       transaction.attempts++;
       if ("PACKET".equals(transaction.operation)) {
@@ -495,7 +503,9 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
     int total = transaction.messages.size() - ("MISSION_UPLOAD".equals(transaction.operation) ? 1 : 0);
     recentResults.put(transaction.id, new MavlinkTerminalResult(transaction.topic, status, reason, transaction.attempts, transaction.retries,
-        transaction.requested.cardinality(), transaction.operation, transaction.system, transaction.component, total, transaction.fingerprint));
+        transaction.requested.cardinality(), transaction.operation, transaction.system, transaction.component, total, transaction.fingerprint,
+        transaction.lastSent == null ? null : transaction.lastSent.deepCopy(),
+        transaction.lastResponse == null ? null : transaction.lastResponse.deepCopy()));
     if (recentResults.size() > MAX_RECENT_RESULTS) {
       recentResults.remove(recentResults.keySet().iterator().next());
     }
@@ -527,12 +537,19 @@ final class MavlinkTransactionManager implements AutoCloseable {
     publish(transaction.topic, transaction.id, status, reason, transaction.attempts,
         transaction.retries, transaction.requested.cardinality(), transaction.operation,
         transaction.system, transaction.component, transaction.messages.size() -
-            ("MISSION_UPLOAD".equals(transaction.operation) ? 1 : 0));
+            ("MISSION_UPLOAD".equals(transaction.operation) ? 1 : 0),
+        transaction.lastSent, transaction.lastResponse);
   }
 
   private void publish(String topic, String id, String status, String reason,
       int attempts, int retries, int requested, String operation,
       int system, int component, int total) {
+    publish(topic, id, status, reason, attempts, retries, requested, operation, system, component, total, null, null);
+  }
+
+  private void publish(String topic, String id, String status, String reason,
+      int attempts, int retries, int requested, String operation,
+      int system, int component, int total, JsonObject lastSent, JsonObject lastResponse) {
     if (topic == null || topic.isBlank()) {
       return;
     }
@@ -552,11 +569,28 @@ final class MavlinkTransactionManager implements AutoCloseable {
     if (reason != null) {
       event.addProperty("reason", reason);
     }
+    if (lastSent != null) {
+      event.add("lastSent", lastSent.deepCopy());
+    }
+    if (lastResponse != null) {
+      event.add("lastResponse", lastResponse.deepCopy());
+    }
     try {
       statusPublisher.publish(topic, event);
     } catch (RuntimeException exception) {
       logger.log(MAVLINK_TRANSACTION_STATUS_PUBLISH_FAILED, topic, exception);
     }
+  }
+
+  private static JsonObject responseEvidence(ProcessedFrame received) {
+    JsonObject evidence = new JsonObject();
+    JsonObject header = new JsonObject();
+    header.addProperty("messageId", received.getFrame().getMessageId());
+    header.addProperty("systemId", received.getFrame().getSystemId());
+    header.addProperty("componentId", received.getFrame().getComponentId());
+    evidence.add("header", header);
+    evidence.add("payload", AUDIT_GSON.toJsonTree(received.getFields()));
+    return evidence;
   }
 
   private static int messageId(JsonObject message) {
