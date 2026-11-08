@@ -17,7 +17,14 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_CANCELLED;
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_CONNECTION_CLOSED;
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_FAILED;
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_REJECTED;
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_RETRYING;
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_SEND_FAILED;
 import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_STATUS_PUBLISH_FAILED;
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_TIMED_OUT;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -99,14 +106,14 @@ final class MavlinkTransactionManager implements AutoCloseable {
     String id = text(request, "transactionId", null);
     String topic = text(request, "statusTopic", defaultStatusTopic);
     if (id == null || id.isBlank()) {
-      publish(topic, id, "REJECTED", "Missing transactionId", 0, 0, 0, null, 0, 0, 0);
+      reject(topic, id, null, destination, "Missing transactionId");
       return;
     }
     String operation = text(request, "operation", "");
     String fingerprint = "CANCEL".equals(operation) ? null : fingerprint(request, destination);
     if (active != null && active.id.equals(id) && !"CANCEL".equals(operation)) {
       if (!active.fingerprint.equals(fingerprint)) {
-        publish(topic, id, "REJECTED", "Transaction ID reused with different request", 0, 0, 0, operation, 0, 0, 0);
+        reject(topic, id, operation, destination, "Transaction ID reused with different request");
       } else {
         publish(active, active.status, null);
       }
@@ -115,7 +122,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     TerminalResult previous = recentResults.get(id);
     if (previous != null) {
       if ("CANCEL".equals(operation)) {
-        publish(topic, id, "REJECTED", "Transaction already completed", 0, 0, 0, operation, 0, 0, 0);
+        reject(topic, id, operation, destination, "Transaction already completed");
       } else if (!previous.fingerprint().equals(fingerprint)) {
         publish(topic, id, "REJECTED", "Transaction ID reused with different request", 0, 0, 0, operation, 0, 0, 0);
       } else {
@@ -128,16 +135,16 @@ final class MavlinkTransactionManager implements AutoCloseable {
       if (active != null && active.id.equals(id)) {
         finish(active, "CANCELLED", "Cancelled by requester");
       } else {
-        publish(topic, id, "REJECTED", "No matching active transaction", 0, 0, 0, null, 0, 0, 0);
+        reject(topic, id, operation, destination, "No matching active transaction");
       }
       return;
     }
     if (closed) {
-      publish(topic, id, "REJECTED", "Protocol connection is closed", 0, 0, 0, null, 0, 0, 0);
+      reject(topic, id, operation, destination, "Protocol connection is closed");
       return;
     }
     if (active != null) {
-      publish(topic, id, "REJECTED", "Another transaction is active", 0, 0, 0, null, 0, 0, 0);
+      reject(topic, id, operation, destination, "Another transaction is active");
       return;
     }
 
@@ -148,7 +155,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       publish(transaction, "QUEUED", null);
       send(transaction, 0);
     } catch (RuntimeException exception) {
-      publish(topic, id, "REJECTED", exception.getMessage(), 0, 0, 0, operation, 0, 0, 0);
+      reject(topic, id, operation, destination, exception.getMessage());
     }
   }
 
@@ -303,6 +310,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       scheduleTimeout(transaction);
       publish(transaction, "MISSION_UPLOAD".equals(transaction.operation) ? "WAITING_FOR_MISSION_REQUEST" : "WAITING_FOR_ACK", null);
     } catch (Exception exception) {
+      logger.log(MAVLINK_TRANSACTION_SEND_FAILED, transaction.id, transaction.operation, transaction.destination, exception);
       finish(transaction, "FAILED", "MAVLink transmission failed: " + exception.getMessage());
     }
   }
@@ -328,6 +336,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       return;
     }
     transaction.retries++;
+    logger.log(MAVLINK_TRANSACTION_RETRYING, transaction.id, transaction.retries, DEFAULT_MAX_RETRIES, transaction.operation, transaction.destination);
     publish(transaction, "RETRYING", null);
     if ("COMMAND".equals(transaction.operation) && messageId(transaction.messages.getFirst()) == MavlinkCommandLong.MESSAGE_ID_COMMAND_LONG) {
       JsonObject payload = transaction.messages.getFirst().getAsJsonObject("payload");
@@ -353,7 +362,27 @@ final class MavlinkTransactionManager implements AutoCloseable {
     if (recentResults.size() > MAX_RECENT_RESULTS) {
       recentResults.remove(recentResults.keySet().iterator().next());
     }
+    switch (status) {
+      case "FAILED" -> {
+        // The endpoint failure already logs the original exception and context.
+        if (reason == null || !reason.startsWith("MAVLink transmission failed: ")) {
+          logger.log(MAVLINK_TRANSACTION_FAILED, transaction.id, transaction.operation, transaction.destination, reason);
+        }
+      }
+      case "TIMED_OUT" -> logger.log(MAVLINK_TRANSACTION_TIMED_OUT, transaction.id, transaction.operation, transaction.destination,
+          transaction.attempts, transaction.retries, reason);
+      case "CANCELLED" -> logger.log(MAVLINK_TRANSACTION_CANCELLED, transaction.id, transaction.operation, transaction.destination);
+      case "CLOSED" -> logger.log(MAVLINK_TRANSACTION_CONNECTION_CLOSED, transaction.id, transaction.operation, transaction.destination);
+      default -> {
+        // Successful completion and normal packet progress are reported through status events only.
+      }
+    }
     publish(transaction, status, reason);
+  }
+
+  private void reject(String topic, String id, String operation, String destination, String reason) {
+    logger.log(MAVLINK_TRANSACTION_REJECTED, id, operation, destination, reason);
+    publish(topic, id, "REJECTED", reason, 0, 0, 0, operation, 0, 0, 0);
   }
 
   private void publish(Transaction transaction, String status, String reason) {
