@@ -230,9 +230,7 @@ public class MavlinkProtocol extends Protocol {
         transactionManager.submitNative(outbound, parts[2]);
       } else {
         JsonObject request = outbound.getAsJsonObject();
-        if (request.has("operation") && (request.has("messages") || request.has("transactionId"))) {
-          transactionManager.submit(request, parts[2]);
-        } else if (request.has("messages") || isMavlinkCommand(request)) {
+        if (request.has("operation") || request.has("messages") || isMavlinkCommand(request)) {
           transactionManager.submitNative(request, parts[2]);
         } else {
           sendData(request, parts[2]);
