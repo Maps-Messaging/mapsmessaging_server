@@ -169,6 +169,27 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
   }
 
+  /** Update only the observed protocol transaction field; telemetry and legacy sender state are unchanged. */
+  public void updateTransactionStatus(String twinId, MavlinkTransactionStatus status) {
+    if (closed.get() || twinId == null || twinId.isBlank() || status == null) {
+      return;
+    }
+    if (twinManager.getTwin(twinId).filter(DroneTwin.class::isInstance).isEmpty()) {
+      return;
+    }
+    TwinUpdateContext context = new TwinUpdateContext();
+    context.setUpdateSource(MAVLINK_NAME);
+    context.setSourceInstanceId("mavlink:" + status.systemId() + ":" + status.componentId());
+    context.setReceivedTime(status.observedAt());
+    context.setReason("MAVLink transaction status");
+    context.setFullSnapshot(false);
+    twinManager.updateTwin(twinId, twin -> {
+      if (twin instanceof DroneTwin droneTwin) {
+        droneTwin.setMavlinkTransactionStatus(status);
+      }
+    }, context);
+  }
+
   @Override
   public void close() {
     if (closed.compareAndSet(false, true)) {
