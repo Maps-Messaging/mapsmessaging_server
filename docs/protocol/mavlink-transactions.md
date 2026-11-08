@@ -51,6 +51,8 @@ A request with top-level `operation` and `messages` (or `transactionId` for canc
 
 Only one `COMMAND_LONG` (76) or `COMMAND_INT` (75) is accepted per `COMMAND` transaction. The transaction completes on matching `COMMAND_ACK` (77); `MAV_RESULT_IN_PROGRESS` keeps it active. Existing wire encoder validation and local source identity override remain in force.
 
+A missing command ACK reports `TIMED_OUT` with an **unknown vehicle outcome** after 5 seconds. The protocol does **not** automatically retransmit a command, because the autopilot might already have executed it and not every command is safe to repeat. Explicit application-level decisions about resubmitting a command are separate.
+
 ## Mission upload transaction
 
 ```json
@@ -104,7 +106,9 @@ If `statusTopic` is omitted, the default is `<configured outbound topic>/transac
 
 States include `QUEUED`, `WAITING_FOR_ACK`, `WAITING_FOR_MISSION_REQUEST`, `UPLOADING`, `IN_PROGRESS`, `RETRYING`, `SENT`, `COMPLETED`, `FAILED`, `TIMED_OUT`, `CANCELLED`, `CLOSED` and `REJECTED`. `reason` is included for errors. Transaction submission to the messaging engine is not the same as device acknowledgement.
 
-The current server protocol uses the existing sender retry baseline of six retries and 5 seconds response timeout for the opt-in path. This is a first implementation for integration testing, not a claim of full MAVLink mission-command coverage.
+Mission uploads use the existing sender retry limit of six retries, with 5 seconds per-response timeout. Every mission retry re-sends `MISSION_COUNT`, resets the requested-item progress from the previous attempt and requires a new item-zero request. Commands have a 5-second ACK timeout but **no automatic retransmission**. Status-delivery exceptions are logged and isolated from transaction processing; successful wire transactions are not turned into failures by a status-topic error.
+
+The transaction manager's independent tests simulate successful and rejected ACKs, wrong targets, stale/duplicate mission item requests, mission retry exhaustion, status publication failures, endpoint failures, cancellation and shutdown. A server build and runtime integration test are still necessary. This is an initial implementation, not a claim of full MAVLink mission-command coverage.
 
 ## Compatibility / limitations
 
