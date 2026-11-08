@@ -151,13 +151,13 @@ final class MavlinkTransactionManager implements AutoCloseable {
     } else if ("COMMAND".equals(operation)) {
       if (messages.size() != 1 || (messageId(messages.getFirst()) != MavlinkCommandLong.MESSAGE_ID_COMMAND_LONG
           && messageId(messages.getFirst()) != MavlinkCommandInt.MESSAGE_ID_COMMAND_INT)) {
-        throw new IllegalArgumentException("COMMAND requires exactly one MavlinkCommandLong.MESSAGE_ID_COMMAND_LONG/MavlinkCommandInt.MESSAGE_ID_COMMAND_INT");
+        throw new IllegalArgumentException("COMMAND requires exactly one COMMAND_LONG/COMMAND_INT");
       }
       requiredInt(firstPayload, "command");
     } else {
       if (messageId(messages.getFirst()) != MavlinkMissionCount.MESSAGE_ID_MISSION_COUNT
           || requiredInt(firstPayload, "count") != messages.size() - 1) {
-        throw new IllegalArgumentException("Mission must start with matching MavlinkMissionCount.MESSAGE_ID_MISSION_COUNT");
+        throw new IllegalArgumentException("Mission must start with matching MISSION_COUNT");
       }
       int missionType = integer(firstPayload, "mission_type", 0);
       for (int i = 1; i < messages.size(); i++) {
@@ -200,7 +200,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
         publish(transaction, "IN_PROGRESS", null);
       } else {
         finish(transaction, result == 0 ? "COMPLETED" : "FAILED",
-            result == 0 ? null : "MavlinkMessageIds.COMMAND_ACK result " + result);
+            result == 0 ? null : "COMMAND_ACK result " + result);
       }
       return;
     }
@@ -229,7 +229,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
         finish(transaction, "COMPLETED", null);
       } else {
         finish(transaction, "FAILED", result == 0
-            ? "Mission accepted before every item was requested" : "MavlinkMessageIds.MISSION_ACK result " + result);
+            ? "Mission accepted before every item was requested" : "MISSION_ACK result " + result);
       }
     }
   }
