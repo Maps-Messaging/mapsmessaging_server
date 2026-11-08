@@ -101,6 +101,18 @@ class MavlinkSourceRegistryTest {
     assertSame(second, result);
   }
 
+  @Test
+  void transactionStatusRequiresAnExactConfiguredSource() {
+    MavlinkKnownSourceDTO first = source("drone-1", 17, 42);
+    MavlinkKnownSourceDTO second = source("drone-2", 18, 42);
+    MavlinkSourceRegistry registry = new MavlinkSourceRegistry(config(first, second));
+
+    assertSame(first, registry.getTransactionSource(17, 42));
+    assertSame(second, registry.getTransactionSource(18, 42));
+    assertNull(registry.getTransactionSource(17, 154));
+    assertNull(registry.getTransactionSource(19, 42));
+  }
+
   private MavlinkTwinConfigDTO config(MavlinkKnownSourceDTO... sources) {
     MavlinkTwinConfigDTO config = new MavlinkTwinConfigDTO();
     config.setKnownSources(List.of(sources));
