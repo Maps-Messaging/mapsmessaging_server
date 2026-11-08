@@ -33,6 +33,8 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ScheduledFuture;
@@ -61,6 +63,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
   }
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkTransactionManager.class);
+  private static final int MAX_RECENT_RESULTS = 128;
 
   private final WireSender wireSender;
   private final StatusPublisher statusPublisher;
@@ -68,6 +71,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
   private final int targetSystem;
   private final int localSystem;
   private final int localComponent;
+  private final Map<String, TerminalResult> recentResults = new LinkedHashMap<>();
   private Transaction active;
   private boolean closed;
 
@@ -88,6 +92,20 @@ final class MavlinkTransactionManager implements AutoCloseable {
       return;
     }
     String operation = text(request, "operation", "");
+    if (active != null && active.id.equals(id) && !"CANCEL".equals(operation)) {
+      publish(active, active.status, null);
+      return;
+    }
+    TerminalResult previous = recentResults.get(id);
+    if (previous != null) {
+      if ("CANCEL".equals(operation)) {
+        publish(topic, id, "REJECTED", "Transaction already completed", 0, 0, 0, operation, 0, 0, 0);
+      } else {
+        publish(previous.topic(), id, previous.status(), previous.reason(), previous.attempts(), previous.retries(), previous.requested(),
+            previous.operation(), previous.system(), previous.component(), previous.total());
+      }
+      return;
+    }
     if ("CANCEL".equals(operation)) {
       if (active != null && active.id.equals(id)) {
         finish(active, "CANCELLED", "Cancelled by requester");
@@ -198,6 +216,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       }
       int result = integer(received.getFields(), "result", -1);
       if (result == 5) {
+        transaction.commandInProgress = true;
         scheduleTimeout(transaction);
         publish(transaction, "IN_PROGRESS", null);
       } else {
@@ -212,7 +231,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       }
       int sequence = integer(received.getFields(), "seq", -1);
       if (sequence < 0 || sequence >= transaction.messages.size() - 1) {
-        finish(transaction, "FAILED", "Mission request index out of bounds: " + sequence);
+        // A delayed or corrupt request must not abort an otherwise recoverable upload.
         return;
       }
       // Ignore stale requests from an earlier upload until this upload starts at item zero.
@@ -227,11 +246,16 @@ final class MavlinkTransactionManager implements AutoCloseable {
     } else if (id == MavlinkMessageIds.MISSION_ACK && ackTargetMatches(received, transaction)
         && integer(received.getFields(), "mission_type", 0) == transaction.missionType) {
       int result = integer(received.getFields(), "type", -1);
+      if (result == 13) { // MAV_MISSION_INVALID_SEQUENCE: out-of-order requests are recoverable.
+        scheduleTimeout(transaction);
+        return;
+      }
       if (result == 0 && transaction.requested.cardinality() == transaction.messages.size() - 1) {
         finish(transaction, "COMPLETED", null);
+      } else if (result == 0) {
+        finish(transaction, "FAILED", "Mission accepted before every item was requested");
       } else {
-        finish(transaction, "FAILED", result == 0
-            ? "Mission accepted before every item was requested" : "MISSION_ACK result " + result);
+        finish(transaction, "FAILED", "MISSION_ACK result " + result);
       }
     }
   }
@@ -275,20 +299,20 @@ final class MavlinkTransactionManager implements AutoCloseable {
       finish(transaction, "TIMED_OUT", "MAVLink response timeout");
       return;
     }
-    if ("COMMAND".equals(transaction.operation)) {
-      // A command may have executed despite a missing ACK; do not replay potentially non-idempotent actions.
-      finish(transaction, "TIMED_OUT", "COMMAND_ACK not received; command outcome unknown, automatic retransmission disabled");
+    if ("COMMAND".equals(transaction.operation) && transaction.commandInProgress) {
+      finish(transaction, "TIMED_OUT", "Command progress stopped; outcome unknown");
       return;
     }
     transaction.retries++;
     publish(transaction, "RETRYING", null);
-    if ("MISSION_UPLOAD".equals(transaction.operation)) {
-      // A new upload handshake must not inherit successful item requests from a previous attempt.
-      transaction.requested.clear();
-      send(transaction, 0);
-    } else {
-      send(transaction, transaction.lastIndex);
+    if ("COMMAND".equals(transaction.operation) && messageId(transaction.messages.getFirst()) == MavlinkCommandLong.MESSAGE_ID_COMMAND_LONG) {
+      JsonObject payload = transaction.messages.getFirst().getAsJsonObject("payload");
+      payload.addProperty("confirmation", integer(payload, "confirmation", 0) + 1);
     }
+    // Mission items are sent only on vehicle requests. If the next request or final ACK is lost,
+    // resend the last requested item, allowing the autopilot to request it again or finish.
+    // Before the first request, retry MISSION_COUNT.
+    send(transaction, "MISSION_UPLOAD".equals(transaction.operation) && transaction.requested.isEmpty() ? 0 : transaction.lastIndex);
   }
 
   private void finish(Transaction transaction, String status, String reason) {
@@ -299,10 +323,17 @@ final class MavlinkTransactionManager implements AutoCloseable {
     if (transaction.future != null) {
       transaction.future.cancel(false);
     }
+    int total = transaction.messages.size() - ("MISSION_UPLOAD".equals(transaction.operation) ? 1 : 0);
+    recentResults.put(transaction.id, new TerminalResult(transaction.topic, status, reason, transaction.attempts, transaction.retries,
+        transaction.requested.cardinality(), transaction.operation, transaction.system, transaction.component, total));
+    if (recentResults.size() > MAX_RECENT_RESULTS) {
+      recentResults.remove(recentResults.keySet().iterator().next());
+    }
     publish(transaction, status, reason);
   }
 
   private void publish(Transaction transaction, String status, String reason) {
+    transaction.status = status;
     publish(transaction.topic, transaction.id, status, reason, transaction.attempts,
         transaction.retries, transaction.requested.cardinality(), transaction.operation,
         transaction.system, transaction.component, transaction.messages.size() -
@@ -373,6 +404,10 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
   }
 
+  private record TerminalResult(String topic, String status, String reason, int attempts, int retries, int requested, String operation, int system,
+      int component, int total) {
+  }
+
   private static final class Transaction {
     private final String id;
     private final String topic;
@@ -390,6 +425,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
     private int lastIndex;
     private int attempts;
     private int retries;
+    private boolean commandInProgress;
+    private String status = "QUEUED";
 
     private Transaction(String id, String topic, String operation, String destination, List<JsonObject> messages, int system, int component,
         int missionType, int localSystem, int localComponent) {
