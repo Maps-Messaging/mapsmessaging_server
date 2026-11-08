@@ -22,7 +22,7 @@ A request with top-level `operation` and `messages` (or `transactionId` for canc
   "messages": [
     {
       "header": {"version":"V2","systemId":255,"componentId":190,"messageId":0,"signed":false},
-      "payload": {}
+      "payload": {"custom_mode":0,"type":6,"autopilot":8,"base_mode":0,"system_status":4,"mavlink_version":3}
     }
   ]
 }
@@ -41,8 +41,8 @@ A request with top-level `operation` and `messages` (or `transactionId` for canc
     {
       "header": {"version":"V2","systemId":255,"componentId":190,"messageId":76,"signed":false},
       "payload": {
-        "target_system":1,"target_component":1,"command":400,"confirmation":0,
-        "param1":0,"param2":0,"param3":0,"param4":0,"param5":0,"param6":0,"param7":0
+        "target_system":1,"target_component":1,"command":512,"confirmation":0,
+        "param1":148,"param2":0,"param3":0,"param4":0,"param5":0,"param6":0,"param7":0
       }
     }
   ]
