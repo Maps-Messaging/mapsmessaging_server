@@ -6,6 +6,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -15,6 +16,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.mavlink.message.Frame;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +120,106 @@ class MavlinkTransactionManagerTest {
       assertEquals("command-2", statuses.getLast().get("transactionId").getAsString());
       assertTrue(statuses.getLast().get("reason").getAsString().contains("active"));
     }
+  }
+
+  @Test
+  void commandTimeoutDoesNotRepeatPossiblyNonIdempotentCommand() throws Exception {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submit(request("command-no-replay", "COMMAND", packet(76)), "127.0.0.1:14550");
+      triggerTimeout(manager);
+      assertEquals(1, sent.size());
+      assertEquals("TIMED_OUT", statuses.getLast().get("status").getAsString());
+      assertEquals(0, statuses.getLast().get("retryCount").getAsInt());
+      assertTrue(statuses.getLast().get("reason").getAsString().contains("unknown"));
+    }
+  }
+
+  @Test
+  void missionRetryClearsRequestedItemsAndStartsNewHandshake() throws Exception {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject count = packet(44);
+      count.getAsJsonObject("payload").addProperty("count", 2);
+      JsonObject item0 = packet(73);
+      item0.getAsJsonObject("payload").addProperty("seq", 0);
+      JsonObject item1 = packet(73);
+      item1.getAsJsonObject("payload").addProperty("seq", 1);
+      manager.submit(request("mission-retry", "MISSION_UPLOAD", count, item0, item1), "127.0.0.1:14550");
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      assertEquals(1, statuses.getLast().get("requestedItems").getAsInt());
+
+      triggerTimeout(manager);
+      assertEquals(3, sent.size());
+      assertEquals(44, sent.getLast().getAsJsonObject("header").get("messageId").getAsInt());
+      assertEquals(0, statuses.getLast().get("requestedItems").getAsInt());
+
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 1, "mission_type", 0)));
+      assertEquals(3, sent.size());
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
+      assertEquals("FAILED", statuses.getLast().get("status").getAsString());
+      assertEquals(0, statuses.getLast().get("requestedItems").getAsInt());
+    }
+  }
+
+  @Test
+  void failedStatusPublicationDoesNotPreventTransmissionOrCompletion() {
+    List<JsonObject> sent = new ArrayList<>();
+    MavlinkTransactionManager.StatusPublisher failingPublisher = (topic, message) -> {
+      throw new IllegalStateException("simulated status destination failure");
+    };
+    try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
+        (packet, destination) -> sent.add(packet.deepCopy()), failingPublisher, "/status", 1, 255, 190)) {
+      assertDoesNotThrow(() -> manager.submit(request("publish-failure", "PACKET", packet(0)), "127.0.0.1:14550"));
+      assertEquals(1, sent.size());
+      assertDoesNotThrow(() -> manager.submit(request("next-packet", "PACKET", packet(0)), "127.0.0.1:14550"));
+      assertEquals(2, sent.size());
+    }
+  }
+
+  @Test
+  void missingStatusTopicDoesNotChangeTransactionOutcome() {
+    List<JsonObject> sent = new ArrayList<>();
+    try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
+        (packet, destination) -> sent.add(packet.deepCopy()), (topic, status) -> {
+          throw new AssertionError("No topic: status publisher should not be called");
+        }, null, 1, 255, 190)) {
+      manager.submit(request("no-topic", "PACKET", packet(0)), "127.0.0.1:14550");
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
+  void duplicateRequestedMissionItemIsTransmittedAgainWithoutDoubleCountingProgress() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject count = packet(44);
+      count.getAsJsonObject("payload").addProperty("count", 1);
+      JsonObject item = packet(73);
+      item.getAsJsonObject("payload").addProperty("seq", 0);
+      manager.submit(request("mission-duplicate", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      assertEquals(3, sent.size());
+      assertEquals(1, statuses.getLast().get("requestedItems").getAsInt());
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  private static void triggerTimeout(MavlinkTransactionManager manager) throws Exception {
+    Field activeField = MavlinkTransactionManager.class.getDeclaredField("active");
+    activeField.setAccessible(true);
+    Object transaction = activeField.get(manager);
+    Field generationField = transaction.getClass().getDeclaredField("generation");
+    generationField.setAccessible(true);
+    long generation = generationField.getLong(transaction);
+    Method timeoutMethod = MavlinkTransactionManager.class.getDeclaredMethod("timeout", transaction.getClass(), long.class);
+    timeoutMethod.setAccessible(true);
+    timeoutMethod.invoke(manager, transaction, generation);
   }
 
   private static MavlinkTransactionManager manager(
