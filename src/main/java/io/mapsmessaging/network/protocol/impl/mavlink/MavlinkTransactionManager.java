@@ -64,15 +64,19 @@ final class MavlinkTransactionManager implements AutoCloseable {
   private final StatusPublisher statusPublisher;
   private final String defaultStatusTopic;
   private final int targetSystem;
+  private final int localSystem;
+  private final int localComponent;
   private Transaction active;
   private boolean closed;
 
   MavlinkTransactionManager(WireSender wireSender, StatusPublisher statusPublisher,
-      String defaultStatusTopic, int targetSystem) {
+      String defaultStatusTopic, int targetSystem, int localSystem, int localComponent) {
     this.wireSender = Objects.requireNonNull(wireSender);
     this.statusPublisher = Objects.requireNonNull(statusPublisher);
     this.defaultStatusTopic = defaultStatusTopic;
     this.targetSystem = targetSystem;
+    this.localSystem = localSystem;
+    this.localComponent = localComponent;
   }
 
   synchronized void submit(JsonObject request, String destination) {
@@ -168,7 +172,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       }
     }
     return new Transaction(id, topic, operation, destination, List.copyOf(messages), system,
-        component, integer(firstPayload, "mission_type", 0));
+        component, integer(firstPayload, "mission_type", 0), localSystem, localComponent);
   }
 
   synchronized void onFrame(ProcessedFrame received) {
@@ -178,7 +182,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
     int sourceSystem = received.getFrame().getSystemId();
     int sourceComponent = received.getFrame().getComponentId();
-    if (sourceSystem != transaction.system || sourceComponent != transaction.component) {
+    if (sourceSystem != transaction.system
+        || (transaction.component != 0 && sourceComponent != transaction.component)) {
       return;
     }
     int id = received.getFrame().getMessageId();
@@ -209,12 +214,10 @@ final class MavlinkTransactionManager implements AutoCloseable {
         finish(transaction, "FAILED", "Mission request index out of bounds: " + sequence);
         return;
       }
-      try {
-        send(transaction, sequence + 1);
+      send(transaction, sequence + 1);
+      if (active == transaction) {
         transaction.requested.set(sequence);
         publish(transaction, "UPLOADING", null);
-      } catch (RuntimeException exception) {
-        finish(transaction, "FAILED", exception.getMessage());
       }
     } else if (id == MISSION_ACK && ackTargetMatches(received, transaction)
         && integer(received.getFields(), "mission_type", 0) == transaction.missionType) {
@@ -231,8 +234,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
   private boolean ackTargetMatches(ProcessedFrame received, Transaction transaction) {
     int target = integer(received.getFields(), "target_system", 0);
     int component = integer(received.getFields(), "target_component", 0);
-    return (target == 0 || target == transaction.localSystem)
-        && (component == 0 || component == transaction.localComponent);
+    return (target == 0 || transaction.localSystem == 0 || target == transaction.localSystem)
+        && (component == 0 || transaction.localComponent == 0 || component == transaction.localComponent);
   }
 
   private void send(Transaction transaction, int index) {
@@ -352,8 +355,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
     private final int system;
     private final int component;
     private final int missionType;
-    private final int localSystem = 0;
-    private final int localComponent = 0;
+    private final int localSystem;
+    private final int localComponent;
     private final BitSet requested = new BitSet();
     private ScheduledFuture<?> future;
     private long generation;
@@ -362,7 +365,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
     private int retries;
 
     private Transaction(String id, String topic, String operation, String destination,
-        List<JsonObject> messages, int system, int component, int missionType) {
+        List<JsonObject> messages, int system, int component, int missionType,
+        int localSystem, int localComponent) {
       this.id = id;
       this.topic = topic;
       this.operation = operation;
@@ -371,6 +375,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
       this.system = system;
       this.component = component;
       this.missionType = missionType;
+      this.localSystem = localSystem;
+      this.localComponent = localComponent;
     }
   }
 }
