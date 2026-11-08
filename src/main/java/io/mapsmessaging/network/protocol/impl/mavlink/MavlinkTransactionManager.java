@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_TRANSACTION_STATUS_PUBLISH_FAILED;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -335,7 +337,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     try {
       statusPublisher.publish(topic, event);
     } catch (RuntimeException exception) {
-      logger.error("Unable to publish MAVLink transaction status to {}", topic, exception);
+      logger.log(MAVLINK_TRANSACTION_STATUS_PUBLISH_FAILED, topic, exception);
     }
   }
 
