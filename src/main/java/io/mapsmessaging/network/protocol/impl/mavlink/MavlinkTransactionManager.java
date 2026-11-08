@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -103,6 +104,37 @@ final class MavlinkTransactionManager implements AutoCloseable {
     this.verifySourceAddress = verifySourceAddress;
   }
 
+  synchronized void submitNative(JsonElement input, String destination) {
+    JsonObject request;
+    if (input.isJsonArray()) {
+      request = new JsonObject();
+      request.add("messages", input.deepCopy());
+    } else if (input.isJsonObject()) {
+      JsonObject object = input.getAsJsonObject();
+      if (object.has("header")) {
+        request = new JsonObject();
+        JsonArray messages = new JsonArray();
+        JsonObject packet = object.deepCopy();
+        packet.remove("transactionId");
+        packet.remove("statusTopic");
+        messages.add(packet);
+        request.add("messages", messages);
+        if (object.has("transactionId")) {
+          request.add("transactionId", object.get("transactionId").deepCopy());
+        }
+        if (object.has("statusTopic")) {
+          request.add("statusTopic", object.get("statusTopic").deepCopy());
+        }
+      } else {
+        request = object.deepCopy();
+      }
+    } else {
+      reject(defaultStatusTopic, null, null, destination, "Expected MAVLink JSON message or mission item array");
+      return;
+    }
+    submit(request, destination);
+  }
+
   synchronized void submit(JsonObject request, String destination) {
     String id = null;
     String topic = defaultStatusTopic;
@@ -112,6 +144,12 @@ final class MavlinkTransactionManager implements AutoCloseable {
       id = text(request, "transactionId", null);
       topic = text(request, "statusTopic", defaultStatusTopic);
       operation = text(request, "operation", "");
+      if (operation.isBlank()) {
+        operation = inferOperation(request);
+        if (id == null || id.isBlank()) {
+          id = UUID.randomUUID().toString();
+        }
+      }
       fingerprint = "CANCEL".equals(operation) ? null : fingerprint(request, destination);
     } catch (RuntimeException exception) {
       reject(topic, id, operation, destination, "Invalid transaction request: " + exception.getMessage());
@@ -169,6 +207,28 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
   }
 
+  private static String inferOperation(JsonObject request) {
+    JsonElement element = request.get("messages");
+    if (element == null || !element.isJsonArray() || element.getAsJsonArray().isEmpty()) {
+      throw new IllegalArgumentException("MAVLink message or mission item array is required");
+    }
+    JsonArray messages = element.getAsJsonArray();
+    JsonElement first = messages.get(0);
+    if (!first.isJsonObject() || !first.getAsJsonObject().has("header")) {
+      throw new IllegalArgumentException("Each MAVLink item requires a header");
+    }
+    int firstMessageId = messageId(first.getAsJsonObject());
+    if (firstMessageId == MavlinkMissionItemInt.MESSAGE_ID_MISSION_ITEM_INT
+        || firstMessageId == MavlinkMissionCount.MESSAGE_ID_MISSION_COUNT) {
+      return "MISSION_UPLOAD";
+    }
+    if (messages.size() == 1 && (firstMessageId == MavlinkCommandLong.MESSAGE_ID_COMMAND_LONG
+        || firstMessageId == MavlinkCommandInt.MESSAGE_ID_COMMAND_INT)) {
+      return "COMMAND";
+    }
+    return "PACKET";
+  }
+
   private Transaction prepare(JsonObject request, String destination, String topic, String id, String operation) {
     if (!"PACKET".equals(operation) && !"COMMAND".equals(operation) && !"MISSION_UPLOAD".equals(operation)) {
       throw new IllegalArgumentException("Unsupported transaction operation: " + operation);
@@ -191,6 +251,22 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
     if (messages.isEmpty()) {
       throw new IllegalArgumentException("Transaction contains no MAVLink messages");
+    }
+    if ("MISSION_UPLOAD".equals(operation)
+        && messageId(messages.getFirst()) == MavlinkMissionItemInt.MESSAGE_ID_MISSION_ITEM_INT) {
+      JsonObject first = messages.getFirst();
+      JsonObject firstPayload = first.getAsJsonObject("payload");
+      JsonObject count = new JsonObject();
+      JsonObject header = first.getAsJsonObject("header").deepCopy();
+      header.addProperty("messageId", MavlinkMissionCount.MESSAGE_ID_MISSION_COUNT);
+      JsonObject payload = new JsonObject();
+      payload.addProperty("target_system", requiredInt(firstPayload, "target_system"));
+      payload.addProperty("target_component", requiredInt(firstPayload, "target_component"));
+      payload.addProperty("count", messages.size());
+      payload.addProperty("mission_type", integer(firstPayload, "mission_type", 0));
+      count.add("header", header);
+      count.add("payload", payload);
+      messages.add(0, count);
     }
     JsonObject firstPayload = messages.getFirst().getAsJsonObject("payload");
     int system = "PACKET".equals(operation) ? integer(firstPayload, "target_system", targetSystem) : requiredInt(firstPayload, "target_system");
@@ -228,8 +304,26 @@ final class MavlinkTransactionManager implements AutoCloseable {
         }
       }
     }
-    return new Transaction(id, topic, operation, destination, List.copyOf(messages), system, component, integer(firstPayload, "mission_type", 0),
-        localSystem, localComponent);
+    Transaction transaction = new Transaction(id, topic, operation, destination, List.copyOf(messages), system, component,
+        integer(firstPayload, "mission_type", 0), localSystem, localComponent);
+    if ("COMMAND".equals(operation)) {
+      JsonObject payload = messages.getFirst().getAsJsonObject("payload");
+      int command = requiredInt(payload, "command");
+      if (command == 224) {
+        float sequence = payload.has("param1") ? payload.get("param1").getAsFloat() : -1f;
+        if (!Float.isFinite(sequence) || sequence < -1 || sequence > 65535 || (sequence >= 0 && sequence != Math.floor(sequence))) {
+          throw new IllegalArgumentException("Invalid MAVLink current mission sequence");
+        }
+        transaction.expectedMissionSequence = sequence >= 0 ? (int) sequence : -1;
+      } else if (command == 512) {
+        float requested = payload.has("param1") ? payload.get("param1").getAsFloat() : -1f;
+        if (!Float.isFinite(requested) || requested < 0 || requested != Math.floor(requested) || requested > 16777215) {
+          throw new IllegalArgumentException("MAV_CMD_REQUEST_MESSAGE requires a valid message id in param1");
+        }
+        transaction.requestedMessageId = (int) requested;
+      }
+    }
+    return transaction;
   }
 
   synchronized void onFrame(ProcessedFrame received) {
@@ -249,6 +343,21 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
     int id = received.getFrame().getMessageId();
     if ("COMMAND".equals(transaction.operation)) {
+      if (transaction.expectedMissionSequence >= 0 && id == 42
+          && integer(received.getFields(), "seq", -1) == transaction.expectedMissionSequence) {
+        transaction.missionCurrentSeen = true;
+        if (transaction.commandAccepted) {
+          finish(transaction, "COMPLETED", null);
+        }
+        return;
+      }
+      if (transaction.requestedMessageId >= 0 && id == transaction.requestedMessageId) {
+        transaction.requestedMessageSeen = true;
+        if (transaction.commandAccepted) {
+          finish(transaction, "COMPLETED", null);
+        }
+        return;
+      }
       if (id != MavlinkMessageIds.COMMAND_ACK
           || integer(received.getFields(), "command", -1)
               != requiredInt(transaction.messages.getFirst().getAsJsonObject("payload"), "command")
@@ -260,9 +369,18 @@ final class MavlinkTransactionManager implements AutoCloseable {
         transaction.commandInProgress = true;
         scheduleTimeout(transaction);
         publish(transaction, "IN_PROGRESS", null);
+      } else if (result == 0) {
+        transaction.commandAccepted = true;
+        boolean awaitingMissionCurrent = transaction.expectedMissionSequence >= 0 && !transaction.missionCurrentSeen;
+        boolean awaitingRequestedMessage = transaction.requestedMessageId >= 0 && !transaction.requestedMessageSeen;
+        if (awaitingMissionCurrent || awaitingRequestedMessage) {
+          scheduleTimeout(transaction);
+          publish(transaction, "WAITING_FOR_RESPONSE", null);
+        } else {
+          finish(transaction, "COMPLETED", null);
+        }
       } else {
-        finish(transaction, result == 0 ? "COMPLETED" : "FAILED",
-            result == 0 ? null : "COMMAND_ACK result " + result);
+        finish(transaction, "FAILED", "COMMAND_ACK result " + result);
       }
       return;
     }
@@ -341,8 +459,10 @@ final class MavlinkTransactionManager implements AutoCloseable {
       finish(transaction, "TIMED_OUT", "MAVLink response timeout");
       return;
     }
-    if ("COMMAND".equals(transaction.operation) && transaction.commandInProgress) {
-      finish(transaction, "TIMED_OUT", "Command progress stopped; outcome unknown");
+    if ("COMMAND".equals(transaction.operation) && (transaction.commandInProgress || transaction.commandAccepted)) {
+      finish(transaction, "TIMED_OUT", transaction.commandAccepted
+          ? "MAVLink command accepted but expected response not observed; outcome unknown"
+          : "Command progress stopped; outcome unknown");
       return;
     }
     if ("MISSION_UPLOAD".equals(transaction.operation) && !transaction.requested.isEmpty()) {
@@ -528,6 +648,11 @@ final class MavlinkTransactionManager implements AutoCloseable {
     private int retries;
     private String fingerprint;
     private boolean commandInProgress;
+    private boolean commandAccepted;
+    private boolean missionCurrentSeen;
+    private boolean requestedMessageSeen;
+    private int expectedMissionSequence = -1;
+    private int requestedMessageId = -1;
     private String status = "QUEUED";
 
     private Transaction(String id, String topic, String operation, String destination, List<JsonObject> messages, int system, int component,
