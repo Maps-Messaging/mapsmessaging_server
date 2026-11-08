@@ -310,7 +310,7 @@ public class MavlinkProtocol extends Protocol {
               break;
           }
         } catch (IOException e) {
-          // log it
+          logger.log(MAVLINK_DIALECT_FAILED_TO_LOAD, mavlinkConfig.getDialectName(), e);
         }
       }
     }
