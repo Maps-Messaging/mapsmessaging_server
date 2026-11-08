@@ -51,7 +51,7 @@ A request with top-level `operation` and `messages` (or `transactionId` for canc
 
 Only one `COMMAND_LONG` (76) or `COMMAND_INT` (75) is accepted per `COMMAND` transaction. The transaction completes on matching `COMMAND_ACK` (77); `MAV_RESULT_IN_PROGRESS` keeps it active. Existing wire encoder validation and local source identity override remain in force.
 
-A missing command ACK reports `TIMED_OUT` with an **unknown vehicle outcome** after 5 seconds. The protocol does **not** automatically retransmit a command, because the autopilot might already have executed it and not every command is safe to repeat. Explicit application-level decisions about resubmitting a command are separate.
+A missing initial command ACK triggers up to six bounded retransmissions (5-second response timeout). For `COMMAND_LONG`, retries increase the MAVLink `confirmation` field as prescribed by the command protocol. Once a long-running command responds `MAV_RESULT_IN_PROGRESS`, a subsequent missing progress/final ACK produces `TIMED_OUT` with an **unknown vehicle outcome**, rather than restarting an operation already in progress. ACK matching checks command number, target and source identity. <https://mavlink.io/en/services/command.html>
 
 ## Mission upload transaction
 
@@ -106,9 +106,13 @@ If `statusTopic` is omitted, the default is `<configured outbound topic>/transac
 
 States include `QUEUED`, `WAITING_FOR_ACK`, `WAITING_FOR_MISSION_REQUEST`, `UPLOADING`, `IN_PROGRESS`, `RETRYING`, `SENT`, `COMPLETED`, `FAILED`, `TIMED_OUT`, `CANCELLED`, `CLOSED` and `REJECTED`. `reason` is included for errors. Transaction submission to the messaging engine is not the same as device acknowledgement.
 
-Mission uploads use the existing sender retry limit of six retries, with 5 seconds per-response timeout. Every mission retry re-sends `MISSION_COUNT`, resets the requested-item progress from the previous attempt and requires a new item-zero request. Commands have a 5-second ACK timeout but **no automatic retransmission**. Status-delivery exceptions are logged and isolated from transaction processing; successful wire transactions are not turned into failures by a status-topic error.
+Mission uploads use six bounded retries and a 5-second response timeout. If the initial mission request is lost, `MISSION_COUNT` is retransmitted. After receiving the first item request, timeouts retransmit the **last requested mission item**, allowing the vehicle to recover from a lost item, next request, or final ACK. Repeated or non-monotonic item requests are answered with the requested item, while invalid/out-of-range requests and `MAV_MISSION_INVALID_SEQUENCE` remain recoverable. Other mission error ACK results terminate the transaction. <https://mavlink.io/en/services/mission.html>
 
-The transaction manager's independent tests simulate successful and rejected ACKs, wrong targets, stale/duplicate mission item requests, mission retry exhaustion, status publication failures, endpoint failures, cancellation and shutdown. A server build and runtime integration test are still necessary. This is an initial implementation, not a claim of full MAVLink mission-command coverage.
+Both command and mission transactions tolerate duplicate and delayed engine submissions carrying the same `transactionId` without retransmission, returning their current or cached terminal status. Reusing the same ID with different request content or destination is rejected. The completed-result cache is bounded to 128 entries per live connection, is **not persistent**, and is cleared on restart. Deduplication is therefore not a durable exactly-once guarantee; upstream producers must not reuse transaction IDs. UDP ACK matching also verifies the originating peer address when the endpoint is UDP, alongside MAVLink system/component matching. The MAVLink ACK format has no unique application transaction ID, so arbitrarily late acknowledgements for a different operation using the same MAVLink command ID cannot be disambiguated perfectly.
+
+Status-delivery exceptions are logged via `ServerLogMessages` and isolated from transaction processing; successful wire transactions are not turned into failures by a status-topic error.
+
+The transaction manager's isolated tests simulate successful/rejected ACKs, wrong sources and UDP peers, lost ACKs and mission requests, out-of-order/duplicate mission items, invalid sequence recovery, retry exhaustion, duplicate and conflicting transaction IDs, status publication failures, endpoint failures, cancellation and shutdown. A server build and runtime integration test are still necessary. This is an initial implementation, not a claim of full MAVLink mission-command coverage.
 
 ## Compatibility / limitations
 
