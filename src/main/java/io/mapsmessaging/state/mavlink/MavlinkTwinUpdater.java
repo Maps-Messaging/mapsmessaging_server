@@ -45,7 +45,6 @@ import io.mapsmessaging.state.mavlink.model.ModelManager;
 import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.mapsmessaging.state.metrics.FeedActivityRegistry;
 import java.util.ArrayList;
 import java.util.List;
@@ -158,10 +157,6 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
 
       if (entityTwin instanceof DroneTwin droneTwin) {
-        MavlinkEventListSender sender = droneTwin.getActiveMavlinkSender();
-        if (sender != null) {
-          sender.onMavlinkMessage(packet);
-        }
         applyModelDetectionEvent(droneTwin, packet, context, droneInfo);
       }
     } finally {
@@ -169,7 +164,7 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     }
   }
 
-  /** Update only the observed protocol transaction field; telemetry and legacy sender state are unchanged. */
+  /** Update only the observed protocol transaction field; telemetry state is unchanged. */
   public void updateTransactionStatus(String twinId, MavlinkTransactionStatus status) {
     if (closed.get() || twinId == null || twinId.isBlank() || status == null) {
       return;
