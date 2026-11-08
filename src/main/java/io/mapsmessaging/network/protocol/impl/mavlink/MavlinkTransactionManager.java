@@ -209,7 +209,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
 
   private static String inferOperation(JsonObject request) {
     JsonElement element = request.get("messages");
-    if (element == null || !element.isJsonArray() || element.getAsJsonArray().isEmpty()) {
+    if (element == null || !element.isJsonArray() || element.getAsJsonArray().size() == 0) {
       throw new IllegalArgumentException("MAVLink message or mission item array is required");
     }
     JsonArray messages = element.getAsJsonArray();
@@ -346,14 +346,14 @@ final class MavlinkTransactionManager implements AutoCloseable {
       if (transaction.expectedMissionSequence >= 0 && id == 42
           && integer(received.getFields(), "seq", -1) == transaction.expectedMissionSequence) {
         transaction.missionCurrentSeen = true;
-        if (transaction.commandAccepted) {
+        if (transaction.commandAccepted || transaction.commandInProgress) {
           finish(transaction, "COMPLETED", null);
         }
         return;
       }
       if (transaction.requestedMessageId >= 0 && id == transaction.requestedMessageId) {
         transaction.requestedMessageSeen = true;
-        if (transaction.commandAccepted) {
+        if (transaction.commandAccepted || transaction.commandInProgress) {
           finish(transaction, "COMPLETED", null);
         }
         return;
