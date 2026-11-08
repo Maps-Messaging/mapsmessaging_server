@@ -13,6 +13,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.gson.JsonArray;
+import io.mapsmessaging.logging.ServerLogMessages;
+import io.mapsmessaging.logging.LEVEL;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.mavlink.message.Frame;
@@ -24,6 +26,23 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class MavlinkTransactionManagerTest {
+
+  @Test
+  void transactionDiagnosticsHaveCentralizedSeverityAndCorrectParameterCounts() {
+    assertEquals(4, ServerLogMessages.MAVLINK_TRANSACTION_REJECTED.getParameterCount());
+    assertEquals(5, ServerLogMessages.MAVLINK_TRANSACTION_RETRYING.getParameterCount());
+    assertEquals(3, ServerLogMessages.MAVLINK_TRANSACTION_SEND_FAILED.getParameterCount());
+    assertEquals(4, ServerLogMessages.MAVLINK_TRANSACTION_FAILED.getParameterCount());
+    assertEquals(6, ServerLogMessages.MAVLINK_TRANSACTION_TIMED_OUT.getParameterCount());
+    assertEquals(3, ServerLogMessages.MAVLINK_TRANSACTION_CANCELLED.getParameterCount());
+    assertEquals(3, ServerLogMessages.MAVLINK_TRANSACTION_CONNECTION_CLOSED.getParameterCount());
+    assertEquals(1, ServerLogMessages.MAVLINK_TRANSACTION_STATUS_PUBLISH_FAILED.getParameterCount());
+
+    assertEquals(LEVEL.WARN, ServerLogMessages.MAVLINK_TRANSACTION_RETRYING.getLevel());
+    assertEquals(LEVEL.WARN, ServerLogMessages.MAVLINK_TRANSACTION_TIMED_OUT.getLevel());
+    assertEquals(LEVEL.ERROR, ServerLogMessages.MAVLINK_TRANSACTION_FAILED.getLevel());
+    assertEquals(LEVEL.ERROR, ServerLogMessages.MAVLINK_TRANSACTION_SEND_FAILED.getLevel());
+  }
 
   @Test
   void singlePacketIsSentAndReportedWithoutAwaitingAcknowledgement() {
