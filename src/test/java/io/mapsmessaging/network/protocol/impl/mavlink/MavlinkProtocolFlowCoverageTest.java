@@ -95,6 +95,42 @@ class MavlinkProtocolFlowCoverageTest {
   }
 
   @Test
+  void cancellationTopicRoutesTransactionIdWithoutSendingMavlinkFrame() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    setField(fixture.protocol, MavlinkProtocol.class, "cancellationTopicName", "/outbound/cancel");
+    Runnable completion = mock(Runnable.class);
+    Message message = mock(Message.class);
+    when(message.getCorrelationData()).thenReturn("ID#42#127.0.0.1:14550".getBytes(StandardCharsets.UTF_8));
+    when(message.getOpaqueData()).thenReturn("{\\"transactionId\\":\\"cancel-1\\"}".getBytes(StandardCharsets.UTF_8));
+    fixture.protocol.sendMessage(new MessageEvent("/outbound/cancel", mock(SubscribedEventManager.class), message, completion));
+
+    ArgumentCaptor<JsonObject> captured = ArgumentCaptor.forClass(JsonObject.class);
+    verify(manager).cancelRequest(captured.capture(), eq("127.0.0.1:14550"));
+    assertEquals("cancel-1", captured.getValue().get("transactionId").getAsString());
+    verify(manager, never()).submitNative(any(), any());
+    verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
+    verify(completion).run();
+  }
+
+  @Test
+  void invalidCancellationPayloadDoesNotReachTransactionManager() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    setField(fixture.protocol, MavlinkProtocol.class, "cancellationTopicName", "/outbound/cancel");
+    Runnable completion = mock(Runnable.class);
+    Message message = mock(Message.class);
+    when(message.getCorrelationData()).thenReturn("ID#42#127.0.0.1:14550".getBytes(StandardCharsets.UTF_8));
+    when(message.getOpaqueData()).thenReturn("[]".getBytes(StandardCharsets.UTF_8));
+    fixture.protocol.sendMessage(new MessageEvent("/outbound/cancel", mock(SubscribedEventManager.class), message, completion));
+
+    verifyNoInteractions(manager);
+    verify(completion).run();
+  }
+
+  @Test
   void nativeMavlinkMissionArrayUsesManagerWithoutOperationSelector() throws Exception {
     Fixture fixture = fixture();
     MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
