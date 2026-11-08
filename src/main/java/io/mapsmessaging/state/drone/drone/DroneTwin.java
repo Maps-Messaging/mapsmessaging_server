@@ -127,6 +127,8 @@ public class DroneTwin extends EntityTwin {
   private volatile io.mapsmessaging.state.mavlink.sender.MavlinkTransmissionState missionTransmission;
 
   @Schema(description = "Latest protocol-observed MAVLink transaction status. Independent of the legacy sender.", nullable = true)
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
   private MavlinkTransactionStatus mavlinkTransactionStatus;
 
   @Schema(description = "Latest STANAG task upload retry state, retained after completion.")
