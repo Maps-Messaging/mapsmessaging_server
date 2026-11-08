@@ -88,6 +88,7 @@ public class MavlinkProtocol extends Protocol {
   private final Map<Integer, MavlinkAcceptedSourceDTO> acceptedComponents;
   private final Map<Integer, SequenceTracker> sequenceTrackers;
   private final String outboundTopicName;
+  private final String cancellationTopicName;
   // Parsing and dialect replacement stay on the selector thread or the serial port
   // single-thread read executor; the factory maintains mutable per-stream context.
   protected MavlinkEventFactory mavlinkEventFactory;
@@ -146,8 +147,14 @@ public class MavlinkProtocol extends Protocol {
       subscriptionContextBuilder.setReceiveMaximum(10);
       subscriptionContextBuilder.setNoLocalMessages(true);
       session.addSubscription(subscriptionContextBuilder.build());
+      SubscriptionContextBuilder cancellationSubscription = new SubscriptionContextBuilder(outboundTopic + "/cancel", ClientAcknowledgement.AUTO);
+      cancellationSubscription.setQos(qos);
+      cancellationSubscription.setReceiveMaximum(10);
+      cancellationSubscription.setNoLocalMessages(true);
+      session.addSubscription(cancellationSubscription.build());
     }
     outboundTopicName = outboundTopic;
+    cancellationTopicName = outboundTopic == null || outboundTopic.isEmpty() ? null : outboundTopic + "/cancel";
     transactionManager = new MavlinkTransactionManager(this::sendTransactionFrame, this::publishTransactionStatus,
         outboundTopicName == null ? null : outboundTopicName + "/transactions", key.getSystemId(),
         mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getSystemId() : 0,
@@ -226,6 +233,15 @@ public class MavlinkProtocol extends Protocol {
 
       String json = new String(messageEvent.getMessage().getOpaqueData(), StandardCharsets.UTF_8);
       JsonElement outbound = JsonParser.parseString(json);
+      if (cancellationTopicName != null && cancellationTopicName.equals(messageEvent.getDestinationName())) {
+        if (!outbound.isJsonObject()) {
+          logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), "invalid-cancellation-request",
+              new IllegalArgumentException("Cancellation requires a JSON object with a transactionId"));
+          return;
+        }
+        transactionManager.cancelRequest(outbound.getAsJsonObject(), parts[2]);
+        return;
+      }
       if (outbound.isJsonArray()) {
         transactionManager.submitNative(outbound, parts[2]);
       } else {
