@@ -229,7 +229,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
   }
 
   private Transaction prepare(JsonObject request, String destination, String topic, String id, String operation) {
-      JsonElement element = request.get("messages");
+    JsonElement element = request.get("messages");
     if (element == null || !element.isJsonArray()) {
       throw new IllegalArgumentException("Transaction requires an array of MAVLink messages");
     }
@@ -531,9 +531,6 @@ final class MavlinkTransactionManager implements AutoCloseable {
     JsonObject event = new JsonObject();
     if (id != null) {
       event.addProperty("transactionId", id);
-    }
-    if (operation != null) {
-      event.addProperty("operation", operation);
     }
     event.addProperty("status", status);
     event.addProperty("attempts", attempts);
