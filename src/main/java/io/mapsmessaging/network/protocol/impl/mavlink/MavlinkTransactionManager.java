@@ -42,7 +42,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,7 +49,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -85,8 +83,8 @@ final class MavlinkTransactionManager implements AutoCloseable {
   private final int localSystem;
   private final int localComponent;
   private final boolean verifySourceAddress;
-  private final Map<String, TerminalResult> recentResults = new LinkedHashMap<>();
-  private Transaction active;
+  private final Map<String, MavlinkTerminalResult> recentResults = new LinkedHashMap<>();
+  private MavlinkTransaction active;
   private boolean closed;
 
   MavlinkTransactionManager(WireSender wireSender, StatusPublisher statusPublisher, String defaultStatusTopic, int targetSystem, int localSystem, int localComponent) {
@@ -168,7 +166,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       }
       return;
     }
-    TerminalResult previous = recentResults.get(id);
+    MavlinkTerminalResult previous = recentResults.get(id);
     if (previous != null) {
       if (!previous.fingerprint().equals(fingerprint)) {
         reject(topic, id, operation, destination, "Transaction ID reused with different request");
@@ -188,7 +186,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
 
     try {
-      Transaction transaction = prepare(request, destination, topic, id, operation);
+      MavlinkTransaction transaction = prepare(request, destination, topic, id, operation);
       transaction.fingerprint = fingerprint;
       active = transaction;
       publish(transaction, "QUEUED", null);
@@ -228,7 +226,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     return "PACKET";
   }
 
-  private Transaction prepare(JsonObject request, String destination, String topic, String id, String operation) {
+  private MavlinkTransaction prepare(JsonObject request, String destination, String topic, String id, String operation) {
     JsonElement element = request.get("messages");
     if (element == null || !element.isJsonArray()) {
       throw new IllegalArgumentException("Transaction requires an array of MAVLink messages");
@@ -300,7 +298,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
         }
       }
     }
-    Transaction transaction = new Transaction(id, topic, operation, destination, List.copyOf(messages), system, component,
+    MavlinkTransaction transaction = new MavlinkTransaction(id, topic, operation, destination, List.copyOf(messages), system, component,
         integer(firstPayload, "mission_type", 0), localSystem, localComponent);
     if ("COMMAND".equals(operation)) {
       JsonObject payload = messages.getFirst().getAsJsonObject("payload");
@@ -327,7 +325,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
   }
 
   synchronized void onFrame(ProcessedFrame received, String sourceAddress) {
-    Transaction transaction = active;
+    MavlinkTransaction transaction = active;
     if (transaction == null || received == null || !received.isValid()
         || (verifySourceAddress && !samePeer(transaction.destination, sourceAddress))) {
       return;
@@ -415,14 +413,14 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
   }
 
-  private boolean ackTargetMatches(ProcessedFrame received, Transaction transaction) {
+  private boolean ackTargetMatches(ProcessedFrame received, MavlinkTransaction transaction) {
     int target = integer(received.getFields(), "target_system", 0);
     int component = integer(received.getFields(), "target_component", 0);
     return (target == 0 || transaction.localSystem == 0 || target == transaction.localSystem)
         && (component == 0 || transaction.localComponent == 0 || component == transaction.localComponent);
   }
 
-  private void send(Transaction transaction, int index) {
+  private void send(MavlinkTransaction transaction, int index) {
     try {
       wireSender.send(transaction.messages.get(index).deepCopy(), transaction.destination);
       transaction.lastIndex = index;
@@ -439,7 +437,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
   }
 
-  private void scheduleTimeout(Transaction transaction) {
+  private void scheduleTimeout(MavlinkTransaction transaction) {
     if (transaction.future != null) {
       transaction.future.cancel(false);
     }
@@ -447,7 +445,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     transaction.future = SimpleTaskScheduler.getInstance().schedule(() -> timeout(transaction, generation), DEFAULT_ACK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
   }
 
-  private synchronized void timeout(Transaction transaction, long generation) {
+  private synchronized void timeout(MavlinkTransaction transaction, long generation) {
     if (active != transaction || transaction.generation != generation) {
       return;
     }
@@ -477,7 +475,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     send(transaction, "MISSION_UPLOAD".equals(transaction.operation) ? 0 : transaction.lastIndex);
   }
 
-  private void finish(Transaction transaction, String status, String reason) {
+  private void finish(MavlinkTransaction transaction, String status, String reason) {
     if (active != transaction) {
       return;
     }
@@ -486,7 +484,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       transaction.future.cancel(false);
     }
     int total = transaction.messages.size() - ("MISSION_UPLOAD".equals(transaction.operation) ? 1 : 0);
-    recentResults.put(transaction.id, new TerminalResult(transaction.topic, status, reason, transaction.attempts, transaction.retries,
+    recentResults.put(transaction.id, new MavlinkTerminalResult(transaction.topic, status, reason, transaction.attempts, transaction.retries,
         transaction.requested.cardinality(), transaction.operation, transaction.system, transaction.component, total, transaction.fingerprint));
     if (recentResults.size() > MAX_RECENT_RESULTS) {
       recentResults.remove(recentResults.keySet().iterator().next());
@@ -514,7 +512,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     publish(topic, id, "REJECTED", reason, 0, 0, 0, operation, 0, 0, 0);
   }
 
-  private void publish(Transaction transaction, String status, String reason) {
+  private void publish(MavlinkTransaction transaction, String status, String reason) {
     transaction.status = status;
     publish(transaction.topic, transaction.id, status, reason, transaction.attempts,
         transaction.retries, transaction.requested.cardinality(), transaction.operation,
@@ -618,48 +616,4 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
   }
 
-  private record TerminalResult(String topic, String status, String reason, int attempts, int retries, int requested, String operation, int system,
-      int component, int total, String fingerprint) {
-  }
-
-  private static final class Transaction {
-    private final String id;
-    private final String topic;
-    private final String operation;
-    private final String destination;
-    private final List<JsonObject> messages;
-    private final int system;
-    private final int component;
-    private final int missionType;
-    private final int localSystem;
-    private final int localComponent;
-    private final BitSet requested = new BitSet();
-    private ScheduledFuture<?> future;
-    private long generation;
-    private int lastIndex;
-    private int attempts;
-    private int retries;
-    private String fingerprint;
-    private boolean commandInProgress;
-    private boolean commandAccepted;
-    private boolean missionCurrentSeen;
-    private boolean requestedMessageSeen;
-    private int expectedMissionSequence = -1;
-    private int requestedMessageId = -1;
-    private String status = "QUEUED";
-
-    private Transaction(String id, String topic, String operation, String destination, List<JsonObject> messages, int system, int component,
-        int missionType, int localSystem, int localComponent) {
-      this.id = id;
-      this.topic = topic;
-      this.operation = operation;
-      this.destination = destination;
-      this.messages = messages;
-      this.system = system;
-      this.component = component;
-      this.missionType = missionType;
-      this.localSystem = localSystem;
-      this.localComponent = localComponent;
-    }
-  }
 }
