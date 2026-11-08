@@ -315,6 +315,43 @@ class MavlinkTwinUpdaterTest {
     assertEquals(1, updater.getMessagesProcessedCount());
   }
 
+  @Test
+  void transactionStatusUpdatesOnlyNewTwinFieldAndPreservesExistingData() {
+    TwinManager twinManager = twinManager();
+    DroneTwin twin = new DroneTwin("drone-1");
+    twin.setMissionState("ACTIVE");
+    twin.setResponseTopicName("mavlink/outbound");
+    twinManager.registerTwin(twin, context(null, null));
+    MavlinkTwinUpdater updater = new MavlinkTwinUpdater(twinManager, mock(ListenerManager.class));
+    MavlinkTransactionStatus observation = new MavlinkTransactionStatus(
+        "tx-1", 17, 42, "COMPLETED", 3, 1, 2, 2, null, NOW);
+
+    updater.updateTransactionStatus("drone-1", observation);
+
+    assertSame(observation, twin.getMavlinkTransactionStatus());
+    assertEquals("ACTIVE", twin.getMissionState());
+    assertEquals("mavlink/outbound", twin.getResponseTopicName());
+    assertNull(twin.getMissionTransmission());
+    assertEquals(-1, updater.getLastMessageAgeMillis());
+    updater.close();
+  }
+
+  @Test
+  void unknownTwinOrClosedUpdaterDoesNotCreateOrUpdateTransactionState() {
+    TwinManager twinManager = twinManager();
+    DroneTwin twin = new DroneTwin("drone-1");
+    twinManager.registerTwin(twin, context(null, null));
+    MavlinkTwinUpdater updater = new MavlinkTwinUpdater(twinManager, mock(ListenerManager.class));
+    MavlinkTransactionStatus observation = new MavlinkTransactionStatus(
+        "tx-2", 17, 42, "FAILED", 1, 0, 0, 0, "Rejected", NOW);
+
+    updater.updateTransactionStatus("missing-drone", observation);
+    assertNull(twin.getMavlinkTransactionStatus());
+    updater.close();
+    updater.updateTransactionStatus("drone-1", observation);
+    assertNull(twin.getMavlinkTransactionStatus());
+  }
+
   private TwinManager twinManager() {
     return new TwinManager(false, 10_000L, 5_000L, 120_000L, null);
   }
