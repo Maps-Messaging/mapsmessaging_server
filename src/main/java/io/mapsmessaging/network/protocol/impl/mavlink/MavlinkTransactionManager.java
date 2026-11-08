@@ -55,8 +55,8 @@ import java.util.concurrent.TimeUnit;
  * MAVLink wire transaction state for one protocol connection. An engine command is accepted
  * through the existing outbound subscription; the twin never owns a protocol sender.
  *
- * <p>The transaction envelope is opt-in. Ordinary single-frame outbound messages continue
- * through the existing, unchanged MavlinkProtocol send path.
+ * <p>Native MAVLink command messages and mission-item arrays use protocol-owned transactions.
+ * Other single-frame outbound messages retain their existing one-way send path.
  */
 final class MavlinkTransactionManager implements AutoCloseable {
 
