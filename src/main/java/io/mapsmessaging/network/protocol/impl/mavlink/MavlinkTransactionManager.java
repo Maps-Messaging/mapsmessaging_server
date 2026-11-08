@@ -174,7 +174,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
         reject(topic, id, operation, destination, "Transaction ID reused with different request");
       } else {
         publish(previous.topic(), id, previous.status(), previous.reason(), previous.attempts(), previous.retries(), previous.requested(),
-            previous.operation(), previous.system(), previous.component(), previous.total(), previous.lastSent(), previous.lastResponse());
+            previous.system(), previous.component(), previous.total(), previous.lastSent(), previous.lastResponse());
       }
       return;
     }
@@ -529,26 +529,26 @@ final class MavlinkTransactionManager implements AutoCloseable {
 
   private void reject(String topic, String id, String operation, String destination, String reason) {
     logger.log(MAVLINK_TRANSACTION_REJECTED, id, operation, destination, reason);
-    publish(topic, id, "REJECTED", reason, 0, 0, 0, operation, 0, 0, 0);
+    publish(topic, id, "REJECTED", reason, 0, 0, 0, 0, 0, 0);
   }
 
   private void publish(MavlinkTransaction transaction, String status, String reason) {
     transaction.status = status;
     publish(transaction.topic, transaction.id, status, reason, transaction.attempts,
-        transaction.retries, transaction.requested.cardinality(), transaction.operation,
+        transaction.retries, transaction.requested.cardinality(),
         transaction.system, transaction.component, transaction.messages.size() -
             ("MISSION_UPLOAD".equals(transaction.operation) ? 1 : 0),
         transaction.lastSent, transaction.lastResponse);
   }
 
   private void publish(String topic, String id, String status, String reason,
-      int attempts, int retries, int requested, String operation,
+      int attempts, int retries, int requested,
       int system, int component, int total) {
-    publish(topic, id, status, reason, attempts, retries, requested, operation, system, component, total, null, null);
+    publish(topic, id, status, reason, attempts, retries, requested, system, component, total, null, null);
   }
 
   private void publish(String topic, String id, String status, String reason,
-      int attempts, int retries, int requested, String operation,
+      int attempts, int retries, int requested,
       int system, int component, int total, JsonObject lastSent, JsonObject lastResponse) {
     if (topic == null || topic.isBlank()) {
       return;
