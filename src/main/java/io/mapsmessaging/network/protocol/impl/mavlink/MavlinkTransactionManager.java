@@ -196,6 +196,16 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
   }
 
+  synchronized void cancelRequest(JsonObject request, String destination) {
+    JsonElement element = request.get("transactionId");
+    if (request.size() != 1 || element == null || !element.isJsonPrimitive()
+        || !element.getAsJsonPrimitive().isString() || element.getAsString().isBlank()) {
+      reject(defaultStatusTopic, null, null, destination, "Cancellation requires only a nonblank transactionId");
+      return;
+    }
+    cancel(element.getAsString(), destination);
+  }
+
   synchronized void cancel(String id, String destination) {
     if (active != null && active.id.equals(id) && samePeer(active.destination, destination)) {
       finish(active, "CANCELLED", "Cancelled by requester");
