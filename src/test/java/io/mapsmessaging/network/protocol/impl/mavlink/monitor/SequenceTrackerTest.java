@@ -152,6 +152,43 @@ class SequenceTrackerTest {
   }
 
   @Test
+  void forwardLossThresholdAtThirtyTwoIsClassifiedAsLoss() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult result = tracker.accept(42);
+    assertEquals(SequenceStatus.LOSS, result.getStatus());
+    assertEquals(31, result.getLostPackets());
+  }
+
+  @Test
+  void forwardJumpOfThirtyThreeIsClassifiedAsReset() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult result = tracker.accept(43);
+    assertEquals(SequenceStatus.RESET, result.getStatus());
+    assertEquals(0, result.getLostPackets());
+  }
+
+  @Test
+  void deltaOfOneHundredTwentyEightIsClassifiedAsReset() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult result = tracker.accept(138);
+    assertEquals(SequenceStatus.RESET, result.getStatus());
+  }
+
+  @Test
+  void deltaOfOneHundredTwentyNineIsIgnoredAsOlderTraffic() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult delayed = tracker.accept(139);
+    SequenceResult next = tracker.accept(11);
+    assertEquals(SequenceStatus.OUT_OF_ORDER, delayed.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(10, next.getPreviousSequenceNumber());
+  }
+
+  @Test
   void sequenceWrapFrom255ToZeroIsOk() {
     SequenceTracker tracker = new SequenceTracker();
     tracker.accept(255);
