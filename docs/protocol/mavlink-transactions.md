@@ -10,9 +10,36 @@ Publish to the configured MAVLink **outbound command topic**, using the same mes
 
 The protocol instance validates that endpoint ID as before and, for UDP, uses the socket address to select the target peer.
 
-A request with top-level `operation` and `messages` (or `transactionId` for cancellation) is handled as a transaction. A legacy single MAVLink `{"header":...,"payload":...}` frame keeps the original one-way send path.
+Applications can publish normal MAVLink JSON directly: a single `{"header":...,"payload":...}` frame or an array of MAVLink `MISSION_ITEM_INT` frames representing one upload. The protocol recognises `COMMAND_LONG` and `COMMAND_INT` by message ID and derives `MISSION_COUNT` for a mission-item array. Other single frames retain the one-way send behaviour. An optional wrapper containing `messages`, `transactionId`, and `statusTopic` carries correlation metadata without a new operation vocabulary. The original `operation` envelope remains supported for compatibility.
 
-## Packet transaction
+## Native MAVLink JSON
+
+A MAVLink command is sent using its usual `header` and `payload` fields. The server handles the matching `COMMAND_ACK` without requiring an `operation` field.
+
+To send a plan, publish **one JSON message** containing an ordered array of `MISSION_ITEM_INT` frames. The server validates sequence, target and mission type, generates `MISSION_COUNT`, and handles vehicle requests, retransmissions and the final `MISSION_ACK`.
+
+```json
+[
+  {
+    "header": {"version": "V2", "messageId": 73, "systemId": 255, "componentId": 190},
+    "payload": {"target_system": 1, "target_component": 1, "seq": 0,
+                "mission_type": 0, "frame": 6, "command": 16,
+                "current": 1, "autocontinue": 1, "x": -338650000, "y": 1512100000, "z": 50}
+  },
+  {
+    "header": {"version": "V2", "messageId": 73, "systemId": 255, "componentId": 190},
+    "payload": {"target_system": 1, "target_component": 1, "seq": 1,
+                "mission_type": 0, "frame": 6, "command": 16,
+                "current": 0, "autocontinue": 1, "x": -338660000, "y": 1512200000, "z": 60}
+  }
+]
+```
+
+A wrapper such as `{"transactionId":"upload-1","statusTopic":"/mavlink/status","messages":[...]}` may be used when explicit status correlation is needed. Without one, the protocol generates a connection-local transaction ID for status events.
+
+For `MAV_CMD_DO_SET_MISSION_CURRENT` (224), an accepted `COMMAND_ACK` is followed by confirmation of the requested sequence in `MISSION_CURRENT`. For `MAV_CMD_REQUEST_MESSAGE` (512), the protocol distinguishes an accepted command from observation of the requested message ID. If the requested message is also streamed, observing it alone cannot establish unique response provenance. Accepted commands awaiting confirmation are not blindly retransmitted.
+
+## Legacy packet transaction
 
 ```json
 {
@@ -104,9 +131,9 @@ If `statusTopic` is omitted, the default is `<configured outbound topic>/transac
 }
 ```
 
-States include `QUEUED`, `WAITING_FOR_ACK`, `WAITING_FOR_MISSION_REQUEST`, `UPLOADING`, `IN_PROGRESS`, `RETRYING`, `SENT`, `COMPLETED`, `FAILED`, `TIMED_OUT`, `CANCELLED`, `CLOSED` and `REJECTED`. `reason` is included for errors. Transaction submission to the messaging engine is not the same as device acknowledgement.
+States include `QUEUED`, `WAITING_FOR_ACK`, `WAITING_FOR_RESPONSE`, `WAITING_FOR_MISSION_REQUEST`, `UPLOADING`, `IN_PROGRESS`, `RETRYING`, `SENT`, `COMPLETED`, `FAILED`, `TIMED_OUT`, `CANCELLED`, `CLOSED` and `REJECTED`. `reason` is included for errors. Transaction submission to the messaging engine is not the same as device acknowledgement.
 
-Mission uploads use six bounded retries and a 5-second response timeout. If the initial mission request is lost, `MISSION_COUNT` is retransmitted. After receiving the first item request, timeouts retransmit the **last requested mission item**, allowing the vehicle to recover from a lost item, next request, or final ACK. Repeated or non-monotonic item requests are answered with the requested item, while invalid/out-of-range requests and `MAV_MISSION_INVALID_SEQUENCE` remain recoverable. Other mission error ACK results terminate the transaction. <https://mavlink.io/en/services/mission.html>
+Mission uploads use six bounded retries and a 5-second response timeout. If the initial mission request is lost, `MISSION_COUNT` is retransmitted. After receiving the first item request, timeouts **do not** transmit unsolicited mission items. The vehicle must request any retransmission. If no further request or final ACK arrives, the protocol reports a timeout with an uncertain vehicle outcome. Repeated or non-monotonic item requests are answered with the requested item, while invalid/out-of-range requests and `MAV_MISSION_INVALID_SEQUENCE` remain recoverable. Other mission error ACK results terminate the transaction. <https://mavlink.io/en/services/mission.html>
 
 Both command and mission transactions tolerate duplicate and delayed engine submissions carrying the same `transactionId` without retransmission, returning their current or cached terminal status. Reusing the same ID with different request content or destination is rejected. The completed-result cache is bounded to 128 entries per live connection, is **not persistent**, and is cleared on restart. Deduplication is therefore not a durable exactly-once guarantee; upstream producers must not reuse transaction IDs. UDP ACK matching also verifies the originating peer address when the endpoint is UDP, alongside MAVLink system/component matching. The MAVLink ACK format has no unique application transaction ID, so arbitrarily late acknowledgements for a different operation using the same MAVLink command ID cannot be disambiguated perfectly.
 
