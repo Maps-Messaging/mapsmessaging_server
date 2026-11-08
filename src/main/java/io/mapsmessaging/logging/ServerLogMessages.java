@@ -950,6 +950,7 @@ public enum ServerLogMessages implements LogMessage {
   MAVLINK_FAILED_SENDING_OUTBOUND_PACKET(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to send outbound MAVLink packet on '{}', destination '{}': {}"),
   MAVLINK_FAILED_SENDING_HEARTBEAT(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to send MAVLink heartbeat on '{}': {}"),
   MAVLINK_UNKNOWN_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unknown MAVLink state packet from {}"),
+  MAVLINK_TRANSACTION_STATUS_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Unable to publish MAVLink transaction status to {}"),
 
 
 
