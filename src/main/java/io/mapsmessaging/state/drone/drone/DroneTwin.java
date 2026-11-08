@@ -36,20 +36,15 @@ import io.mapsmessaging.state.drone.model.SystemState;
 import io.mapsmessaging.state.drone.model.TimeState;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
 import io.mapsmessaging.state.mavlink.MavlinkTransactionStatus;
-import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -97,13 +92,6 @@ public class DroneTwin extends EntityTwin {
   @EqualsAndHashCode.Exclude
   private final DroneContactManager contactManager = new DroneContactManager();
 
-  @JsonIgnore
-  @Schema(hidden = true)
-  @ToString.Exclude
-  @EqualsAndHashCode.Exclude
-  @Getter(AccessLevel.NONE)
-  private final transient AtomicReference<MavlinkEventListSender> activeMavlinkSender = new AtomicReference<>();
-
   @Schema(description = "Decoded autopilot information for the vehicle.", nullable = true)
   private AutopilotState autopilotState;
 
@@ -122,11 +110,7 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Current mission execution state.", example = "ACTIVE", nullable = true)
   private String missionState;
 
-  @Schema(description = "Latest outbound MAVLink transmission snapshot, retained after completion.")
-  @SuppressWarnings("java:S3077") // MavlinkTransmissionState publishes immutable snapshots; volatile publishes its replacement.
-  private volatile io.mapsmessaging.state.mavlink.sender.MavlinkTransmissionState missionTransmission;
-
-  @Schema(description = "Latest protocol-observed MAVLink transaction status. Independent of the legacy sender.", nullable = true)
+  @Schema(description = "Latest protocol-observed MAVLink transaction status.", nullable = true)
   @ToString.Exclude
   @EqualsAndHashCode.Exclude
   private MavlinkTransactionStatus mavlinkTransactionStatus;
@@ -324,58 +308,6 @@ public class DroneTwin extends EntityTwin {
   @Schema(hidden = true)
   public DroneContactManager getContactManager() {
     return contactManager;
-  }
-
-  @JsonIgnore
-  @Schema(hidden = true)
-  public MavlinkEventListSender getActiveMavlinkSender() {
-    return activeMavlinkSender.get();
-  }
-
-  @JsonIgnore
-  @Schema(hidden = true)
-  public boolean hasActiveMavlinkSender() {
-    return activeMavlinkSender.get() != null;
-  }
-
-  @JsonIgnore
-  @Schema(hidden = true)
-  public boolean registerMavlinkSender(MavlinkEventListSender sender) {
-    if (!activeMavlinkSender.compareAndSet(null, Objects.requireNonNull(sender, "sender must not be null"))) {
-      return false;
-    }
-    missionTransmission = sender.getTransmissionState();
-    return true;
-  }
-
-  @JsonIgnore
-  @Schema(hidden = true)
-  public boolean removeMavlinkSender(MavlinkEventListSender sender) {
-    return activeMavlinkSender.compareAndSet(Objects.requireNonNull(sender, "sender must not be null"), null);
-  }
-
-  @JsonIgnore
-  @Schema(hidden = true)
-  public boolean cancelActiveMavlinkSender() {
-    MavlinkEventListSender sender = activeMavlinkSender.getAndSet(null);
-    if (sender == null) {
-      return false;
-    }
-
-    sender.cancel();
-    return true;
-  }
-
-  @JsonIgnore
-  @Schema(hidden = true)
-  public boolean closeActiveMavlinkSender() {
-    MavlinkEventListSender sender = activeMavlinkSender.getAndSet(null);
-    if (sender == null) {
-      return false;
-    }
-
-    sender.close();
-    return true;
   }
 
   @Schema(description = "Current contacts detected by this drone. Expired contacts are removed before the list is returned.", accessMode = Schema.AccessMode.READ_ONLY)
