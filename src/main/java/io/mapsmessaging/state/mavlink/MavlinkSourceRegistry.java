@@ -43,9 +43,10 @@ public class MavlinkSourceRegistry {
     this.systemSources = buildSystemSources(knownSources);
   }
 
-  /** Transaction status has no MAVLink frame and must match a configured component exactly. */
+  /** Transaction status must resolve unambiguously within this configured MAVLink source. */
   public MavlinkKnownSourceDTO getTransactionSource(int systemId, int componentId) {
-    return knownSources.get(buildSourceKey(systemId, componentId));
+    MavlinkKnownSourceDTO source = knownSources.get(buildSourceKey(systemId, componentId));
+    return source != null ? source : componentId == 0 ? systemSources.get(systemId) : null;
   }
 
   public MavlinkKnownSourceDTO getKnownSource(ProcessedFrame env) {
