@@ -141,10 +141,13 @@ final class MavlinkTransactionManager implements AutoCloseable {
       throw new IllegalArgumentException("Transaction contains no MAVLink messages");
     }
     JsonObject firstPayload = messages.getFirst().getAsJsonObject("payload");
-    int system = requiredInt(firstPayload, "target_system");
-    int component = requiredInt(firstPayload, "target_component");
-    if (system <= 0 || system > 255 || component < 0 || component > 255
-        || (targetSystem > 0 && system != targetSystem)) {
+    int system = "PACKET".equals(operation)
+        ? integer(firstPayload, "target_system", targetSystem) : requiredInt(firstPayload, "target_system");
+    int component = "PACKET".equals(operation)
+        ? integer(firstPayload, "target_component", 0) : requiredInt(firstPayload, "target_component");
+    if (system < 0 || system > 255 || component < 0 || component > 255
+        || (!"PACKET".equals(operation) && system == 0)
+        || (targetSystem > 0 && system != 0 && system != targetSystem)) {
       throw new IllegalArgumentException("Invalid MAVLink transaction target");
     }
 
