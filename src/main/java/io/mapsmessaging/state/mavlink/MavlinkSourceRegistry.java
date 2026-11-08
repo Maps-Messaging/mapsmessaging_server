@@ -43,6 +43,11 @@ public class MavlinkSourceRegistry {
     this.systemSources = buildSystemSources(knownSources);
   }
 
+  /** Transaction status has no MAVLink frame and must match a configured component exactly. */
+  public MavlinkKnownSourceDTO getTransactionSource(int systemId, int componentId) {
+    return knownSources.get(buildSourceKey(systemId, componentId));
+  }
+
   public MavlinkKnownSourceDTO getKnownSource(ProcessedFrame env) {
     int systemId = env.getFrame().getSystemId();
     String sourceKey = buildSourceKey(systemId, env.getFrame().getComponentId());
