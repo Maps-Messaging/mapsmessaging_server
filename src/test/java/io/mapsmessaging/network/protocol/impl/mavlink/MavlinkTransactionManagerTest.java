@@ -618,6 +618,27 @@ class MavlinkTransactionManagerTest {
   }
 
   @Test
+  void legacyMissionRequestUsesMissionItemIntAsRequiredByMavlink() {
+    for (int requestMessageId : new int[]{40, 51}) {
+      List<JsonObject> sent = new ArrayList<>();
+      List<JsonObject> statuses = new ArrayList<>();
+      try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+        JsonObject count = packet(44);
+        count.getAsJsonObject("payload").addProperty("count", 1);
+        JsonObject item = packet(73);
+        item.getAsJsonObject("payload").addProperty("seq", 0);
+        manager.submit(request("request-" + requestMessageId, "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+
+        manager.onFrame(inbound(requestMessageId, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+        assertEquals(2, sent.size());
+        assertEquals(73, sent.getLast().getAsJsonObject("header").get("messageId").getAsInt());
+        manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
+        assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+      }
+    }
+  }
+
+  @Test
   void completedTransactionCacheEvictsOldestEntryAfterOneHundredTwentyEightResults() {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
