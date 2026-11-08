@@ -165,7 +165,9 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
-    transactionManager.close();
+    if (transactionManager != null) {
+      transactionManager.close();
+    }
     stopHeartbeat();
     try {
       if (!session.isClosed()) {
@@ -323,7 +325,9 @@ public class MavlinkProtocol extends Protocol {
         }
       }
     }
-    transactionManager.onFrame(env);
+    if (transactionManager != null) {
+      transactionManager.onFrame(env);
+    }
     processStreamTracker(env);
     handleEvent(env, raw, socketAddress);
   }
