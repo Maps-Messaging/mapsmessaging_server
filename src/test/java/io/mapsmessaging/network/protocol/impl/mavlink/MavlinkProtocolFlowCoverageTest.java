@@ -11,6 +11,7 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
@@ -76,6 +77,49 @@ class MavlinkProtocolFlowCoverageTest {
     verify(completion).run();
     verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
     verify(fixture.factory, never()).writeTlog(any());
+  }
+
+  @Test
+  void nativeMavlinkCommandUsesManagerAndPreservesEngineCompletion() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Runnable completion = mock(Runnable.class);
+
+    fixture.protocol.sendMessage(event("ID#42#127.0.0.1:14550",
+        "{\"header\":{\"messageId\":76},\"payload\":{\"target_system\":3,\"target_component\":7,\"command\":400}}", completion));
+
+    verify(manager).submitNative(any(JsonElement.class), eq("127.0.0.1:14550"));
+    verify(completion).run();
+    verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
+  }
+
+  @Test
+  void nativeMavlinkMissionArrayUsesManagerWithoutOperationSelector() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Runnable completion = mock(Runnable.class);
+
+    fixture.protocol.sendMessage(event("ID#42#127.0.0.1:14550",
+        "[{\"header\":{\"messageId\":73},\"payload\":{\"seq\":0}}]", completion));
+
+    verify(manager).submitNative(any(JsonElement.class), eq("127.0.0.1:14550"));
+    verify(completion).run();
+  }
+
+  @Test
+  void legacyTransactionEnvelopeRemainsSupported() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Runnable completion = mock(Runnable.class);
+
+    fixture.protocol.sendMessage(event("ID#42#127.0.0.1:14550",
+        "{\"operation\":\"COMMAND\",\"transactionId\":\"old-1\",\"messages\":[]}", completion));
+
+    verify(manager).submit(any(JsonObject.class), eq("127.0.0.1:14550"));
+    verify(completion).run();
   }
 
   @Test
