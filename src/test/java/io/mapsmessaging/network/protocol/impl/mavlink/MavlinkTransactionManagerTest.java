@@ -79,6 +79,32 @@ class MavlinkTransactionManagerTest {
   }
 
   @Test
+  void terminalStatusIncludesMatchedAcknowledgementAndLastSentFrame() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = request("audit-evidence", packet(76));
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
+
+      JsonObject completed = statuses.getLast();
+      assertEquals("COMPLETED", completed.get("status").getAsString());
+      assertEquals(76, completed.getAsJsonObject("lastSent").getAsJsonObject("header").get("messageId").getAsInt());
+      JsonObject received = completed.getAsJsonObject("lastResponse");
+      assertEquals(77, received.getAsJsonObject("header").get("messageId").getAsInt());
+      assertEquals(400, received.getAsJsonObject("payload").get("command").getAsInt());
+      assertEquals(0, received.getAsJsonObject("payload").get("result").getAsInt());
+      completed.getAsJsonObject("lastResponse").addProperty("modified", true);
+
+      manager.submitNative(command, "127.0.0.1:14550");
+      JsonObject replayed = statuses.getLast().getAsJsonObject("lastResponse");
+      assertEquals(77, replayed.getAsJsonObject("header").get("messageId").getAsInt());
+      assertFalse(replayed.has("modified"));
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
   void missionSendsOnlyRequestedItemsAndReportsUploadCompletion() {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
