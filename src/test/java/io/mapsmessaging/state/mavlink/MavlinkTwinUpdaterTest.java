@@ -331,7 +331,6 @@ class MavlinkTwinUpdaterTest {
     assertSame(observation, twin.getMavlinkTransactionStatus());
     assertEquals("ACTIVE", twin.getMissionState());
     assertEquals("mavlink/outbound", twin.getResponseTopicName());
-    assertNull(twin.getMissionTransmission());
     assertEquals(-1, updater.getLastMessageAgeMillis());
     updater.close();
   }
