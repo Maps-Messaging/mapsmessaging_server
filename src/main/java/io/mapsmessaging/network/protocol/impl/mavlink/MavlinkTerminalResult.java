@@ -17,6 +17,8 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import com.google.gson.JsonObject;
+
 record MavlinkTerminalResult(String topic, String status, String reason, int attempts, int retries, int requested, String operation, int system,
-    int component, int total, String fingerprint) {
+    int component, int total, String fingerprint, JsonObject lastSent, JsonObject lastResponse) {
 }
