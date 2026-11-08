@@ -147,11 +147,8 @@ public class MavlinkProtocol extends Protocol {
       session.addSubscription(subscriptionContextBuilder.build());
     }
     outboundTopicName = outboundTopic;
-    transactionManager = new MavlinkTransactionManager(
-        this::sendTransactionFrame,
-        this::publishTransactionStatus,
-        outboundTopicName == null ? null : outboundTopicName + "/transactions",
-        key.getSystemId(),
+    transactionManager = new MavlinkTransactionManager(this::sendTransactionFrame, this::publishTransactionStatus,
+        outboundTopicName == null ? null : outboundTopicName + "/transactions", key.getSystemId(),
         mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getSystemId() : 0,
         mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getComponentId() : 0);
     if (mavlinkConfig.hasLocalMavlinkIdentity()) {
@@ -242,15 +239,7 @@ public class MavlinkProtocol extends Protocol {
 
   private void sendData(JsonObject input, String socketAddressText) {
     try {
-      overrideSequence(input);
-      validateOutboundHeader(input);
-      byte[] frame = formatter.parseFromJson(input);
-      Packet packet = new Packet(ByteBuffer.wrap(frame));
-      if (endPoint.isUDP()) {
-        packet.setFromAddress(parseSocketAddress(socketAddressText));
-      }
-      endPoint.sendPacket(packet);
-      factory.writeTlog(frame);
+      sendTransactionFrame(input, socketAddressText);
     } catch (Exception e) {
       logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), socketAddressText, e);
     }
