@@ -73,10 +73,12 @@ class MavlinkTransactionManagerTest {
 
       assertEquals(1, sent.size());
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 1, "mission_type", 0)));
-      assertEquals(2, sent.size());
-      assertEquals(1, sent.getLast().getAsJsonObject("payload").get("seq").getAsInt());
+      assertEquals(1, sent.size()); // An old upload's request must not start this upload.
 
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      assertEquals(2, sent.size());
+      assertEquals(0, sent.getLast().getAsJsonObject("payload").get("seq").getAsInt());
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 1, "mission_type", 0)));
       assertEquals(3, sent.size());
       manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
 
