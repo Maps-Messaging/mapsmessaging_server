@@ -51,7 +51,8 @@ public class MavlinkTwinConfigDTO {
 
   @Schema(
       description = "Optional exact MAVLink transaction-status topic for updating the twin's observed protocol state. Blank disables the subscription.",
-      example = "/protocol/mavlink/vehicle/outbound/transactions"
+      example = "/protocol/mavlink/vehicle/outbound/transactions",
+      nullable = true
   )
   private String transactionStatusTopic;
 
