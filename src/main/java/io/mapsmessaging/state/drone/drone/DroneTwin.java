@@ -35,6 +35,7 @@ import io.mapsmessaging.state.drone.model.EnvironmentalState;
 import io.mapsmessaging.state.drone.model.SystemState;
 import io.mapsmessaging.state.drone.model.TimeState;
 import io.mapsmessaging.state.drone.model.autopilot.AutopilotState;
+import io.mapsmessaging.state.mavlink.MavlinkTransactionStatus;
 import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
@@ -124,6 +125,9 @@ public class DroneTwin extends EntityTwin {
   @Schema(description = "Latest outbound MAVLink transmission snapshot, retained after completion.")
   @SuppressWarnings("java:S3077") // MavlinkTransmissionState publishes immutable snapshots; volatile publishes its replacement.
   private volatile io.mapsmessaging.state.mavlink.sender.MavlinkTransmissionState missionTransmission;
+
+  @Schema(description = "Latest protocol-observed MAVLink transaction status. Independent of the legacy sender.", nullable = true)
+  private MavlinkTransactionStatus mavlinkTransactionStatus;
 
   @Schema(description = "Latest STANAG task upload retry state, retained after completion.")
   // Extension callers own the map and its values; the server only publishes/replaces the reference.
