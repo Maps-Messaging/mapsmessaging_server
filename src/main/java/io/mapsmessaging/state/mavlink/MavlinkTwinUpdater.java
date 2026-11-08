@@ -331,19 +331,16 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     droneTwin.setSystemId(knownSource.getSystemId());
     droneTwin.setComponentId(knownSource.getComponentId());
     droneTwin.setModelName(droneInfo.getModelName());
-    droneTwin.setAltitudeMode(droneInfo.getAltitudeMode());
-    droneTwin.setAltitudeMeters(droneInfo.getAltitudeMeters());
     droneTwin.setSurveyRadiusMeters(droneInfo.getSurveyRadiusMeters());
     droneTwin.setArrivalToleranceMeters(droneInfo.getArrivalToleranceMeters());
     applyTaskCompletionConfiguration(droneTwin, droneInfo);
-    if (!droneInfo.isCompleteTaskOnArrivalTolerance()
-        && !droneInfo.isCompleteTaskOnAutoToLoiter()) {
+    if (!droneInfo.isCompleteTaskOnArrivalTolerance() && !droneInfo.isCompleteTaskOnAutoToLoiter()) {
       logger.log(MAVLINK_TASK_COMPLETION_GATES_DISABLED, twinId);
     }
     if (droneInfo.getCancelAction() != null) {
       droneTwin.setStopAction(droneInfo.getCancelAction());
     } else {
-      droneTwin.setStopAction(StopActionEnum.STOP);
+      droneTwin.setStopAction(StopActionEnum.HOLD_POSITION);
     }
     if (droneInfo.getCapabilities() != null) {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
@@ -361,16 +358,8 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     } else if (droneInfo.getBatteryCapacityAh() > 0) {
 
     }
-
     EntityTwin registeredTwin = twinManager.registerTwin(droneTwin, context);
-
-    logger.log(
-        MAVLINK_STATE_TWIN_CREATED,
-        twinId,
-        env.getFrame().getSystemId(),
-        env.getFrame().getComponentId()
-    );
-
+    logger.log(MAVLINK_STATE_TWIN_CREATED, twinId, env.getFrame().getSystemId(), env.getFrame().getComponentId());
     return registeredTwin;
   }
 

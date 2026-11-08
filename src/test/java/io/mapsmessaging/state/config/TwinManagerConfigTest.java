@@ -415,24 +415,6 @@ class TwinManagerConfigTest {
     }
   }
 
-  @Test
-  void drone_altitude_preserves_exact_key_and_value_through_round_trip()
-      throws ReflectiveOperationException {
-    ConfigurationProperties drone = droneInfoProperties("drone-altitude", UUID.randomUUID());
-    drone.put("altitudeMeters", 125.5);
-    ConfigurationProperties root = new ConfigurationProperties();
-    root.put("droneInfo", drone);
-
-    TwinManagerConfig config = newTwinManagerConfig(root);
-    ConfigurationProperties packed = config.toConfigurationProperties();
-    List<?> entries = assertInstanceOf(List.class, packed.get("droneInfo"));
-    ConfigurationProperties packedDrone =
-        assertInstanceOf(ConfigurationProperties.class, entries.getFirst());
-    assertEquals(125.5, packedDrone.getDoubleProperty("altitudeMeters", -1.0));
-    TwinManagerConfig restored = newTwinManagerConfig(packed);
-    assertEquals(125.5, restored.getDroneInfo().getFirst().getAltitudeMeters(), 0.0);
-  }
-
   private ConfigurationProperties adapterProperties(String topic, int interval) {
     ConfigurationProperties properties = new ConfigurationProperties();
     properties.put("enabled", true);

@@ -22,14 +22,12 @@ package io.mapsmessaging.state.drone.drone;
 import static io.mapsmessaging.state.drone.util.SyntheticMmsiGenerator.generateSyntheticMmsi;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.mapsmessaging.state.config.AltitudeMode;
 import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.capability.TaskCapabilities;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.model.Contact;
-import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.DroneContactManager;
 import io.mapsmessaging.state.drone.model.EnvironmentalState;
 import io.mapsmessaging.state.drone.model.SystemState;
@@ -64,12 +62,6 @@ public class DroneTwin extends EntityTwin {
 
   @Schema(description = "Configured UxV model name used to resolve the command model implementation.", example = "generic-px4-uav", nullable = true)
   private String modelName;
-
-  @Schema(description = "Configured source used to resolve task altitude.", nullable = true)
-  private AltitudeMode altitudeMode;
-
-  @Schema(description = "Configured home-relative altitude in metres when altitudeMode is FIXED.", nullable = true)
-  private Double altitudeMeters;
 
   @Schema(description = "Synthetic or assigned MMSI used for external maritime-style identity mapping.", example = "999001234", nullable = true)
   private Long mmsi;

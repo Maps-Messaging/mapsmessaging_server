@@ -80,20 +80,6 @@ public class DroneInfoDTO {
       defaultValue = "false")
   private boolean completeTaskOnAutoToLoiter = false;
 
-  @Schema(
-      description = "Source used to resolve the mission altitude for vehicle-specific tasking.",
-      example = "FIXED",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true)
-  private AltitudeMode altitudeMode;
-
-  @Schema(
-      description = "Configured home-relative mission altitude in metres when altitudeMode is FIXED.",
-      example = "-10.0",
-      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
-      nullable = true)
-  private Double altitudeMeters;
-
   @Schema(description = "Drone description", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE, nullable = true)
   private Map<String, Object> description;
 
@@ -107,13 +93,13 @@ public class DroneInfoDTO {
   private TaskCapabilities capabilities = new TaskCapabilities();
 
   @Schema(description = "Action performed when the current task is cancelled.")
-  private StopActionEnum cancelAction = StopActionEnum.STOP;
+  private StopActionEnum cancelAction = StopActionEnum.HOLD_POSITION;
 
   @Schema(description = "Action performed when a mission completes normally.")
-  private StopActionEnum missionEndAction = StopActionEnum.STOP;
+  private StopActionEnum missionEndAction = StopActionEnum.HOLD_POSITION;
 
   @Schema(description = "Action performed when a mission exceeds its configured duration.")
-  private StopActionEnum missionTimeoutAction = StopActionEnum.STOP;
+  private StopActionEnum missionTimeoutAction = StopActionEnum.HOLD_POSITION;
 
   public List<DataProductConfig> getDataProducts() {
     if (dataProducts == null) {

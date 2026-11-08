@@ -21,7 +21,6 @@ package io.mapsmessaging.state.mavlink;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.mavlink.ProcessedFrame;
-import io.mapsmessaging.state.config.AltitudeMode;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.StopActionEnum;
 import io.mapsmessaging.state.config.VehicleClass;
@@ -209,8 +208,6 @@ class MavlinkTwinUpdaterTest {
     droneInfo.setBatteryCapacityHours(4.5);
     droneInfo.setCancelAction(StopActionEnum.RETURN_TO_HOME);
     droneInfo.setArrivalToleranceMeters(35.0d);
-    droneInfo.setAltitudeMode(AltitudeMode.FIXED);
-    droneInfo.setAltitudeMeters(7.5d);
     droneInfo.setDescription(Map.of("role", "survey"));
     droneInfo.setSpecialization(Map.of(
         "$discriminator", "NodeSpecializationTypeEnum_SURFACE_VESSEL",
@@ -233,15 +230,10 @@ class MavlinkTwinUpdaterTest {
     assertEquals(4.5, twin.getBatteryCapacityHours());
     assertEquals(StopActionEnum.RETURN_TO_HOME, twin.getStopAction());
     assertEquals(35.0d, twin.getArrivalToleranceMeters());
-    assertEquals(AltitudeMode.FIXED, twin.getAltitudeMode());
-    assertEquals(7.5d, twin.getAltitudeMeters());
     assertEquals("mavlink/outbound", twin.getResponseTopicName());
     assertEquals("outbound-2", twin.getUniqueOutboundIdentifier());
     assertEquals("survey", twin.getDescription().get("role"));
-    assertEquals(
-        "NodeSpecializationTypeEnum_SURFACE_VESSEL",
-        twin.getSpecialization().get("$discriminator")
-    );
+    assertEquals("NodeSpecializationTypeEnum_SURFACE_VESSEL", twin.getSpecialization().get("$discriminator"));
     Map<?, ?> surfaceVessel = assertInstanceOf(Map.class, twin.getSpecialization().get("surface_vessel"));
     assertEquals("NavalVesselTypeEnum_UNKNOWN", surfaceVessel.get("app11_vessel_type"));
     assertEquals("A-M-F-Q", twin.getAttributes().get("cotClassification"));

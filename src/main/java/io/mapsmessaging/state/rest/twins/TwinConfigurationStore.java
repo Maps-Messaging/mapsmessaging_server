@@ -22,7 +22,6 @@ package io.mapsmessaging.state.rest.twins;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
-import io.mapsmessaging.state.config.AltitudeMode;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import io.mapsmessaging.state.config.TwinManagerConfig;
@@ -544,17 +543,7 @@ class TwinConfigurationStore {
     validateNonNegativeFinite(droneInfo.getBatteryCapacityHours(), "batteryCapacityHours");
     validateOptionalPositiveFinite(droneInfo.getRangeMeters(), "rangeMeters");
     validateOptionalPositiveFinite(droneInfo.getSurveyRadiusMeters(), "surveyRadiusMeters");
-    validateOptionalPositiveFinite(
-        droneInfo.getArrivalToleranceMeters(), "arrivalToleranceMeters");
-    if (droneInfo.getAltitudeMode() == AltitudeMode.FIXED
-        && droneInfo.getAltitudeMeters() == null) {
-      throw new TwinConfigurationException(
-          "altitudeMeters is required when altitudeMode is FIXED", 400);
-    }
-    if (droneInfo.getAltitudeMeters() != null
-        && !Double.isFinite(droneInfo.getAltitudeMeters())) {
-      throw new TwinConfigurationException("altitudeMeters must be finite", 400);
-    }
+    validateOptionalPositiveFinite(droneInfo.getArrivalToleranceMeters(), "arrivalToleranceMeters");
     validateTaskCapabilities(droneInfo.getCapabilities());
   }
 

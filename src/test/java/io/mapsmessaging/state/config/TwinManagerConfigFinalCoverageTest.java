@@ -10,23 +10,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class TwinManagerConfigFinalCoverageTest {
 
   @Test
-  void altitudeModeParserUsesDefaultForMissingValuesAndNormalizesCase() throws Exception {
-    TwinManagerConfig config = new TwinManagerConfig();
-    Method method = TwinManagerConfig.class.getDeclaredMethod(
-        "parseAltitudeMode", String.class, AltitudeMode.class);
-    method.setAccessible(true);
-
-    assertEquals(AltitudeMode.CURRENT, method.invoke(config, null, AltitudeMode.CURRENT));
-    assertEquals(AltitudeMode.CURRENT, method.invoke(config, " ", AltitudeMode.CURRENT));
-    assertEquals(AltitudeMode.FIXED, method.invoke(config, " fixed ", AltitudeMode.CURRENT));
-    assertEquals(AltitudeMode.TASK, method.invoke(config, "task", AltitudeMode.CURRENT));
-  }
-
-  @Test
   void messageEncodingParserUsesDefaultAndAcceptsLowercaseNames() throws Exception {
     TwinManagerConfig config = new TwinManagerConfig();
-    Method method = TwinManagerConfig.class.getDeclaredMethod(
-        "parseMessageEncoding", String.class, MessageEncodingEnum.class);
+    Method method = TwinManagerConfig.class.getDeclaredMethod("parseMessageEncoding", String.class, MessageEncodingEnum.class);
     method.setAccessible(true);
 
     assertEquals(

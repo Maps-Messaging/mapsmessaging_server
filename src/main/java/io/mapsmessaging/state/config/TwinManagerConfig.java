@@ -465,14 +465,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     droneInfo.setRangeMeters(readOptionalPositiveDouble(properties, "rangeMeters"));
     droneInfo.setSurveyRadiusMeters(readOptionalPositiveDouble(properties, "surveyRadiusMeters"));
     droneInfo.setArrivalToleranceMeters(readOptionalPositiveDouble(properties, "arrivalToleranceMeters"));
-    droneInfo.setAltitudeMode(parseAltitudeMode(properties.getProperty("altitudeMode", null), droneInfo.getAltitudeMode()));
-    if (properties.containsKey(ALTITUDE_METERS)) {
-      double altitudeMeters = properties.getDoubleProperty(ALTITUDE_METERS, Double.NaN);
-      if (!Double.isFinite(altitudeMeters)) {
-        throw new IllegalArgumentException("altitudeMeters must be a finite value");
-      }
-      droneInfo.setAltitudeMeters(altitudeMeters);
-    }
     droneInfo.setMessageEncoding(parseMessageEncoding(properties.getProperty("messageEncoding", null), droneInfo.getMessageEncoding()));
     StopActionEnum legacyStopAction = parseTerminalAction(properties.getProperty("stopAction", null), droneInfo.getCancelAction());
     droneInfo.setCancelAction(parseTerminalAction(properties.getProperty("cancelAction", null), legacyStopAction));
@@ -502,14 +494,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
     double value = properties.getDoubleProperty(propertyName, 0.0d);
     return Double.isFinite(value) && value > 0.0d ? value : null;
-  }
-
-  private AltitudeMode parseAltitudeMode(String value, AltitudeMode defaultValue) {
-    if (value == null || value.isBlank()) {
-      return defaultValue;
-    }
-
-    return AltitudeMode.valueOf(value.trim().toUpperCase(Locale.ROOT));
   }
 
   private MessageEncodingEnum parseMessageEncoding(String value, MessageEncodingEnum defaultValue) {
@@ -559,15 +543,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
           && droneInfo.getArrivalToleranceMeters() > 0.0d) {
         properties.put(
             "arrivalToleranceMeters", droneInfo.getArrivalToleranceMeters());
-      }
-
-      if (droneInfo.getAltitudeMode() != null) {
-        properties.put("altitudeMode", droneInfo.getAltitudeMode().name());
-      }
-
-      if (droneInfo.getAltitudeMeters() != null
-          && Double.isFinite(droneInfo.getAltitudeMeters())) {
-        properties.put(ALTITUDE_METERS, droneInfo.getAltitudeMeters());
       }
 
       if (droneInfo.getMessageEncoding() != null) {
