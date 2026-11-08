@@ -113,6 +113,14 @@ class MavlinkSourceRegistryTest {
     assertNull(registry.getTransactionSource(19, 42));
   }
 
+  @Test
+  void broadcastTargetResolvesOnlyWhenSystemHasOneConfiguredVehicle() {
+    MavlinkKnownSourceDTO autopilot = source("drone-1", 17, 42);
+    MavlinkKnownSourceDTO camera = source("camera-1", 17, 154);
+    assertSame(autopilot, new MavlinkSourceRegistry(config(autopilot)).getTransactionSource(17, 0));
+    assertNull(new MavlinkSourceRegistry(config(autopilot, camera)).getTransactionSource(17, 0));
+  }
+
   private MavlinkTwinConfigDTO config(MavlinkKnownSourceDTO... sources) {
     MavlinkTwinConfigDTO config = new MavlinkTwinConfigDTO();
     config.setKnownSources(List.of(sources));
