@@ -111,6 +111,10 @@ final class MavlinkTransactionManager implements AutoCloseable {
       request.add("messages", input.deepCopy());
     } else if (input.isJsonObject()) {
       JsonObject object = input.getAsJsonObject();
+      if (object.has("operation")) {
+        reject(defaultStatusTopic, null, null, destination, "Unsupported operation envelope; submit MAVLink JSON directly");
+        return;
+      }
       if (object.has("header")) {
         request = new JsonObject();
         JsonArray messages = new JsonArray();
@@ -135,7 +139,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     submit(request, destination);
   }
 
-  synchronized void submit(JsonObject request, String destination) {
+  private void submit(JsonObject request, String destination) {
     String id = null;
     String topic = defaultStatusTopic;
     String operation = null;
@@ -143,14 +147,11 @@ final class MavlinkTransactionManager implements AutoCloseable {
     try {
       id = text(request, "transactionId", null);
       topic = text(request, "statusTopic", defaultStatusTopic);
-      operation = text(request, "operation", "");
-      if (operation.isBlank()) {
-        operation = inferOperation(request);
-        if (id == null || id.isBlank()) {
-          id = UUID.randomUUID().toString();
-        }
+      operation = inferOperation(request);
+      if (id == null || id.isBlank()) {
+        id = UUID.randomUUID().toString();
       }
-      fingerprint = "CANCEL".equals(operation) ? null : fingerprint(request, destination);
+      fingerprint = fingerprint(request, destination);
     } catch (RuntimeException exception) {
       reject(topic, id, operation, destination, "Invalid transaction request: " + exception.getMessage());
       return;
@@ -159,7 +160,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
       reject(topic, id, operation, destination, "Missing transactionId");
       return;
     }
-    if (active != null && active.id.equals(id) && !"CANCEL".equals(operation)) {
+    if (active != null && active.id.equals(id)) {
       if (!active.fingerprint.equals(fingerprint)) {
         reject(topic, id, operation, destination, "Transaction ID reused with different request");
       } else {
@@ -169,21 +170,11 @@ final class MavlinkTransactionManager implements AutoCloseable {
     }
     TerminalResult previous = recentResults.get(id);
     if (previous != null) {
-      if ("CANCEL".equals(operation)) {
-        reject(topic, id, operation, destination, "Transaction already completed");
-      } else if (!previous.fingerprint().equals(fingerprint)) {
+      if (!previous.fingerprint().equals(fingerprint)) {
         reject(topic, id, operation, destination, "Transaction ID reused with different request");
       } else {
         publish(previous.topic(), id, previous.status(), previous.reason(), previous.attempts(), previous.retries(), previous.requested(),
             previous.operation(), previous.system(), previous.component(), previous.total());
-      }
-      return;
-    }
-    if ("CANCEL".equals(operation)) {
-      if (active != null && active.id.equals(id) && samePeer(active.destination, destination)) {
-        finish(active, "CANCELLED", "Cancelled by requester");
-      } else {
-        reject(topic, id, operation, destination, "No matching active transaction for destination");
       }
       return;
     }
@@ -204,6 +195,14 @@ final class MavlinkTransactionManager implements AutoCloseable {
       send(transaction, 0);
     } catch (RuntimeException exception) {
       reject(topic, id, operation, destination, exception.getMessage());
+    }
+  }
+
+  synchronized void cancel(String id, String destination) {
+    if (active != null && active.id.equals(id) && samePeer(active.destination, destination)) {
+      finish(active, "CANCELLED", "Cancelled by requester");
+    } else {
+      reject(defaultStatusTopic, id, null, destination, "No matching active transaction for destination");
     }
   }
 
@@ -230,10 +229,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
   }
 
   private Transaction prepare(JsonObject request, String destination, String topic, String id, String operation) {
-    if (!"PACKET".equals(operation) && !"COMMAND".equals(operation) && !"MISSION_UPLOAD".equals(operation)) {
-      throw new IllegalArgumentException("Unsupported transaction operation: " + operation);
-    }
-    JsonElement element = request.get("messages");
+      JsonElement element = request.get("messages");
     if (element == null || !element.isJsonArray()) {
       throw new IllegalArgumentException("Transaction requires an array of MAVLink messages");
     }
