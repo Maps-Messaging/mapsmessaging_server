@@ -75,7 +75,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
   }
 
   private static final Logger logger = LoggerFactory.getLogger(MavlinkTransactionManager.class);
-  private static final Gson AUDIT_GSON = new Gson();
+  private static final Gson AUDIT_GSON = GsonFactory.createStrictJsonWithSafeFloats();
   private static final int MAX_RECENT_RESULTS = 128;
 
   private final WireSender wireSender;
