@@ -95,6 +95,7 @@ public class MavlinkProtocol extends Protocol {
   private final boolean storeOffline;
   private final AtomicInteger sequenceCounter = new AtomicInteger(0);
   private final MavlinkHeartbeatEmitter heartbeatEmitter;
+  private final MavlinkTransactionManager transactionManager;
   private ScheduledFuture<?> heartbeatFuture;
   private boolean detectedDialect = false;
 
@@ -146,6 +147,13 @@ public class MavlinkProtocol extends Protocol {
       session.addSubscription(subscriptionContextBuilder.build());
     }
     outboundTopicName = outboundTopic;
+    transactionManager = new MavlinkTransactionManager(
+        this::sendTransactionFrame,
+        this::publishTransactionStatus,
+        outboundTopicName == null ? null : outboundTopicName + "/transactions",
+        key.getSystemId(),
+        mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getSystemId() : 0,
+        mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getComponentId() : 0);
     if (mavlinkConfig.hasLocalMavlinkIdentity()) {
       SocketAddress heartbeatAddress = endPoint.isUDP() ? parseSocketAddress(endPoint.getRemoteSocketAddress()) : null;
       heartbeatEmitter = new MavlinkHeartbeatEmitter(sequenceCounter, endPoint, mavlinkConfig, heartbeatAddress);
@@ -157,6 +165,7 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    transactionManager.close();
     stopHeartbeat();
     try {
       if (!session.isClosed()) {
@@ -216,7 +225,12 @@ public class MavlinkProtocol extends Protocol {
       }
 
       String json = new String(messageEvent.getMessage().getOpaqueData(), StandardCharsets.UTF_8);
-      sendData(JsonParser.parseString(json).getAsJsonObject(), parts[2]);
+      JsonObject outbound = JsonParser.parseString(json).getAsJsonObject();
+      if (outbound.has("operation") && (outbound.has("messages") || outbound.has("transactionId"))) {
+        transactionManager.submit(outbound, parts[2]);
+      } else {
+        sendData(outbound, parts[2]);
+      }
     } catch (RuntimeException e) {
       logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), "message-event", e);
     } finally {
@@ -238,6 +252,29 @@ public class MavlinkProtocol extends Protocol {
     } catch (Exception e) {
       logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), socketAddressText, e);
     }
+  }
+
+  private void sendTransactionFrame(JsonObject input, String socketAddressText) throws Exception {
+    overrideSequence(input);
+    validateOutboundHeader(input);
+    byte[] frame = formatter.parseFromJson(input);
+    Packet packet = new Packet(ByteBuffer.wrap(frame));
+    if (endPoint.isUDP()) {
+      packet.setFromAddress(parseSocketAddress(socketAddressText));
+    }
+    endPoint.sendPacket(packet);
+    factory.writeTlog(frame);
+  }
+
+  private void publishTransactionStatus(String topic, JsonObject status) {
+    Message message = new MessageBuilder()
+        .setContentType("application/json")
+        .setOpaqueData(status.toString().getBytes(StandardCharsets.UTF_8))
+        .setQoS(qos)
+        .setRetain(false)
+        .storeOffline(storeOffline)
+        .build();
+    sendMessage(topic, message);
   }
 
   public static String toHexDump(byte[] data) {
@@ -286,6 +323,7 @@ public class MavlinkProtocol extends Protocol {
         }
       }
     }
+    transactionManager.onFrame(env);
     processStreamTracker(env);
     handleEvent(env, raw, socketAddress);
   }
