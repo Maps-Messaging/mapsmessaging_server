@@ -50,7 +50,7 @@ public class ModelStoreApiTest extends ApiTestBase {
     if (response.statusCode() == 406) {
       response.then()
           .contentType(ContentType.JSON)
-          .body("status", not(isEmptyOrNullString()));
+          .body("status", not(is(emptyOrNullString())));
     }
   }
 
@@ -65,7 +65,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .then()
         .statusCode(400)
         .contentType(ContentType.JSON)
-        .body("status", not(isEmptyOrNullString()));
+        .body("status", not(is(emptyOrNullString())));
   }
 
   @Test
@@ -81,7 +81,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .then()
         .statusCode(406)
         .contentType(ContentType.JSON)
-        .body("status", not(isEmptyOrNullString()));
+        .body("status", not(is(emptyOrNullString())));
   }
 
   @Test
@@ -93,7 +93,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .then()
         .statusCode(400)
         .contentType(ContentType.JSON)
-        .body("status", not(isEmptyOrNullString()));
+        .body("status", not(is(emptyOrNullString())));
   }
 
   @Test
@@ -105,7 +105,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .then()
         .statusCode(400)
         .contentType(ContentType.JSON)
-        .body("status", not(isEmptyOrNullString()));
+        .body("status", not(is(emptyOrNullString())));
   }
 
   @Test
@@ -124,7 +124,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .then()
         .statusCode(200)
         .contentType(ContentType.JSON)
-        .body("status", not(isEmptyOrNullString()));
+        .body("status", not(is(emptyOrNullString())));
 
     // head exists
     givenAuthenticated()
@@ -179,7 +179,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .then()
         .statusCode(404)
         .contentType(ContentType.JSON)
-        .body("status", not(isEmptyOrNullString()));
+        .body("status", not(is(emptyOrNullString())));
   }
 
   @Test
@@ -194,7 +194,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .then()
         .statusCode(404)
         .contentType(ContentType.JSON)
-        .body("status", not(isEmptyOrNullString()));
+        .body("status", not(is(emptyOrNullString())));
   }
 
   @Test
@@ -209,7 +209,7 @@ public class ModelStoreApiTest extends ApiTestBase {
         .then()
         .statusCode(404)
         .contentType(ContentType.JSON)
-        .body("status", not(isEmptyOrNullString()));
+        .body("status", not(is(emptyOrNullString())));
   }
 
   private void deleteIfSafe(String modelName) {
