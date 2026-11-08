@@ -109,7 +109,7 @@ class MavlinkProtocolFlowCoverageTest {
   }
 
   @Test
-  void legacyTransactionEnvelopeRemainsSupported() throws Exception {
+  void obsoleteOperationEnvelopeRoutesToNativeValidation() throws Exception {
     Fixture fixture = fixture();
     MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
     setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
@@ -118,7 +118,7 @@ class MavlinkProtocolFlowCoverageTest {
     fixture.protocol.sendMessage(event("ID#42#127.0.0.1:14550",
         "{\"operation\":\"COMMAND\",\"transactionId\":\"old-1\",\"messages\":[]}", completion));
 
-    verify(manager).submit(any(JsonObject.class), eq("127.0.0.1:14550"));
+    verify(manager).submitNative(any(JsonElement.class), eq("127.0.0.1:14550"));
     verify(completion).run();
   }
 
@@ -131,10 +131,10 @@ class MavlinkProtocolFlowCoverageTest {
 
     fixture.protocol.sendMessage(event(
         "ID#42#127.0.0.1:14550",
-        "{\"transactionId\":\"command-1\",\"operation\":\"COMMAND\",\"messages\":[]}",
+        "{\"transactionId\":\"command-1\",\"messages\":[]}",
         completion));
 
-    verify(manager).submit(any(JsonObject.class), eq("127.0.0.1:14550"));
+    verify(manager).submitNative(any(JsonElement.class), eq("127.0.0.1:14550"));
     verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
     verify(completion).run();
   }
@@ -171,11 +171,8 @@ class MavlinkProtocolFlowCoverageTest {
     String command = """
         {
           "transactionId": "engine-command",
-          "operation": "COMMAND",
-          "messages": [{
-            "header": {"messageId": 76, "systemId": 255, "componentId": 190},
-            "payload": {"target_system": 3, "target_component": 7, "command": 400}
-          }]
+          "header": {"messageId": 76, "systemId": 255, "componentId": 190},
+          "payload": {"target_system": 3, "target_component": 7, "command": 400}
         }
         """;
 
