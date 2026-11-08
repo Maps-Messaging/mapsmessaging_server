@@ -83,7 +83,7 @@ final class MavlinkTransactionManager implements AutoCloseable {
     String id = text(request, "transactionId", null);
     String topic = text(request, "statusTopic", defaultStatusTopic);
     if (id == null || id.isBlank()) {
-      publish(topic, id, "REJECTED", "Missing transactionId", 0, 0, 0, null);
+      publish(topic, id, "REJECTED", "Missing transactionId", 0, 0, 0, null, 0, 0, 0);
       return;
     }
     String operation = text(request, "operation", "");
@@ -91,16 +91,16 @@ final class MavlinkTransactionManager implements AutoCloseable {
       if (active != null && active.id.equals(id)) {
         finish(active, "CANCELLED", "Cancelled by requester");
       } else {
-        publish(topic, id, "REJECTED", "No matching active transaction", 0, 0, 0, null);
+        publish(topic, id, "REJECTED", "No matching active transaction", 0, 0, 0, null, 0, 0, 0);
       }
       return;
     }
     if (closed) {
-      publish(topic, id, "REJECTED", "Protocol connection is closed", 0, 0, 0, null);
+      publish(topic, id, "REJECTED", "Protocol connection is closed", 0, 0, 0, null, 0, 0, 0);
       return;
     }
     if (active != null) {
-      publish(topic, id, "REJECTED", "Another transaction is active", 0, 0, 0, null);
+      publish(topic, id, "REJECTED", "Another transaction is active", 0, 0, 0, null, 0, 0, 0);
       return;
     }
 
@@ -110,13 +110,14 @@ final class MavlinkTransactionManager implements AutoCloseable {
       publish(transaction, "QUEUED", null);
       send(transaction, 0);
     } catch (RuntimeException exception) {
-      publish(topic, id, "REJECTED", exception.getMessage(), 0, 0, 0, operation);
+      publish(topic, id, "REJECTED", exception.getMessage(), 0, 0, 0, operation, 0, 0, 0);
     }
   }
 
   private Transaction prepare(JsonObject request, String destination, String topic, String id,
       String operation) {
-    if (!"COMMAND".equals(operation) && !"MISSION_UPLOAD".equals(operation)) {
+    if (!"PACKET".equals(operation) && !"COMMAND".equals(operation)
+        && !"MISSION_UPLOAD".equals(operation)) {
       throw new IllegalArgumentException("Unsupported transaction operation: " + operation);
     }
     JsonElement element = request.get("messages");
@@ -147,7 +148,11 @@ final class MavlinkTransactionManager implements AutoCloseable {
       throw new IllegalArgumentException("Invalid MAVLink transaction target");
     }
 
-    if ("COMMAND".equals(operation)) {
+    if ("PACKET".equals(operation)) {
+      if (messages.size() != 1) {
+        throw new IllegalArgumentException("PACKET requires exactly one MAVLink message");
+      }
+    } else if ("COMMAND".equals(operation)) {
       if (messages.size() != 1 || (messageId(messages.getFirst()) != COMMAND_LONG
           && messageId(messages.getFirst()) != COMMAND_INT)) {
         throw new IllegalArgumentException("COMMAND requires exactly one COMMAND_LONG/COMMAND_INT");
@@ -243,8 +248,13 @@ final class MavlinkTransactionManager implements AutoCloseable {
       wireSender.send(transaction.messages.get(index).deepCopy(), transaction.destination);
       transaction.lastIndex = index;
       transaction.attempts++;
+      if ("PACKET".equals(transaction.operation)) {
+        finish(transaction, "SENT", null);
+        return;
+      }
       scheduleTimeout(transaction);
-      publish(transaction, index == 0 ? "WAITING_FOR_ACK" : "WAITING_FOR_MISSION_REQUEST", null);
+      publish(transaction, "MISSION_UPLOAD".equals(transaction.operation)
+          ? "WAITING_FOR_MISSION_REQUEST" : "WAITING_FOR_ACK", null);
     } catch (Exception exception) {
       finish(transaction, "FAILED", "MAVLink transmission failed: " + exception.getMessage());
     }
@@ -287,11 +297,14 @@ final class MavlinkTransactionManager implements AutoCloseable {
 
   private void publish(Transaction transaction, String status, String reason) {
     publish(transaction.topic, transaction.id, status, reason, transaction.attempts,
-        transaction.retries, transaction.requested.cardinality(), transaction.operation);
+        transaction.retries, transaction.requested.cardinality(), transaction.operation,
+        transaction.system, transaction.component, transaction.messages.size() -
+            ("MISSION_UPLOAD".equals(transaction.operation) ? 1 : 0));
   }
 
   private void publish(String topic, String id, String status, String reason,
-      int attempts, int retries, int requested, String operation) {
+      int attempts, int retries, int requested, String operation,
+      int system, int component, int total) {
     if (topic == null || topic.isBlank()) {
       return;
     }
@@ -306,6 +319,11 @@ final class MavlinkTransactionManager implements AutoCloseable {
     event.addProperty("attempts", attempts);
     event.addProperty("retryCount", retries);
     event.addProperty("requestedItems", requested);
+    event.addProperty("totalItems", total);
+    if (system > 0) {
+      event.addProperty("systemId", system);
+      event.addProperty("componentId", component);
+    }
     if (reason != null) {
       event.addProperty("reason", reason);
     }
