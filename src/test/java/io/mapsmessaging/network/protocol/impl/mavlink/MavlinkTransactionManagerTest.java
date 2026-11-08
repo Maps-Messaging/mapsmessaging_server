@@ -210,6 +210,82 @@ class MavlinkTransactionManagerTest {
     }
   }
 
+  @Test
+  void rejectedCommandAckFailsWithoutRetry() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submit(request("rejected", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 2)));
+      assertEquals("FAILED", statuses.getLast().get("status").getAsString());
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
+  void missionRetryStopsAtConfiguredLimit() throws Exception {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject count = packet(44);
+      count.getAsJsonObject("payload").addProperty("count", 1);
+      JsonObject item = packet(73);
+      item.getAsJsonObject("payload").addProperty("seq", 0);
+      manager.submit(request("retry-limit", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      for (int attempt = 0; attempt <= MavlinkTransactionManager.DEFAULT_MAX_RETRIES; attempt++) {
+        triggerTimeout(manager);
+      }
+      assertEquals(MavlinkTransactionManager.DEFAULT_MAX_RETRIES + 1, sent.size());
+      assertEquals("TIMED_OUT", statuses.getLast().get("status").getAsString());
+      assertEquals(MavlinkTransactionManager.DEFAULT_MAX_RETRIES, statuses.getLast().get("retryCount").getAsInt());
+    }
+  }
+
+  @Test
+  void closingTransactionReportsClosedAndRejectsFurtherCommands() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    MavlinkTransactionManager manager = manager(sent, statuses);
+    manager.submit(request("closing", "COMMAND", packet(76)), "127.0.0.1:14550");
+    manager.close();
+    assertEquals("CLOSED", statuses.getLast().get("status").getAsString());
+    manager.submit(request("after-close", "COMMAND", packet(76)), "127.0.0.1:14550");
+    assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
+    assertEquals(1, sent.size());
+  }
+
+  @Test
+  void invalidMissionItemAndWrongTargetAreRejectedBeforeSending() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject count = packet(44);
+      count.getAsJsonObject("payload").addProperty("count", 1);
+      JsonObject invalid = packet(73);
+      invalid.getAsJsonObject("payload").addProperty("seq", 4);
+      manager.submit(request("bad-mission", "MISSION_UPLOAD", count, invalid), "127.0.0.1:14550");
+      assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
+
+      JsonObject wrongTarget = packet(76);
+      wrongTarget.getAsJsonObject("payload").addProperty("target_system", 2);
+      manager.submit(request("bad-target", "COMMAND", wrongTarget), "127.0.0.1:14550");
+      assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
+      assertEquals(0, sent.size());
+    }
+  }
+
+  @Test
+  void wireSendExceptionFailsTransactionWithoutMaskingFailure() {
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
+        (message, destination) -> { throw new java.io.IOException("simulated endpoint failure"); },
+        (topic, status) -> statuses.add(status.deepCopy()), "/status", 1, 255, 190)) {
+      manager.submit(request("send-failed", "COMMAND", packet(76)), "127.0.0.1:14550");
+      assertEquals("FAILED", statuses.getLast().get("status").getAsString());
+      assertTrue(statuses.getLast().get("reason").getAsString().contains("simulated endpoint failure"));
+    }
+  }
+
   private static void triggerTimeout(MavlinkTransactionManager manager) throws Exception {
     Field activeField = MavlinkTransactionManager.class.getDeclaredField("active");
     activeField.setAccessible(true);
