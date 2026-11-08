@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.*;
@@ -224,17 +225,36 @@ public class MavlinkProtocol extends Protocol {
       }
 
       String json = new String(messageEvent.getMessage().getOpaqueData(), StandardCharsets.UTF_8);
-      JsonObject outbound = JsonParser.parseString(json).getAsJsonObject();
-      if (outbound.has("operation") && (outbound.has("messages") || outbound.has("transactionId"))) {
-        transactionManager.submit(outbound, parts[2]);
+      JsonElement outbound = JsonParser.parseString(json);
+      if (outbound.isJsonArray()) {
+        transactionManager.submitNative(outbound, parts[2]);
       } else {
-        sendData(outbound, parts[2]);
+        JsonObject request = outbound.getAsJsonObject();
+        if (request.has("operation") && (request.has("messages") || request.has("transactionId"))) {
+          transactionManager.submit(request, parts[2]);
+        } else if (request.has("messages") || isMavlinkCommand(request)) {
+          transactionManager.submitNative(request, parts[2]);
+        } else {
+          sendData(request, parts[2]);
+        }
       }
     } catch (RuntimeException e) {
       logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), "message-event", e);
     } finally {
       messageEvent.getCompletionTask().run();
     }
+  }
+
+  private static boolean isMavlinkCommand(JsonObject request) {
+    if (!request.has("header") || !request.get("header").isJsonObject()) {
+      return false;
+    }
+    JsonObject header = request.getAsJsonObject("header");
+    if (!header.has("messageId") || header.get("messageId").isJsonNull()) {
+      return false;
+    }
+    int messageId = header.get("messageId").getAsInt();
+    return messageId == 75 || messageId == 76;
   }
 
   private void sendData(JsonObject input, String socketAddressText) {
