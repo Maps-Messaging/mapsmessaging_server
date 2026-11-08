@@ -49,9 +49,17 @@ For an array of MAVLink mission items, the protocol generates `MISSION_COUNT`, s
 
 One transaction may be active per MAVLink protocol connection. A concurrent request is rejected without disturbing the active exchange.
 
-## Local transaction lifecycle
+## Local transaction lifecycle and cancellation
 
-Local cancellation is an internal transaction-manager action, not an additional MAVLink JSON command or vehicle flight-mode command. Transport/session shutdown closes outstanding local transactions. No `operation: CANCEL` envelope is accepted.
+To cancel an active transaction, publish a JSON object containing only its transaction ID to the dedicated control topic `<configured outbound topic>/cancel`:
+
+```json
+{"transactionId":"upload-1"}
+```
+
+Use the same `ID#<endpointId>#<remoteSocketAddress>` message correlation as the original request. The protocol requires the transaction ID and matching MAVLink peer; an invalid or unrelated request cannot cancel another transaction. A successful cancellation reports `CANCELLED` through the transaction's configured status topic. Cancellation stops the local transaction and timeout; it does not send a vehicle flight command or undo an already accepted command or mission. A failed cancellation is reported as `REJECTED` on the default transaction-status topic.
+
+The cancellation topic is separate from the outbound MAVLink JSON topic and accepts no `operation` selector. Transport/session shutdown still closes outstanding local transactions.
 
 ## Engine status
 
