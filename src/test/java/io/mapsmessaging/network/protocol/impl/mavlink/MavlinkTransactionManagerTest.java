@@ -48,7 +48,7 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("packet-1", "PACKET", packet(0)), "127.0.0.1:14550");
+      manager.submitNative(request("packet-1", packet(0)), "127.0.0.1:14550");
       assertEquals(1, sent.size());
       assertEquals("QUEUED", statuses.getFirst().get("status").getAsString());
       assertEquals("SENT", statuses.getLast().get("status").getAsString());
@@ -60,7 +60,7 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("command-1", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("command-1", packet(76)), "127.0.0.1:14550");
       assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
 
       manager.onFrame(inbound(77, 2, 1, Map.of("command", 400, "result", 0)));
@@ -89,7 +89,7 @@ class MavlinkTransactionManagerTest {
       item0.getAsJsonObject("payload").addProperty("seq", 0);
       JsonObject item1 = packet(73);
       item1.getAsJsonObject("payload").addProperty("seq", 1);
-      manager.submit(request("plan-1", "MISSION_UPLOAD", count, item0, item1),
+      manager.submitNative(request("plan-1", count, item0, item1),
           "127.0.0.1:14550");
 
       assertEquals(1, sent.size());
@@ -114,11 +114,8 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("command-1", "COMMAND", packet(76)), "127.0.0.1:14550");
-      JsonObject cancel = new JsonObject();
-      cancel.addProperty("transactionId", "command-1");
-      cancel.addProperty("operation", "CANCEL");
-      manager.submit(cancel, "127.0.0.1:14550");
+      manager.submitNative(request("command-1", packet(76)), "127.0.0.1:14550");
+      manager.cancel("command-1", "127.0.0.1:14550");
 
       assertEquals(1, sent.size());
       assertEquals("CANCELLED", statuses.getLast().get("status").getAsString());
@@ -130,8 +127,8 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("command-1", "COMMAND", packet(76)), "127.0.0.1:14550");
-      manager.submit(request("command-2", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("command-1", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("command-2", packet(76)), "127.0.0.1:14550");
 
       assertEquals(1, sent.size());
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
@@ -145,7 +142,7 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("command-retry", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("command-retry", packet(76)), "127.0.0.1:14550");
       for (int attempt = 1; attempt <= MavlinkTransactionManager.DEFAULT_MAX_RETRIES; attempt++) {
         triggerTimeout(manager);
         assertEquals(attempt, sent.getLast().getAsJsonObject("payload").get("confirmation").getAsInt());
@@ -162,7 +159,7 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("command-progress", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("command-progress", packet(76)), "127.0.0.1:14550");
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 5)));
       triggerTimeout(manager);
       assertEquals(1, sent.size());
@@ -182,7 +179,7 @@ class MavlinkTransactionManagerTest {
       item0.getAsJsonObject("payload").addProperty("seq", 0);
       JsonObject item1 = packet(73);
       item1.getAsJsonObject("payload").addProperty("seq", 1);
-      manager.submit(request("mission-retry", "MISSION_UPLOAD", count, item0, item1), "127.0.0.1:14550");
+      manager.submitNative(request("mission-retry", count, item0, item1), "127.0.0.1:14550");
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
 
       triggerTimeout(manager);
@@ -207,9 +204,9 @@ class MavlinkTransactionManagerTest {
     };
     try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
         (packet, destination) -> sent.add(packet.deepCopy()), failingPublisher, "/status", 1, 255, 190)) {
-      assertDoesNotThrow(() -> manager.submit(request("publish-failure", "PACKET", packet(0)), "127.0.0.1:14550"));
+      assertDoesNotThrow(() -> manager.submitNative(request("publish-failure", packet(0)), "127.0.0.1:14550"));
       assertEquals(1, sent.size());
-      assertDoesNotThrow(() -> manager.submit(request("next-packet", "PACKET", packet(0)), "127.0.0.1:14550"));
+      assertDoesNotThrow(() -> manager.submitNative(request("next-packet", packet(0)), "127.0.0.1:14550"));
       assertEquals(2, sent.size());
     }
   }
@@ -221,7 +218,7 @@ class MavlinkTransactionManagerTest {
         (packet, destination) -> sent.add(packet.deepCopy()), (topic, status) -> {
           throw new AssertionError("No topic: status publisher should not be called");
         }, null, 1, 255, 190)) {
-      manager.submit(request("no-topic", "PACKET", packet(0)), "127.0.0.1:14550");
+      manager.submitNative(request("no-topic", packet(0)), "127.0.0.1:14550");
       assertEquals(1, sent.size());
     }
   }
@@ -235,7 +232,7 @@ class MavlinkTransactionManagerTest {
       count.getAsJsonObject("payload").addProperty("count", 1);
       JsonObject item = packet(73);
       item.getAsJsonObject("payload").addProperty("seq", 0);
-      manager.submit(request("mission-duplicate", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      manager.submitNative(request("mission-duplicate", count, item), "127.0.0.1:14550");
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
       assertEquals(3, sent.size());
@@ -250,7 +247,7 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("rejected", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("rejected", packet(76)), "127.0.0.1:14550");
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 2)));
       assertEquals("FAILED", statuses.getLast().get("status").getAsString());
       assertEquals(1, sent.size());
@@ -266,7 +263,7 @@ class MavlinkTransactionManagerTest {
       count.getAsJsonObject("payload").addProperty("count", 1);
       JsonObject item = packet(73);
       item.getAsJsonObject("payload").addProperty("seq", 0);
-      manager.submit(request("retry-limit", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      manager.submitNative(request("retry-limit", count, item), "127.0.0.1:14550");
       for (int attempt = 0; attempt <= MavlinkTransactionManager.DEFAULT_MAX_RETRIES; attempt++) {
         triggerTimeout(manager);
       }
@@ -281,10 +278,10 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     MavlinkTransactionManager manager = manager(sent, statuses);
-    manager.submit(request("closing", "COMMAND", packet(76)), "127.0.0.1:14550");
+    manager.submitNative(request("closing", packet(76)), "127.0.0.1:14550");
     manager.close();
     assertEquals("CLOSED", statuses.getLast().get("status").getAsString());
-    manager.submit(request("after-close", "COMMAND", packet(76)), "127.0.0.1:14550");
+    manager.submitNative(request("after-close", packet(76)), "127.0.0.1:14550");
     assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
     assertEquals(1, sent.size());
   }
@@ -298,12 +295,12 @@ class MavlinkTransactionManagerTest {
       count.getAsJsonObject("payload").addProperty("count", 1);
       JsonObject invalid = packet(73);
       invalid.getAsJsonObject("payload").addProperty("seq", 4);
-      manager.submit(request("bad-mission", "MISSION_UPLOAD", count, invalid), "127.0.0.1:14550");
+      manager.submitNative(request("bad-mission", count, invalid), "127.0.0.1:14550");
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
 
       JsonObject wrongTarget = packet(76);
       wrongTarget.getAsJsonObject("payload").addProperty("target_system", 2);
-      manager.submit(request("bad-target", "COMMAND", wrongTarget), "127.0.0.1:14550");
+      manager.submitNative(request("bad-target", wrongTarget), "127.0.0.1:14550");
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
       assertEquals(0, sent.size());
     }
@@ -315,7 +312,7 @@ class MavlinkTransactionManagerTest {
     try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
         (message, destination) -> { throw new java.io.IOException("simulated endpoint failure"); },
         (topic, status) -> statuses.add(status.deepCopy()), "/status", 1, 255, 190)) {
-      manager.submit(request("send-failed", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("send-failed", packet(76)), "127.0.0.1:14550");
       assertEquals("FAILED", statuses.getLast().get("status").getAsString());
       assertTrue(statuses.getLast().get("reason").getAsString().contains("simulated endpoint failure"));
     }
@@ -326,9 +323,9 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      JsonObject command = request("same-id", "COMMAND", packet(76));
-      manager.submit(command, "127.0.0.1:14550");
-      manager.submit(command, "127.0.0.1:14550");
+      JsonObject command = request("same-id", packet(76));
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.submitNative(command, "127.0.0.1:14550");
       assertEquals(1, sent.size());
       assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
     }
@@ -339,10 +336,10 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      JsonObject command = request("done-id", "COMMAND", packet(76));
-      manager.submit(command, "127.0.0.1:14550");
+      JsonObject command = request("done-id", packet(76));
+      manager.submitNative(command, "127.0.0.1:14550");
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
-      manager.submit(command, "127.0.0.1:14550");
+      manager.submitNative(command, "127.0.0.1:14550");
       assertEquals(1, sent.size());
       assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
     }
@@ -359,7 +356,7 @@ class MavlinkTransactionManagerTest {
       first.getAsJsonObject("payload").addProperty("seq", 0);
       JsonObject second = packet(73);
       second.getAsJsonObject("payload").addProperty("seq", 1);
-      manager.submit(request("out-of-order", "MISSION_UPLOAD", count, first, second), "127.0.0.1:14550");
+      manager.submitNative(request("out-of-order", count, first, second), "127.0.0.1:14550");
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 17, "mission_type", 0)));
       manager.onFrame(inbound(47, 1, 1, Map.of("type", 13, "mission_type", 0)));
       assertEquals(1, sent.size());
@@ -379,7 +376,7 @@ class MavlinkTransactionManagerTest {
       count.getAsJsonObject("payload").addProperty("count", 1);
       JsonObject item = packet(73);
       item.getAsJsonObject("payload").addProperty("seq", 0);
-      manager.submit(request("final-ack-lost", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      manager.submitNative(request("final-ack-lost", count, item), "127.0.0.1:14550");
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
 
       triggerTimeout(manager);
@@ -399,10 +396,10 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("collision", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("collision", packet(76)), "127.0.0.1:14550");
       JsonObject other = packet(76);
       other.getAsJsonObject("payload").addProperty("command", 401);
-      manager.submit(request("collision", "COMMAND", other), "127.0.0.1:14550");
+      manager.submitNative(request("collision", other), "127.0.0.1:14550");
       assertEquals(1, sent.size());
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
       assertTrue(statuses.getLast().get("reason").getAsString().contains("different request"));
@@ -414,11 +411,11 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("collision", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("collision", packet(76)), "127.0.0.1:14550");
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
       JsonObject changed = packet(76);
       changed.getAsJsonObject("payload").addProperty("command", 401);
-      manager.submit(request("collision", "COMMAND", changed), "127.0.0.1:14550");
+      manager.submitNative(request("collision", changed), "127.0.0.1:14550");
       assertEquals(1, sent.size());
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
     }
@@ -431,7 +428,7 @@ class MavlinkTransactionManagerTest {
     try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
         (message, destination) -> sent.add(message.deepCopy()), (topic, status) -> statuses.add(status.deepCopy()),
         "/status", 1, 255, 190, true)) {
-      manager.submit(request("peer-check", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("peer-check", packet(76)), "127.0.0.1:14550");
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)), "127.0.0.2:14550");
       assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)), "127.0.0.1:14550");
@@ -448,7 +445,7 @@ class MavlinkTransactionManagerTest {
       count.getAsJsonObject("payload").addProperty("count", 1);
       JsonObject item = packet(73);
       item.getAsJsonObject("payload").addProperty("seq", 0);
-      manager.submit(request("wrong-target", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      manager.submitNative(request("wrong-target", count, item), "127.0.0.1:14550");
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "target_system", 17, "mission_type", 0)));
       manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 1)));
       assertEquals(1, sent.size());
@@ -465,14 +462,11 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("cancel-one", "COMMAND", packet(76)), "127.0.0.1:14550");
-      JsonObject cancel = new JsonObject();
-      cancel.addProperty("transactionId", "cancel-one");
-      cancel.addProperty("operation", "CANCEL");
-      manager.submit(cancel, "127.0.0.1:14550");
+      manager.submitNative(request("cancel-one", packet(76)), "127.0.0.1:14550");
+      manager.cancel("cancel-one", "127.0.0.1:14550");
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
       assertEquals("CANCELLED", statuses.getLast().get("status").getAsString());
-      manager.submit(request("cancel-one", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("cancel-one", packet(76)), "127.0.0.1:14550");
       assertEquals("CANCELLED", statuses.getLast().get("status").getAsString());
       assertEquals(1, sent.size());
     }
@@ -483,12 +477,8 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("cancel-peer", "COMMAND", packet(76)), "127.0.0.1:14550");
-      JsonObject cancel = new JsonObject();
-      cancel.addProperty("transactionId", "cancel-peer");
-      cancel.addProperty("operation", "CANCEL");
-
-      manager.submit(cancel, "127.0.0.2:14550");
+      manager.submitNative(request("cancel-peer", packet(76)), "127.0.0.1:14550");
+      manager.cancel("cancel-peer", "127.0.0.2:14550");
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
       assertEquals(1, sent.size());
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
@@ -501,12 +491,8 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("cancel-normalized", "COMMAND", packet(76)), "127.0.0.1:14550");
-      JsonObject cancel = new JsonObject();
-      cancel.addProperty("transactionId", "cancel-normalized");
-      cancel.addProperty("operation", "CANCEL");
-
-      manager.submit(cancel, "/127.0.0.1:14550");
+      manager.submitNative(request("cancel-normalized", packet(76)), "127.0.0.1:14550");
+      manager.cancel("cancel-normalized", "/127.0.0.1:14550");
       assertEquals("CANCELLED", statuses.getLast().get("status").getAsString());
       assertEquals(1, sent.size());
     }
@@ -519,7 +505,7 @@ class MavlinkTransactionManagerTest {
     try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
         (message, destination) -> sent.add(message.deepCopy()), (topic, status) -> statuses.add(status.deepCopy()),
         "/status", 1, 255, 190, true)) {
-      manager.submit(request("peer-format", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("peer-format", packet(76)), "127.0.0.1:14550");
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)), "/127.0.0.1:14550");
       assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
       assertEquals(1, sent.size());
@@ -531,16 +517,16 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      JsonObject malformed = request("malformed", "COMMAND", packet(76));
+      JsonObject malformed = request("malformed", packet(76));
       malformed.add("transactionId", new JsonObject());
 
-      assertDoesNotThrow(() -> manager.submit(malformed, "127.0.0.1:14550"));
+      assertDoesNotThrow(() -> manager.submitNative(malformed, "127.0.0.1:14550"));
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
       assertEquals(0, sent.size());
 
-      JsonObject malformedOperation = request("malformed-operation", "COMMAND", packet(76));
-      malformedOperation.add("operation", new JsonObject());
-      assertDoesNotThrow(() -> manager.submit(malformedOperation, "127.0.0.1:14550"));
+      JsonObject obsoleteOperation = request("malformed-operation", packet(76));
+      obsoleteOperation.addProperty("operation", "COMMAND");
+      assertDoesNotThrow(() -> manager.submitNative(obsoleteOperation, "127.0.0.1:14550"));
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
       assertEquals(0, sent.size());
     }
@@ -551,11 +537,11 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("in-flight", "COMMAND", packet(76)), "127.0.0.1:14550");
-      JsonObject malformed = request("broken", "COMMAND", packet(76));
+      manager.submitNative(request("in-flight", packet(76)), "127.0.0.1:14550");
+      JsonObject malformed = request("broken", packet(76));
       malformed.add("statusTopic", new JsonObject());
 
-      assertDoesNotThrow(() -> manager.submit(malformed, "127.0.0.1:14550"));
+      assertDoesNotThrow(() -> manager.submitNative(malformed, "127.0.0.1:14550"));
       assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
       assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
@@ -572,7 +558,7 @@ class MavlinkTransactionManagerTest {
       count.getAsJsonObject("payload").addProperty("count", 1);
       JsonObject item = packet(73);
       item.getAsJsonObject("payload").addProperty("seq", 0);
-      manager.submit(request("count-retry", "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+      manager.submitNative(request("count-retry", count, item), "127.0.0.1:14550");
 
       triggerTimeout(manager);
       assertEquals(2, sent.size());
@@ -590,7 +576,7 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("late-timeout", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("late-timeout", packet(76)), "127.0.0.1:14550");
       Object transaction = activeTransaction(manager);
       long generation = transactionGeneration(transaction);
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
@@ -606,7 +592,7 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> sent = new ArrayList<>();
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
-      manager.submit(request("stale-timeout", "COMMAND", packet(76)), "127.0.0.1:14550");
+      manager.submitNative(request("stale-timeout", packet(76)), "127.0.0.1:14550");
       Object transaction = activeTransaction(manager);
       long oldGeneration = transactionGeneration(transaction);
       manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 5)));
@@ -627,7 +613,7 @@ class MavlinkTransactionManagerTest {
         count.getAsJsonObject("payload").addProperty("count", 1);
         JsonObject item = packet(73);
         item.getAsJsonObject("payload").addProperty("seq", 0);
-        manager.submit(request("request-" + requestMessageId, "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+        manager.submitNative(request("request-" + requestMessageId, count, item), "127.0.0.1:14550");
 
         manager.onFrame(inbound(requestMessageId, 1, 1, Map.of("seq", 0, "mission_type", 0)));
         assertEquals(2, sent.size());
@@ -644,15 +630,15 @@ class MavlinkTransactionManagerTest {
     List<JsonObject> statuses = new ArrayList<>();
     try (MavlinkTransactionManager manager = manager(sent, statuses)) {
       for (int index = 0; index < 129; index++) {
-        manager.submit(request("packet-" + index, "PACKET", packet(0)), "127.0.0.1:14550");
+        manager.submitNative(request("packet-" + index, packet(0)), "127.0.0.1:14550");
       }
       assertEquals(129, sent.size());
 
-      manager.submit(request("packet-128", "PACKET", packet(0)), "127.0.0.1:14550");
+      manager.submitNative(request("packet-128", packet(0)), "127.0.0.1:14550");
       assertEquals(129, sent.size());
       assertEquals("SENT", statuses.getLast().get("status").getAsString());
 
-      manager.submit(request("packet-0", "PACKET", packet(0)), "127.0.0.1:14550");
+      manager.submitNative(request("packet-0", packet(0)), "127.0.0.1:14550");
       assertEquals(130, sent.size());
       assertEquals("SENT", statuses.getLast().get("status").getAsString());
     }
@@ -668,7 +654,7 @@ class MavlinkTransactionManagerTest {
         count.getAsJsonObject("payload").addProperty("count", 1);
         JsonObject item = packet(73);
         item.getAsJsonObject("payload").addProperty("seq", 0);
-        manager.submit(request("mission-error-" + result, "MISSION_UPLOAD", count, item), "127.0.0.1:14550");
+        manager.submitNative(request("mission-error-" + result, count, item), "127.0.0.1:14550");
         manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
         manager.onFrame(inbound(47, 1, 1, Map.of("type", result, "mission_type", 0)));
 
@@ -933,10 +919,9 @@ class MavlinkTransactionManagerTest {
         "/mavlink/outbound/transactions", 1, 255, 190);
   }
 
-  private static JsonObject request(String id, String operation, JsonObject... packets) {
+  private static JsonObject request(String id, JsonObject... packets) {
     JsonObject request = new JsonObject();
     request.addProperty("transactionId", id);
-    request.addProperty("operation", operation);
     JsonArray messages = new JsonArray();
     for (JsonObject packet : packets) {
       messages.add(packet);
