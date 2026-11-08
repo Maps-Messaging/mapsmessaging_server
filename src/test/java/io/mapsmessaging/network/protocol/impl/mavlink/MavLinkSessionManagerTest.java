@@ -19,6 +19,8 @@ package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -31,6 +33,83 @@ import java.net.InetSocketAddress;
 import org.junit.jupiter.api.Test;
 
 class MavLinkSessionManagerTest {
+
+  @Test
+  void activeSessionRemainsRegisteredDuringExpiryScan() throws IOException {
+    MavLinkSessionManager<Timeoutable> manager = new MavLinkSessionManager<>(60);
+    Timeoutable context = mock(Timeoutable.class);
+    MavlinkDeviceKey key = new MavlinkDeviceKey(0, new InetSocketAddress("127.0.0.1", 14550), 1);
+    manager.addState(key, new UDPSessionState<>(context));
+
+    manager.scanForTimeouts();
+
+    assertNotNull(manager.getState(key));
+    verify(context, never()).close();
+    manager.close();
+    verify(context).close();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void idleSessionExpiresWithoutAContextOverride() throws IOException {
+    MavLinkSessionManager<Timeoutable> manager = new MavLinkSessionManager<>(60);
+    Timeoutable context = mock(Timeoutable.class);
+    UDPSessionState<Timeoutable> state = mock(UDPSessionState.class);
+    when(state.getContext()).thenReturn(context);
+    when(state.getGetLastAccess()).thenReturn(0L);
+    MavlinkDeviceKey key = new MavlinkDeviceKey(0, new InetSocketAddress("127.0.0.1", 14550), 1);
+    manager.addState(key, state);
+
+    manager.scanForTimeouts();
+
+    assertNull(manager.getState(key));
+    verify(context).close();
+    manager.close();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void contextSpecificTimeoutOverridesManagerDefault() throws IOException {
+    MavLinkSessionManager<Timeoutable> manager = new MavLinkSessionManager<>(1);
+    Timeoutable context = mock(Timeoutable.class);
+    when(context.getTimeOut()).thenReturn(java.util.concurrent.TimeUnit.DAYS.toMillis(1));
+    UDPSessionState<Timeoutable> state = mock(UDPSessionState.class);
+    when(state.getContext()).thenReturn(context);
+    when(state.getGetLastAccess()).thenReturn(System.currentTimeMillis() - java.util.concurrent.TimeUnit.HOURS.toMillis(1));
+    MavlinkDeviceKey key = new MavlinkDeviceKey(0, new InetSocketAddress("127.0.0.1", 14550), 1);
+    manager.addState(key, state);
+
+    manager.scanForTimeouts();
+
+    assertNotNull(manager.getState(key));
+    verify(context, never()).close();
+    manager.close();
+    verify(context).close();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void expiredVehicleDoesNotCloseAnotherVehicleSession() throws IOException {
+    MavLinkSessionManager<Timeoutable> manager = new MavLinkSessionManager<>(60);
+    Timeoutable expired = mock(Timeoutable.class);
+    Timeoutable healthy = mock(Timeoutable.class);
+    UDPSessionState<Timeoutable> oldState = mock(UDPSessionState.class);
+    when(oldState.getContext()).thenReturn(expired);
+    when(oldState.getGetLastAccess()).thenReturn(0L);
+    MavlinkDeviceKey oldKey = new MavlinkDeviceKey(0, new InetSocketAddress("127.0.0.1", 14550), 1);
+    MavlinkDeviceKey activeKey = new MavlinkDeviceKey(0, new InetSocketAddress("127.0.0.2", 14550), 2);
+    manager.addState(oldKey, oldState);
+    manager.addState(activeKey, new UDPSessionState<>(healthy));
+
+    manager.scanForTimeouts();
+
+    assertNull(manager.getState(oldKey));
+    assertNotNull(manager.getState(activeKey));
+    verify(expired).close();
+    verify(healthy, never()).close();
+    manager.close();
+    verify(healthy).close();
+  }
 
   @Test
   void shutdownHandlesMissingContextWithoutThrowing() {
