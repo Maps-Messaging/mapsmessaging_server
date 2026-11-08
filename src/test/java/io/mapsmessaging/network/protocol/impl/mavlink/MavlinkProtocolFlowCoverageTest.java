@@ -103,7 +103,9 @@ class MavlinkProtocolFlowCoverageTest {
     Runnable completion = mock(Runnable.class);
     Message message = mock(Message.class);
     when(message.getCorrelationData()).thenReturn("ID#42#127.0.0.1:14550".getBytes(StandardCharsets.UTF_8));
-    when(message.getOpaqueData()).thenReturn("{\\"transactionId\\":\\"cancel-1\\"}".getBytes(StandardCharsets.UTF_8));
+    JsonObject cancellation = new JsonObject();
+    cancellation.addProperty("transactionId", "cancel-1");
+    when(message.getOpaqueData()).thenReturn(cancellation.toString().getBytes(StandardCharsets.UTF_8));
     fixture.protocol.sendMessage(new MessageEvent("/outbound/cancel", mock(SubscribedEventManager.class), message, completion));
 
     ArgumentCaptor<JsonObject> captured = ArgumentCaptor.forClass(JsonObject.class);
