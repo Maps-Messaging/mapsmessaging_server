@@ -678,6 +678,179 @@ class MavlinkTransactionManagerTest {
     }
   }
 
+  @Test
+  void nativeMissionItemsGenerateMissionCountAndCompleteViaVehicleRequests() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonArray items = new JsonArray();
+      JsonObject item0 = packet(73);
+      JsonObject item1 = packet(73);
+      item0.getAsJsonObject("payload").addProperty("seq", 0);
+      item1.getAsJsonObject("payload").addProperty("seq", 1);
+      items.add(item0);
+      items.add(item1);
+      manager.submitNative(items, "127.0.0.1:14550");
+      assertEquals(1, sent.size());
+      assertEquals(44, sent.getFirst().getAsJsonObject("header").get("messageId").getAsInt());
+      assertEquals(2, sent.getFirst().getAsJsonObject("payload").get("count").getAsInt());
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 0, "mission_type", 0)));
+      manager.onFrame(inbound(51, 1, 1, Map.of("seq", 1, "mission_type", 0)));
+      manager.onFrame(inbound(47, 1, 1, Map.of("type", 0, "mission_type", 0)));
+      assertEquals(3, sent.size());
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+      assertEquals(2, statuses.getLast().get("totalItems").getAsInt());
+    }
+  }
+
+  @Test
+  void nativeCommandRequiresMatchingMavlinkAckWithoutOperationSelector() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      manager.submitNative(packet(76), "127.0.0.1:14550");
+      assertEquals(1, sent.size());
+      assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 400, "result", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void setCurrentMissionRequiresMatchingMissionCurrentAfterCommandAck() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(76);
+      command.getAsJsonObject("payload").addProperty("command", 224);
+      command.getAsJsonObject("payload").addProperty("param1", 3);
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 224, "result", 0)));
+      assertEquals("WAITING_FOR_RESPONSE", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(42, 1, 1, Map.of("seq", 2)));
+      assertEquals("WAITING_FOR_RESPONSE", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(42, 1, 1, Map.of("seq", 3)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
+  void missionCurrentBeforeAckDoesNotCompleteEarly() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(76);
+      command.getAsJsonObject("payload").addProperty("command", 224);
+      command.getAsJsonObject("payload").addProperty("param1", 3);
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(42, 1, 1, Map.of("seq", 3)));
+      assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 224, "result", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void acceptedSetCurrentMissionTimesOutWithoutRetransmission() throws Exception {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(76);
+      command.getAsJsonObject("payload").addProperty("command", 224);
+      command.getAsJsonObject("payload").addProperty("param1", 3);
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 224, "result", 0)));
+      triggerTimeout(manager);
+      assertEquals("TIMED_OUT", statuses.getLast().get("status").getAsString());
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
+  void requestedMessageIsObservedAfterCommandAccepted() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(76);
+      command.getAsJsonObject("payload").addProperty("command", 512);
+      command.getAsJsonObject("payload").addProperty("param1", 148);
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 512, "result", 0)));
+      assertEquals("WAITING_FOR_RESPONSE", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(0, 1, 1, Map.of()));
+      assertEquals("WAITING_FOR_RESPONSE", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(148, 1, 1, Map.of()));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void requestedTelemetryBeforeAckDoesNotCompleteEarly() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(76);
+      command.getAsJsonObject("payload").addProperty("command", 512);
+      command.getAsJsonObject("payload").addProperty("param1", 148);
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(148, 1, 1, Map.of()));
+      assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 512, "result", 0)));
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void requestedMessageTimeoutDoesNotRetransmitAcceptedCommand() throws Exception {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(76);
+      command.getAsJsonObject("payload").addProperty("command", 512);
+      command.getAsJsonObject("payload").addProperty("param1", 148);
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 512, "result", 0)));
+      triggerTimeout(manager);
+      assertEquals("TIMED_OUT", statuses.getLast().get("status").getAsString());
+      assertEquals(1, sent.size());
+    }
+  }
+
+  @Test
+  void rejectedSetCurrentMissionDoesNotWaitForMissionCurrent() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonObject command = packet(76);
+      command.getAsJsonObject("payload").addProperty("command", 224);
+      command.getAsJsonObject("payload").addProperty("param1", 3);
+      manager.submitNative(command, "127.0.0.1:14550");
+      manager.onFrame(inbound(77, 1, 1, Map.of("command", 224, "result", 2)));
+      assertEquals("FAILED", statuses.getLast().get("status").getAsString());
+      manager.onFrame(inbound(42, 1, 1, Map.of("seq", 3)));
+      assertEquals("FAILED", statuses.getLast().get("status").getAsString());
+    }
+  }
+
+  @Test
+  void nativeMissionRejectsNonSequentialItemsBeforeSending() {
+    List<JsonObject> sent = new ArrayList<>();
+    List<JsonObject> statuses = new ArrayList<>();
+    try (MavlinkTransactionManager manager = manager(sent, statuses)) {
+      JsonArray items = new JsonArray();
+      JsonObject first = packet(73);
+      JsonObject second = packet(73);
+      first.getAsJsonObject("payload").addProperty("seq", 0);
+      second.getAsJsonObject("payload").addProperty("seq", 2);
+      items.add(first);
+      items.add(second);
+      manager.submitNative(items, "127.0.0.1:14550");
+      assertEquals("REJECTED", statuses.getLast().get("status").getAsString());
+      assertEquals(0, sent.size());
+    }
+  }
+
   private static void triggerTimeout(MavlinkTransactionManager manager) throws Exception {
     Object transaction = activeTransaction(manager);
     invokeTimeout(manager, transaction, transactionGeneration(transaction));
