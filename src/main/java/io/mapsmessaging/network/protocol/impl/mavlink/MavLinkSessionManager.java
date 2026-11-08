@@ -19,6 +19,11 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_SESSION_CLOSE_FAILED;
+import static io.mapsmessaging.logging.ServerLogMessages.MAVLINK_SESSION_NULL_CONTEXT;
+
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.udp.session.UDPSessionState;
 import io.mapsmessaging.utilities.threads.SimpleTaskScheduler;
@@ -36,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 public class MavLinkSessionManager <T extends Timeoutable> {
 
+  private static final Logger logger = LoggerFactory.getLogger(MavLinkSessionManager.class);
   private final long timeout;
 
   private final Map<MavlinkDeviceKey, UDPSessionState<T>> sessionStateMap;
@@ -49,13 +55,16 @@ public class MavLinkSessionManager <T extends Timeoutable> {
 
   public void close() {
     monitor.cancel(false);
-    List<UDPSessionState<T>> closingSessions = new ArrayList<>(sessionStateMap.values());
-    for (UDPSessionState<T> state : closingSessions) {
-      if (state.getContext() != null) {
+    List<Map.Entry<MavlinkDeviceKey, UDPSessionState<T>>> closingSessions = new ArrayList<>(sessionStateMap.entrySet());
+    for (Map.Entry<MavlinkDeviceKey, UDPSessionState<T>> entry : closingSessions) {
+      T context = entry.getValue().getContext();
+      if (context == null) {
+        logger.log(MAVLINK_SESSION_NULL_CONTEXT, entry.getKey(), "shutdown");
+      } else {
         try {
-          state.getContext().close();
+          context.close();
         } catch (IOException e) {
-          //
+          logger.log(MAVLINK_SESSION_CLOSE_FAILED, entry.getKey(), e);
         }
       }
     }
@@ -90,9 +99,15 @@ public class MavLinkSessionManager <T extends Timeoutable> {
   private void createExpiredList(List<MavlinkDeviceKey> expiredKeys){
     long now = System.currentTimeMillis();
     for (Map.Entry<MavlinkDeviceKey, UDPSessionState<T>> entry : sessionStateMap.entrySet()) {
+      T context = entry.getValue().getContext();
+      if (context == null) {
+        logger.log(MAVLINK_SESSION_NULL_CONTEXT, entry.getKey(), "expiry scan");
+        expiredKeys.add(entry.getKey());
+        continue;
+      }
       long expiry = now - timeout;
-      if (entry.getValue().getContext().getTimeOut() != 0) {
-        expiry = now - entry.getValue().getContext().getTimeOut();
+      if (context.getTimeOut() != 0) {
+        expiry = now - context.getTimeOut();
       }
       if (entry.getValue().getGetLastAccess() < expiry) {
         expiredKeys.add(entry.getKey());
@@ -103,13 +118,16 @@ public class MavLinkSessionManager <T extends Timeoutable> {
 
   private void processExpiredSessions( List<MavlinkDeviceKey> expiredKeys){
     for (MavlinkDeviceKey key : expiredKeys) {
-      UDPSessionState<T> state = sessionStateMap.get(key);
-      sessionStateMap.remove(key);
-      if (state.getContext() != null) {
+      UDPSessionState<T> state = sessionStateMap.remove(key);
+      if (state == null) {
+        continue;
+      }
+      T context = state.getContext();
+      if (context != null) {
         try {
-          state.getContext().close();
+          context.close();
         } catch (IOException e) {
-          //
+          logger.log(MAVLINK_SESSION_CLOSE_FAILED, key, e);
         }
       }
     }
