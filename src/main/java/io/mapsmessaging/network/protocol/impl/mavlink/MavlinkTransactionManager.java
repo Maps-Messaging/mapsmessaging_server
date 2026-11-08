@@ -222,6 +222,10 @@ final class MavlinkTransactionManager implements AutoCloseable {
         finish(transaction, "FAILED", "Mission request index out of bounds: " + sequence);
         return;
       }
+      // Ignore stale requests from an earlier upload until this upload starts at item zero.
+      if (transaction.requested.isEmpty() && sequence != 0) {
+        return;
+      }
       send(transaction, sequence + 1);
       if (active == transaction) {
         transaction.requested.set(sequence);
