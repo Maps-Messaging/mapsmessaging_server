@@ -21,6 +21,9 @@ package io.mapsmessaging.state;
 
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
 import io.mapsmessaging.canbus.j1939.n2k.N2kParserFactory;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import static io.mapsmessaging.state.logging.StateLogMessages.N2K_AIS_OUTBOUND_NOT_CONFIGURED;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.n2k.DroneMonitor;
@@ -29,6 +32,8 @@ import io.mapsmessaging.utilities.Lifecycle;
 
 
 public class AISN2KManager implements Lifecycle {
+
+  private static final Logger logger = LoggerFactory.getLogger(AISN2KManager.class);
 
   private final N2KTwinConfig aisConfig;
   private final TwinManager twinManager;
@@ -45,8 +50,11 @@ public class AISN2KManager implements Lifecycle {
 
   @Override
   public void start() {
-    if (aisConfig == null || !aisConfig.isPublishMavlinkDrones() || session == null
-        || aisConfig.getOutboundTopicName() == null || aisConfig.getOutboundTopicName().isBlank()) {
+    if (aisConfig == null || !aisConfig.isPublishMavlinkDrones()) {
+      return;
+    }
+    if (session == null || aisConfig.getOutboundTopicName() == null || aisConfig.getOutboundTopicName().isBlank()) {
+      logger.log(N2K_AIS_OUTBOUND_NOT_CONFIGURED);
       return;
     }
     N2kMessageParser parser = new N2kMessageParser(N2kParserFactory.getN2kParser());
