@@ -74,7 +74,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
     validateCoordinates(position, "position");
-    double altitudeMeters = toAltitude(withAltitude(position, request.altitudeMeters()));
+    GeoPosition commandPosition = withAltitude(position, request.altitudeMeters());
 
     List<MavlinkMessage> messages =
         List.of(
@@ -82,11 +82,10 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
                 context.targetSystem(),
                 context.targetComponent(),
                 context.sequence()),
-            MavlinkMissionItemFactory.guidedWaypointRelativeAltitude(
+            MavlinkMissionItemFactory.guidedWaypoint(
                 context.targetSystem(),
                 context.targetComponent(),
-                position,
-                altitudeMeters));
+                commandPosition));
 
     return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
   }
@@ -121,27 +120,25 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
 
     GeoPosition position = Objects.requireNonNull(request.position(), "position must not be null");
     validateCoordinates(position, "position");
-    double altitudeMeters = toAltitude(withAltitude(position, request.altitudeMeters()));
+    GeoPosition commandPosition = withAltitude(position, request.altitudeMeters());
 
     Duration duration = toDuration(request.duration(), "duration");
     MavlinkMessage message;
     if (duration.isZero()) {
       message =
-          MavlinkCommandIntFactory.loiterUnlimitedRelativeAltitude(
+          MavlinkCommandIntFactory.loiterUnlimited(
               context.targetSystem(),
               context.targetComponent(),
-              position,
-              altitudeMeters,
+              commandPosition,
               request.radiusMeters(),
               Float.NaN,
               context.sequence());
     } else {
       message =
-          MavlinkCommandIntFactory.loiterTimeRelativeAltitude(
+          MavlinkCommandIntFactory.loiterTime(
               context.targetSystem(),
               context.targetComponent(),
-              position,
-              altitudeMeters,
+              commandPosition,
               request.radiusMeters(),
               duration,
               context.sequence());
@@ -158,12 +155,11 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   protected MavlinkMessage toMissionMessage(UxvCommandContext context, int sequence, PlanItem item) {
     return switch (item.type()) {
       case WAYPOINT ->
-          MavlinkMissionItemIntFactory.waypointRelativeAltitude(
+          MavlinkMissionItemIntFactory.waypoint(
               context.targetSystem(),
               context.targetComponent(),
               sequence,
-              item.position(),
-              toAltitude(withAltitude(item.position(), item.altitudeMeters())),
+              withAltitude(item.position(), item.altitudeMeters()),
               toSeconds(item.holdDuration()),
               item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters().floatValue(),
               DEFAULT_PASS_RADIUS_METERS,
@@ -181,24 +177,22 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
   private MavlinkMessage toMissionLoiter(UxvCommandContext context, int sequence, PlanItem item) {
     double radiusMeters = item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters();
     requirePositiveOrZero(radiusMeters, "radiusMeters");
-    double altitudeMeters = toAltitude(withAltitude(item.position(), item.altitudeMeters()));
+    GeoPosition position = withAltitude(item.position(), item.altitudeMeters());
 
     Duration duration = toDuration(item.holdDuration(), "holdDuration");
     if (duration.isZero()) {
-      return MavlinkMissionItemIntFactory.loiterUnlimitedRelativeAltitude(
+      return MavlinkMissionItemIntFactory.loiterUnlimited(
           context.targetSystem(),
           context.targetComponent(),
           sequence,
-          item.position(),
-          altitudeMeters,
+          position,
           radiusMeters);
     }
-    return MavlinkMissionItemIntFactory.loiterTimeRelativeAltitude(
+    return MavlinkMissionItemIntFactory.loiterTime(
         context.targetSystem(),
         context.targetComponent(),
         sequence,
-        item.position(),
-        altitudeMeters,
+        position,
         duration,
         radiusMeters);
   }
