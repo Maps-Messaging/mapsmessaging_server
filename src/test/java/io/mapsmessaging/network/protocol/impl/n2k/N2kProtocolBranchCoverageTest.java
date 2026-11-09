@@ -127,7 +127,7 @@ class N2kProtocolBranchCoverageTest {
     when(fixture.framePacker.getTransportType(pgn, data.length)).thenReturn(transport);
     List<CanFrame> frames = List.of(frame(pgn, 42, 255, data));
     if (transport == N2kTransportType.FAST_PACKET) {
-      when(fixture.framePacker.packFastPacket(eq(pgn), anyInt(), eq(42), eq(255), aryEq(data))).thenReturn(frames);
+      when(fixture.framePacker.packFastPacket(eq(pgn), anyInt(), eq(42), eq(255), eq(data))).thenReturn(frames);
     }
     JsonObject request = new JsonObject();
     request.addProperty("type", "n2k-pgn");
