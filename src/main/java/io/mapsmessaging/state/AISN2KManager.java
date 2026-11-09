@@ -24,11 +24,13 @@ import io.mapsmessaging.canbus.j1939.n2k.N2kParserFactory;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
 import static io.mapsmessaging.state.logging.StateLogMessages.N2K_AIS_OUTBOUND_NOT_CONFIGURED;
+import static io.mapsmessaging.state.logging.StateLogMessages.N2K_AIS_PARSER_LOAD_FAILED;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.n2k.DroneMonitor;
 import io.mapsmessaging.state.n2k.N2kSession;
 import io.mapsmessaging.utilities.Lifecycle;
+import java.io.IOException;
 
 
 public class AISN2KManager implements Lifecycle {
@@ -60,7 +62,13 @@ public class AISN2KManager implements Lifecycle {
       logger.log(N2K_AIS_OUTBOUND_NOT_CONFIGURED);
       return;
     }
-    N2kMessageParser parser = new N2kMessageParser(N2kParserFactory.getN2kParser());
+    N2kMessageParser parser;
+    try {
+      parser = new N2kMessageParser(N2kParserFactory.getN2kParser());
+    } catch (IOException exception) {
+      logger.log(N2K_AIS_PARSER_LOAD_FAILED, exception);
+      return;
+    }
     droneMonitor = new DroneMonitor(twinManager, aisConfig.getAis(), parser, session);
     twinManager.addObserver(droneMonitor);
   }
