@@ -30,6 +30,9 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.n2k.DroneMonitor;
 import io.mapsmessaging.state.n2k.N2kSession;
 import io.mapsmessaging.utilities.Lifecycle;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
 
@@ -65,7 +68,7 @@ public class AISN2KManager implements Lifecycle {
     N2kMessageParser parser;
     try {
       parser = new N2kMessageParser(N2kParserFactory.getN2kParser());
-    } catch (IOException exception) {
+    } catch (IOException | SAXException | ParserConfigurationException exception) {
       logger.log(N2K_AIS_PARSER_LOAD_FAILED, exception);
       return;
     }
