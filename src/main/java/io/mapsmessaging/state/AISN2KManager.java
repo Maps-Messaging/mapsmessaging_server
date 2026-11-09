@@ -50,6 +50,9 @@ public class AISN2KManager implements Lifecycle {
 
   @Override
   public void start() {
+    if (droneMonitor != null) {
+      return;
+    }
     if (aisConfig == null || !aisConfig.isPublishMavlinkDrones()) {
       return;
     }
