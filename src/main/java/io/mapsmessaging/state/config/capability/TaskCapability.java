@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.config.capability;
 
 import com.google.gson.annotations.SerializedName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,12 +31,15 @@ import lombok.NoArgsConstructor;
 public class TaskCapability {
 
   @SerializedName("task_type")
+  @Schema(name = "task_type")
   private PlanTaskType taskType;
 
   @SerializedName("task_specialization")
+  @Schema(name = "task_specialization")
   private TaskSpecialization specialization = TaskSpecialization.NONE;
 
   @SerializedName("authorities")
+  @Schema(name = "authorities")
   private Authorities[] authorities;
 
 }
