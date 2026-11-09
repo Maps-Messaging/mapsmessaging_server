@@ -22,7 +22,9 @@ package io.mapsmessaging.state.n2k;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.logging.Logger;
@@ -42,6 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.UUID;
 
 import static io.mapsmessaging.state.logging.StateLogMessages.*;
@@ -55,11 +58,22 @@ public class N2kSession implements MessageHandler, Lifecycle {
   private final N2KTwinConfig n2kConfig;
   private final N2kTwinUpdater twinUpdater;
   private final DroneInfoDTO droneInfo;
+  private final boolean subscribeInbound;
+  private volatile boolean started;
 
   public N2kSession(
       @NonNull @NotNull TwinManager twinManager,
       @NonNull @NotNull N2KTwinConfig n2kConfig,
       @NonNull @NotNull DroneInfoRegistry droneRegistry) {
+    this(twinManager, n2kConfig, droneRegistry, true);
+  }
+
+  public N2kSession(
+      @NonNull @NotNull TwinManager twinManager,
+      @NonNull @NotNull N2KTwinConfig n2kConfig,
+      @NonNull @NotNull DroneInfoRegistry droneRegistry,
+      boolean subscribeInbound) {
+    this.subscribeInbound = subscribeInbound;
     this.protocol = SessionHelper.createLoopbackProtocol(this);
     this.namespaceTopicPath = n2kConfig.getTopic();
     this.n2kConfig = n2kConfig;
@@ -75,7 +89,10 @@ public class N2kSession implements MessageHandler, Lifecycle {
 
   @Override
   public void start() {
-    if (droneInfo == null) {
+    boolean inbound = subscribeInbound && droneInfo != null;
+    boolean outbound = n2kConfig.isPublishMavlinkDrones() && n2kConfig.getOutboundTopicName() != null
+        && !n2kConfig.getOutboundTopicName().isBlank();
+    if (!inbound && !outbound) {
       logger.log(N2K_SESSION_START_SKIPPED, n2kConfig.getName(), namespaceTopicPath);
       return;
     }
@@ -84,7 +101,10 @@ public class N2kSession implements MessageHandler, Lifecycle {
 
     try {
       protocol.connect(UUID.randomUUID().toString(), "anonymous", "anonymous");
-      protocol.subscribeLocal(namespaceTopicPath, namespaceTopicPath, QualityOfService.AT_MOST_ONCE, null, null, null, null, null);
+      started = true;
+      if (inbound) {
+        protocol.subscribeLocal(namespaceTopicPath, namespaceTopicPath, QualityOfService.AT_MOST_ONCE, null, null, null, null, null);
+      }
       logger.log(N2K_SESSION_STARTED, n2kConfig.getName(), namespaceTopicPath);
     } catch (IOException exception) {
       logger.log(N2K_SESSION_START_FAILED, exception);
@@ -93,7 +113,7 @@ public class N2kSession implements MessageHandler, Lifecycle {
 
   @Override
   public void stop() {
-    if (droneInfo == null) {
+    if (!started && (droneInfo == null || !subscribeInbound)) {
       logger.log(N2K_SESSION_STOP_SKIPPED, n2kConfig.getName());
       return;
     }
@@ -101,12 +121,47 @@ public class N2kSession implements MessageHandler, Lifecycle {
     logger.log(N2K_SESSION_STOPPING, n2kConfig.getName(), namespaceTopicPath);
 
     try {
-      protocol.unsubscribeLocal(namespaceTopicPath);
+      if (subscribeInbound && droneInfo != null) {
+        protocol.unsubscribeLocal(namespaceTopicPath);
+      }
       protocol.close();
+      started = false;
       logger.log(N2K_SESSION_STOPPED, n2kConfig.getName(), namespaceTopicPath);
     } catch (IOException exception) {
       logger.log(N2K_SESSION_STOP_FAILED, exception);
     }
+  }
+
+  public boolean publishPgn(int pgn, int destinationAddress, byte[] data) {
+    String topic = n2kConfig.getOutboundTopicName();
+    if (!started || protocol.getSession() == null || topic == null || topic.isBlank()
+        || data == null || data.length == 0) {
+      return false;
+    }
+    JsonObject request = new JsonObject();
+    request.addProperty("type", "n2k-pgn");
+    request.addProperty("pgn", pgn);
+    request.addProperty("destinationAddress", destinationAddress);
+    request.addProperty("payload", Base64.getEncoder().encodeToString(data));
+    Message message = new MessageBuilder()
+        .setOpaqueData(request.toString().getBytes(StandardCharsets.UTF_8))
+        .setContentType("application/json")
+        .setQoS(QualityOfService.AT_MOST_ONCE)
+        .setRetain(false)
+        .build();
+    protocol.getSession().findDestination(topic, DestinationType.TOPIC)
+        .whenComplete((destination, exception) -> {
+          if (exception != null || destination == null) {
+            logger.log(N2K_SESSION_START_FAILED, exception == null ? new IOException("No outbound N2K destination: " + topic) : new IOException(exception));
+            return;
+          }
+          try {
+            destination.storeMessage(message);
+          } catch (IOException ioException) {
+            logger.log(N2K_SESSION_START_FAILED, ioException);
+          }
+        });
+    return true;
   }
 
   @Override
