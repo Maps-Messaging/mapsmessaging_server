@@ -40,6 +40,14 @@ public class N2KTwinConfig {
   protected boolean publishMavlinkDrones = true;
 
   @Schema(
+      description = "Engine topic used for outbound AIS PGN requests. Must match the N2K protocol outboundTopicName.",
+      requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+      nullable = true,
+      example = "/n2k/ais/outbound"
+  )
+  protected String outboundTopicName;
+
+  @Schema(
       description =
           "Messaging topic subscription used to receive decoded NMEA 2000 JSON events for twin monitoring.",
       example = "/canbus0/n2k/json/#",
