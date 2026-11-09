@@ -1,12 +1,15 @@
 package io.mapsmessaging.state.n2k;
 
 import io.mapsmessaging.canbus.j1939.n2k.codec.FieldValueSource;
+import io.mapsmessaging.state.AISN2KManager;
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
 import io.mapsmessaging.state.config.n2k.N2KAisConfigDTO;
+import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.config.n2k.N2KPgnTransmitConfigDTO;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import org.junit.jupiter.api.Test;
@@ -87,6 +90,31 @@ class DroneMonitorTest {
     monitor.close();
 
     verify(twinManager).removeObserver(monitor);
+  }
+
+  @Test
+  void aisManagerRegistersAndRemovesObserverWithoutProtocolReference() {
+    TwinManager twinManager = mock(TwinManager.class);
+    N2KTwinConfig config = new N2KTwinConfig();
+    config.setOutboundTopicName("/n2k/ais/outbound");
+    AISN2KManager manager = new AISN2KManager(twinManager, config, mock(N2kSession.class));
+
+    manager.start();
+    org.mockito.ArgumentCaptor<TwinObserver> observer = org.mockito.ArgumentCaptor.forClass(TwinObserver.class);
+    verify(twinManager).addObserver(observer.capture());
+    manager.stop();
+
+    verify(twinManager).removeObserver(observer.getValue());
+  }
+
+  @Test
+  void aisManagerWithoutOutboundTopicDoesNotRegisterObserver() {
+    TwinManager twinManager = mock(TwinManager.class);
+    AISN2KManager manager = new AISN2KManager(twinManager, new N2KTwinConfig(), mock(N2kSession.class));
+
+    manager.start();
+
+    verify(twinManager, never()).addObserver(any());
   }
 
   private static N2KAisConfigDTO onlyPositionPgn(long interval) {
