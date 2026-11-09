@@ -101,6 +101,7 @@ public enum StateLogMessages implements LogMessage {
   N2K_DRONE_CONFIG_RESOLVED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Resolved drone configuration '{}' for N2K topic '{}'"),
   N2K_DRONE_CONFIG_MISSING(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "No N2K drone configuration found for source '{}' using topic '{}'"),
   N2K_AIS_OUTBOUND_NOT_CONFIGURED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "N2K AIS publication is enabled but outboundTopicName is not configured"),
+  N2K_AIS_PARSER_LOAD_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load N2K AIS parser; AIS observer will not be registered"),
   N2K_AIS_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to publish N2K AIS PGN to engine topic '{}'"),
   N2K_SESSION_START_SKIPPED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "N2K session '{}' was not started for topic '{}' because no matching drone is configured"),
   N2K_SESSION_STARTING(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "Starting N2K session '{}' using topic '{}'"),
