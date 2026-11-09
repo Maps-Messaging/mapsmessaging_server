@@ -119,6 +119,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       n2KTwinConfig.setName(n2kProps.getProperty("name", n2KTwinConfig.getName()));
       n2KTwinConfig.setVehicleClass(n2kProps.getProperty(VEHICLE_CLASS, n2KTwinConfig.getVehicleClass()));
       n2KTwinConfig.setPublishMavlinkDrones(n2kProps.getBooleanProperty("publishMavlinkDrones", n2KTwinConfig.isPublishMavlinkDrones()));
+      n2KTwinConfig.setOutboundTopicName(n2kProps.getProperty("outboundTopicName", n2KTwinConfig.getOutboundTopicName()));
       if (n2kProps.containsKey("ais")) {
         Object aisConfig = n2kProps.get("ais");
         if (aisConfig instanceof ConfigurationProperties aisProperties) {
@@ -205,6 +206,9 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
       n2kProps.put("name", this.n2KTwinConfig.getName());
       n2kProps.put(VEHICLE_CLASS, this.n2KTwinConfig.getVehicleClass());
       n2kProps.put("publishMavlinkDrones", this.n2KTwinConfig.isPublishMavlinkDrones());
+      if (this.n2KTwinConfig.getOutboundTopicName() != null) {
+        n2kProps.put("outboundTopicName", this.n2KTwinConfig.getOutboundTopicName());
+      }
 
       if (n2KTwinConfig.getAis() != null) {
         n2kProps.put("ais", N2KAisConfig.toConfigurationProperties(n2KTwinConfig.getAis()));
@@ -222,6 +226,11 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     }
 
     boolean hasChanged = false;
+
+    if (!Objects.equals(n2KTwinConfig.getOutboundTopicName(), newConfig.n2KTwinConfig.getOutboundTopicName())) {
+      n2KTwinConfig.setOutboundTopicName(newConfig.n2KTwinConfig.getOutboundTopicName());
+      hasChanged = true;
+    }
 
     if (n2KTwinConfig.isPublishMavlinkDrones() != newConfig.n2KTwinConfig.isPublishMavlinkDrones()) {
       n2KTwinConfig.setPublishMavlinkDrones(newConfig.n2KTwinConfig.isPublishMavlinkDrones());
@@ -910,7 +919,7 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
     if (this.n2KTwinConfig.isEnable() || this.n2KTwinConfig.isPublishMavlinkDrones()) {
       return true;
     }
-    if (this.n2KTwinConfig.getName() != null || this.n2KTwinConfig.getVehicleClass() != null) {
+    if (this.n2KTwinConfig.getName() != null || this.n2KTwinConfig.getVehicleClass() != null || this.n2KTwinConfig.getOutboundTopicName() != null) {
       return true;
     }
     return this.n2KTwinConfig.getTopic() != null && !"/canbus0/n2k/json/#".equals(this.n2KTwinConfig.getTopic());
