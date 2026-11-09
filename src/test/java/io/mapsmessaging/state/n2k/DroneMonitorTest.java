@@ -100,6 +100,7 @@ class DroneMonitorTest {
     AISN2KManager manager = new AISN2KManager(twinManager, config, mock(N2kSession.class));
 
     manager.start();
+    manager.start();
     org.mockito.ArgumentCaptor<TwinObserver> observer = org.mockito.ArgumentCaptor.forClass(TwinObserver.class);
     verify(twinManager).addObserver(observer.capture());
     manager.stop();
