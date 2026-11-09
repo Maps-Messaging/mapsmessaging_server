@@ -286,6 +286,19 @@ class TwinManagerConfigTest {
   }
 
   @Test
+  void updateCopiesN2kOutboundTopic() {
+    TwinManagerConfig current = new TwinManagerConfig();
+    current.setN2KTwinConfig(new N2KTwinConfig());
+    TwinManagerConfigDTO updated = new TwinManagerConfigDTO();
+    N2KTwinConfig updatedN2k = new N2KTwinConfig();
+    updatedN2k.setOutboundTopicName("/n2k/ais/outbound");
+    updated.setN2KTwinConfig(updatedN2k);
+
+    assertTrue(current.update(updated));
+    assertEquals("/n2k/ais/outbound", current.getN2KTwinConfig().getOutboundTopicName());
+  }
+
+  @Test
   void update_copiesAdapterConfigMap() {
     TwinManagerConfig config = new TwinManagerConfig();
     config.setN2KTwinConfig(new N2KTwinConfig());
