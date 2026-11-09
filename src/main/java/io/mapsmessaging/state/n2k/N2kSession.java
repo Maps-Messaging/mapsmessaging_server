@@ -152,13 +152,13 @@ public class N2kSession implements MessageHandler, Lifecycle {
     protocol.getSession().findDestination(topic, DestinationType.TOPIC)
         .whenComplete((destination, exception) -> {
           if (exception != null || destination == null) {
-            logger.log(N2K_SESSION_START_FAILED, exception == null ? new IOException("No outbound N2K destination: " + topic) : new IOException(exception));
+            logger.log(N2K_AIS_PUBLISH_FAILED, topic, exception == null ? new IOException("Destination unavailable") : new IOException(exception));
             return;
           }
           try {
             destination.storeMessage(message);
           } catch (IOException ioException) {
-            logger.log(N2K_SESSION_START_FAILED, ioException);
+            logger.log(N2K_AIS_PUBLISH_FAILED, topic, ioException);
           }
         });
     return true;
