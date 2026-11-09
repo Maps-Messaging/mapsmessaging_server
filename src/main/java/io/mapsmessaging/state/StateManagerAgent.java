@@ -110,11 +110,13 @@ public class StateManagerAgent implements Agent {
       lifecycleList.add(new TakManager(twinManager, takConfig));
       lifecycleList.add(new MavlinkTwinManager(twinManager, registry, config));
       loadStateMessageAdapters(config);
-      if (n2KTwinConfig != null && n2KTwinConfig.isEnable()) {
-        lifecycleList.add(new N2kSession(twinManager, n2KTwinConfig, registry));
+      N2kSession n2kSession = null;
+      if (n2KTwinConfig != null && (n2KTwinConfig.isEnable() || n2KTwinConfig.isPublishMavlinkDrones())) {
+        n2kSession = new N2kSession(twinManager, n2KTwinConfig, registry, n2KTwinConfig.isEnable());
+        lifecycleList.add(n2kSession);
       }
       lifecycleList.add(new TwinPublisherManager(twinManager, config.getPublish()));
-      aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig());
+      aisManager = new AISN2KManager(twinManager, config.getN2KTwinConfig(), n2kSession);
       lifecycleList.add(aisManager);
       List<EndPointConnectionServerConfig> migrationList = TakConnectionConfigConverter.convert(config.getTak());
       if(!migrationList.isEmpty()) {
