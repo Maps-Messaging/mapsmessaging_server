@@ -47,7 +47,6 @@ public class TwinManagerConfig extends TwinManagerConfigDTO implements Config, C
   private static final String TLS_ENABLED = "tlsEnabled";
   private static final String HOSTNAME = "hostname";
   private static final String SPECIALIZATION = "specialization";
-  private static final String ALTITUDE_METERS = "altitudeMeters";
   private static final String DESCRIPTION = "description";
   private static final String GEOSPATIAL_KEY = "geospatial";
   private static final String TOPIC = "topic";
