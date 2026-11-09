@@ -20,57 +20,45 @@
 package io.mapsmessaging.state;
 
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
-import io.mapsmessaging.network.protocol.impl.n2k.N2kProtocol;
-import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
+import io.mapsmessaging.canbus.j1939.n2k.N2kParserFactory;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.n2k.DroneMonitor;
+import io.mapsmessaging.state.n2k.N2kSession;
 import io.mapsmessaging.utilities.Lifecycle;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class AISN2KManager implements Lifecycle {
 
   private final N2KTwinConfig aisConfig;
   private final TwinManager twinManager;
-  private final List<DroneMonitor> droneMonitors;
+  private final N2kSession session;
+  private DroneMonitor droneMonitor;
 
 
 
-  public AISN2KManager(TwinManager twinManager, N2KTwinConfig aisConfig) {
+  public AISN2KManager(TwinManager twinManager, N2KTwinConfig aisConfig, N2kSession session) {
     this.aisConfig = aisConfig;
     this.twinManager = twinManager;
-    droneMonitors = new CopyOnWriteArrayList<>();
+    this.session = session;
   }
 
   @Override
   public void start() {
-    // Drone monitors are created when a protocol is registered.
+    if (aisConfig == null || !aisConfig.isPublishMavlinkDrones() || session == null
+        || aisConfig.getOutboundTopicName() == null || aisConfig.getOutboundTopicName().isBlank()) {
+      return;
+    }
+    N2kMessageParser parser = new N2kMessageParser(N2kParserFactory.getN2kParser());
+    droneMonitor = new DroneMonitor(twinManager, aisConfig.getAis(), parser, session);
+    twinManager.addObserver(droneMonitor);
   }
 
   @Override
   public void stop() {
-    for(DroneMonitor droneMonitor: droneMonitors){
+    if (droneMonitor != null) {
       droneMonitor.close();
+      droneMonitor = null;
     }
   }
-
-  public void registerProtocol(N2kProtocol n2kprotocol){
-    if(aisConfig.isPublishMavlinkDrones()) {
-      N2kMessageParser parser = ((CanbusFormatter) n2kprotocol.getFormatter()).getParser();
-      droneMonitors.add(new DroneMonitor(twinManager, aisConfig.getAis(), parser, n2kprotocol));
-    }
-  }
-
-  public void unregisterProtocol(N2kProtocol n2kprotocol){
-    for(DroneMonitor droneMonitor: droneMonitors){
-      if(droneMonitor.getN2kProtocol() == n2kprotocol){
-        droneMonitors.remove(droneMonitor);
-        droneMonitor.close();
-        break;
-      }
-    }
-  }
-
 }
