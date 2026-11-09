@@ -119,6 +119,54 @@ class N2kProtocolBranchCoverageTest {
     assertEquals("CanId: " + canId + " Data: " + Base64.getEncoder().encodeToString(data), rendered);
   }
 
+  @ParameterizedTest
+  @CsvSource({"60928,SINGLE_FRAME", "126996,FAST_PACKET"})
+  void sendMessageRoutesCompletePgnRequestThroughExistingPacker(int pgn, N2kTransportType transport) throws Exception {
+    Fixture fixture = fixture();
+    byte[] data = {1, 2, 3};
+    when(fixture.framePacker.getTransportType(pgn, data.length)).thenReturn(transport);
+    List<CanFrame> frames = List.of(frame(pgn, 42, 255, data));
+    if (transport == N2kTransportType.FAST_PACKET) {
+      when(fixture.framePacker.packFastPacket(eq(pgn), anyInt(), eq(42), eq(255), aryEq(data))).thenReturn(frames);
+    }
+    JsonObject request = new JsonObject();
+    request.addProperty("type", "n2k-pgn");
+    request.addProperty("pgn", pgn);
+    request.addProperty("destinationAddress", 255);
+    request.addProperty("payload", Base64.getEncoder().encodeToString(data));
+    Message message = mock(Message.class);
+    when(message.getOpaqueData()).thenReturn(request.toString().getBytes(StandardCharsets.UTF_8));
+
+    fixture.protocol.sendMessage(new MessageEvent("/out", null, message, null));
+
+    if (transport == N2kTransportType.FAST_PACKET) {
+      verify(fixture.endPoint).writeFrames(same(frames));
+      verify(fixture.endPoint, never()).writeFrame(any());
+    } else {
+      verify(fixture.endPoint).writeFrame(any(CanFrame.class));
+      verify(fixture.endPoint, never()).writeFrames(anyList());
+    }
+    verifyNoInteractions(fixture.formatter);
+  }
+
+  @Test
+  void sendMessageRejectsInvalidCompletePgnRequest() throws Exception {
+    Fixture fixture = fixture();
+    JsonObject request = new JsonObject();
+    request.addProperty("type", "n2k-pgn");
+    request.addProperty("pgn", 129039);
+    request.addProperty("destinationAddress", 256);
+    request.addProperty("payload", Base64.getEncoder().encodeToString(new byte[]{1}));
+    Message message = mock(Message.class);
+    when(message.getOpaqueData()).thenReturn(request.toString().getBytes(StandardCharsets.UTF_8));
+
+    assertDoesNotThrow(() -> fixture.protocol.sendMessage(new MessageEvent("/out", null, message, null)));
+
+    verify(fixture.endPoint, never()).writeFrame(any());
+    verify(fixture.endPoint, never()).writeFrames(anyList());
+    verifyNoInteractions(fixture.formatter);
+  }
+
   @Test
   void sendMessageIgnoresNullPayload() throws Exception {
     Fixture fixture = fixture();
