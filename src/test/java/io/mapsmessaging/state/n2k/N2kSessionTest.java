@@ -1,13 +1,11 @@
 package io.mapsmessaging.state.n2k;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.features.DestinationType;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.concurrent.CompletableFuture;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.state.StateLoopProtocol;
@@ -18,6 +16,9 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.util.SessionHelper;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -122,7 +123,7 @@ class N2kSessionTest {
       verify(protocol).close();
       org.mockito.ArgumentCaptor<Message> messages = org.mockito.ArgumentCaptor.forClass(Message.class);
       verify(destination).storeMessage(messages.capture());
-      var request = JsonParser.parseString(new String(messages.getValue().getOpaqueData(), StandardCharsets.UTF_8)).getAsJsonObject();
+      JsonObject request = JsonParser.parseString(new String(messages.getValue().getOpaqueData(), StandardCharsets.UTF_8)).getAsJsonObject();
       assertEquals("n2k-pgn", request.get("type").getAsString());
       assertEquals(129039, request.get("pgn").getAsInt());
       assertEquals(255, request.get("destinationAddress").getAsInt());
