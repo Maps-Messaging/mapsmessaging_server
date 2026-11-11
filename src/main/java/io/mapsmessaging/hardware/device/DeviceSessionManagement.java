@@ -67,6 +67,8 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private Session session;
   private Destination destination;
   private Destination config;
+  private Destination request;
+  private Destination response;
 
   private SubscribedEventManager subscribedEventManager;
   private SubscribedEventManager displayEventManager;
@@ -128,8 +130,10 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     if(device.enableConfig()) {
       config = session.findDestination(device.getTopicName(topicNameTemplate+ "/config"), DestinationType.TOPIC).get();
       try {
+        request = session.findDestination(device.getTopicName(topicNameTemplate+ "/request"), DestinationType.TOPIC).get();
+        response = session.findDestination(device.getTopicName(topicNameTemplate+ "/response"), DestinationType.TOPIC).get();
         updateConfig();
-        subscribedEventManager = subscribe(config);
+        subscribedEventManager = subscribe(request);
       } catch (Exception e) {
         logger.log(DEVICE_SUBSCRIPTION_EXCEPTION, e);
       }
@@ -163,8 +167,8 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   public void stop() throws IOException {
     logger.log(DEVICE_STOP, device.getName() );
     device.getTrigger().removeTask(this);
-    if(config != null) {
-      session.removeSubscription(config.getFullyQualifiedNamespace());
+    if(request != null) {
+      session.removeSubscription(request.getFullyQualifiedNamespace());
     }
     SessionManager.getInstance().close(session, true);
   }
@@ -174,6 +178,10 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   }
 
   private Message buildMessage(byte[] payload) {
+    return buildMessage(payload, true, null);
+  }
+
+  private Message buildMessage(byte[] payload, boolean retain, byte[] correlationData) {
     Map<String, String> meta = new LinkedHashMap<>();
     meta.put("busName", device.getBusName());
     if(device.getBusNumber()>=0) meta.put("busNumber", ""+device.getBusNumber());
@@ -186,7 +194,10 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     messageBuilder.setTransformation(transformation);
     messageBuilder.setQoS(QualityOfService.AT_MOST_ONCE);
     messageBuilder.setMeta(meta);
-    messageBuilder.setRetain(true);
+    messageBuilder.setRetain(retain);
+    if (correlationData != null) {
+      messageBuilder.setCorrelationData(correlationData);
+    }
     return messageBuilder.build();
   }
 
@@ -235,21 +246,49 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   @Override
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     try {
-      byte[] update = device.updateConfig(messageEvent.getMessage().getOpaqueData());
-      if(update != null && device.getType() == DeviceType.SENSOR) {
-        Thread t = new Thread(() -> {
-          try {
-            config.storeMessage(buildMessage(update));
-          } catch (IOException e) {
-            logger.log(DEVICE_PUBLISH_EXCEPTION, e);
-          }
-        });
-        t.start();
+      Message incoming = messageEvent.getMessage();
+      // Preserve the existing display /data write path.
+      if (destination != null && destination.getFullyQualifiedNamespace() != null
+          && destination.getFullyQualifiedNamespace().equals(messageEvent.getDestinationName())) {
+        device.updateConfig(incoming.getOpaqueData());
+        return;
       }
-    } catch (Throwable e) {
-      logger.log(DEVICE_PUBLISH_EXCEPTION, e);
+      if (incoming.isRetain()) {
+        publishResponse(errorResponse("Retained device requests are not permitted"), incoming.getCorrelationData());
+        return;
+      }
+      try {
+        byte[] result = device.updateConfig(incoming.getOpaqueData());
+        publishResponse(result == null ? "{}".getBytes(StandardCharsets.UTF_8) : result, incoming.getCorrelationData());
+      } catch (Throwable exception) {
+        logger.log(DEVICE_PUBLISH_EXCEPTION, exception);
+        publishResponse(errorResponse(exception.getMessage()), incoming.getCorrelationData());
+      }
+    } catch (Throwable exception) {
+      logger.log(DEVICE_PUBLISH_EXCEPTION, exception);
+    } finally {
+      messageEvent.getCompletionTask().run();
     }
-    messageEvent.getCompletionTask().run();
+  }
+
+  private void publishResponse(byte[] payload, byte[] correlationData) {
+    if (response != null) {
+      Thread publisher = new Thread(() -> {
+        try {
+          response.storeMessage(buildMessage(payload, false, correlationData));
+        } catch (IOException exception) {
+          logger.log(DEVICE_PUBLISH_EXCEPTION, exception);
+        }
+      });
+      publisher.start();
+    }
+  }
+
+  private byte[] errorResponse(String message) {
+    JsonObject error = new JsonObject();
+    error.addProperty("status", "error");
+    error.addProperty("error", message == null ? "Device request failed" : message);
+    return error.toString().getBytes(StandardCharsets.UTF_8);
   }
 
   public void updateConfig() {

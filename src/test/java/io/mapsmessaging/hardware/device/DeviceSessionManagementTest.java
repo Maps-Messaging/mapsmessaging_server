@@ -220,6 +220,148 @@ class DeviceSessionManagementTest {
     verify(management.getDevice().getTrigger()).addTask(management);
   }
 
+  @Test
+  void configIsRetainedAndOnlyRequestTopicIsSubscribed() throws Exception {
+    DeviceHandler device = mock(DeviceHandler.class);
+    DeviceController controller = mock(DeviceController.class);
+    Session session = mock(Session.class);
+    Destination data = mock(Destination.class);
+    Destination config = mock(Destination.class);
+    Destination request = mock(Destination.class);
+    Destination response = mock(Destination.class);
+    Trigger trigger = mock(Trigger.class);
+    when(device.getSchemaId()).thenReturn(UUID.randomUUID());
+    when(device.getController()).thenReturn(controller);
+    when(device.getName()).thenReturn("SEN6x");
+    when(device.getBusName()).thenReturn("i2c");
+    when(device.getVersion()).thenReturn("1.0");
+    when(device.getType()).thenReturn(DeviceType.SENSOR);
+    when(device.getTrigger()).thenReturn(trigger);
+    when(device.getSchema()).thenReturn(null);
+    when(device.enableConfig()).thenReturn(true);
+    when(device.getConfiguration()).thenReturn("{\"commands\":{}}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    when(device.getTopicName("/device/data")).thenReturn("/device/data");
+    when(device.getTopicName("/device/config")).thenReturn("/device/config");
+    when(device.getTopicName("/device/request")).thenReturn("/device/request");
+    when(device.getTopicName("/device/response")).thenReturn("/device/response");
+    when(request.getFullyQualifiedNamespace()).thenReturn("/device/request");
+    when(session.getName()).thenReturn("device-session");
+    when(session.findDestination("/device/data", DestinationType.TOPIC)).thenReturn(CompletableFuture.completedFuture(data));
+    when(session.findDestination("/device/config", DestinationType.TOPIC)).thenReturn(CompletableFuture.completedFuture(config));
+    when(session.findDestination("/device/request", DestinationType.TOPIC)).thenReturn(CompletableFuture.completedFuture(request));
+    when(session.findDestination("/device/response", DestinationType.TOPIC)).thenReturn(CompletableFuture.completedFuture(response));
+
+    DeviceSessionManagement management =
+        new DeviceSessionManagement(device, "/device", DataFilter.ALWAYS_SEND, mock(BusHandler.class), null);
+    management.setSession(session);
+    management.start();
+
+    ArgumentCaptor<Message> retained = ArgumentCaptor.forClass(Message.class);
+    verify(config).storeMessage(retained.capture());
+    assertTrue(retained.getValue().isRetain());
+    assertArrayEquals("{\"commands\":{}}".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+        retained.getValue().getOpaqueData());
+    verify(session).addSubscription(any());
+    verify(config, never()).getFullyQualifiedNamespace();
+    verify(response, never()).storeMessage(any());
+  }
+
+  @Test
+  void requestRepliesOnResponseTopicWithoutReplacingRetainedConfig() throws Exception {
+    DeviceHandler device = mock(DeviceHandler.class);
+    DeviceController controller = mock(DeviceController.class);
+    Destination config = mock(Destination.class);
+    Destination response = mock(Destination.class);
+    Session session = mock(Session.class);
+    when(device.getSchemaId()).thenReturn(UUID.randomUUID());
+    when(device.getController()).thenReturn(controller);
+    when(device.getVersion()).thenReturn("1.0");
+    when(device.getName()).thenReturn("SEN6x");
+    when(device.getBusName()).thenReturn("i2c");
+    when(session.getName()).thenReturn("device-session");
+    byte[] payload = "{\"command\":\"RESET\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    when(device.updateConfig(payload)).thenReturn("{\"status\":\"success\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    DeviceSessionManagement management =
+        new DeviceSessionManagement(device, "/device", DataFilter.ALWAYS_SEND, mock(BusHandler.class), null);
+    management.setSession(session);
+    management.setConfig(config);
+    management.setResponse(response);
+    Message message = mock(Message.class);
+    when(message.getOpaqueData()).thenReturn(payload);
+    when(message.getCorrelationData()).thenReturn(new byte[]{7, 8, 9});
+    MessageEvent event = mock(MessageEvent.class);
+    Runnable completion = mock(Runnable.class);
+    when(event.getMessage()).thenReturn(message);
+    when(event.getCompletionTask()).thenReturn(completion);
+
+    management.sendMessage(event);
+
+    ArgumentCaptor<Message> reply = ArgumentCaptor.forClass(Message.class);
+    verify(response, timeout(1000)).storeMessage(reply.capture());
+    assertFalse(reply.getValue().isRetain());
+    assertArrayEquals(new byte[]{7, 8, 9}, reply.getValue().getCorrelationData());
+    verify(config, never()).storeMessage(any());
+    verify(completion).run();
+  }
+
+  @Test
+  void rejectedRetainedRequestProducesNonRetainedErrorWithoutExecuting() throws Exception {
+    DeviceHandler device = mock(DeviceHandler.class);
+    when(device.getSchemaId()).thenReturn(UUID.randomUUID());
+    when(device.getController()).thenReturn(mock(DeviceController.class));
+    DeviceSessionManagement management =
+        new DeviceSessionManagement(device, "/device", DataFilter.ALWAYS_SEND, mock(BusHandler.class), null);
+    management.setSession(mock(Session.class));
+    Destination response = mock(Destination.class);
+    management.setResponse(response);
+    Message incoming = mock(Message.class);
+    when(incoming.isRetain()).thenReturn(true);
+    when(incoming.getCorrelationData()).thenReturn(new byte[]{1});
+    MessageEvent event = mock(MessageEvent.class);
+    Runnable completion = mock(Runnable.class);
+    when(event.getMessage()).thenReturn(incoming);
+    when(event.getCompletionTask()).thenReturn(completion);
+
+    management.sendMessage(event);
+
+    verify(device, never()).updateConfig(any());
+    ArgumentCaptor<Message> captured = ArgumentCaptor.forClass(Message.class);
+    verify(response, timeout(1000)).storeMessage(captured.capture());
+    assertFalse(captured.getValue().isRetain());
+    assertArrayEquals(new byte[]{1}, captured.getValue().getCorrelationData());
+    assertTrue(new String(captured.getValue().getOpaqueData()).contains("Retained device requests"));
+    verify(completion).run();
+  }
+
+  @Test
+  void failedRequestProducesNonRetainedCorrelatedError() throws Exception {
+    DeviceHandler device = mock(DeviceHandler.class);
+    when(device.getSchemaId()).thenReturn(UUID.randomUUID());
+    when(device.getController()).thenReturn(mock(DeviceController.class));
+    when(device.updateConfig(any())).thenThrow(new IOException("bad command"));
+    DeviceSessionManagement management =
+        new DeviceSessionManagement(device, "/device", DataFilter.ALWAYS_SEND, mock(BusHandler.class), null);
+    management.setSession(mock(Session.class));
+    Destination response = mock(Destination.class);
+    management.setResponse(response);
+    Message incoming = mock(Message.class);
+    when(incoming.getOpaqueData()).thenReturn(new byte[]{1});
+    when(incoming.getCorrelationData()).thenReturn(new byte[]{2});
+    MessageEvent event = mock(MessageEvent.class);
+    Runnable completion = mock(Runnable.class);
+    when(event.getMessage()).thenReturn(incoming);
+    when(event.getCompletionTask()).thenReturn(completion);
+
+    management.sendMessage(event);
+
+    ArgumentCaptor<Message> captured = ArgumentCaptor.forClass(Message.class);
+    verify(response, timeout(1000)).storeMessage(captured.capture());
+    assertFalse(captured.getValue().isRetain());
+    assertArrayEquals(new byte[]{2}, captured.getValue().getCorrelationData());
+    assertTrue(new String(captured.getValue().getOpaqueData()).contains("bad command"));
+    verify(completion).run();
+  }
+
   private static SchemaConfig schema(String source) {
     SchemaConfig config = new SchemaConfig();
     config.setUniqueId(UUID.randomUUID());
