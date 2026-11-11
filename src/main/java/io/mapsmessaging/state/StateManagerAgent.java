@@ -193,7 +193,13 @@ public class StateManagerAgent implements Agent {
         }
       }
     } finally {
-      logger.log(STATE_MANAGER_STOPPED);
+      try {
+        if (twinManager != null) {
+          twinManager.close();
+        }
+      } finally {
+        logger.log(STATE_MANAGER_STOPPED);
+      }
     }
   }
 
