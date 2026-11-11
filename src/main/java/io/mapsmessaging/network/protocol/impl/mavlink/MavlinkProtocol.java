@@ -98,6 +98,7 @@ public class MavlinkProtocol extends Protocol {
   private final AtomicInteger sequenceCounter = new AtomicInteger(0);
   private final MavlinkHeartbeatEmitter heartbeatEmitter;
   private final MavlinkTransactionManager transactionManager;
+  private final MavlinkTransactionStatusDispatcher statusDispatcher;
   private ScheduledFuture<?> heartbeatFuture;
   private boolean detectedDialect = false;
 
@@ -155,6 +156,7 @@ public class MavlinkProtocol extends Protocol {
     }
     outboundTopicName = outboundTopic;
     cancellationTopicName = outboundTopic == null || outboundTopic.isEmpty() ? null : outboundTopic + "/cancel";
+    statusDispatcher = new MavlinkTransactionStatusDispatcher();
     transactionManager = new MavlinkTransactionManager(this::sendTransactionFrame, this::publishTransactionStatus,
         outboundTopicName == null ? null : outboundTopicName + "/transactions", key.getSystemId(),
         mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getSystemId() : 0,
@@ -173,6 +175,7 @@ public class MavlinkProtocol extends Protocol {
     if (transactionManager != null) {
       transactionManager.close();
     }
+    statusDispatcher.close();
     stopHeartbeat();
     try {
       if (!session.isClosed()) {
@@ -299,7 +302,7 @@ public class MavlinkProtocol extends Protocol {
         .setRetain(false)
         .storeOffline(storeOffline)
         .build();
-    sendMessage(topic, message);
+    statusDispatcher.dispatch(() -> sendMessage(topic, message));
   }
 
   public static String toHexDump(byte[] data) {
@@ -593,5 +596,45 @@ public class MavlinkProtocol extends Protocol {
     }
 
     return value;
+  }
+}
+
+
+/**
+ * Separates MAVLink transaction status delivery from the network reader and engine
+ * delivery call stacks. Each protocol instance has its own ordered, bounded queue.
+ */
+final class MavlinkTransactionStatusDispatcher implements AutoCloseable {
+  private static final int QUEUE_CAPACITY = 256;
+  private static final long SHUTDOWN_TIMEOUT_SECONDS = 5;
+
+  private volatile Thread worker;
+  private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+      1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(QUEUE_CAPACITY),
+      task -> {
+        Thread thread = new Thread(task, "mavlink-transaction-status");
+        thread.setDaemon(true);
+        worker = thread;
+        return thread;
+      }, new ThreadPoolExecutor.AbortPolicy());
+
+  void dispatch(Runnable task) {
+    executor.execute(task);
+  }
+
+  @Override
+  public void close() {
+    executor.shutdown();
+    if (Thread.currentThread() == worker) {
+      return;
+    }
+    try {
+      if (!executor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      executor.shutdownNow();
+    }
   }
 }
