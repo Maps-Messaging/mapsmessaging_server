@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
-import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkPosition;
 
 public final class MavlinkMissionItemFactory {
 

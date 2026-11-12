@@ -8,8 +8,6 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
-import io.mapsmessaging.network.protocol.impl.mavlink.messages.*;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
