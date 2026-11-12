@@ -396,7 +396,7 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
     }
 
     requireFinite(altitudeMeters, "altitudeMeters");
-    return new GeoPosition(position.getLatitude(), position.getLongitude(), null, null);
+    return new GeoPosition(position.getLatitude(), position.getLongitude(), null, null, altitudeMeters);
   }
 
   protected final float toAltitude(GeoPosition position) {
