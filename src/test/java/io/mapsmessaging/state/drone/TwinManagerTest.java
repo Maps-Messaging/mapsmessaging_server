@@ -34,6 +34,11 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -187,16 +192,18 @@ class TwinManagerTest {
   }
 
   @Test
-  void observer_receivesUpdateEvent() {
+  void observer_receivesUpdateEvent() throws InterruptedException {
     TwinManager twinManager = new TwinManager();
-    AtomicBoolean called = new AtomicBoolean(false);
+    CountDownLatch called = new CountDownLatch(1);
+    AtomicReference<String> observedId = new AtomicReference<>();
+    AtomicReference<String> observedMode = new AtomicReference<>();
 
     twinManager.addObserver(new TwinObserver() {
       @Override
       public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
-        called.set(true);
-        assertEquals("drone-1", twinId);
-        assertEquals("AUTO", ((DroneTwin) current).getFlightMode());
+        observedId.set(twinId);
+        observedMode.set(((DroneTwin) current).getFlightMode());
+        called.countDown();
       }
     });
 
@@ -205,13 +212,16 @@ class TwinManagerTest {
 
     twinManager.updateTwin("drone-1", twin -> ((DroneTwin) twin).setFlightMode("AUTO"), new TwinUpdateContext());
 
-    assertTrue(called.get());
+    assertTrue(called.await(2, TimeUnit.SECONDS));
+    assertEquals("drone-1", observedId.get());
+    assertEquals("AUTO", observedMode.get());
+    twinManager.close();
   }
 
   @Test
-  void observerException_doesNotBreakManagerOrOtherObservers() {
+  void observerException_doesNotBreakManagerOrOtherObservers() throws InterruptedException {
     TwinManager twinManager = new TwinManager();
-    AtomicBoolean healthyObserverCalled = new AtomicBoolean(false);
+    CountDownLatch healthyObserverCalled = new CountDownLatch(1);
 
     twinManager.addObserver(new TwinObserver() {
       @Override
@@ -223,7 +233,7 @@ class TwinManagerTest {
     twinManager.addObserver(new TwinObserver() {
       @Override
       public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
-        healthyObserverCalled.set(true);
+        healthyObserverCalled.countDown();
       }
     });
 
@@ -234,8 +244,86 @@ class TwinManagerTest {
         twinManager.updateTwin("drone-1", twin -> ((DroneTwin) twin).setFlightMode("AUTO"), new TwinUpdateContext())
     );
 
-    assertTrue(healthyObserverCalled.get());
+    assertTrue(healthyObserverCalled.await(2, TimeUnit.SECONDS));
     assertEquals("AUTO", ((DroneTwin) twinManager.getTwin("drone-1").orElseThrow()).getFlightMode());
+    twinManager.close();
+  }
+
+
+  @Test
+  void updateCallbacksRunOnDedicatedThreadAndRemainOrdered() throws InterruptedException {
+    try (TwinManager twinManager = new TwinManager()) {
+      twinManager.registerTwin(new DroneTwin("drone-1"), new TwinUpdateContext());
+      CountDownLatch delivered = new CountDownLatch(3);
+      List<Integer> observed = new CopyOnWriteArrayList<>();
+      AtomicReference<Thread> callbackThread = new AtomicReference<>();
+      Thread engineThread = Thread.currentThread();
+
+      twinManager.addObserver(new TwinObserver() {
+        @Override
+        public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
+          callbackThread.set(Thread.currentThread());
+          observed.add((int) context.getSequenceNumber().longValue());
+          delivered.countDown();
+        }
+      });
+
+      for (int index = 0; index < 3; index++) {
+        TwinUpdateContext context = new TwinUpdateContext();
+        context.setSequenceNumber((long) index);
+        twinManager.updateTwin("drone-1", twin -> ((DroneTwin) twin).setArmed(true), context);
+      }
+
+      assertTrue(delivered.await(2, TimeUnit.SECONDS));
+      assertNotSame(engineThread, callbackThread.get());
+      assertEquals(List.of(0, 1, 2), observed);
+    }
+  }
+
+  @Test
+  void closeDrainsPendingUpdateNotifications() throws InterruptedException {
+    TwinManager twinManager = new TwinManager();
+    twinManager.registerTwin(new DroneTwin("drone-1"), new TwinUpdateContext());
+    CountDownLatch delivered = new CountDownLatch(3);
+    twinManager.addObserver(new TwinObserver() {
+      @Override
+      public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
+        delivered.countDown();
+      }
+    });
+
+    for (int index = 0; index < 3; index++) {
+      twinManager.updateTwin("drone-1", twin -> ((DroneTwin) twin).setArmed(true), new TwinUpdateContext());
+    }
+
+    twinManager.close();
+    assertEquals(0L, delivered.getCount());
+    assertThrows(java.util.concurrent.RejectedExecutionException.class,
+        () -> twinManager.updateTwin("drone-1", twin -> ((DroneTwin) twin).setArmed(false), new TwinUpdateContext()));
+  }
+
+  @Test
+  void observerCanUpdateTwinWithoutReEnteringItsNotification() throws InterruptedException {
+    try (TwinManager twinManager = new TwinManager()) {
+      twinManager.registerTwin(new DroneTwin("drone-1"), new TwinUpdateContext());
+      CountDownLatch delivered = new CountDownLatch(2);
+      AtomicInteger calls = new AtomicInteger();
+      twinManager.addObserver(new TwinObserver() {
+        @Override
+        public void onTwinUpdated(String twinId, EntityTwin current, TwinUpdateContext context) {
+          if (calls.incrementAndGet() == 1) {
+            twinManager.updateTwin(twinId, twin -> ((DroneTwin) twin).setFlightMode("AUTO"), new TwinUpdateContext());
+          }
+          delivered.countDown();
+        }
+      });
+
+      twinManager.updateTwin("drone-1", twin -> ((DroneTwin) twin).setArmed(true), new TwinUpdateContext());
+
+      assertTrue(delivered.await(2, TimeUnit.SECONDS));
+      assertEquals(2, calls.get());
+      assertEquals("AUTO", ((DroneTwin) twinManager.getTwin("drone-1").orElseThrow()).getFlightMode());
+    }
   }
 
   @Test

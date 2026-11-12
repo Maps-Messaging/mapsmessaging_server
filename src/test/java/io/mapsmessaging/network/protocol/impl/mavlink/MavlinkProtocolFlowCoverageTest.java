@@ -11,6 +11,7 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
@@ -37,6 +38,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +77,163 @@ class MavlinkProtocolFlowCoverageTest {
     verify(completion).run();
     verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
     verify(fixture.factory, never()).writeTlog(any());
+  }
+
+  @Test
+  void nativeMavlinkCommandUsesManagerAndPreservesEngineCompletion() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Runnable completion = mock(Runnable.class);
+
+    fixture.protocol.sendMessage(event("ID#42#127.0.0.1:14550",
+        "{\"header\":{\"messageId\":76},\"payload\":{\"target_system\":3,\"target_component\":7,\"command\":400}}", completion));
+
+    verify(manager).submitNative(any(JsonElement.class), eq("127.0.0.1:14550"));
+    verify(completion).run();
+    verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
+  }
+
+  @Test
+  void cancellationTopicRoutesTransactionIdWithoutSendingMavlinkFrame() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    setField(fixture.protocol, MavlinkProtocol.class, "cancellationTopicName", "/outbound/cancel");
+    Runnable completion = mock(Runnable.class);
+    Message message = mock(Message.class);
+    when(message.getCorrelationData()).thenReturn("ID#42#127.0.0.1:14550".getBytes(StandardCharsets.UTF_8));
+    JsonObject cancellation = new JsonObject();
+    cancellation.addProperty("transactionId", "cancel-1");
+    when(message.getOpaqueData()).thenReturn(cancellation.toString().getBytes(StandardCharsets.UTF_8));
+    fixture.protocol.sendMessage(new MessageEvent("/outbound/cancel", mock(SubscribedEventManager.class), message, completion));
+
+    ArgumentCaptor<JsonObject> captured = ArgumentCaptor.forClass(JsonObject.class);
+    verify(manager).cancelRequest(captured.capture(), eq("127.0.0.1:14550"));
+    assertEquals("cancel-1", captured.getValue().get("transactionId").getAsString());
+    verify(manager, never()).submitNative(any(), any());
+    verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
+    verify(completion).run();
+  }
+
+  @Test
+  void invalidCancellationPayloadDoesNotReachTransactionManager() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    setField(fixture.protocol, MavlinkProtocol.class, "cancellationTopicName", "/outbound/cancel");
+    Runnable completion = mock(Runnable.class);
+    Message message = mock(Message.class);
+    when(message.getCorrelationData()).thenReturn("ID#42#127.0.0.1:14550".getBytes(StandardCharsets.UTF_8));
+    when(message.getOpaqueData()).thenReturn("[]".getBytes(StandardCharsets.UTF_8));
+    fixture.protocol.sendMessage(new MessageEvent("/outbound/cancel", mock(SubscribedEventManager.class), message, completion));
+
+    verifyNoInteractions(manager);
+    verify(completion).run();
+  }
+
+  @Test
+  void nativeMavlinkMissionArrayUsesManagerWithoutOperationSelector() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Runnable completion = mock(Runnable.class);
+
+    fixture.protocol.sendMessage(event("ID#42#127.0.0.1:14550",
+        "[{\"header\":{\"messageId\":73},\"payload\":{\"seq\":0}}]", completion));
+
+    verify(manager).submitNative(any(JsonElement.class), eq("127.0.0.1:14550"));
+    verify(completion).run();
+  }
+
+  @Test
+  void obsoleteOperationEnvelopeRoutesToNativeValidation() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Runnable completion = mock(Runnable.class);
+
+    fixture.protocol.sendMessage(event("ID#42#127.0.0.1:14550",
+        "{\"operation\":\"COMMAND\",\"transactionId\":\"old-1\",\"messages\":[]}", completion));
+
+    verify(manager).submitNative(any(JsonElement.class), eq("127.0.0.1:14550"));
+    verify(completion).run();
+  }
+
+  @Test
+  void optInTransactionUsesProtocolManagerButPreservesEngineCompletion() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Runnable completion = mock(Runnable.class);
+
+    fixture.protocol.sendMessage(event(
+        "ID#42#127.0.0.1:14550",
+        "{\"transactionId\":\"command-1\",\"messages\":[]}",
+        completion));
+
+    verify(manager).submitNative(any(JsonElement.class), eq("127.0.0.1:14550"));
+    verify(fixture.endPoint, never()).sendPacket(any(Packet.class));
+    verify(completion).run();
+  }
+
+  @Test
+  void decodedInboundFrameReachesTransactionManagerWithOriginalSocketAddress() throws Exception {
+    Fixture fixture = fixture();
+    MavlinkTransactionManager manager = mock(MavlinkTransactionManager.class);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    Frame frame = frame(77, 1, false, new byte[0]);
+    ProcessedFrame processed = mock(ProcessedFrame.class);
+    when(processed.isValid()).thenReturn(true);
+    when(processed.getFrame()).thenReturn(frame);
+    when(processed.getFields()).thenReturn(Map.of("command", 400, "result", 0));
+    when(processed.getMessageName()).thenReturn("COMMAND_ACK");
+    when(fixture.eventFactory.unpack(eq("mavlink-test"), any(ByteBuffer.class))).thenReturn(Optional.of(processed));
+
+    fixture.protocol.processRawFrame(new byte[]{1, 2, 3}, "/127.0.0.1:14550");
+
+    verify(manager).onFrame(processed, "/127.0.0.1:14550");
+  }
+
+  @Test
+  void engineCommandAndDecodedAckCompleteThroughRealTransactionManager() throws Exception {
+    Fixture fixture = fixture();
+    List<JsonObject> statuses = new ArrayList<>();
+    MavlinkTransactionManager manager = new MavlinkTransactionManager(
+        (message, destination) -> invoke(fixture.protocol, "sendTransactionFrame", new Class<?>[]{JsonObject.class, String.class}, message, destination),
+        (topic, status) -> statuses.add(status.deepCopy()), "/status", 3, 255, 190);
+    setField(fixture.protocol, MavlinkProtocol.class, "transactionManager", manager);
+    when(fixture.formatter.parseFromJson(any(JsonObject.class))).thenReturn(new byte[]{1, 2, 3});
+    when(fixture.endPoint.sendPacket(any(Packet.class))).thenReturn(3);
+    Runnable completion = mock(Runnable.class);
+    String command = """
+        {
+          "transactionId": "engine-command",
+          "header": {"messageId": 76, "systemId": 255, "componentId": 190},
+          "payload": {"target_system": 3, "target_component": 7, "command": 400}
+        }
+        """;
+
+    try (manager) {
+      fixture.protocol.sendMessage(event("ID#42#127.0.0.1:14550", command, completion));
+      verify(completion).run();
+      verify(fixture.endPoint).sendPacket(any(Packet.class));
+      assertEquals("WAITING_FOR_ACK", statuses.getLast().get("status").getAsString());
+
+      Frame frame = frame(77, 1, false, new byte[0]);
+      ProcessedFrame processed = mock(ProcessedFrame.class);
+      when(processed.isValid()).thenReturn(true);
+      when(processed.getFrame()).thenReturn(frame);
+      when(processed.getFields()).thenReturn(Map.of("command", 400, "result", 0));
+      when(processed.getMessageName()).thenReturn("COMMAND_ACK");
+      when(fixture.eventFactory.unpack(eq("mavlink-test"), any(ByteBuffer.class))).thenReturn(Optional.of(processed));
+
+      fixture.protocol.processRawFrame(new byte[]{1, 2, 3}, "127.0.0.1:14550");
+
+      assertEquals("COMPLETED", statuses.getLast().get("status").getAsString());
+      assertEquals("engine-command", statuses.getLast().get("transactionId").getAsString());
+      verify(fixture.endPoint).sendPacket(any(Packet.class));
+    }
   }
 
   @Test

@@ -23,7 +23,9 @@ import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.state.StateLoopProtocol;
+import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.DroneInfoRegistry;
+import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.state.config.MavlinkTwinConfigDTO;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.Invocation;
@@ -42,6 +44,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
 
 class MavlinkStateSubscriberTest {
 
@@ -199,6 +203,86 @@ class MavlinkStateSubscriberTest {
         org.mockito.ArgumentMatchers.any(),
         org.mockito.ArgumentMatchers.any()
     );
+  }
+
+  @Test
+  void transactionStatusSubscriptionIsOptInAndUnsubscribedAtStop() throws Exception {
+    Fixture fixture = statusFixture();
+    fixture.subscriber.start();
+
+    assertEquals(2, invocationCount(fixture.protocol, "subscribeLocal"));
+    fixture.subscriber.stop();
+    assertEquals(2, invocationCount(fixture.protocol, "unsubscribeLocal"));
+    verify(fixture.protocol).unsubscribeLocal("/mavlink/status");
+    verify(fixture.twinUpdater).close();
+  }
+
+  @Test
+  void statusEventUpdatesCorrectConfiguredTwinWithoutEnteringTelemetryParser() {
+    Fixture fixture = statusFixture();
+    MavlinkKnownSourceDTO source = new MavlinkKnownSourceDTO();
+    source.setName("drone-1");
+    source.setSystemId(17);
+    source.setComponentId(42);
+    when(fixture.sourceRegistry.getTransactionSource(17, 42)).thenReturn(source);
+    MessageEvent event = statusEvent(MavlinkTransactionStatusTest.event().toString());
+
+    fixture.subscriber.handle(event);
+
+    verify(fixture.twinUpdater).updateTransactionStatus(eq("drone-1"), any(MavlinkTransactionStatus.class));
+    verify(fixture.sourceRegistry, never()).getKnownSource(any());
+    verify(event.getCompletionTask()).run();
+  }
+
+  @Test
+  void malformedOrUnknownStatusDoesNotUpdateTwin() {
+    Fixture fixture = statusFixture();
+    fixture.subscriber.handle(statusEvent("not-json"));
+    fixture.subscriber.handle(statusEvent("{}"));
+    fixture.subscriber.handle(statusEvent(MavlinkTransactionStatusTest.event().toString()));
+
+    verify(fixture.twinUpdater, never()).updateTransactionStatus(any(), any());
+  }
+
+  @Test
+  void disabledStatusSubscriptionKeepsExistingTelemetryHandling() throws Exception {
+    Fixture fixture = fixture();
+    fixture.subscriber.start();
+    assertEquals(1, invocationCount(fixture.protocol, "subscribeLocal"));
+    fixture.subscriber.stop();
+    assertEquals(1, invocationCount(fixture.protocol, "unsubscribeLocal"));
+  }
+
+  @Test
+  void statusTopicMustBeExactAndDifferentFromTelemetryTopic() {
+    StateLoopProtocol protocol = mock(StateLoopProtocol.class);
+    MavlinkSourceRegistry sources = mock(MavlinkSourceRegistry.class);
+    DroneInfoRegistry drones = mock(DroneInfoRegistry.class);
+    MavlinkTwinUpdater updater = mock(MavlinkTwinUpdater.class);
+    assertThrows(IllegalArgumentException.class, () ->
+        new MavlinkStateSubscriber(protocol, "mavlink/state", "mavlink/state", sources, drones, updater));
+    assertThrows(IllegalArgumentException.class, () ->
+        new MavlinkStateSubscriber(protocol, "mavlink/state", "/mavlink/+/status", sources, drones, updater));
+  }
+
+  private MessageEvent statusEvent(String json) {
+    MessageEvent event = mock(MessageEvent.class);
+    Message message = new MessageBuilder().setOpaqueData(json.getBytes(StandardCharsets.UTF_8)).build();
+    when(event.getDestinationName()).thenReturn("/mavlink/status");
+    when(event.getMessage()).thenReturn(message);
+    when(event.getCompletionTask()).thenReturn(mock(Runnable.class));
+    return event;
+  }
+
+  private Fixture statusFixture() {
+    StateLoopProtocol protocol = mock(StateLoopProtocol.class);
+    MavlinkSourceRegistry sourceRegistry = mock(MavlinkSourceRegistry.class);
+    DroneInfoRegistry droneRegistry = mock(DroneInfoRegistry.class);
+    MavlinkTwinUpdater updater = mock(MavlinkTwinUpdater.class);
+    when(droneRegistry.getDroneInfo("drone-1")).thenReturn(new DroneInfoDTO());
+    MavlinkStateSubscriber subscriber = new MavlinkStateSubscriber(
+        protocol, "mavlink/state", "/mavlink/status", sourceRegistry, droneRegistry, updater);
+    return new Fixture(protocol, sourceRegistry, updater, subscriber);
   }
 
   private void assertMalformedCompleted(Fixture fixture, byte[] payload) {

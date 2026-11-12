@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.config.capability;
 
 import com.google.gson.annotations.SerializedName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,6 +32,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Authorities {
   @SerializedName("$discriminator")
+  @Schema(name = "$discriminator")
   private final String discriminator =  "AuthorityTypeEnum_GUID";
   private UUID guid;
 }

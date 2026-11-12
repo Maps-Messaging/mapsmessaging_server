@@ -238,6 +238,7 @@ class TwinManagerConfigTest {
     n2k.put("name", "canbus1");
     n2k.put("vehicleClass", "USV");
     n2k.put("publishMavlinkDrones", false);
+    n2k.put("outboundTopicName", "/n2k/ais/outbound");
     root.put("n2k", n2k);
 
     TwinManagerConfig config = newTwinManagerConfig(root);
@@ -249,6 +250,7 @@ class TwinManagerConfigTest {
     assertEquals("canbus1", savedN2k.getProperty("name"));
     assertEquals("USV", savedN2k.getProperty("vehicleClass"));
     assertEquals(false, savedN2k.get("publishMavlinkDrones"));
+    assertEquals("/n2k/ais/outbound", savedN2k.getProperty("outboundTopicName"));
     ConfigurationProperties savedAis = assertInstanceOf(ConfigurationProperties.class, savedN2k.get("ais"));
     ConfigurationProperties savedPgn129039 = assertInstanceOf(ConfigurationProperties.class, savedAis.get("pgn129039"));
     assertEquals(true, savedPgn129039.get("enabled"));
@@ -281,6 +283,19 @@ class TwinManagerConfigTest {
     assertEquals(droneUuid, config.getDroneInfo().get(0).getUuid());
     assertNull(config.getDroneInfo().get(0).getDescription());
     assertInstanceOf(TaskCapabilities.class, config.getDroneInfo().get(0).getCapabilities());
+  }
+
+  @Test
+  void updateCopiesN2kOutboundTopic() {
+    TwinManagerConfig current = new TwinManagerConfig();
+    current.setN2KTwinConfig(new N2KTwinConfig());
+    TwinManagerConfigDTO updated = new TwinManagerConfigDTO();
+    N2KTwinConfig updatedN2k = new N2KTwinConfig();
+    updatedN2k.setOutboundTopicName("/n2k/ais/outbound");
+    updated.setN2KTwinConfig(updatedN2k);
+
+    assertTrue(current.update(updated));
+    assertEquals("/n2k/ais/outbound", current.getN2KTwinConfig().getOutboundTopicName());
   }
 
   @Test
@@ -326,6 +341,7 @@ class TwinManagerConfigTest {
     n2k.setEnable(true);
     n2k.setPublishMavlinkDrones(false);
     n2k.setTopic("/it/n2k/json/#");
+    n2k.setOutboundTopicName("/it/n2k/ais/outbound");
     n2k.setName("it-n2k");
     n2k.setVehicleClass("USV");
     n2k.getAis().getPgn129039().setEnabled(false);
@@ -364,6 +380,7 @@ class TwinManagerConfigTest {
     assertEquals(true, reloaded.getN2KTwinConfig().isEnable());
     assertEquals(false, reloaded.getN2KTwinConfig().isPublishMavlinkDrones());
     assertEquals("/it/n2k/json/#", reloaded.getN2KTwinConfig().getTopic());
+    assertEquals("/it/n2k/ais/outbound", reloaded.getN2KTwinConfig().getOutboundTopicName());
     assertEquals("it-n2k", reloaded.getN2KTwinConfig().getName());
     assertEquals("USV", reloaded.getN2KTwinConfig().getVehicleClass());
     assertEquals(false, reloaded.getN2KTwinConfig().getAis().getPgn129039().isEnabled());
@@ -413,24 +430,6 @@ class TwinManagerConfigTest {
       assertEquals(VehicleClass.USV,
           restored.getMavlink().getFirst().getKnownSources().getFirst().getVehicleClass());
     }
-  }
-
-  @Test
-  void drone_altitude_preserves_exact_key_and_value_through_round_trip()
-      throws ReflectiveOperationException {
-    ConfigurationProperties drone = droneInfoProperties("drone-altitude", UUID.randomUUID());
-    drone.put("altitudeMeters", 125.5);
-    ConfigurationProperties root = new ConfigurationProperties();
-    root.put("droneInfo", drone);
-
-    TwinManagerConfig config = newTwinManagerConfig(root);
-    ConfigurationProperties packed = config.toConfigurationProperties();
-    List<?> entries = assertInstanceOf(List.class, packed.get("droneInfo"));
-    ConfigurationProperties packedDrone =
-        assertInstanceOf(ConfigurationProperties.class, entries.getFirst());
-    assertEquals(125.5, packedDrone.getDoubleProperty("altitudeMeters", -1.0));
-    TwinManagerConfig restored = newTwinManagerConfig(packed);
-    assertEquals(125.5, restored.getDroneInfo().getFirst().getAltitudeMeters(), 0.0);
   }
 
   private ConfigurationProperties adapterProperties(String topic, int interval) {

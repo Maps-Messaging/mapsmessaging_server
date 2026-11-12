@@ -98,6 +98,97 @@ class SequenceTrackerTest {
   }
 
   @Test
+  void delayedPacketDoesNotMoveSequenceBaselineBackward() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    tracker.accept(11);
+    SequenceResult delayed = tracker.accept(9);
+    SequenceResult next = tracker.accept(12);
+
+    assertEquals(SequenceStatus.OUT_OF_ORDER, delayed.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(11, next.getPreviousSequenceNumber());
+    assertEquals(12, next.getExpectedSequenceNumber());
+    assertEquals(0, next.getLostPackets());
+  }
+
+  @Test
+  void duplicatePacketDoesNotMoveSequenceBaseline() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(20);
+    SequenceResult duplicate = tracker.accept(20);
+    SequenceResult next = tracker.accept(21);
+
+    assertEquals(SequenceStatus.OUT_OF_ORDER, duplicate.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(20, next.getPreviousSequenceNumber());
+  }
+
+  @Test
+  void delayedPacketAcrossSequenceWrapDoesNotCreateFalseLoss() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(254);
+    tracker.accept(255);
+    tracker.accept(0);
+    SequenceResult delayed = tracker.accept(254);
+    SequenceResult next = tracker.accept(1);
+
+    assertEquals(SequenceStatus.OUT_OF_ORDER, delayed.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(0, next.getPreviousSequenceNumber());
+    assertEquals(0, next.getLostPackets());
+  }
+
+  @Test
+  void largeForwardJumpStillReportsReset() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult reset = tracker.accept(50);
+    SequenceResult next = tracker.accept(51);
+
+    assertEquals(SequenceStatus.RESET, reset.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(50, next.getPreviousSequenceNumber());
+  }
+
+  @Test
+  void forwardLossThresholdAtThirtyTwoIsClassifiedAsLoss() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult result = tracker.accept(42);
+    assertEquals(SequenceStatus.LOSS, result.getStatus());
+    assertEquals(31, result.getLostPackets());
+  }
+
+  @Test
+  void forwardJumpOfThirtyThreeIsClassifiedAsReset() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult result = tracker.accept(43);
+    assertEquals(SequenceStatus.RESET, result.getStatus());
+    assertEquals(0, result.getLostPackets());
+  }
+
+  @Test
+  void deltaOfOneHundredTwentyEightIsClassifiedAsReset() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult result = tracker.accept(138);
+    assertEquals(SequenceStatus.RESET, result.getStatus());
+  }
+
+  @Test
+  void deltaOfOneHundredTwentyNineIsIgnoredAsOlderTraffic() {
+    SequenceTracker tracker = new SequenceTracker();
+    tracker.accept(10);
+    SequenceResult delayed = tracker.accept(139);
+    SequenceResult next = tracker.accept(11);
+    assertEquals(SequenceStatus.OUT_OF_ORDER, delayed.getStatus());
+    assertEquals(SequenceStatus.OK, next.getStatus());
+    assertEquals(10, next.getPreviousSequenceNumber());
+  }
+
+  @Test
   void sequenceWrapFrom255ToZeroIsOk() {
     SequenceTracker tracker = new SequenceTracker();
     tracker.accept(255);

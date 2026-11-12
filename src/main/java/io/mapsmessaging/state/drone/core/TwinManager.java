@@ -33,18 +33,29 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static io.mapsmessaging.state.logging.StateLogMessages.*;
 
-public class TwinManager {
+public class TwinManager implements AutoCloseable {
 
   private static final String TWIN_ID_REQUIRED = "twinId must not be null";
+  private static final long OBSERVER_SHUTDOWN_TIMEOUT_SECONDS = 5;
 
 
   private final ConcurrentHashMap<String, EntityTwin> twins = new ConcurrentHashMap<>();
   private final CopyOnWriteArrayList<TwinObserver> observers = new CopyOnWriteArrayList<>();
   private final Logger logger = LoggerFactory.getLogger(TwinManager.class);
+  private volatile Thread observerThread;
+  private final ExecutorService observerExecutor = Executors.newSingleThreadExecutor(task -> {
+    Thread thread = new Thread(task, "twin-update-observers");
+    thread.setDaemon(true);
+    observerThread = thread;
+    return thread;
+  });
   @Getter
   private final StateAuditContext auditContext;
   @Getter
@@ -177,7 +188,7 @@ public class TwinManager {
       ensureLinkConnected(twin);
     }
 
-    notifyUpdated(twin, context);
+    observerExecutor.execute(() -> notifyUpdated(twin, context));
     logger.log(TWIN_UPDATED, twinId);
     return Optional.of(twin);
   }
@@ -402,6 +413,22 @@ public class TwinManager {
       } catch (Throwable ignore) {
         logger.log(TWIN_OBSERVER_CALLBACK_FAILED, ignore);
       }
+    }
+  }
+
+  @Override
+  public void close() {
+    observerExecutor.shutdown();
+    if (Thread.currentThread() == observerThread) {
+      return;
+    }
+    try {
+      if (!observerExecutor.awaitTermination(OBSERVER_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        observerExecutor.shutdownNow();
+      }
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      observerExecutor.shutdownNow();
     }
   }
 

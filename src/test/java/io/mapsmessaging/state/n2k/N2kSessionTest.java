@@ -1,6 +1,11 @@
 package io.mapsmessaging.state.n2k;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import io.mapsmessaging.api.Destination;
 import io.mapsmessaging.api.MessageEvent;
+import io.mapsmessaging.api.Session;
+import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.features.QualityOfService;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.state.StateLoopProtocol;
@@ -11,6 +16,9 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.util.SessionHelper;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -88,6 +96,53 @@ class N2kSessionTest {
     }
 
     verify(completion).run();
+  }
+
+  @Test
+  void outboundOnlyN2kSessionPublishesCompletePgnUsingExistingSession() throws Exception {
+    StateLoopProtocol protocol = mock(StateLoopProtocol.class);
+    Session engineSession = mock(Session.class);
+    Destination destination = mock(Destination.class);
+    N2KTwinConfig config = config();
+    when(config.isPublishMavlinkDrones()).thenReturn(true);
+    when(config.getOutboundTopicName()).thenReturn("/n2k/ais/outbound");
+    when(protocol.getSession()).thenReturn(engineSession);
+    when(engineSession.findDestination("/n2k/ais/outbound", DestinationType.TOPIC))
+        .thenReturn(CompletableFuture.completedFuture(destination));
+
+    try (MockedStatic<SessionHelper> mocked = mockStatic(SessionHelper.class)) {
+      mocked.when(() -> SessionHelper.createLoopbackProtocol(any())).thenReturn(protocol);
+      N2kSession session = new N2kSession(mock(TwinManager.class), config, mock(DroneInfoRegistry.class), false);
+
+      session.start();
+      assertTrue(session.publishPgn(129039, 255, new byte[]{1, 2, 3}));
+      session.stop();
+
+      verify(protocol).connect(anyString(), eq("anonymous"), eq("anonymous"));
+      verify(protocol, never()).subscribeLocal(anyString(), anyString(), any(), any(), any(), any(), any(), any());
+      verify(protocol).close();
+      org.mockito.ArgumentCaptor<Message> messages = org.mockito.ArgumentCaptor.forClass(Message.class);
+      verify(destination).storeMessage(messages.capture());
+      JsonObject request = JsonParser.parseString(new String(messages.getValue().getOpaqueData(), StandardCharsets.UTF_8)).getAsJsonObject();
+      assertEquals("n2k-pgn", request.get("type").getAsString());
+      assertEquals(129039, request.get("pgn").getAsInt());
+      assertEquals(255, request.get("destinationAddress").getAsInt());
+      assertArrayEquals(new byte[]{1, 2, 3}, Base64.getDecoder().decode(request.get("payload").getAsString()));
+    }
+  }
+
+  @Test
+  void outboundPublishWithoutStartedSessionIsRejected() {
+    StateLoopProtocol protocol = mock(StateLoopProtocol.class);
+    N2KTwinConfig config = config();
+    when(config.getOutboundTopicName()).thenReturn("/n2k/ais/outbound");
+    try (MockedStatic<SessionHelper> mocked = mockStatic(SessionHelper.class)) {
+      mocked.when(() -> SessionHelper.createLoopbackProtocol(any())).thenReturn(protocol);
+      N2kSession session = new N2kSession(mock(TwinManager.class), config, mock(DroneInfoRegistry.class), false);
+
+      assertFalse(session.publishPgn(129039, 255, new byte[]{1}));
+      verifyNoInteractions(protocol);
+    }
   }
 
   private static N2KTwinConfig config() {

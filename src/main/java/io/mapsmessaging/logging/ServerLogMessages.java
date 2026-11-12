@@ -417,6 +417,8 @@ public enum ServerLogMessages implements LogMessage {
   // </editor-fold>
   // <editor-fold desc="Mavlink log messages">
   MAVLINK_FAILED_SETTING_UP_SESSION(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to setup Mavlink session for {}"),
+  MAVLINK_SESSION_CLOSE_FAILED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to close MAVLink session {}"),
+  MAVLINK_SESSION_NULL_CONTEXT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "MAVLink session {} has no protocol context during {}"),
   MAVLINK_SESSION_CREATED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "New Mavlink session setup for {}"),
   MAVLINK_FAILED_FORWARD_PACKET(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to forward mavlink packet to {}"),
   MAVLINK_DIALECT_FAILED_TO_LOAD(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "Failed to load the mavlink dialect specifed at {}"),
@@ -950,6 +952,14 @@ public enum ServerLogMessages implements LogMessage {
   MAVLINK_FAILED_SENDING_OUTBOUND_PACKET(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to send outbound MAVLink packet on '{}', destination '{}': {}"),
   MAVLINK_FAILED_SENDING_HEARTBEAT(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Failed to send MAVLink heartbeat on '{}': {}"),
   MAVLINK_UNKNOWN_PACKET_IGNORED(LEVEL.DEBUG, SERVER_CATEGORY.PROTOCOL, "Ignoring unknown MAVLink state packet from {}"),
+  MAVLINK_TRANSACTION_STATUS_PUBLISH_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "Unable to publish MAVLink transaction status to {}"),
+  MAVLINK_TRANSACTION_REJECTED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "MAVLink transaction '{}' rejected, operation '{}', peer '{}': {}"),
+  MAVLINK_TRANSACTION_RETRYING(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "MAVLink transaction '{}' retry {}/{}, operation '{}', peer '{}'"),
+  MAVLINK_TRANSACTION_SEND_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink transaction '{}' failed sending '{}' to '{}'"),
+  MAVLINK_TRANSACTION_FAILED(LEVEL.ERROR, SERVER_CATEGORY.PROTOCOL, "MAVLink transaction '{}' failed, operation '{}', peer '{}': {}"),
+  MAVLINK_TRANSACTION_TIMED_OUT(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "MAVLink transaction '{}' timed out, operation '{}', peer '{}', attempts {}, retries {}: {}"),
+  MAVLINK_TRANSACTION_CANCELLED(LEVEL.INFO, SERVER_CATEGORY.PROTOCOL, "MAVLink transaction '{}' cancelled, operation '{}', peer '{}'"),
+  MAVLINK_TRANSACTION_CONNECTION_CLOSED(LEVEL.WARN, SERVER_CATEGORY.PROTOCOL, "MAVLink transaction '{}' stopped because the connection closed, operation '{}', peer '{}'"),
 
 
 

@@ -20,57 +20,67 @@
 package io.mapsmessaging.state;
 
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
-import io.mapsmessaging.network.protocol.impl.n2k.N2kProtocol;
-import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
+import io.mapsmessaging.canbus.j1939.n2k.N2kParserFactory;
+import io.mapsmessaging.logging.Logger;
+import io.mapsmessaging.logging.LoggerFactory;
+import static io.mapsmessaging.state.logging.StateLogMessages.N2K_AIS_OUTBOUND_NOT_CONFIGURED;
+import static io.mapsmessaging.state.logging.StateLogMessages.N2K_AIS_PARSER_LOAD_FAILED;
 import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.n2k.DroneMonitor;
+import io.mapsmessaging.state.n2k.N2kSession;
 import io.mapsmessaging.utilities.Lifecycle;
+import org.xml.sax.SAXException;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+
 
 public class AISN2KManager implements Lifecycle {
 
+  private static final Logger logger = LoggerFactory.getLogger(AISN2KManager.class);
+
   private final N2KTwinConfig aisConfig;
   private final TwinManager twinManager;
-  private final List<DroneMonitor> droneMonitors;
+  private final N2kSession session;
+  private DroneMonitor droneMonitor;
 
 
 
-  public AISN2KManager(TwinManager twinManager, N2KTwinConfig aisConfig) {
+  public AISN2KManager(TwinManager twinManager, N2KTwinConfig aisConfig, N2kSession session) {
     this.aisConfig = aisConfig;
     this.twinManager = twinManager;
-    droneMonitors = new CopyOnWriteArrayList<>();
+    this.session = session;
   }
 
   @Override
   public void start() {
-    // Drone monitors are created when a protocol is registered.
+    if (droneMonitor != null) {
+      return;
+    }
+    if (aisConfig == null || !aisConfig.isPublishMavlinkDrones()) {
+      return;
+    }
+    if (session == null || aisConfig.getOutboundTopicName() == null || aisConfig.getOutboundTopicName().isBlank()) {
+      logger.log(N2K_AIS_OUTBOUND_NOT_CONFIGURED);
+      return;
+    }
+    N2kMessageParser parser;
+    try {
+      parser = new N2kMessageParser(N2kParserFactory.getN2kParser());
+    } catch (IOException | SAXException | ParserConfigurationException exception) {
+      logger.log(N2K_AIS_PARSER_LOAD_FAILED, exception);
+      return;
+    }
+    droneMonitor = new DroneMonitor(twinManager, aisConfig.getAis(), parser, session);
+    twinManager.addObserver(droneMonitor);
   }
 
   @Override
   public void stop() {
-    for(DroneMonitor droneMonitor: droneMonitors){
+    if (droneMonitor != null) {
       droneMonitor.close();
+      droneMonitor = null;
     }
   }
-
-  public void registerProtocol(N2kProtocol n2kprotocol){
-    if(aisConfig.isPublishMavlinkDrones()) {
-      N2kMessageParser parser = ((CanbusFormatter) n2kprotocol.getFormatter()).getParser();
-      droneMonitors.add(new DroneMonitor(twinManager, aisConfig.getAis(), parser, n2kprotocol));
-    }
-  }
-
-  public void unregisterProtocol(N2kProtocol n2kprotocol){
-    for(DroneMonitor droneMonitor: droneMonitors){
-      if(droneMonitor.getN2kProtocol() == n2kprotocol){
-        droneMonitors.remove(droneMonitor);
-        droneMonitor.close();
-        break;
-      }
-    }
-  }
-
 }

@@ -15,17 +15,10 @@
  * limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.sender;
+package io.mapsmessaging.network.protocol.impl.mavlink;
 
-import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
-import java.util.Objects;
+import com.google.gson.JsonObject;
 
-public record PreparedMavlinkCommandSet(
-    UxvModelCommandSet commandSet,
-    MavlinkAcknowledgementHandler acknowledgementHandler) {
-
-  public PreparedMavlinkCommandSet {
-    Objects.requireNonNull(commandSet, "commandSet must not be null");
-    Objects.requireNonNull(acknowledgementHandler, "acknowledgementHandler must not be null");
-  }
+record MavlinkTerminalResult(String topic, String status, String reason, int attempts, int retries, int requested, String operation, int system,
+    int component, int total, String fingerprint, JsonObject lastSent, JsonObject lastResponse) {
 }

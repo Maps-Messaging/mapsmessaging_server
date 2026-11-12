@@ -63,15 +63,16 @@ public class SequenceTracker {
     if (delta == 1) {
       status = SequenceStatus.OK;
     }
+    else if (delta == 0 || delta > 128) {
+      // Treat backward or duplicate sequences as out of order; they must not replace the forward baseline.
+      status = SequenceStatus.OUT_OF_ORDER;
+    }
     else if (delta > 1 && delta <= RESET_THRESHOLD) {
       status = SequenceStatus.LOSS;
       lostPackets = delta - 1;
     }
-    else if (delta > RESET_THRESHOLD) {
-      status = SequenceStatus.RESET;
-    }
     else {
-      status = SequenceStatus.OUT_OF_ORDER;
+      status = SequenceStatus.RESET;
     }
 
     boolean statusChanged = status != lastStatus;
@@ -86,7 +87,9 @@ public class SequenceTracker {
         .status(status)
         .build();
 
-    lastSequenceNumber = currentSequenceNumber;
+    if (status != SequenceStatus.OUT_OF_ORDER) {
+      lastSequenceNumber = currentSequenceNumber;
+    }
     lastStatus = status;
     return result;
   }

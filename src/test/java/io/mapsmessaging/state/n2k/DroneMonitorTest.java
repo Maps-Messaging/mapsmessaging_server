@@ -1,13 +1,15 @@
 package io.mapsmessaging.state.n2k;
 
 import io.mapsmessaging.canbus.j1939.n2k.codec.FieldValueSource;
+import io.mapsmessaging.state.AISN2KManager;
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
-import io.mapsmessaging.network.protocol.impl.n2k.N2kProtocol;
 import io.mapsmessaging.state.config.n2k.N2KAisConfigDTO;
+import io.mapsmessaging.state.config.n2k.N2KTwinConfig;
 import io.mapsmessaging.state.config.n2k.N2KPgnTransmitConfigDTO;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinLifecycleStatus;
 import io.mapsmessaging.state.drone.core.TwinManager;
+import io.mapsmessaging.state.drone.core.TwinObserver;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.GeoPosition;
 import org.junit.jupiter.api.Test;
@@ -23,55 +25,55 @@ class DroneMonitorTest {
   void eligibleDroneUpdateEmitsConfiguredPgn() throws Exception {
     TwinManager twinManager = mock(TwinManager.class);
     N2kMessageParser parser = mock(N2kMessageParser.class);
-    N2kProtocol protocol = mock(N2kProtocol.class);
+    N2kSession session = mock(N2kSession.class);
     when(parser.encodeFromSource(eq(129039), any(FieldValueSource.class)))
         .thenReturn(new byte[]{1, 2});
 
     DroneMonitor monitor =
-        new DroneMonitor(twinManager, onlyPositionPgn(100_000), parser, protocol);
+        new DroneMonitor(twinManager, onlyPositionPgn(100_000), parser, session);
 
     monitor.onTwinUpdated("drone-1", eligibleTwin("drone-1"), null);
 
-    verify(protocol).writePgn(129039, 0xff, new byte[]{1, 2});
+    verify(session).publishPgn(129039, 0xff, new byte[]{1, 2});
   }
 
   @Test
   void removalClearsPerDroneEmissionState() throws Exception {
     TwinManager twinManager = mock(TwinManager.class);
     N2kMessageParser parser = mock(N2kMessageParser.class);
-    N2kProtocol protocol = mock(N2kProtocol.class);
+    N2kSession session = mock(N2kSession.class);
     when(parser.encodeFromSource(eq(129039), any(FieldValueSource.class)))
         .thenReturn(new byte[]{7});
 
     DroneMonitor monitor =
-        new DroneMonitor(twinManager, onlyPositionPgn(100_000), parser, protocol);
+        new DroneMonitor(twinManager, onlyPositionPgn(100_000), parser, session);
     DroneTwin twin = eligibleTwin("drone-2");
 
     monitor.onTwinUpdated("drone-2", twin, null);
     monitor.onTwinUpdated("drone-2", twin, null);
-    verify(protocol, times(1)).writePgn(eq(129039), eq(0xff), any(byte[].class));
+    verify(session, times(1)).publishPgn(eq(129039), eq(0xff), any(byte[].class));
 
     monitor.onTwinRemoved(twin, null);
     monitor.onTwinUpdated("drone-2", twin, null);
 
-    verify(protocol, times(2)).writePgn(eq(129039), eq(0xff), any(byte[].class));
+    verify(session, times(2)).publishPgn(eq(129039), eq(0xff), any(byte[].class));
   }
 
   @Test
   void nonDroneAndBlankIdentifiersAreIgnored() throws Exception {
-    N2kProtocol protocol = mock(N2kProtocol.class);
+    N2kSession session = mock(N2kSession.class);
     DroneMonitor monitor =
         new DroneMonitor(
             mock(TwinManager.class),
             onlyPositionPgn(1000),
             mock(N2kMessageParser.class),
-            protocol
+            session
         );
 
     monitor.onTwinUpdated("entity", mock(EntityTwin.class), null);
     monitor.onTwinUpdated(" ", eligibleTwin("drone-3"), null);
 
-    verifyNoInteractions(protocol);
+    verifyNoInteractions(session);
   }
 
   @Test
@@ -82,12 +84,38 @@ class DroneMonitorTest {
             twinManager,
             onlyPositionPgn(1000),
             mock(N2kMessageParser.class),
-            mock(N2kProtocol.class)
+            mock(N2kSession.class)
         );
 
     monitor.close();
 
     verify(twinManager).removeObserver(monitor);
+  }
+
+  @Test
+  void aisManagerRegistersAndRemovesObserverWithoutProtocolReference() {
+    TwinManager twinManager = mock(TwinManager.class);
+    N2KTwinConfig config = new N2KTwinConfig();
+    config.setOutboundTopicName("/n2k/ais/outbound");
+    AISN2KManager manager = new AISN2KManager(twinManager, config, mock(N2kSession.class));
+
+    manager.start();
+    manager.start();
+    org.mockito.ArgumentCaptor<TwinObserver> observer = org.mockito.ArgumentCaptor.forClass(TwinObserver.class);
+    verify(twinManager).addObserver(observer.capture());
+    manager.stop();
+
+    verify(twinManager).removeObserver(observer.getValue());
+  }
+
+  @Test
+  void aisManagerWithoutOutboundTopicDoesNotRegisterObserver() {
+    TwinManager twinManager = mock(TwinManager.class);
+    AISN2KManager manager = new AISN2KManager(twinManager, new N2KTwinConfig(), mock(N2kSession.class));
+
+    manager.start();
+
+    verify(twinManager, never()).addObserver(any());
   }
 
   private static N2KAisConfigDTO onlyPositionPgn(long interval) {

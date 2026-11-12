@@ -63,7 +63,7 @@ class SticklebackArdupilotUsvModelTest {
     assertEquals(MavlinkCommandLongFactory.ARDUPLANE_MODE_GUIDED, guidedMode.getParam2());
 
     MavlinkMissionItem guidedWaypoint = assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(1));
-    assertEquals(MavlinkMissionItemFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT, guidedWaypoint.getFrame());
+    assertEquals(MavlinkMissionItemFactory.MAV_FRAME_GLOBAL, guidedWaypoint.getFrame());
     assertEquals(123.0f, guidedWaypoint.getAltitude());
     assertEquals(2, guidedWaypoint.getCurrent());
 
@@ -82,6 +82,7 @@ class SticklebackArdupilotUsvModelTest {
 
     MavlinkMissionItem guidedWaypoint =
         assertInstanceOf(MavlinkMissionItem.class, commandSet.messages().get(1));
+    assertEquals(MavlinkMissionItemFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT, guidedWaypoint.getFrame());
     assertEquals(7.5f, guidedWaypoint.getAltitude());
     assertEquals(123.0d, position.getAltitudeMslMeters());
   }
@@ -129,6 +130,7 @@ class SticklebackArdupilotUsvModelTest {
     UxvModelCommandSet commands = model.loiter(
         CONTEXT, new LoiterRequest(position, 25.0d, Duration.ZERO, null, -3.5d, null));
     MavlinkCommandInt loiter = assertInstanceOf(MavlinkCommandInt.class, commands.messages().getFirst());
+    assertEquals(MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, loiter.getFrame());
     assertEquals(-3.5f, loiter.getAltitude());
     assertEquals(87.0d, position.getAltitudeMslMeters());
   }
@@ -156,7 +158,7 @@ class SticklebackArdupilotUsvModelTest {
 
     MavlinkCommandInt loiter = assertInstanceOf(MavlinkCommandInt.class, commandSet.messages().get(0));
     assertEquals(MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_UNLIM, loiter.getCommand());
-    assertEquals(MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, loiter.getFrame());
+    assertEquals(MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_INT, loiter.getFrame());
     assertEquals(87.0f, loiter.getAltitude());
     assertEquals(87.0d, position.getAltitudeMslMeters());
   }
@@ -199,13 +201,13 @@ class SticklebackArdupilotUsvModelTest {
     MavlinkMissionItemInt waypoint = assertInstanceOf(MavlinkMissionItemInt.class, commandSet.messages().get(1));
     assertEquals(1, waypoint.getMissionSequence());
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_WAYPOINT, waypoint.getCommand());
-    assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, waypoint.getFrame());
+    assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_INT, waypoint.getFrame());
     assertEquals(123.0f, waypoint.getAltitude());
 
     MavlinkMissionItemInt loiter = assertInstanceOf(MavlinkMissionItemInt.class, commandSet.messages().get(2));
     assertEquals(2, loiter.getMissionSequence());
     assertEquals(MavlinkMissionItemIntFactory.MAV_CMD_NAV_LOITER_UNLIM, loiter.getCommand());
-    assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, loiter.getFrame());
+    assertEquals(MavlinkMissionItemIntFactory.MAV_FRAME_GLOBAL_TERRAIN_ALT_INT, loiter.getFrame());
     assertEquals(8.0f, loiter.getAltitude());
 
     assertEquals(123.0d, waypointPosition.getAltitudeMslMeters());

@@ -143,7 +143,6 @@ public class N2kProtocol extends Protocol {
     t.start();
     logger.log(N2K_PROTOCOL_CREATED_AND_BOUND,endPoint.getName());
     scheduledFuture = SimpleTaskScheduler.getInstance().scheduleAtFixedRate(unknownCanIdentifiers::clear, 10, 10, TimeUnit.MINUTES);
-    MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().registerProtocol(this);
   }
 
   @Override
@@ -162,7 +161,6 @@ public class N2kProtocol extends Protocol {
       scheduledFuture = null;
     }
     try {
-      MessageDaemon.getInstance().getSubSystemManager().getStateManager().getAisManager().unregisterProtocol(this);
       if (session != null) {
         SessionManager.getInstance().close(session, false);
       }
@@ -189,6 +187,9 @@ public class N2kProtocol extends Protocol {
   public void sendMessage(@NotNull @NonNull MessageEvent messageEvent) {
     Message msg = messageEvent.getMessage();
     byte[] payload = msg.getOpaqueData();
+    if (payload != null && payload.length != 13 && isPgnRequest(payload)) {
+      return;
+    }
     CanFrame frame = null;
     // Let's try raw
     if(payload != null && payload.length == 13) {
@@ -213,6 +214,30 @@ public class N2kProtocol extends Protocol {
         logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, e);
       }
     }
+  }
+
+  private boolean isPgnRequest(byte[] payload) {
+    JsonObject request;
+    try {
+      request = JsonParser.parseString(new String(payload, java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+    } catch (RuntimeException exception) {
+      return false;
+    }
+    if (!request.has("type") || !"n2k-pgn".equals(request.get("type").getAsString())) {
+      return false;
+    }
+    try {
+      int pgn = request.get("pgn").getAsInt();
+      int destination = request.get("destinationAddress").getAsInt();
+      byte[] data = Base64.getDecoder().decode(request.get("payload").getAsString());
+      if (pgn < 0 || pgn > 0x3FFFF || destination < 0 || destination > 255 || data.length == 0) {
+        throw new IllegalArgumentException("Invalid outbound N2K PGN request");
+      }
+      writePgn(pgn, destination, data);
+    } catch (IOException | RuntimeException exception) {
+      logger.log(N2K_PROTOCOL_CANBUS_BUILD_ERROR, exception);
+    }
+    return true;
   }
 
   @Override

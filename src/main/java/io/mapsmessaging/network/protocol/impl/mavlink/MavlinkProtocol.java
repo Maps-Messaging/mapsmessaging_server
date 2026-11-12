@@ -20,6 +20,7 @@
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.mapsmessaging.api.*;
@@ -87,6 +88,7 @@ public class MavlinkProtocol extends Protocol {
   private final Map<Integer, MavlinkAcceptedSourceDTO> acceptedComponents;
   private final Map<Integer, SequenceTracker> sequenceTrackers;
   private final String outboundTopicName;
+  private final String cancellationTopicName;
   // Parsing and dialect replacement stay on the selector thread or the serial port
   // single-thread read executor; the factory maintains mutable per-stream context.
   protected MavlinkEventFactory mavlinkEventFactory;
@@ -95,6 +97,8 @@ public class MavlinkProtocol extends Protocol {
   private final boolean storeOffline;
   private final AtomicInteger sequenceCounter = new AtomicInteger(0);
   private final MavlinkHeartbeatEmitter heartbeatEmitter;
+  private final MavlinkTransactionManager transactionManager;
+  private final MavlinkTransactionStatusDispatcher statusDispatcher;
   private ScheduledFuture<?> heartbeatFuture;
   private boolean detectedDialect = false;
 
@@ -144,8 +148,19 @@ public class MavlinkProtocol extends Protocol {
       subscriptionContextBuilder.setReceiveMaximum(10);
       subscriptionContextBuilder.setNoLocalMessages(true);
       session.addSubscription(subscriptionContextBuilder.build());
+      SubscriptionContextBuilder cancellationSubscription = new SubscriptionContextBuilder(outboundTopic + "/cancel", ClientAcknowledgement.AUTO);
+      cancellationSubscription.setQos(qos);
+      cancellationSubscription.setReceiveMaximum(10);
+      cancellationSubscription.setNoLocalMessages(true);
+      session.addSubscription(cancellationSubscription.build());
     }
     outboundTopicName = outboundTopic;
+    cancellationTopicName = outboundTopic == null || outboundTopic.isEmpty() ? null : outboundTopic + "/cancel";
+    statusDispatcher = new MavlinkTransactionStatusDispatcher();
+    transactionManager = new MavlinkTransactionManager(this::sendTransactionFrame, this::publishTransactionStatus,
+        outboundTopicName == null ? null : outboundTopicName + "/transactions", key.getSystemId(),
+        mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getSystemId() : 0,
+        mavlinkConfig.hasLocalMavlinkIdentity() ? mavlinkConfig.getComponentId() : 0, endPoint.isUDP());
     if (mavlinkConfig.hasLocalMavlinkIdentity()) {
       SocketAddress heartbeatAddress = endPoint.isUDP() ? parseSocketAddress(endPoint.getRemoteSocketAddress()) : null;
       heartbeatEmitter = new MavlinkHeartbeatEmitter(sequenceCounter, endPoint, mavlinkConfig, heartbeatAddress);
@@ -157,6 +172,10 @@ public class MavlinkProtocol extends Protocol {
 
   @Override
   public void close() throws IOException {
+    if (transactionManager != null) {
+      transactionManager.close();
+    }
+    statusDispatcher.close();
     stopHeartbeat();
     try {
       if (!session.isClosed()) {
@@ -216,7 +235,26 @@ public class MavlinkProtocol extends Protocol {
       }
 
       String json = new String(messageEvent.getMessage().getOpaqueData(), StandardCharsets.UTF_8);
-      sendData(JsonParser.parseString(json).getAsJsonObject(), parts[2]);
+      JsonElement outbound = JsonParser.parseString(json);
+      if (cancellationTopicName != null && cancellationTopicName.equals(messageEvent.getDestinationName())) {
+        if (!outbound.isJsonObject()) {
+          logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), "invalid-cancellation-request",
+              new IllegalArgumentException("Cancellation requires a JSON object with a transactionId"));
+          return;
+        }
+        transactionManager.cancelRequest(outbound.getAsJsonObject(), parts[2]);
+        return;
+      }
+      if (outbound.isJsonArray()) {
+        transactionManager.submitNative(outbound, parts[2]);
+      } else {
+        JsonObject request = outbound.getAsJsonObject();
+        if (request.has("operation") || request.has("messages") || isMavlinkCommand(request)) {
+          transactionManager.submitNative(request, parts[2]);
+        } else {
+          sendData(request, parts[2]);
+        }
+      }
     } catch (RuntimeException e) {
       logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), "message-event", e);
     } finally {
@@ -224,20 +262,47 @@ public class MavlinkProtocol extends Protocol {
     }
   }
 
+  private static boolean isMavlinkCommand(JsonObject request) {
+    if (!request.has("header") || !request.get("header").isJsonObject()) {
+      return false;
+    }
+    JsonObject header = request.getAsJsonObject("header");
+    if (!header.has("messageId") || header.get("messageId").isJsonNull()) {
+      return false;
+    }
+    int messageId = header.get("messageId").getAsInt();
+    return messageId == 75 || messageId == 76;
+  }
+
   private void sendData(JsonObject input, String socketAddressText) {
     try {
-      overrideSequence(input);
-      validateOutboundHeader(input);
-      byte[] frame = formatter.parseFromJson(input);
-      Packet packet = new Packet(ByteBuffer.wrap(frame));
-      if (endPoint.isUDP()) {
-        packet.setFromAddress(parseSocketAddress(socketAddressText));
-      }
-      endPoint.sendPacket(packet);
-      factory.writeTlog(frame);
+      sendTransactionFrame(input, socketAddressText);
     } catch (Exception e) {
       logger.log(MAVLINK_FAILED_SENDING_OUTBOUND_PACKET, endPoint.getName(), socketAddressText, e);
     }
+  }
+
+  private void sendTransactionFrame(JsonObject input, String socketAddressText) throws Exception {
+    overrideSequence(input);
+    validateOutboundHeader(input);
+    byte[] frame = formatter.parseFromJson(input);
+    Packet packet = new Packet(ByteBuffer.wrap(frame));
+    if (endPoint.isUDP()) {
+      packet.setFromAddress(parseSocketAddress(socketAddressText));
+    }
+    endPoint.sendPacket(packet);
+    factory.writeTlog(frame);
+  }
+
+  private void publishTransactionStatus(String topic, JsonObject status) {
+    Message message = new MessageBuilder()
+        .setContentType("application/json")
+        .setOpaqueData(status.toString().getBytes(StandardCharsets.UTF_8))
+        .setQoS(qos)
+        .setRetain(false)
+        .storeOffline(storeOffline)
+        .build();
+    statusDispatcher.dispatch(() -> sendMessage(topic, message));
   }
 
   public static String toHexDump(byte[] data) {
@@ -267,24 +332,22 @@ public class MavlinkProtocol extends Protocol {
       detectedDialect = true;
       if (env.getFields().containsKey("autopilot")) {
         int val = (int) env.getFields().get("autopilot");
-        try {
-          switch (val) {
-            case MAV_AUTOPILOT_ARDUPILOTMEGA:
-              mavlinkEventFactory = MavlinkInterfaceManager.loadDialect("ardupilot/all");
-              break;
-
-            case MAV_AUTOPILOT_PX4:
-              mavlinkEventFactory = MavlinkInterfaceManager.loadDialect("common");
-              break;
-
-            default:
-              // Unknown or unsupported autopilot
-              break;
+        String selectedDialect = switch (val) {
+          case MAV_AUTOPILOT_ARDUPILOTMEGA -> "ardupilot/all";
+          case MAV_AUTOPILOT_PX4 -> "common";
+          default -> null;
+        };
+        if (selectedDialect != null) {
+          try {
+            mavlinkEventFactory = MavlinkInterfaceManager.loadDialect(selectedDialect);
+          } catch (IOException e) {
+            logger.log(MAVLINK_DIALECT_FAILED_TO_LOAD, selectedDialect, e);
           }
-        } catch (IOException e) {
-          // log it
         }
       }
+    }
+    if (transactionManager != null) {
+      transactionManager.onFrame(env, socketAddress);
     }
     processStreamTracker(env);
     handleEvent(env, raw, socketAddress);
@@ -533,5 +596,45 @@ public class MavlinkProtocol extends Protocol {
     }
 
     return value;
+  }
+}
+
+
+/**
+ * Separates MAVLink transaction status delivery from the network reader and engine
+ * delivery call stacks. Each protocol instance has its own ordered, bounded queue.
+ */
+final class MavlinkTransactionStatusDispatcher implements AutoCloseable {
+  private static final int QUEUE_CAPACITY = 256;
+  private static final long SHUTDOWN_TIMEOUT_SECONDS = 5;
+
+  private volatile Thread worker;
+  private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+      1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(QUEUE_CAPACITY),
+      task -> {
+        Thread thread = new Thread(task, "mavlink-transaction-status");
+        thread.setDaemon(true);
+        worker = thread;
+        return thread;
+      }, new ThreadPoolExecutor.AbortPolicy());
+
+  void dispatch(Runnable task) {
+    executor.execute(task);
+  }
+
+  @Override
+  public void close() {
+    executor.shutdown();
+    if (Thread.currentThread() == worker) {
+      return;
+    }
+    try {
+      if (!executor.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      executor.shutdownNow();
+    }
   }
 }

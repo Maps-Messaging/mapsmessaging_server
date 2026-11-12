@@ -25,9 +25,9 @@ public class DataProductConfig {
   @Schema(description = "External data product URI.", example = "rtsp://drone01/videofeed01")
   private String uri;
 
-  @Schema(description = "Flexible enumeration describing the product type.")
+  @Schema(description = "Flexible enumeration describing the product type.", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)
   private Map<String, Object> productType = new LinkedHashMap<>();
 
-  @Schema(description = "Flexible enumeration describing the standard to which the product conforms.")
+  @Schema(description = "Flexible enumeration describing the standard to which the product conforms.", type = "object", additionalProperties = Schema.AdditionalPropertiesValue.TRUE)
   private Map<String, Object> conformsTo = new LinkedHashMap<>();
 }

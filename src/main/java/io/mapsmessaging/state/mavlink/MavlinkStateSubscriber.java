@@ -86,6 +86,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
   private final StateLoopProtocol protocol;
   private final String namespaceTopicPath;
+  private final String transactionStatusTopic;
   private final MavlinkSourceRegistry sourceRegistry;
   private final DroneInfoRegistry droneRegistry;
   private final MavlinkTwinUpdater twinUpdater;
@@ -96,6 +97,7 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
   public MavlinkStateSubscriber(@NonNull @NotNull TwinManager twinManager, @NonNull @NotNull MavlinkTwinConfigDTO mavlinkConfig, @NonNull @NotNull DroneInfoRegistry registry) {
     this.protocol = SessionHelper.createLoopbackProtocol(this);
     this.namespaceTopicPath = mavlinkConfig.getTopic();
+    this.transactionStatusTopic = configuredTransactionTopic(mavlinkConfig.getTransactionStatusTopic(), namespaceTopicPath);
     this.sourceRegistry = new MavlinkSourceRegistry(mavlinkConfig);
     this.droneRegistry = registry;
     this.twinUpdater = new MavlinkTwinUpdater(
@@ -124,11 +126,34 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       DroneInfoRegistry droneRegistry,
       MavlinkTwinUpdater twinUpdater
   ) {
+    this(protocol, namespaceTopicPath, null, sourceRegistry, droneRegistry, twinUpdater);
+  }
+
+  MavlinkStateSubscriber(
+      StateLoopProtocol protocol,
+      String namespaceTopicPath,
+      String transactionStatusTopic,
+      MavlinkSourceRegistry sourceRegistry,
+      DroneInfoRegistry droneRegistry,
+      MavlinkTwinUpdater twinUpdater
+  ) {
     this.protocol = Objects.requireNonNull(protocol, "protocol must not be null");
     this.namespaceTopicPath = Objects.requireNonNull(namespaceTopicPath, "namespaceTopicPath must not be null");
+    this.transactionStatusTopic = configuredTransactionTopic(transactionStatusTopic, namespaceTopicPath);
     this.sourceRegistry = Objects.requireNonNull(sourceRegistry, "sourceRegistry must not be null");
     this.droneRegistry = Objects.requireNonNull(droneRegistry, "droneRegistry must not be null");
     this.twinUpdater = Objects.requireNonNull(twinUpdater, "twinUpdater must not be null");
+  }
+
+  private static String configuredTransactionTopic(String configured, String telemetryTopic) {
+    if (configured == null || configured.isBlank()) {
+      return null;
+    }
+    String topic = configured.trim();
+    if (topic.equals(telemetryTopic) || topic.contains("+") || topic.contains("#") || topic.contains(">")) {
+      throw new IllegalArgumentException("MAVLink transaction status must use a separate exact topic");
+    }
+    return topic;
   }
 
   public synchronized void start() throws IOException {
@@ -145,6 +170,9 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
     try {
       protocol.connect(UUID.randomUUID().toString(), "anonymous", "anonymous");
       protocol.subscribeLocal(namespaceTopicPath, namespaceTopicPath, QualityOfService.AT_MOST_ONCE, null, null, null, null, null);
+      if (transactionStatusTopic != null) {
+        protocol.subscribeLocal(transactionStatusTopic, transactionStatusTopic, QualityOfService.AT_MOST_ONCE, null, null, null, null, null);
+      }
       started = true;
       logger.log(MAVLINK_STATE_SUBSCRIBER_STARTED, namespaceTopicPath);
     } catch (IOException exception) {
@@ -178,6 +206,17 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
         protocol.unsubscribeLocal(namespaceTopicPath);
       } catch (RuntimeException exception) {
         failure = exception;
+      }
+      if (transactionStatusTopic != null) {
+        try {
+          protocol.unsubscribeLocal(transactionStatusTopic);
+        } catch (RuntimeException exception) {
+          if (failure == null) {
+            failure = exception;
+          } else {
+            failure.addSuppressed(exception);
+          }
+        }
       }
     }
 
@@ -233,6 +272,10 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
 
     try {
       Message message = messageEvent.getMessage();
+      if (transactionStatusTopic != null && transactionStatusTopic.equals(sourceName)) {
+        handleTransactionStatus(message.getOpaqueData(), sourceName);
+        return;
+      }
       ProcessedFrame env = parseJson(message.getOpaqueData(), sourceName);
 
       if (env == null) {
@@ -288,6 +331,27 @@ public class MavlinkStateSubscriber implements MessageHandler, AutoCloseable {
       throw exception;
     } finally {
       messageEvent.getCompletionTask().run();
+    }
+  }
+
+  private void handleTransactionStatus(byte[] data, String sourceName) {
+    if (data == null || data.length == 0) {
+      logger.log(MAVLINK_STATE_JSON_PARSE_FAILED, new IllegalArgumentException("Empty transaction status"), sourceName);
+      return;
+    }
+    try {
+      JsonObject json = JsonParser.parseString(new String(data, StandardCharsets.UTF_8)).getAsJsonObject();
+      MavlinkTransactionStatus status = MavlinkTransactionStatus.fromJson(json, Instant.now());
+      MavlinkKnownSourceDTO source = sourceRegistry.getTransactionSource(status.systemId(), status.componentId());
+      if (source == null || source.getName() == null || source.getName().isBlank()) {
+        return;
+      }
+      if (droneRegistry.getDroneInfo(source.getName()) == null) {
+        return;
+      }
+      twinUpdater.updateTransactionStatus(source.getName(), status);
+    } catch (RuntimeException exception) {
+      logger.log(MAVLINK_STATE_JSON_PARSE_FAILED, exception, sourceName);
     }
   }
 

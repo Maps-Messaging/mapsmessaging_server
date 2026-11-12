@@ -45,7 +45,6 @@ import io.mapsmessaging.state.mavlink.model.ModelManager;
 import io.mapsmessaging.state.mavlink.model.UxvModel;
 import io.mapsmessaging.state.mavlink.packet.BatteryStatusPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
-import io.mapsmessaging.state.mavlink.sender.MavlinkEventListSender;
 import io.mapsmessaging.state.metrics.FeedActivityRegistry;
 import java.util.ArrayList;
 import java.util.List;
@@ -158,15 +157,32 @@ public class MavlinkTwinUpdater implements AutoCloseable {
       listenerManager.handle(env.getFrame().getMessageId(), twinId, packet, context);
 
       if (entityTwin instanceof DroneTwin droneTwin) {
-        MavlinkEventListSender sender = droneTwin.getActiveMavlinkSender();
-        if (sender != null) {
-          sender.onMavlinkMessage(packet);
-        }
         applyModelDetectionEvent(droneTwin, packet, context, droneInfo);
       }
     } finally {
       droneMonitor.endTwinUpdate(twinId, context);
     }
+  }
+
+  /** Update only the observed protocol transaction field; telemetry state is unchanged. */
+  public void updateTransactionStatus(String twinId, MavlinkTransactionStatus status) {
+    if (closed.get() || twinId == null || twinId.isBlank() || status == null) {
+      return;
+    }
+    if (twinManager.getTwin(twinId).filter(DroneTwin.class::isInstance).isEmpty()) {
+      return;
+    }
+    TwinUpdateContext context = new TwinUpdateContext();
+    context.setUpdateSource(MAVLINK_NAME);
+    context.setSourceInstanceId("mavlink:" + status.systemId() + ":" + status.componentId());
+    context.setReceivedTime(status.observedAt());
+    context.setReason("MAVLink transaction status");
+    context.setFullSnapshot(false);
+    twinManager.updateTwin(twinId, twin -> {
+      if (twin instanceof DroneTwin droneTwin) {
+        droneTwin.setMavlinkTransactionStatus(status);
+      }
+    }, context);
   }
 
   @Override
@@ -315,19 +331,16 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     droneTwin.setSystemId(knownSource.getSystemId());
     droneTwin.setComponentId(knownSource.getComponentId());
     droneTwin.setModelName(droneInfo.getModelName());
-    droneTwin.setAltitudeMode(droneInfo.getAltitudeMode());
-    droneTwin.setAltitudeMeters(droneInfo.getAltitudeMeters());
     droneTwin.setSurveyRadiusMeters(droneInfo.getSurveyRadiusMeters());
     droneTwin.setArrivalToleranceMeters(droneInfo.getArrivalToleranceMeters());
     applyTaskCompletionConfiguration(droneTwin, droneInfo);
-    if (!droneInfo.isCompleteTaskOnArrivalTolerance()
-        && !droneInfo.isCompleteTaskOnAutoToLoiter()) {
+    if (!droneInfo.isCompleteTaskOnArrivalTolerance() && !droneInfo.isCompleteTaskOnAutoToLoiter()) {
       logger.log(MAVLINK_TASK_COMPLETION_GATES_DISABLED, twinId);
     }
     if (droneInfo.getCancelAction() != null) {
       droneTwin.setStopAction(droneInfo.getCancelAction());
     } else {
-      droneTwin.setStopAction(StopActionEnum.STOP);
+      droneTwin.setStopAction(StopActionEnum.HOLD_POSITION);
     }
     if (droneInfo.getCapabilities() != null) {
       droneTwin.setCapabilities(droneInfo.getCapabilities());
@@ -345,16 +358,8 @@ public class MavlinkTwinUpdater implements AutoCloseable {
     } else if (droneInfo.getBatteryCapacityAh() > 0) {
 
     }
-
     EntityTwin registeredTwin = twinManager.registerTwin(droneTwin, context);
-
-    logger.log(
-        MAVLINK_STATE_TWIN_CREATED,
-        twinId,
-        env.getFrame().getSystemId(),
-        env.getFrame().getComponentId()
-    );
-
+    logger.log(MAVLINK_STATE_TWIN_CREATED, twinId, env.getFrame().getSystemId(), env.getFrame().getComponentId());
     return registeredTwin;
   }
 
