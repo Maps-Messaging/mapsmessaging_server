@@ -22,8 +22,8 @@ package io.mapsmessaging.state.mavlink.model.impl.usv;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandInt;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandIntFactory;
 import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
 import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.model.UxvOperation;

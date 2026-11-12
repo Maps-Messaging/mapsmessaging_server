@@ -28,7 +28,7 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import java.time.Instant;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.ALTITUDE;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.ALTITUDE;
 
 public class AltitudeListener implements Listener {
 

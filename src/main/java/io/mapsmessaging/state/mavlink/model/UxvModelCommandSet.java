@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.model;
 
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMessage;
 
 import java.util.List;
 import java.util.Objects;

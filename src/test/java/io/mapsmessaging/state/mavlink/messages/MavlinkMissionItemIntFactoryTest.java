@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.*;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -51,7 +53,7 @@ class MavlinkMissionItemIntFactoryTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             MISSION_SEQUENCE,
-            position,
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
             Duration.ofSeconds(30),
             50.0d);
 
@@ -79,7 +81,7 @@ class MavlinkMissionItemIntFactoryTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             MISSION_SEQUENCE,
-            position,
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
             Duration.ofSeconds(30),
             50.0d);
 
@@ -118,7 +120,7 @@ class MavlinkMissionItemIntFactoryTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             MISSION_SEQUENCE,
-            position,
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
             1.5f,
             4.0f,
             2.0f,
@@ -156,7 +158,7 @@ class MavlinkMissionItemIntFactoryTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             MISSION_SEQUENCE,
-            new GeoPosition(-33.8688d, 151.2093d, 100.0d, null),
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(new GeoPosition(-33.8688d, 151.2093d, 100.0d, null)),
             75.0d);
 
     assertMissionEnvelope(
@@ -177,7 +179,7 @@ class MavlinkMissionItemIntFactoryTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             MISSION_SEQUENCE,
-            new GeoPosition(-33.8688d, 151.2093d, 100.0d, null),
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(new GeoPosition(-33.8688d, 151.2093d, 100.0d, null)),
             Duration.ofMillis(1500),
             50.0d);
 
@@ -196,7 +198,7 @@ class MavlinkMissionItemIntFactoryTest {
                 TARGET_SYSTEM,
                 TARGET_COMPONENT,
                 MISSION_SEQUENCE,
-                new GeoPosition(-33.8688d, 151.2093d, 100.0d, null),
+                io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(new GeoPosition(-33.8688d, 151.2093d, 100.0d, null)),
                 Duration.ofMillis(-1),
                 50.0d));
   }
@@ -374,7 +376,7 @@ class MavlinkMissionItemIntFactoryTest {
         TARGET_SYSTEM,
         TARGET_COMPONENT,
         MISSION_SEQUENCE,
-        position);
+        io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position));
   }
 
   private static void assertMissionEnvelope(

@@ -27,7 +27,7 @@ import io.mapsmessaging.state.mavlink.packet.MissionCurrentPacket;
 
 import java.time.Instant;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MISSION_CURRENT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.MISSION_CURRENT;
 
 public class MissionCurrentListener implements Listener {
 

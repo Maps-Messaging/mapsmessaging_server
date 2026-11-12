@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.ATTITUDE;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.ATTITUDE;
 
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;

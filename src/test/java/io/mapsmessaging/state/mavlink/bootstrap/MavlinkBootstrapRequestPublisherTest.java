@@ -19,9 +19,9 @@
 
 package io.mapsmessaging.state.mavlink.bootstrap;
 
-import static io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory.MAV_CMD_REQUEST_MESSAGE;
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.AUTOPILOT_VERSION;
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
+import static io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLongFactory.MAV_CMD_REQUEST_MESSAGE;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.AUTOPILOT_VERSION;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.BATTERY_STATUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;

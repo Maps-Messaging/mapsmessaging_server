@@ -20,7 +20,7 @@
 package io.mapsmessaging.state.mavlink.model.impl;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.*;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.*;
 import io.mapsmessaging.state.mavlink.model.HomeRequest;
 import io.mapsmessaging.state.mavlink.model.MissionPlan;
 import io.mapsmessaging.state.mavlink.model.MissionCurrentRequest;
@@ -130,9 +130,9 @@ public abstract class AbstractMissionUxvModel extends AbstractUxvModel {
 
     GeoPosition position = withAltitude(request.position(), request.altitudeMeters());
     List<MavlinkMessage> messages = List.of(
-        MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), position, context.sequence()),
+        MavlinkCommandIntFactory.reposition(context.targetSystem(), context.targetComponent(), io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position), context.sequence()),
         MavlinkCommandLongFactory.guidedMode(context.targetSystem(), context.targetComponent(), context.sequence()),
-        MavlinkMissionItemFactory.guidedWaypoint(context.targetSystem(), context.targetComponent(), position));
+        MavlinkMissionItemFactory.guidedWaypoint(context.targetSystem(), context.targetComponent(), io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position)));
     return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
   }
 

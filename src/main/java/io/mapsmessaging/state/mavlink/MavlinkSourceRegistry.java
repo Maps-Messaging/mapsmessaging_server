@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.mavlink;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MOUNT_STATUS;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.MOUNT_STATUS;
 
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.mavlink.ProcessedFrame;

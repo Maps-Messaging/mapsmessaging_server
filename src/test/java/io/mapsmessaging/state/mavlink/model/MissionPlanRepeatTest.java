@@ -25,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel;
 import java.util.List;
 import java.util.UUID;

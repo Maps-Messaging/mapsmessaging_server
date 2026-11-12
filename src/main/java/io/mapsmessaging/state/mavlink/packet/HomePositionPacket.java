@@ -19,12 +19,14 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
+
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import lombok.Getter;
 
 import java.util.Map;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.HOME_POSITION;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.HOME_POSITION;
 
 @Getter
 public class HomePositionPacket extends MavlinkPacket {

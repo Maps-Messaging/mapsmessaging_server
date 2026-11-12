@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemInt;
 import io.mapsmessaging.state.mavlink.model.MissionPlan;
 import io.mapsmessaging.state.mavlink.model.PlanItem;
 import io.mapsmessaging.state.mavlink.model.PlanItemType;

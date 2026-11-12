@@ -27,7 +27,7 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import java.time.Instant;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.EXTENDED_SYS_STATE;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.EXTENDED_SYS_STATE;
 
 public class ExtendedSysStateListener implements Listener {
 

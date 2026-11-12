@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.messages;
+package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
 import com.google.gson.JsonObject;
 import lombok.AllArgsConstructor;
@@ -27,24 +27,26 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MavlinkCommandLong implements MavlinkMessage {
+public class MavlinkCommandInt implements MavlinkMessage {
 
-  public static final int MESSAGE_ID_COMMAND_LONG = 76;
+  public static final int MESSAGE_ID_COMMAND_INT = 75;
 
-  private String messageType = "COMMAND_LONG";
-  private int messageId = MESSAGE_ID_COMMAND_LONG;
+  private String messageType = "COMMAND_INT";
+  private int messageId = MESSAGE_ID_COMMAND_INT;
   private int targetSystem;
   private int targetComponent;
+  private int frame;
   private int command;
-  private int confirmation;
+  private int current;
   private int sequence;
+  private int autocontinue;
   private float param1;
   private float param2;
   private float param3;
   private float param4;
-  private float param5;
-  private float param6;
-  private float param7;
+  private int latitude;
+  private int longitude;
+  private float altitude;
 
   public JsonObject toMavlinkJsonObject() {
     JsonObject root = new JsonObject();
@@ -62,15 +64,17 @@ public class MavlinkCommandLong implements MavlinkMessage {
 
     payload.addProperty("target_system", targetSystem);
     payload.addProperty("target_component", targetComponent);
+    payload.addProperty("frame", frame);
     payload.addProperty("command", command);
-    payload.addProperty("confirmation", confirmation);
+    payload.addProperty("current", current);
+    payload.addProperty("autocontinue", autocontinue);
     payload.addProperty("param1", param1);
     payload.addProperty("param2", param2);
     payload.addProperty("param3", param3);
     payload.addProperty("param4", param4);
-    payload.addProperty("param5", param5);
-    payload.addProperty("param6", param6);
-    payload.addProperty("param7", param7);
+    payload.addProperty("x", latitude);
+    payload.addProperty("y", longitude);
+    payload.addProperty("z", altitude);
 
     root.add("header", header);
     root.add("payload", payload);

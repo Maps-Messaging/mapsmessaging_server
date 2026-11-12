@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.listener;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.GLOBAL_POSITION_INT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.GLOBAL_POSITION_INT;
 
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;

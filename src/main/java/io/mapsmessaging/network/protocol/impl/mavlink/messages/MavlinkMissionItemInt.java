@@ -17,31 +17,39 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.messages;
+package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
 import com.google.gson.JsonObject;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class MavlinkMissionCount implements MavlinkMessage {
+@AllArgsConstructor
+public class MavlinkMissionItemInt implements MavlinkMessage {
 
-  public static final int MESSAGE_ID_MISSION_COUNT = 44;
+  public static final int MESSAGE_ID_MISSION_ITEM_INT = 73;
 
   private static final int TRANSPORT_SEQUENCE_PLACEHOLDER = 0;
 
-  private String messageType = "MISSION_COUNT";
-  private int messageId = MESSAGE_ID_MISSION_COUNT;
+  private String messageType = "MISSION_ITEM_INT";
+  private int messageId = MESSAGE_ID_MISSION_ITEM_INT;
   private int targetSystem;
   private int targetComponent;
-  private int count;
+  private int missionSequence;
+  private int frame;
+  private int command;
+  private int current;
+  private int autocontinue;
+  private float param1;
+  private float param2;
+  private float param3;
+  private float param4;
+  private int latitude;
+  private int longitude;
+  private float altitude;
   private int missionType;
-
-  @Override
-  public int getCommand() {
-    return 0;
-  }
 
   @Override
   public JsonObject toMavlinkJsonObject() {
@@ -60,7 +68,18 @@ public class MavlinkMissionCount implements MavlinkMessage {
 
     payload.addProperty("target_system", targetSystem);
     payload.addProperty("target_component", targetComponent);
-    payload.addProperty("count", count);
+    payload.addProperty("seq", missionSequence);
+    payload.addProperty("frame", frame);
+    payload.addProperty("command", command);
+    payload.addProperty("current", current);
+    payload.addProperty("autocontinue", autocontinue);
+    payload.addProperty("param1", param1);
+    payload.addProperty("param2", param2);
+    payload.addProperty("param3", param3);
+    payload.addProperty("param4", param4);
+    payload.addProperty("x", latitude);
+    payload.addProperty("y", longitude);
+    payload.addProperty("z", altitude);
     payload.addProperty("mission_type", missionType);
 
     root.add("header", header);

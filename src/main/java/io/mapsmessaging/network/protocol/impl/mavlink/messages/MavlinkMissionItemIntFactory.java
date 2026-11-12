@@ -17,9 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.messages;
+package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
-import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkPosition;
 import java.time.Duration;
 
 public final class MavlinkMissionItemIntFactory {
@@ -43,7 +43,7 @@ public final class MavlinkMissionItemIntFactory {
   private MavlinkMissionItemIntFactory() {
   }
 
-  public static MavlinkMissionItemInt waypoint(int targetSystem, int targetComponent, int missionSequence, GeoPosition position) {
+  public static MavlinkMissionItemInt waypoint(int targetSystem, int targetComponent, int missionSequence, MavlinkPosition position) {
     return waypoint(
         targetSystem,
         targetComponent,
@@ -59,7 +59,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetSystem,
       int targetComponent,
       int missionSequence,
-      GeoPosition position,
+      MavlinkPosition position,
       float holdTimeSeconds,
       float acceptanceRadiusMeters,
       float passRadiusMeters,
@@ -73,7 +73,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetSystem,
       int targetComponent,
       int missionSequence,
-      GeoPosition position,
+      MavlinkPosition position,
       double relativeAltitudeMeters,
       float holdTimeSeconds,
       float acceptanceRadiusMeters,
@@ -95,7 +95,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetSystem,
       int targetComponent,
       int missionSequence,
-      GeoPosition position,
+      MavlinkPosition position,
       double radiusMeters) {
     MavlinkMissionItemInt missionItem = positionMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_NAV_LOITER_UNLIM, position);
     setLoiterParameters(missionItem, 0.0f, radiusMeters);
@@ -106,7 +106,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetSystem,
       int targetComponent,
       int missionSequence,
-      GeoPosition position,
+      MavlinkPosition position,
       double relativeAltitudeMeters,
       double radiusMeters) {
     MavlinkMissionItemInt missionItem =
@@ -125,7 +125,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetSystem,
       int targetComponent,
       int missionSequence,
-      GeoPosition position,
+      MavlinkPosition position,
       Duration duration,
       double radiusMeters) {
     MavlinkMissionItemInt missionItem = positionMissionItem(targetSystem, targetComponent, missionSequence, MAV_CMD_NAV_LOITER_TIME, position);
@@ -137,7 +137,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetSystem,
       int targetComponent,
       int missionSequence,
-      GeoPosition position,
+      MavlinkPosition position,
       double relativeAltitudeMeters,
       Duration duration,
       double radiusMeters) {
@@ -207,7 +207,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetComponent,
       int missionSequence,
       int command,
-      GeoPosition position) {
+      MavlinkPosition position) {
     validatePosition(position);
     return positionMissionItem(
         targetSystem,
@@ -224,7 +224,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetComponent,
       int missionSequence,
       int command,
-      GeoPosition position,
+      MavlinkPosition position,
       double relativeAltitudeMeters) {
     validatePosition(position);
     requireFinite(relativeAltitudeMeters, "relativeAltitudeMeters");
@@ -243,7 +243,7 @@ public final class MavlinkMissionItemIntFactory {
       int targetComponent,
       int missionSequence,
       int command,
-      GeoPosition position,
+      MavlinkPosition position,
       int frame,
       float altitudeMeters) {
     MavlinkMissionItemInt missionItem = baseMissionItem(targetSystem, targetComponent, missionSequence, frame, command);
@@ -270,7 +270,7 @@ public final class MavlinkMissionItemIntFactory {
     return missionItem;
   }
 
-  private static int resolvePositionFrame(GeoPosition position) {
+  private static int resolvePositionFrame(MavlinkPosition position) {
     if (position.getAltitudeMslMeters() != null) {
       return MAV_FRAME_GLOBAL_INT;
     }
@@ -280,12 +280,12 @@ public final class MavlinkMissionItemIntFactory {
     return MAV_FRAME_GLOBAL_RELATIVE_ALT_INT;
   }
 
-  private static float resolveAltitude(GeoPosition position) {
+  private static float resolveAltitude(MavlinkPosition position) {
     Double altitudeMeters = position.getPreferredAltitudeMeters();
     return altitudeMeters == null ? 0.0f : altitudeMeters.floatValue();
   }
 
-  private static void validatePosition(GeoPosition position) {
+  private static void validatePosition(MavlinkPosition position) {
     if (position == null) {
       throw new IllegalArgumentException("Position must not be null");
     }

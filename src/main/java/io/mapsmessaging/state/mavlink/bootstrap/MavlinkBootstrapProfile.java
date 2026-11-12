@@ -25,7 +25,7 @@ import java.time.Duration;
 import java.util.EnumMap;
 import java.util.Map;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.*;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.*;
 
 @Getter
 public class MavlinkBootstrapProfile {

@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.NAMED_VALUE_FLOAT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.NAMED_VALUE_FLOAT;
 
 /**
  * Listener for NAMED_VALUE_FLOAT.

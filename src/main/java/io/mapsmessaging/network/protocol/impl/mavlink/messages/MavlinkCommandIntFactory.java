@@ -17,9 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.messages;
+package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
-import io.mapsmessaging.state.drone.model.GeoPosition;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkPosition;
 import java.time.Duration;
 
 public final class MavlinkCommandIntFactory {
@@ -38,7 +38,7 @@ public final class MavlinkCommandIntFactory {
   private MavlinkCommandIntFactory() {
   }
 
-  public static MavlinkCommandInt reposition(int targetSystem, int targetComponent, GeoPosition position, int sequence) {
+  public static MavlinkCommandInt reposition(int targetSystem, int targetComponent, MavlinkPosition position, int sequence) {
     MavlinkCommandInt commandInt = repositionCommand(targetSystem, targetComponent, resolvePositionFrame(position), sequence);
     setPosition(commandInt, position);
     return commandInt;
@@ -47,7 +47,7 @@ public final class MavlinkCommandIntFactory {
   public static MavlinkCommandInt repositionRelativeAltitude(
       int targetSystem,
       int targetComponent,
-      GeoPosition position,
+      MavlinkPosition position,
       double relativeAltitudeMeters,
       int sequence) {
     MavlinkCommandInt commandInt = repositionCommand(targetSystem, targetComponent, MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, sequence);
@@ -55,7 +55,7 @@ public final class MavlinkCommandIntFactory {
     return commandInt;
   }
 
-  public static MavlinkCommandInt orbit(int targetSystem, int targetComponent, GeoPosition position, double radiusMeters, int sequence) {
+  public static MavlinkCommandInt orbit(int targetSystem, int targetComponent, MavlinkPosition position, double radiusMeters, int sequence) {
     MavlinkCommandInt commandInt = baseCommandInt(targetSystem, targetComponent, resolvePositionFrame(position), MAV_CMD_DO_ORBIT, sequence);
     commandInt.setParam1((float) radiusMeters);
     commandInt.setParam2(Float.NaN);
@@ -68,7 +68,7 @@ public final class MavlinkCommandIntFactory {
   public static MavlinkCommandInt loiterUnlimited(
       int targetSystem,
       int targetComponent,
-      GeoPosition position,
+      MavlinkPosition position,
       double radiusMeters,
       float yawDegrees,
       int sequence) {
@@ -80,7 +80,7 @@ public final class MavlinkCommandIntFactory {
   public static MavlinkCommandInt loiterUnlimitedRelativeAltitude(
       int targetSystem,
       int targetComponent,
-      GeoPosition position,
+      MavlinkPosition position,
       double relativeAltitudeMeters,
       double radiusMeters,
       float yawDegrees,
@@ -105,7 +105,7 @@ public final class MavlinkCommandIntFactory {
   public static MavlinkCommandInt loiterTime(
       int targetSystem,
       int targetComponent,
-      GeoPosition position,
+      MavlinkPosition position,
       double radiusMeters,
       Duration duration,
       int sequence) {
@@ -117,7 +117,7 @@ public final class MavlinkCommandIntFactory {
   public static MavlinkCommandInt loiterTimeRelativeAltitude(
       int targetSystem,
       int targetComponent,
-      GeoPosition position,
+      MavlinkPosition position,
       double relativeAltitudeMeters,
       double radiusMeters,
       Duration duration,
@@ -178,7 +178,7 @@ public final class MavlinkCommandIntFactory {
     return commandInt;
   }
 
-  private static int resolvePositionFrame(GeoPosition position) {
+  private static int resolvePositionFrame(MavlinkPosition position) {
     validatePosition(position);
     if (position.getAltitudeMslMeters() != null) {
       return MAV_FRAME_GLOBAL_INT;
@@ -189,14 +189,14 @@ public final class MavlinkCommandIntFactory {
     return MAV_FRAME_GLOBAL_RELATIVE_ALT_INT;
   }
 
-  private static void setPosition(MavlinkCommandInt commandInt, GeoPosition position) {
+  private static void setPosition(MavlinkCommandInt commandInt, MavlinkPosition position) {
     validatePosition(position);
     commandInt.setLatitude(toScaledCoordinate(position.getLatitude()));
     commandInt.setLongitude(toScaledCoordinate(position.getLongitude()));
     commandInt.setAltitude(resolveAltitude(position));
   }
 
-  private static void setPosition(MavlinkCommandInt commandInt, GeoPosition position, double relativeAltitudeMeters) {
+  private static void setPosition(MavlinkCommandInt commandInt, MavlinkPosition position, double relativeAltitudeMeters) {
     validatePosition(position);
     requireFinite(relativeAltitudeMeters, "relativeAltitudeMeters");
     commandInt.setLatitude(toScaledCoordinate(position.getLatitude()));
@@ -204,7 +204,7 @@ public final class MavlinkCommandIntFactory {
     commandInt.setAltitude((float) relativeAltitudeMeters);
   }
 
-  private static float resolveAltitude(GeoPosition position) {
+  private static float resolveAltitude(MavlinkPosition position) {
     Double altitudeMeters = position.getAltitudeMslMeters();
     if (altitudeMeters == null) {
       altitudeMeters = position.getAltitudeAglMeters();
@@ -219,7 +219,7 @@ public final class MavlinkCommandIntFactory {
     return altitudeMeters.floatValue();
   }
 
-  private static void validatePosition(GeoPosition position) {
+  private static void validatePosition(MavlinkPosition position) {
     if (position == null) {
       throw new IllegalArgumentException("Position must not be null");
     }

@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.*;
+
 import java.time.Duration;
 import java.util.Objects;
 

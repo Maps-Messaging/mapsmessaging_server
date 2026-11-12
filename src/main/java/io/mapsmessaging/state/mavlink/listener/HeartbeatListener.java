@@ -31,7 +31,7 @@ import io.mapsmessaging.state.mavlink.model.impl.usv.SticklebackArdupilotUsvMode
 
 import java.time.Instant;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.HEARTBEAT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.HEARTBEAT;
 
 /**
  * Listener for HEARTBEAT.

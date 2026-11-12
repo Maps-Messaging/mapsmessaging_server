@@ -27,7 +27,7 @@ import io.mapsmessaging.state.drone.model.autopilot.GenericAutopilotState;
 import io.mapsmessaging.state.mavlink.packet.AutopilotVersionPacket;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.AUTOPILOT_VERSION;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.AUTOPILOT_VERSION;
 
 /**
  * Listener for AUTOPILOT_VERSION.

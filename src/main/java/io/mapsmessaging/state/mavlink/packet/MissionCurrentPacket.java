@@ -19,12 +19,14 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
+
 
 import io.mapsmessaging.mavlink.ProcessedFrame;
 
 import java.util.Map;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MISSION_CURRENT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.MISSION_CURRENT;
 
 public class MissionCurrentPacket extends MavlinkPacket {
 

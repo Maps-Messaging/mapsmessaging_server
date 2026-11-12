@@ -31,7 +31,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.BATTERY_STATUS;
 
 /**
  * Listener for BATTERY_STATUS.

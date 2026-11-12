@@ -19,12 +19,14 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
+
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import lombok.Getter;
 
 import java.util.Map;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.NAMED_VALUE_FLOAT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.NAMED_VALUE_FLOAT;
 
 /**
  * MAVLink NAMED_VALUE_FLOAT mapped to a typed packet.

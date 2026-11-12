@@ -23,12 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandInt;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItem;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLong;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLongFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItem;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemFactory;
 import io.mapsmessaging.state.mavlink.model.RepositionRequest;
 import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
 import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;

@@ -28,7 +28,7 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import java.time.Instant;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.GPS_RAW_INT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.GPS_RAW_INT;
 
 public class GpsRawIntListener implements Listener {
 

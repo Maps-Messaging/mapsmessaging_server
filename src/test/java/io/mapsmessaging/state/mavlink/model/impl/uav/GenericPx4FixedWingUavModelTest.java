@@ -28,8 +28,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.FixedWingUavModel;
 import io.mapsmessaging.state.mavlink.model.MissionPlan;
 import io.mapsmessaging.state.mavlink.model.PlanItem;

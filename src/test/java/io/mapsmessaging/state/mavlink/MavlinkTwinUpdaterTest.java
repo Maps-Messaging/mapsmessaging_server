@@ -47,9 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MOUNT_STATUS;
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.NAMED_VALUE_FLOAT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.BATTERY_STATUS;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.MOUNT_STATUS;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.NAMED_VALUE_FLOAT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;

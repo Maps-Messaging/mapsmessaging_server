@@ -27,7 +27,7 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import java.time.Instant;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.COMMAND_ACK;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.COMMAND_ACK;
 
 /**
  * Listener for COMMAND_ACK.
