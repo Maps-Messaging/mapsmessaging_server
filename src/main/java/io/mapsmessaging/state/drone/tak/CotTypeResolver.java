@@ -23,7 +23,7 @@ import io.mapsmessaging.cot.types.BattleDimension;
 import io.mapsmessaging.cot.types.CotType;
 import io.mapsmessaging.cot.types.CotTypeRegistry;
 import io.mapsmessaging.cot.types.FunctionKey;
-import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
