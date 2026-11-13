@@ -19,7 +19,6 @@
 
 package io.mapsmessaging.logging;
 
-import io.mapsmessaging.state.logging.StateLogMessages;
 import lombok.Getter;
 
 /**
