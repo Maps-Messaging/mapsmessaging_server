@@ -24,6 +24,7 @@ import io.mapsmessaging.config.ConfigManager;
 import io.mapsmessaging.config.network.KeyStoreConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakServerDTO;
