@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.messages;
+package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
 import com.google.gson.JsonObject;
 import lombok.AllArgsConstructor;
@@ -27,31 +27,25 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MavlinkMissionItemInt implements MavlinkMessage {
+public class MavlinkCommandLong implements MavlinkMessage {
 
-  public static final int MESSAGE_ID_MISSION_ITEM_INT = 73;
+  public static final int MESSAGE_ID_COMMAND_LONG = 76;
 
-  private static final int TRANSPORT_SEQUENCE_PLACEHOLDER = 0;
-
-  private String messageType = "MISSION_ITEM_INT";
-  private int messageId = MESSAGE_ID_MISSION_ITEM_INT;
+  private String messageType = "COMMAND_LONG";
+  private int messageId = MESSAGE_ID_COMMAND_LONG;
   private int targetSystem;
   private int targetComponent;
-  private int missionSequence;
-  private int frame;
   private int command;
-  private int current;
-  private int autocontinue;
+  private int confirmation;
+  private int sequence;
   private float param1;
   private float param2;
   private float param3;
   private float param4;
-  private int latitude;
-  private int longitude;
-  private float altitude;
-  private int missionType;
+  private float param5;
+  private float param6;
+  private float param7;
 
-  @Override
   public JsonObject toMavlinkJsonObject() {
     JsonObject root = new JsonObject();
     JsonObject header = new JsonObject();
@@ -60,7 +54,7 @@ public class MavlinkMissionItemInt implements MavlinkMessage {
     header.addProperty("version", "V2");
     header.addProperty("systemId", 0);
     header.addProperty("componentId", 0);
-    header.addProperty("sequence", TRANSPORT_SEQUENCE_PLACEHOLDER);
+    header.addProperty("sequence", sequence);
     header.addProperty("messageId", messageId);
     header.addProperty("signed", false);
     header.addProperty("incompatibilityFlags", 0);
@@ -68,19 +62,15 @@ public class MavlinkMissionItemInt implements MavlinkMessage {
 
     payload.addProperty("target_system", targetSystem);
     payload.addProperty("target_component", targetComponent);
-    payload.addProperty("seq", missionSequence);
-    payload.addProperty("frame", frame);
     payload.addProperty("command", command);
-    payload.addProperty("current", current);
-    payload.addProperty("autocontinue", autocontinue);
+    payload.addProperty("confirmation", confirmation);
     payload.addProperty("param1", param1);
     payload.addProperty("param2", param2);
     payload.addProperty("param3", param3);
     payload.addProperty("param4", param4);
-    payload.addProperty("x", latitude);
-    payload.addProperty("y", longitude);
-    payload.addProperty("z", altitude);
-    payload.addProperty("mission_type", missionType);
+    payload.addProperty("param5", param5);
+    payload.addProperty("param6", param6);
+    payload.addProperty("param7", param7);
 
     root.add("header", header);
     root.add("payload", payload);

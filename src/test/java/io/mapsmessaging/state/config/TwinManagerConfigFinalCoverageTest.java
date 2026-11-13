@@ -1,5 +1,7 @@
 package io.mapsmessaging.state.config;
 
+import io.mapsmessaging.dto.rest.config.VehicleClass;
+
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import org.junit.jupiter.api.Test;
 

@@ -17,37 +17,33 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.messages;
+package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
 import com.google.gson.JsonObject;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-public class MavlinkCommandInt implements MavlinkMessage {
+public class MavlinkMissionCount implements MavlinkMessage {
 
-  public static final int MESSAGE_ID_COMMAND_INT = 75;
+  public static final int MESSAGE_ID_MISSION_COUNT = 44;
 
-  private String messageType = "COMMAND_INT";
-  private int messageId = MESSAGE_ID_COMMAND_INT;
+  private static final int TRANSPORT_SEQUENCE_PLACEHOLDER = 0;
+
+  private String messageType = "MISSION_COUNT";
+  private int messageId = MESSAGE_ID_MISSION_COUNT;
   private int targetSystem;
   private int targetComponent;
-  private int frame;
-  private int command;
-  private int current;
-  private int sequence;
-  private int autocontinue;
-  private float param1;
-  private float param2;
-  private float param3;
-  private float param4;
-  private int latitude;
-  private int longitude;
-  private float altitude;
+  private int count;
+  private int missionType;
 
+  @Override
+  public int getCommand() {
+    return 0;
+  }
+
+  @Override
   public JsonObject toMavlinkJsonObject() {
     JsonObject root = new JsonObject();
     JsonObject header = new JsonObject();
@@ -56,7 +52,7 @@ public class MavlinkCommandInt implements MavlinkMessage {
     header.addProperty("version", "V2");
     header.addProperty("systemId", 0);
     header.addProperty("componentId", 0);
-    header.addProperty("sequence", sequence);
+    header.addProperty("sequence", TRANSPORT_SEQUENCE_PLACEHOLDER);
     header.addProperty("messageId", messageId);
     header.addProperty("signed", false);
     header.addProperty("incompatibilityFlags", 0);
@@ -64,17 +60,8 @@ public class MavlinkCommandInt implements MavlinkMessage {
 
     payload.addProperty("target_system", targetSystem);
     payload.addProperty("target_component", targetComponent);
-    payload.addProperty("frame", frame);
-    payload.addProperty("command", command);
-    payload.addProperty("current", current);
-    payload.addProperty("autocontinue", autocontinue);
-    payload.addProperty("param1", param1);
-    payload.addProperty("param2", param2);
-    payload.addProperty("param3", param3);
-    payload.addProperty("param4", param4);
-    payload.addProperty("x", latitude);
-    payload.addProperty("y", longitude);
-    payload.addProperty("z", altitude);
+    payload.addProperty("count", count);
+    payload.addProperty("mission_type", missionType);
 
     root.add("header", header);
     root.add("payload", payload);

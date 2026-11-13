@@ -19,13 +19,15 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
+
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import lombok.Getter;
 
 import java.util.Arrays;
 import java.util.Map;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.BATTERY_STATUS;
 
 /**
  * MAVLink BATTERY_STATUS mapped to a typed packet.

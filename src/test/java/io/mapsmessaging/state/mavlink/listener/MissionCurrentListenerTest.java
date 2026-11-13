@@ -26,7 +26,7 @@ import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
-import io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds;
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
 import io.mapsmessaging.state.mavlink.packet.MissionCurrentPacket;
 import java.time.Instant;
 import java.util.List;

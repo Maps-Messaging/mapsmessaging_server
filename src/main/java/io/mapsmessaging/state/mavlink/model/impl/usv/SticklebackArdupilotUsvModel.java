@@ -24,7 +24,7 @@ import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.drone.model.DetectionEvent;
 import io.mapsmessaging.state.drone.model.DetectionEventType;
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.*;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.*;
 import io.mapsmessaging.state.mavlink.model.*;
 import io.mapsmessaging.state.mavlink.model.impl.ardupilot.GenericArduPilotUxvModel;
 import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
@@ -85,7 +85,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
             MavlinkMissionItemFactory.guidedWaypoint(
                 context.targetSystem(),
                 context.targetComponent(),
-                commandPosition));
+                io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(commandPosition)));
 
     return UxvModelCommandSet.of(UxvOperation.REPOSITION, getModelName(), messages);
   }
@@ -129,7 +129,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
           MavlinkCommandIntFactory.loiterUnlimited(
               context.targetSystem(),
               context.targetComponent(),
-              commandPosition,
+              io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(commandPosition),
               request.radiusMeters(),
               Float.NaN,
               context.sequence());
@@ -138,7 +138,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
           MavlinkCommandIntFactory.loiterTime(
               context.targetSystem(),
               context.targetComponent(),
-              commandPosition,
+              io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(commandPosition),
               request.radiusMeters(),
               duration,
               context.sequence());
@@ -159,7 +159,7 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
               context.targetSystem(),
               context.targetComponent(),
               sequence,
-              withAltitude(item.position(), item.altitudeMeters()),
+              io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(withAltitude(item.position(), item.altitudeMeters())),
               toSeconds(item.holdDuration()),
               item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters().floatValue(),
               DEFAULT_PASS_RADIUS_METERS,
@@ -185,14 +185,14 @@ public class SticklebackArdupilotUsvModel extends GenericArduPilotUxvModel imple
           context.targetSystem(),
           context.targetComponent(),
           sequence,
-          position,
+          io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
           radiusMeters);
     }
     return MavlinkMissionItemIntFactory.loiterTime(
         context.targetSystem(),
         context.targetComponent(),
         sequence,
-        position,
+        io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
         duration,
         radiusMeters);
   }

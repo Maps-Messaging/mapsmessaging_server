@@ -19,8 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.model.impl.ugv;
 
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMessage;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.PlanItem;
 import io.mapsmessaging.state.mavlink.model.PlanItemType;
 import io.mapsmessaging.state.mavlink.model.PlanValidationIssue;
@@ -67,7 +67,7 @@ public class GenericPx4UgvModel extends GenericPx4UxvModel implements UgvModel {
               context.targetSystem(),
               context.targetComponent(),
               sequence,
-              item.position(),
+              io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(item.position()),
               toSeconds(item.holdDuration()),
               item.radiusMeters() == null ? DEFAULT_ACCEPTANCE_RADIUS_METERS : item.radiusMeters().floatValue(),
               DEFAULT_PASS_RADIUS_METERS,

@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItem;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemFactory;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -34,7 +37,7 @@ class MavlinkMissionItemFactoryTest {
   void guidedWaypointUsesGlobalFrameForMslAltitude() {
     GeoPosition position = new GeoPosition(59.4673d, 24.828353d, 120.0d, null);
 
-    MavlinkMissionItem item = MavlinkMissionItemFactory.guidedWaypoint(TARGET_SYSTEM, TARGET_COMPONENT, position);
+    MavlinkMissionItem item = MavlinkMissionItemFactory.guidedWaypoint(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position));
 
     assertWaypoint(item, MavlinkMissionItemFactory.MAV_FRAME_GLOBAL, 120.0f);
   }
@@ -43,7 +46,7 @@ class MavlinkMissionItemFactoryTest {
   void guidedWaypointUsesTerrainFrameForAglAltitude() {
     GeoPosition position = new GeoPosition(59.4673d, 24.828353d, null, 8.5d);
 
-    MavlinkMissionItem item = MavlinkMissionItemFactory.guidedWaypoint(TARGET_SYSTEM, TARGET_COMPONENT, position);
+    MavlinkMissionItem item = MavlinkMissionItemFactory.guidedWaypoint(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position));
 
     assertWaypoint(item, MavlinkMissionItemFactory.MAV_FRAME_GLOBAL_TERRAIN_ALT, 8.5f);
   }
@@ -52,7 +55,7 @@ class MavlinkMissionItemFactoryTest {
   void guidedWaypointWithoutAltitudeUsesZeroRelativeAltitude() {
     GeoPosition position = new GeoPosition(59.4673d, 24.828353d, null, null);
 
-    MavlinkMissionItem item = MavlinkMissionItemFactory.guidedWaypoint(TARGET_SYSTEM, TARGET_COMPONENT, position);
+    MavlinkMissionItem item = MavlinkMissionItemFactory.guidedWaypoint(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position));
 
     assertWaypoint(item, MavlinkMissionItemFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT, 0.0f);
   }
@@ -61,7 +64,7 @@ class MavlinkMissionItemFactoryTest {
   void guidedWaypointRelativeAltitudeUsesExplicitAltitude() {
     GeoPosition position = new GeoPosition(59.4673d, 24.828353d, 500.0d, null);
 
-    MavlinkMissionItem item = MavlinkMissionItemFactory.guidedWaypointRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, position, 10.0d);
+    MavlinkMissionItem item = MavlinkMissionItemFactory.guidedWaypointRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position), 10.0d);
 
     assertWaypoint(item, MavlinkMissionItemFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT, 10.0f);
   }
@@ -72,7 +75,7 @@ class MavlinkMissionItemFactoryTest {
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> MavlinkMissionItemFactory.guidedWaypointRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, position, Double.NaN));
+        () -> MavlinkMissionItemFactory.guidedWaypointRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position), Double.NaN));
   }
 
   private static void assertWaypoint(MavlinkMissionItem item, int expectedFrame, float expectedAltitude) {

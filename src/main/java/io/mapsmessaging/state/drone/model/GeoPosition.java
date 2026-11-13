@@ -20,6 +20,7 @@
 package io.mapsmessaging.state.drone.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkPosition;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -80,6 +81,32 @@ public class GeoPosition {
       Double altitudeMslMeters,
       Double altitudeAglMeters) {
     this(latitude, longitude, altitudeMslMeters, altitudeAglMeters, null);
+  }
+
+
+  public GeoPosition(MavlinkPosition position) {
+    this(
+        java.util.Objects.requireNonNull(position, "position").getLatitude(),
+        position.getLongitude(),
+        position.getAltitudeMslMeters(),
+        position.getAltitudeAglMeters(),
+        position.getAltitudeRelativeMeters());
+  }
+
+  public MavlinkPosition toMavlinkPosition() {
+    int frame;
+    if (altitudeMslMeters != null) {
+      frame = MavlinkPosition.GLOBAL_INT;
+    } else if (altitudeAglMeters != null) {
+      frame = MavlinkPosition.GLOBAL_TERRAIN_ALT_INT;
+    } else {
+      frame = MavlinkPosition.GLOBAL_RELATIVE_ALT_INT;
+    }
+    return new MavlinkPosition(latitude, longitude, getPreferredAltitudeMeters(), frame);
+  }
+
+  public static MavlinkPosition toMavlinkPosition(GeoPosition position) {
+    return position == null ? null : position.toMavlinkPosition();
   }
 
   public Double getPreferredAltitudeMeters() {

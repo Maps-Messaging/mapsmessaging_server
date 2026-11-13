@@ -23,7 +23,7 @@ import io.mapsmessaging.cot.types.Affiliation;
 import io.mapsmessaging.cot.types.BattleDimension;
 import io.mapsmessaging.cot.types.CotType;
 import io.mapsmessaging.cot.types.FunctionKey;
-import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import io.mapsmessaging.state.config.DataProductConfig;
 import io.mapsmessaging.state.drone.tak.model.TakVideo;
 import java.net.URI;

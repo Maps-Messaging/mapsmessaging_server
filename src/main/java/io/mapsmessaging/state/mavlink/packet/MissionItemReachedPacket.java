@@ -19,7 +19,9 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.MISSION_ITEM_REACHED;
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
+
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.MISSION_ITEM_REACHED;
 
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import java.util.Map;

@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakProtocolDTO;
 import io.mapsmessaging.dto.rest.config.protocol.impl.TakServerDTO;
 import io.mapsmessaging.state.config.capability.Authorities;
@@ -417,18 +418,15 @@ class TwinManagerConfigTest {
       TwinManagerConfig config = newTwinManagerConfig(root);
       ConfigurationProperties packed = config.toConfigurationProperties();
       List<?> mavlinkEntries = assertInstanceOf(List.class, packed.get("mavlink"));
-      ConfigurationProperties packedMavlink =
-          assertInstanceOf(ConfigurationProperties.class, mavlinkEntries.getFirst());
+      ConfigurationProperties packedMavlink = assertInstanceOf(ConfigurationProperties.class, mavlinkEntries.getFirst());
       assertEquals("/mavlink/3/#", packedMavlink.getProperty("topic"));
       List<?> knownSources = assertInstanceOf(List.class, packedMavlink.get("knownSources"));
-      ConfigurationProperties packedSource =
-          assertInstanceOf(ConfigurationProperties.class, knownSources.getFirst());
+      ConfigurationProperties packedSource = assertInstanceOf(ConfigurationProperties.class, knownSources.getFirst());
       assertEquals("Stickleback", packedSource.getProperty("description"));
       assertEquals("USV", packedSource.getProperty("vehicleClass"));
       TwinManagerConfig restored = newTwinManagerConfig(packed);
       assertEquals(3, restored.getMavlink().getFirst().getKnownSources().getFirst().getSystemId());
-      assertEquals(VehicleClass.USV,
-          restored.getMavlink().getFirst().getKnownSources().getFirst().getVehicleClass());
+      assertEquals(VehicleClass.USV, restored.getMavlink().getFirst().getKnownSources().getFirst().getVehicleClass());
     }
   }
 

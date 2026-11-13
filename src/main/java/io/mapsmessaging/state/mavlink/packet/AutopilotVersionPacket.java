@@ -19,12 +19,14 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
+
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import lombok.Getter;
 
 import java.util.Map;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.AUTOPILOT_VERSION;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.AUTOPILOT_VERSION;
 
 @Getter
 public class AutopilotVersionPacket extends MavlinkPacket {

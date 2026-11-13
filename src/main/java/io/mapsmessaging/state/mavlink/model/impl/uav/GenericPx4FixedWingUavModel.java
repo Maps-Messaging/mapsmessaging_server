@@ -20,8 +20,8 @@
 package io.mapsmessaging.state.mavlink.model.impl.uav;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMessage;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.FixedWingUavModel;
 import io.mapsmessaging.state.mavlink.model.PlanItem;
 import io.mapsmessaging.state.mavlink.model.PlanItemType;
@@ -70,7 +70,7 @@ public class GenericPx4FixedWingUavModel extends GenericPx4UavModel implements F
         context.targetSystem(),
         context.targetComponent(),
         sequence,
-        position,
+        io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
         holdDuration,
         resolveLoiterRadius(item));
   }
@@ -87,7 +87,7 @@ public class GenericPx4FixedWingUavModel extends GenericPx4UavModel implements F
           context.targetSystem(),
           context.targetComponent(),
           sequence,
-          position,
+          io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
           radiusMeters);
     }
 
@@ -95,7 +95,7 @@ public class GenericPx4FixedWingUavModel extends GenericPx4UavModel implements F
         context.targetSystem(),
         context.targetComponent(),
         sequence,
-        position,
+        io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
         holdDuration,
         radiusMeters);
   }

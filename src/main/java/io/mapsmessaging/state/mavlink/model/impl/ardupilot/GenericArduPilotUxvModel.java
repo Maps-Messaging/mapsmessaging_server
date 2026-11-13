@@ -20,9 +20,9 @@
 package io.mapsmessaging.state.mavlink.model.impl.ardupilot;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLongFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMessage;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.MissionPlan;
 import io.mapsmessaging.state.mavlink.model.PlanValidation;
 import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
@@ -115,6 +115,6 @@ public abstract class GenericArduPilotUxvModel extends AbstractMissionUxvModel {
         context.targetSystem(),
         context.targetComponent(),
         HOME_MISSION_SEQUENCE,
-        placeholderPosition);
+        io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(placeholderPosition));
   }
 }

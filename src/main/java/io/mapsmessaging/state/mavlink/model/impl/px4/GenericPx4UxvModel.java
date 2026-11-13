@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.model.impl.px4;
 
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLongFactory;
 import io.mapsmessaging.state.mavlink.model.UxvCommandContext;
 import io.mapsmessaging.state.mavlink.model.UxvModelCommandSet;
 import io.mapsmessaging.state.mavlink.model.UxvOperation;

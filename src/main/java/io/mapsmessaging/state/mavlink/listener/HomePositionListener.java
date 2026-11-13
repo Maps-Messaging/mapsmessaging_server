@@ -28,7 +28,7 @@ import io.mapsmessaging.state.mavlink.packet.MavlinkPacket;
 
 import java.time.Instant;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.HOME_POSITION;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.HOME_POSITION;
 
 /**
  * Listener for HOME_POSITION.

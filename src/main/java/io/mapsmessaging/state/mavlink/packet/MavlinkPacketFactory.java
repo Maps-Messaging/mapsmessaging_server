@@ -19,6 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
+
 import io.mapsmessaging.mavlink.ProcessedFrame;
 
 public class MavlinkPacketFactory {

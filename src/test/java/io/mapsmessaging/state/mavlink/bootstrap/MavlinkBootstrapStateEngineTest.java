@@ -30,9 +30,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.AUTOPILOT_VERSION;
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.BATTERY_STATUS;
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.GLOBAL_POSITION_INT;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.AUTOPILOT_VERSION;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.BATTERY_STATUS;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.GLOBAL_POSITION_INT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mavlink;
 
-import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;

@@ -5,7 +5,7 @@ import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import io.mapsmessaging.state.mavlink.packet.HomePositionPacket;
-import io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds;
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

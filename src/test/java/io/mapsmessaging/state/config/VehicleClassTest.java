@@ -4,6 +4,8 @@
  */
 package io.mapsmessaging.state.config;
 
+import io.mapsmessaging.dto.rest.config.VehicleClass;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;

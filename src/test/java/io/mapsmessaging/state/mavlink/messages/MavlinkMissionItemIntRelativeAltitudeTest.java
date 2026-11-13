@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -40,7 +43,7 @@ class MavlinkMissionItemIntRelativeAltitudeTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             MISSION_SEQUENCE,
-            POSITION,
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(POSITION),
             10.0d,
             0.0f,
             2.0f,
@@ -57,7 +60,7 @@ class MavlinkMissionItemIntRelativeAltitudeTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             MISSION_SEQUENCE,
-            POSITION,
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(POSITION),
             10.0d,
             25.0d);
 
@@ -72,7 +75,7 @@ class MavlinkMissionItemIntRelativeAltitudeTest {
             TARGET_SYSTEM,
             TARGET_COMPONENT,
             MISSION_SEQUENCE,
-            POSITION,
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(POSITION),
             10.0d,
             Duration.ofSeconds(30),
             25.0d);
@@ -90,7 +93,7 @@ class MavlinkMissionItemIntRelativeAltitudeTest {
                 TARGET_SYSTEM,
                 TARGET_COMPONENT,
                 MISSION_SEQUENCE,
-                POSITION,
+                io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(POSITION),
                 Double.NaN,
                 25.0d));
   }

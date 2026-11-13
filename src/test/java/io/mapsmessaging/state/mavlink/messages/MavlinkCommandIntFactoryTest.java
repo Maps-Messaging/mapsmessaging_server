@@ -19,6 +19,9 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandIntFactory;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,7 +40,7 @@ class MavlinkCommandIntFactoryTest {
 
   @Test
   void repositionUsesGlobalIntForMslAltitude() {
-    MavlinkCommandInt command = MavlinkCommandIntFactory.reposition(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, PACKET_SEQUENCE);
+    MavlinkCommandInt command = MavlinkCommandIntFactory.reposition(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(MSL_POSITION), PACKET_SEQUENCE);
 
     assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_INT, MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION);
     assertEquals(-1.0f, command.getParam1());
@@ -49,7 +52,7 @@ class MavlinkCommandIntFactoryTest {
 
   @Test
   void repositionUsesTerrainFrameForAglAltitude() {
-    MavlinkCommandInt command = MavlinkCommandIntFactory.reposition(TARGET_SYSTEM, TARGET_COMPONENT, AGL_POSITION, PACKET_SEQUENCE);
+    MavlinkCommandInt command = MavlinkCommandIntFactory.reposition(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(AGL_POSITION), PACKET_SEQUENCE);
 
     assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_TERRAIN_ALT_INT, MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION);
     assertPosition(command, AGL_POSITION, 35.0f);
@@ -58,7 +61,7 @@ class MavlinkCommandIntFactoryTest {
   @Test
   void repositionRelativeAltitudeUsesExplicitHomeRelativeAltitude() {
     MavlinkCommandInt command =
-        MavlinkCommandIntFactory.repositionRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, 10.0d, PACKET_SEQUENCE);
+        MavlinkCommandIntFactory.repositionRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(MSL_POSITION), 10.0d, PACKET_SEQUENCE);
 
     assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT, MavlinkCommandIntFactory.MAV_CMD_DO_REPOSITION);
     assertPosition(command, MSL_POSITION, 10.0f);
@@ -67,7 +70,7 @@ class MavlinkCommandIntFactoryTest {
   @Test
   void unlimitedLoiterUsesMatchingMslFrameAndNormalisesYaw() {
     MavlinkCommandInt command =
-        MavlinkCommandIntFactory.loiterUnlimited(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, 75.0d, -90.0f, PACKET_SEQUENCE);
+        MavlinkCommandIntFactory.loiterUnlimited(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(MSL_POSITION), 75.0d, -90.0f, PACKET_SEQUENCE);
 
     assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_INT, MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_UNLIM);
     assertEquals(0.0f, command.getParam1());
@@ -83,7 +86,7 @@ class MavlinkCommandIntFactoryTest {
         MavlinkCommandIntFactory.loiterUnlimitedRelativeAltitude(
             TARGET_SYSTEM,
             TARGET_COMPONENT,
-            MSL_POSITION,
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(MSL_POSITION),
             10.0d,
             50.0d,
             Float.NaN,
@@ -97,7 +100,7 @@ class MavlinkCommandIntFactoryTest {
   @Test
   void timedLoiterUsesFractionalDuration() {
     MavlinkCommandInt command =
-        MavlinkCommandIntFactory.loiterTime(TARGET_SYSTEM, TARGET_COMPONENT, AGL_POSITION, 60.0d, Duration.ofMillis(1500), PACKET_SEQUENCE);
+        MavlinkCommandIntFactory.loiterTime(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(AGL_POSITION), 60.0d, Duration.ofMillis(1500), PACKET_SEQUENCE);
 
     assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_TERRAIN_ALT_INT, MavlinkCommandIntFactory.MAV_CMD_NAV_LOITER_TIME);
     assertEquals(1.5f, command.getParam1());
@@ -111,19 +114,19 @@ class MavlinkCommandIntFactoryTest {
   void timedLoiterRejectsNegativeDuration() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> MavlinkCommandIntFactory.loiterTime(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, 60.0d, Duration.ofMillis(-1), PACKET_SEQUENCE));
+        () -> MavlinkCommandIntFactory.loiterTime(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(MSL_POSITION), 60.0d, Duration.ofMillis(-1), PACKET_SEQUENCE));
   }
 
   @Test
   void relativeAltitudeCommandsRejectNonFiniteAltitude() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> MavlinkCommandIntFactory.repositionRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, Double.NaN, PACKET_SEQUENCE));
+        () -> MavlinkCommandIntFactory.repositionRelativeAltitude(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(MSL_POSITION), Double.NaN, PACKET_SEQUENCE));
   }
 
   @Test
   void orbitPopulatesRadiusAndYawBehaviour() {
-    MavlinkCommandInt command = MavlinkCommandIntFactory.orbit(TARGET_SYSTEM, TARGET_COMPONENT, MSL_POSITION, -125.0d, PACKET_SEQUENCE);
+    MavlinkCommandInt command = MavlinkCommandIntFactory.orbit(TARGET_SYSTEM, TARGET_COMPONENT, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(MSL_POSITION), -125.0d, PACKET_SEQUENCE);
 
     assertEnvelope(command, MavlinkCommandIntFactory.MAV_FRAME_GLOBAL_INT, MavlinkCommandIntFactory.MAV_CMD_DO_ORBIT);
     assertEquals(-125.0f, command.getParam1());

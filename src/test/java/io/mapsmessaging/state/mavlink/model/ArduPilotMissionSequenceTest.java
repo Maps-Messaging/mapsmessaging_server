@@ -22,10 +22,10 @@ package io.mapsmessaging.state.mavlink.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLong;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLongFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.impl.uav.GenericPx4UavModel;
 import io.mapsmessaging.state.mavlink.model.impl.usv.SticklebackArdupilotUsvModel;
 import java.util.List;

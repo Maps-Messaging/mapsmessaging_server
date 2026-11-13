@@ -17,9 +17,8 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.messages;
+package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
-import io.mapsmessaging.state.drone.model.GeoPosition;
 
 public final class MavlinkMissionItemFactory {
 
@@ -37,7 +36,7 @@ public final class MavlinkMissionItemFactory {
   private MavlinkMissionItemFactory() {
   }
 
-  public static MavlinkMissionItem guidedWaypoint(int targetSystem, int targetComponent, GeoPosition position) {
+  public static MavlinkMissionItem guidedWaypoint(int targetSystem, int targetComponent, MavlinkPosition position) {
     validatePosition(position);
     return guidedWaypoint(targetSystem, targetComponent, position, resolvePositionFrame(position), resolveAltitude(position));
   }
@@ -45,7 +44,7 @@ public final class MavlinkMissionItemFactory {
   public static MavlinkMissionItem guidedWaypointRelativeAltitude(
       int targetSystem,
       int targetComponent,
-      GeoPosition position,
+      MavlinkPosition position,
       double relativeAltitudeMeters) {
     validatePosition(position);
     requireFinite(relativeAltitudeMeters, "relativeAltitudeMeters");
@@ -55,7 +54,7 @@ public final class MavlinkMissionItemFactory {
   private static MavlinkMissionItem guidedWaypoint(
       int targetSystem,
       int targetComponent,
-      GeoPosition position,
+      MavlinkPosition position,
       int frame,
       float altitudeMeters) {
     MavlinkMissionItem missionItem = new MavlinkMissionItem();
@@ -79,7 +78,7 @@ public final class MavlinkMissionItemFactory {
     return missionItem;
   }
 
-  private static int resolvePositionFrame(GeoPosition position) {
+  private static int resolvePositionFrame(MavlinkPosition position) {
     if (position.getAltitudeMslMeters() != null) {
       return MAV_FRAME_GLOBAL;
     }
@@ -89,7 +88,7 @@ public final class MavlinkMissionItemFactory {
     return MAV_FRAME_GLOBAL_RELATIVE_ALT;
   }
 
-  private static float resolveAltitude(GeoPosition position) {
+  private static float resolveAltitude(MavlinkPosition position) {
     Double altitudeMeters = position.getAltitudeMslMeters();
     if (altitudeMeters == null) {
       altitudeMeters = position.getAltitudeAglMeters();
@@ -104,7 +103,7 @@ public final class MavlinkMissionItemFactory {
     return altitudeMeters.floatValue();
   }
 
-  private static void validatePosition(GeoPosition position) {
+  private static void validatePosition(MavlinkPosition position) {
     if (position == null) {
       throw new IllegalArgumentException("Position must not be null");
     }

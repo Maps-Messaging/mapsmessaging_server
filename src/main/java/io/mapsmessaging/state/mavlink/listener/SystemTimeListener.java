@@ -28,7 +28,7 @@ import io.mapsmessaging.state.mavlink.packet.SystemTimePacket;
 
 import java.time.Instant;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.SYSTEM_TIME;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.SYSTEM_TIME;
 
 public class SystemTimeListener implements Listener {
 

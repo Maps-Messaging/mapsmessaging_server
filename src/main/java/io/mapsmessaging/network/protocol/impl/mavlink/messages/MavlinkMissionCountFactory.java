@@ -17,17 +17,25 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.messages;
+package io.mapsmessaging.network.protocol.impl.mavlink.messages;
 
-import com.google.gson.JsonObject;
+public final class MavlinkMissionCountFactory {
 
-public interface MavlinkMessage {
+  public static final int MAV_MISSION_TYPE_MISSION = 0;
 
-  String getMessageType();
+  private MavlinkMissionCountFactory() {
+  }
 
-  int getMessageId();
+  public static MavlinkMissionCount mission(int targetSystem, int targetComponent, int count) {
+    if (count < 0 || count > 65_535) {
+      throw new IllegalArgumentException("count must be between 0 and 65535");
+    }
 
-  int getCommand();
-
-  JsonObject toMavlinkJsonObject();
+    MavlinkMissionCount missionCount = new MavlinkMissionCount();
+    missionCount.setTargetSystem(targetSystem);
+    missionCount.setTargetComponent(targetComponent);
+    missionCount.setCount(count);
+    missionCount.setMissionType(MAV_MISSION_TYPE_MISSION);
+    return missionCount;
+  }
 }

@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.config;
+package io.mapsmessaging.dto.rest.config;
 
 public enum VehicleDomain {
   AIR,

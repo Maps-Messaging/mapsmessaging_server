@@ -19,12 +19,12 @@
 
 package io.mapsmessaging.state.drone.model;
 
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandInt;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemInt;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLong;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLongFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.HomeRequest;
 import io.mapsmessaging.state.mavlink.model.LoiterRequest;
 import io.mapsmessaging.state.mavlink.model.MissionPlan;

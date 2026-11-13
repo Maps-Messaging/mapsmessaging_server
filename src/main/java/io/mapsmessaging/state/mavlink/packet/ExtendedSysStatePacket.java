@@ -19,12 +19,14 @@
 
 package io.mapsmessaging.state.mavlink.packet;
 
+import io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds;
+
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import lombok.Getter;
 
 import java.util.Map;
 
-import static io.mapsmessaging.state.mavlink.packet.MavlinkMessageIds.EXTENDED_SYS_STATE;
+import static io.mapsmessaging.network.protocol.impl.mavlink.MavlinkMessageIds.EXTENDED_SYS_STATE;
 
 @Getter
 public class ExtendedSysStatePacket extends MavlinkPacket {

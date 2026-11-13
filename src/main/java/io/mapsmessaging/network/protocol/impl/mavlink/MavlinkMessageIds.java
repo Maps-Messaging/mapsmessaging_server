@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.state.mavlink.packet;
+package io.mapsmessaging.network.protocol.impl.mavlink;
 
 public class MavlinkMessageIds {
 

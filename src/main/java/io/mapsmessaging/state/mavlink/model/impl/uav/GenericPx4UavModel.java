@@ -20,11 +20,11 @@
 package io.mapsmessaging.state.mavlink.model.impl.uav;
 
 import io.mapsmessaging.state.drone.model.GeoPosition;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandIntFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLong;
-import io.mapsmessaging.state.mavlink.messages.MavlinkCommandLongFactory;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMessage;
-import io.mapsmessaging.state.mavlink.messages.MavlinkMissionItemIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandIntFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLong;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkCommandLongFactory;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMessage;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 import io.mapsmessaging.state.mavlink.model.LoiterRequest;
 import io.mapsmessaging.state.mavlink.model.OrbitRequest;
 import io.mapsmessaging.state.mavlink.model.PlanItem;
@@ -133,7 +133,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
         MavlinkCommandIntFactory.orbit(
             context.targetSystem(),
             context.targetComponent(),
-            withAltitude(request.center(), request.altitudeMeters()),
+            io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(withAltitude(request.center(), request.altitudeMeters())),
             radiusMeters,
             context.sequence()));
   }
@@ -160,7 +160,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
           MavlinkCommandIntFactory.loiterUnlimited(
               context.targetSystem(),
               context.targetComponent(),
-              position,
+              io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
               request.radiusMeters(),
               yawDegrees,
               context.sequence());
@@ -171,7 +171,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
           MavlinkCommandIntFactory.loiterTime(
               context.targetSystem(),
               context.targetComponent(),
-              position,
+              io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
               request.radiusMeters(),
               request.duration(),
               context.sequence());
@@ -211,7 +211,7 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
         context.targetSystem(),
         context.targetComponent(),
         sequence,
-        withAltitude(item.position(), item.altitudeMeters()),
+        io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(withAltitude(item.position(), item.altitudeMeters())),
         toSeconds(item.holdDuration()),
         item.radiusMeters() == null
             ? DEFAULT_ACCEPTANCE_RADIUS_METERS
@@ -241,11 +241,11 @@ public class GenericPx4UavModel extends GenericPx4UxvModel implements UavModel {
           context.targetSystem(),
           context.targetComponent(),
           sequence,
-          position,
+          io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position),
           radiusMeters);
     }
 
-    return MavlinkMissionItemIntFactory.loiterTime(context.targetSystem(), context.targetComponent(), sequence, position, item.holdDuration(), radiusMeters);
+    return MavlinkMissionItemIntFactory.loiterTime(context.targetSystem(), context.targetComponent(), sequence, io.mapsmessaging.state.drone.model.GeoPosition.toMavlinkPosition(position), item.holdDuration(), radiusMeters);
   }
 
   @Override
