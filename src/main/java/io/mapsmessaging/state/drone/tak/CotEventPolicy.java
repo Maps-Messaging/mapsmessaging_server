@@ -21,7 +21,7 @@ package io.mapsmessaging.state.drone.tak;
 import io.mapsmessaging.cot.types.Affiliation;
 import io.mapsmessaging.state.config.CotAffiliation;
 import io.mapsmessaging.state.config.CotConfigDTO;
-import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.EntityTwin;
 import io.mapsmessaging.state.drone.core.TwinType;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
