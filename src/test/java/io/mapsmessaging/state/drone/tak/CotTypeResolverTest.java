@@ -3,7 +3,7 @@ package io.mapsmessaging.state.drone.tak;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.mapsmessaging.cot.types.Affiliation;
-import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
