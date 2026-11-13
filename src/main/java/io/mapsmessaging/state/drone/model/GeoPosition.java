@@ -94,9 +94,14 @@ public class GeoPosition {
   }
 
   public MavlinkPosition toMavlinkPosition() {
-    int frame = altitudeMslMeters != null ? MavlinkPosition.GLOBAL_INT
-        : altitudeAglMeters != null ? MavlinkPosition.GLOBAL_TERRAIN_ALT_INT
-        : MavlinkPosition.GLOBAL_RELATIVE_ALT_INT;
+    int frame;
+    if (altitudeMslMeters != null) {
+      frame = MavlinkPosition.GLOBAL_INT;
+    } else if (altitudeAglMeters != null) {
+      frame = MavlinkPosition.GLOBAL_TERRAIN_ALT_INT;
+    } else {
+      frame = MavlinkPosition.GLOBAL_RELATIVE_ALT_INT;
+    }
     return new MavlinkPosition(latitude, longitude, getPreferredAltitudeMeters(), frame);
   }
 
