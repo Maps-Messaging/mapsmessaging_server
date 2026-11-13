@@ -23,7 +23,7 @@ import io.mapsmessaging.dto.rest.config.protocol.impl.MavlinkKnownSourceDTO;
 import io.mapsmessaging.mavlink.ProcessedFrame;
 import io.mapsmessaging.state.config.DroneInfoDTO;
 import io.mapsmessaging.state.config.StopActionEnum;
-import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import io.mapsmessaging.state.drone.core.TwinManager;
 import io.mapsmessaging.state.drone.core.TwinUpdateContext;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
