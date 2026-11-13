@@ -1,6 +1,6 @@
 package io.mapsmessaging.state.drone.tak;
 
-import io.mapsmessaging.state.config.VehicleClass;
+import io.mapsmessaging.dto.rest.config.VehicleClass;
 import io.mapsmessaging.state.drone.drone.DroneTwin;
 import org.junit.jupiter.api.Test;
 
