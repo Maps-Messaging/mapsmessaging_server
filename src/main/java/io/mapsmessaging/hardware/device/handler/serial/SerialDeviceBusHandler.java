@@ -51,19 +51,26 @@ public class SerialDeviceBusHandler extends BusHandler {
   @Override
   protected Map<String, DeviceController> scan() {
     Map<String, DeviceController> map = new HashMap<>();
-    List<SerialBusDeviceDTO> list = ((SerialDeviceBusConfig)properties ).getDevices();
-    for(SerialBusDeviceDTO serialDeviceConfig: list){
+    List<SerialBusDeviceDTO> list = ((SerialDeviceBusConfig) properties).getDevices();
+
+    for (SerialBusDeviceDTO serialDeviceConfig : list) {
       String portName = serialDeviceConfig.getSerialConfig().getPort();
-      if(!foundDevices.containsKey(portName)){
+
+      if (!foundDevices.containsKey(portName) && !serialBusManager.getActive().containsKey(portName)) {
         SerialPort port = SerialPortScanner.getInstance().allocatePort(portName);
-        if(port != null){
+        if (port != null) {
           try {
             SerialEndPoint.configure(port, serialDeviceConfig.getSerialConfig());
-            SerialDeviceController controller = serialBusManager.mount(serialDeviceConfig.getName(), new Serial(port));
-            map.put(portName, controller);
+            serialBusManager.mount(serialDeviceConfig.getName(), new Serial(port));
           } catch (IOException e) {
             logger.log(ServerLogMessages.DEVICE_MANAGER_MOUNT_FAILED, portName, e);
           }
+        }
+      }
+
+      for (Map.Entry<String, DeviceController> entry : serialBusManager.getActive().entrySet()) {
+        if (entry.getKey().equals(portName) || entry.getKey().startsWith(portName + "_")) {
+          map.put(entry.getKey(), entry.getValue());
         }
       }
     }
