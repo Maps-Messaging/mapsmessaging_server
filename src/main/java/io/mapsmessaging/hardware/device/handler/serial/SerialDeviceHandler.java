@@ -20,6 +20,7 @@
 package io.mapsmessaging.hardware.device.handler.serial;
 
 import io.mapsmessaging.devices.DeviceController;
+import io.mapsmessaging.devices.serial.ComputedSerialDeviceController;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 
 public class SerialDeviceHandler extends DeviceHandler {
@@ -31,6 +32,11 @@ public class SerialDeviceHandler extends DeviceHandler {
   @Override
   public String getBusName() {
     return "serial";
+  }
+
+  @Override
+  public boolean enableConfig() {
+    return getController() instanceof ComputedSerialDeviceController;
   }
 
 }

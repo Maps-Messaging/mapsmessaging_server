@@ -76,8 +76,12 @@ public abstract class BusHandler implements Runnable {
   public void resume() {
   }
 
+  protected String getSessionName(DeviceHandler deviceHandler) {
+    return deviceHandler.getBusName() + "_" + deviceHandler.getName();
+  }
+
   private SessionContext createContext(DeviceHandler deviceHandler){
-    SessionContextBuilder builder = new SessionContextBuilder(deviceHandler.getBusName()+"_"+deviceHandler.getName(), new DeviceClientConnection(deviceHandler));
+    SessionContextBuilder builder = new SessionContextBuilder(getSessionName(deviceHandler), new DeviceClientConnection(deviceHandler));
     builder.setPersistentSession(false)
     .setResetState(true)
     .setUsername("anonymous")
@@ -128,7 +132,21 @@ public abstract class BusHandler implements Runnable {
 
   public void deviceDetected(DeviceHandler deviceHandler) throws ExecutionException, InterruptedException {
     DeviceSessionManagement deviceSessionManagement = createSession(deviceHandler);
-    deviceSessionManagement.start();
+    deviceSessionCreated(deviceSessionManagement);
+    try {
+      deviceSessionManagement.start();
+    } catch (ExecutionException | InterruptedException exception) {
+      deviceSessionCreationFailed(deviceSessionManagement);
+      throw exception;
+    }
+  }
+
+  protected void deviceSessionCreated(DeviceSessionManagement deviceSessionManagement) {
+    // Optional bus-specific session tracking.
+  }
+
+  protected void deviceSessionCreationFailed(DeviceSessionManagement deviceSessionManagement) {
+    // Preserve existing error handling for other buses.
   }
 
   protected abstract DeviceHandler createDeviceHander(String key, DeviceController controller);

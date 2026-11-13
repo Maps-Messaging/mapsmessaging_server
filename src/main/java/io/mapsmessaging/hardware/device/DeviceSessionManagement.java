@@ -225,9 +225,10 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
       logger.log(DEVICE_PUBLISH_EXCEPTION, e);
       try {
         stop(); // remove and close session
-        busHandler.closedSession(this);
       } catch (IOException ex) {
         // Ignore we are closing this session
+      } finally {
+        busHandler.closedSession(this);
       }
       // OK, device is offline
       payload = null;
