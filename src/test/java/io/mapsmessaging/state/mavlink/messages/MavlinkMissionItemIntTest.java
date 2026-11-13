@@ -19,7 +19,8 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
-import io.mapsmessaging.network.protocol.impl.mavlink.messages.*;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemInt;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItemIntFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

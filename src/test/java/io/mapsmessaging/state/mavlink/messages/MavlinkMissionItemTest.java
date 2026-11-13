@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.state.mavlink.messages;
 
-import io.mapsmessaging.network.protocol.impl.mavlink.messages.*;
+import io.mapsmessaging.network.protocol.impl.mavlink.messages.MavlinkMissionItem;
 
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;

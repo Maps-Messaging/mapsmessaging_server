@@ -277,7 +277,7 @@ class MavlinkTransactionManagerTest {
   @Test
   void failedStatusPublicationDoesNotPreventTransmissionOrCompletion() {
     List<JsonObject> sent = new ArrayList<>();
-    MavlinkTransactionManager.StatusPublisher failingPublisher = (topic, message) -> {
+    MavlinkStatusPublisher failingPublisher = (topic, message) -> {
       throw new IllegalStateException("simulated status destination failure");
     };
     try (MavlinkTransactionManager manager = new MavlinkTransactionManager(
