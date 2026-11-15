@@ -86,6 +86,34 @@ class DeviceSessionManagementTest {
   }
 
   @Test
+  void runPreservesPreviousPayloadWhenNextPollReturnsNull() throws Exception {
+    DeviceController controller = mock(DeviceController.class);
+    DeviceHandler device = mock(DeviceHandler.class);
+    Destination destination = mock(Destination.class);
+    Session session = mock(Session.class);
+    when(device.getSchemaId()).thenReturn(UUID.randomUUID());
+    when(device.getController()).thenReturn(controller);
+    when(device.getName()).thenReturn("radar");
+    when(device.getBusName()).thenReturn("serial");
+    when(device.getVersion()).thenReturn("1.0");
+    when(session.getName()).thenReturn("radar-session");
+
+    byte[] valid = "{\"hasData\":true}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    when(device.getData()).thenReturn(valid, null);
+
+    DeviceSessionManagement management = new DeviceSessionManagement(
+        device, "/device/[device_name]", DataFilter.ALWAYS_SEND, mock(BusHandler.class), null);
+    management.setSession(session);
+    management.setDestination(destination);
+    management.run();
+    assertArrayEquals(valid, management.getPreviousPayload());
+
+    management.run();
+    verify(destination, times(1)).storeMessage(any(Message.class));
+    assertArrayEquals(valid, management.getPreviousPayload());
+  }
+
+  @Test
   void sendMessageAlwaysCompletesEvenWhenDeviceUpdateFails() throws Exception {
     DeviceController controller = mock(DeviceController.class);
     DeviceHandler device = mock(DeviceHandler.class);
