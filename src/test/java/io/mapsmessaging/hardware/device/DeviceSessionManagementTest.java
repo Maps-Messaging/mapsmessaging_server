@@ -65,6 +65,27 @@ class DeviceSessionManagementTest {
   }
 
   @Test
+  void runDoesNotPublishNullDevicePayload() throws Exception {
+    DeviceHandler device = mock(DeviceHandler.class);
+    when(device.getSchemaId()).thenReturn(UUID.randomUUID());
+    when(device.getController()).thenReturn(mock(DeviceController.class));
+    when(device.getData()).thenReturn(null, "{\"value\":21}".getBytes());
+
+    Destination destination = mock(Destination.class);
+    DeviceSessionManagement management = new DeviceSessionManagement(
+        device, "/device/[device_name]", DataFilter.ALWAYS_SEND, mock(BusHandler.class), null);
+    management.setSession(mock(Session.class));
+    management.setDestination(destination);
+
+    management.run();
+    verify(destination, never()).storeMessage(any());
+    assertNull(management.getPreviousPayload());
+
+    management.run();
+    verify(destination).storeMessage(any(Message.class));
+  }
+
+  @Test
   void sendMessageAlwaysCompletesEvenWhenDeviceUpdateFails() throws Exception {
     DeviceController controller = mock(DeviceController.class);
     DeviceHandler device = mock(DeviceHandler.class);

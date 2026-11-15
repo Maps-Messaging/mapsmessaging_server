@@ -206,6 +206,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     byte[] payload;
     try {
       payload = device.getData();
+      if (payload == null) return;
       boolean send = false;
       if (filter.send(previousPayload, payload)) {
         if (parser != null) {
