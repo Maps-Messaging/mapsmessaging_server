@@ -30,6 +30,7 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.devices.DeviceType;
 import io.mapsmessaging.engine.schema.SchemaManager;
 import io.mapsmessaging.hardware.device.filter.DataFilter;
+import io.mapsmessaging.hardware.DeviceManager;
 import io.mapsmessaging.hardware.device.handler.BusHandler;
 import io.mapsmessaging.hardware.device.handler.DeviceHandler;
 import io.mapsmessaging.logging.Logger;
@@ -65,6 +66,7 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
   private final String schemaId;
 
   private Session session;
+  private DeviceManager hardwareManager;
   private Destination destination;
   private Destination config;
   private Destination request;
@@ -120,11 +122,6 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     } catch (Exception e) {
       logger.log(DEVICE_SCHEMA_UPDATE_EXCEPTION, e, String.valueOf(schemaConfig));
       busHandler.closedSession(this);
-      try {
-        SessionManager.getInstance().close(session, true);
-      } catch (IOException closeException) {
-        e.addSuppressed(closeException);
-      }
       throw new ExecutionException(e);
     }
     if(device.enableConfig()) {
@@ -161,16 +158,20 @@ public class DeviceSessionManagement implements Runnable, MessageListener {
     SubscriptionContextBuilder subscriptionContextBuilder = new SubscriptionContextBuilder(destination.getFullyQualifiedNamespace(), ClientAcknowledgement.AUTO);
     subscriptionContextBuilder.setQos(QualityOfService.AT_MOST_ONCE);
     subscriptionContextBuilder.setNoLocalMessages(true);
-    return session.addSubscription(subscriptionContextBuilder.build());
+    return hardwareManager == null
+        ? session.addSubscription(subscriptionContextBuilder.build())
+        : hardwareManager.subscribe(destination, this);
   }
 
   public void stop() throws IOException {
     logger.log(DEVICE_STOP, device.getName() );
     device.getTrigger().removeTask(this);
-    if(request != null) {
+    if (hardwareManager != null) {
+      hardwareManager.unsubscribe(request, this);
+      hardwareManager.unsubscribe(destination, this);
+    } else if (request != null) {
       session.removeSubscription(request.getFullyQualifiedNamespace());
     }
-    SessionManager.getInstance().close(session, true);
   }
 
   public String getName() {
