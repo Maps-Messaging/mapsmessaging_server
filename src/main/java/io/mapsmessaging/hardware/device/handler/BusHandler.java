@@ -73,7 +73,7 @@ public abstract class BusHandler implements Runnable {
     for (DeviceSessionManagement device : sessions) {
       try {
         device.stop();
-      } catch (IOException exception) {
+      } catch (IOException | RuntimeException exception) {
         logger.log(io.mapsmessaging.logging.ServerLogMessages.DEVICE_PUBLISH_EXCEPTION, exception);
       }
     }
@@ -81,7 +81,11 @@ public abstract class BusHandler implements Runnable {
     sessions.sort(java.util.Comparator.comparingInt((DeviceSessionManagement device) -> device.getDevice().getKey().length()).reversed());
     for (DeviceSessionManagement device : sessions) {
       if (activeSessions.containsKey(device.getDevice().getKey())) {
-        closedSession(device);
+        try {
+          closedSession(device);
+        } catch (RuntimeException exception) {
+          logger.log(io.mapsmessaging.logging.ServerLogMessages.DEVICE_PUBLISH_EXCEPTION, exception);
+        }
       }
     }
   }
