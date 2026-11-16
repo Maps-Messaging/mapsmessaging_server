@@ -254,7 +254,7 @@ class DeviceSessionManagementTest {
     }
 
     verify(bus).closedSession(management);
-    verify(sessionManager).close(session, true);
+    verify(sessionManager, never()).close(session, true);
     verify(trigger, never()).addTask(management);
   }
 
