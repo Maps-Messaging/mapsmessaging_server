@@ -272,8 +272,11 @@ public class DeviceManager implements ServiceManager, Agent, ClientConnection, M
         synchronized (DeviceManager.this) {
           starting = false;
           errorMessage = exception.getMessage();
-          stopAll();
-          session = null;
+          try {
+            stopAll();
+          } finally {
+            session = null;
+          }
         }
         logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_FAILED, exception);
         SessionManager.getInstance().closeAsync(created, true);
