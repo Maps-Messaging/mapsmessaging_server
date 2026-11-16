@@ -259,6 +259,7 @@ public class DeviceManager implements ServiceManager, Agent, ClientConnection, M
             return;
           }
           session = created;
+          errorMessage = null;
           for (BusHandler busHandler : busHandlers) {
             busHandler.setHardwareManager(this);
           }
@@ -271,6 +272,8 @@ public class DeviceManager implements ServiceManager, Agent, ClientConnection, M
         synchronized (DeviceManager.this) {
           starting = false;
           errorMessage = exception.getMessage();
+          stopAll();
+          session = null;
         }
         logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_FAILED, exception);
         SessionManager.getInstance().closeAsync(created, true);
