@@ -20,6 +20,15 @@
 package io.mapsmessaging.hardware;
 
 import io.mapsmessaging.config.DeviceManagerConfig;
+import io.mapsmessaging.api.*;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.engine.session.ClientConnection;
+import io.mapsmessaging.hardware.device.DeviceSessionManagement;
+import org.jetbrains.annotations.NotNull;
+import lombok.NonNull;
+import java.security.Principal;
+import java.util.concurrent.ConcurrentHashMap;
 import io.mapsmessaging.devices.DeviceBusManager;
 import io.mapsmessaging.devices.DeviceController;
 import io.mapsmessaging.devices.i2c.I2CBusManager;
@@ -49,7 +58,7 @@ import java.util.*;
 
 import static io.mapsmessaging.logging.ServerLogMessages.DEVICE_MANAGER_FAILED_TO_REGISTER;
 
-public class DeviceManager implements ServiceManager, Agent {
+public class DeviceManager implements ServiceManager, Agent, ClientConnection, MessageListener {
 
   private static final String DEFAULT = "default";
   private final boolean enabled;
@@ -65,6 +74,9 @@ public class DeviceManager implements ServiceManager, Agent {
 
   private final DeviceBusManager deviceBusManager;
   private String errorMessage;
+  private final Map<String, DeviceSessionManagement> subscribers = new ConcurrentHashMap<>();
+  private volatile Session session;
+  private boolean starting;
 
   public DeviceManager(FeatureManager featureManager) {
     enableSpi = featureManager.isEnabled("hardware.spi");
@@ -220,19 +232,67 @@ public class DeviceManager implements ServiceManager, Agent {
     return "Manages all of the physical devices available to the server";
   }
 
-  public void start() {
-    if(!enabled) return;
-    initialise();
-    for(Trigger trigger:configuredTriggers.values()){
-      trigger.start();
-    }
+  public synchronized void start() {
+    if (!enabled || deviceBusManager == null || starting) return;
+    starting = true;
+    SessionContextBuilder builder = new SessionContextBuilder("hardware", this);
+    builder.setPersistentSession(false)
+        .setResetState(true)
+        .setUsername("anonymous")
+        .setPassword(new char[0])
+        .isInternal(true)
+        .setReceiveMaximum(10);
+    SessionManager.getInstance().createAsync(builder.build(), this).whenComplete((created, failure) -> {
+      if (failure != null) {
+        synchronized (DeviceManager.this) {
+          starting = false;
+          errorMessage = failure.getMessage();
+        }
+        logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_FAILED, failure);
+        return;
+      }
+      try {
+        created.login();
+        synchronized (DeviceManager.this) {
+          if (!starting) {
+            SessionManager.getInstance().closeAsync(created, true);
+            return;
+          }
+          session = created;
+          for (BusHandler busHandler : busHandlers) {
+            busHandler.setHardwareManager(this);
+          }
+          startAll();
+          for (Trigger trigger : configuredTriggers.values()) {
+            trigger.start();
+          }
+        }
+      } catch (Exception exception) {
+        synchronized (DeviceManager.this) {
+          starting = false;
+          errorMessage = exception.getMessage();
+        }
+        logger.log(ServerLogMessages.DEVICE_MANAGER_STARTUP_FAILED, exception);
+        SessionManager.getInstance().closeAsync(created, true);
+      }
+    });
   }
 
-  public void stop() {
-    if(!enabled) return;
+  public synchronized void stop() {
+    if (!enabled) return;
+    starting = false;
     stopAll();
     if (deviceBusManager != null) {
       deviceBusManager.close();
+    }
+    Session current = session;
+    session = null;
+    if (current != null) {
+      try {
+        SessionManager.getInstance().close(current, true);
+      } catch (IOException exception) {
+        logger.log(ServerLogMessages.DEVICE_PUBLISH_EXCEPTION, exception);
+      }
     }
   }
 
@@ -291,6 +351,81 @@ public class DeviceManager implements ServiceManager, Agent {
     for(BusHandler busHandler:busHandlers){
       busHandler.resume();
     }
+  }
+
+  public Session getSession() {
+    return session;
+  }
+
+  public SubscribedEventManager subscribe(Destination destination, DeviceSessionManagement device) throws IOException {
+    String name = destination.getFullyQualifiedNamespace();
+    if (subscribers.putIfAbsent(name, device) != null) {
+      throw new IOException("Hardware destination already subscribed: " + name);
+    }
+    try {
+      SubscriptionContextBuilder builder = new SubscriptionContextBuilder(name, ClientAcknowledgement.AUTO);
+      builder.setQos(QualityOfService.AT_MOST_ONCE);
+      builder.setNoLocalMessages(true);
+      return session.addSubscription(builder.build());
+    } catch (IOException | RuntimeException exception) {
+      subscribers.remove(name, device);
+      throw exception;
+    }
+  }
+
+  public void unsubscribe(Destination destination, DeviceSessionManagement device) {
+    if (destination != null && subscribers.remove(destination.getFullyQualifiedNamespace(), device)) {
+      session.removeSubscription(destination.getFullyQualifiedNamespace());
+    }
+  }
+
+  @Override
+  public void sendMessage(@NotNull @NonNull MessageEvent event) {
+    DeviceSessionManagement target = subscribers.get(event.getDestinationName());
+    if (target != null) {
+      target.sendMessage(event);
+    } else {
+      event.getCompletionTask().run();
+    }
+  }
+
+  @Override
+  public long getTimeOut() {
+    return 0;
+  }
+
+  @Override
+  public String getVersion() {
+    return "1.0";
+  }
+
+  @Override
+  public void sendKeepAlive() {
+  }
+
+  @Override
+  public Principal getPrincipal() {
+    return () -> "hardware";
+  }
+
+  @Override
+  public String getAuthenticationConfig() {
+    return "";
+  }
+
+  @Override
+  public String getUniqueName() {
+    return "hardware";
+  }
+
+  @Override
+  public String getProtocolName() {
+    return "";
+  }
+
+  @Override
+  public String getRemoteIp() {
+    return "";
   }
 
   @Override
