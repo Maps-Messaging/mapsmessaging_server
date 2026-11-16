@@ -45,7 +45,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SerialDeviceBusHandler extends BusHandler {
 
   private final SerialBusManager serialBusManager;
-  private final Map<String, DeviceSessionManagement> activeSessions = new ConcurrentHashMap<>();
   private final Map<String, String> canonicalPorts = new ConcurrentHashMap<>();
 
   public SerialDeviceBusHandler(SerialBusManager serialBusManager, SerialBusConfigDTO serialDeviceDTO, Trigger trigger) {
@@ -136,13 +135,8 @@ public class SerialDeviceBusHandler extends BusHandler {
   }
 
   @Override
-  protected String getSessionName(DeviceHandler deviceHandler) {
-    return deviceHandler.getBusName() + "_" + deviceHandler.getKey();
-  }
-
-  @Override
   protected void deviceSessionCreated(DeviceSessionManagement session) {
-    activeSessions.put(session.getDevice().getKey(), session);
+    super.deviceSessionCreated(session);
   }
 
   @Override
