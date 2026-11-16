@@ -137,6 +137,32 @@ class DeviceSessionManagementTest {
   }
 
   @Test
+  void stoppingDeviceUnsubscribesWithoutClosingHardwareSession() throws Exception {
+    DeviceHandler device = mock(DeviceHandler.class);
+    when(device.getSchemaId()).thenReturn(UUID.randomUUID());
+    when(device.getController()).thenReturn(mock(DeviceController.class));
+    Trigger trigger = mock(Trigger.class);
+    when(device.getTrigger()).thenReturn(trigger);
+    Session sharedSession = mock(Session.class);
+    io.mapsmessaging.hardware.DeviceManager manager = mock(io.mapsmessaging.hardware.DeviceManager.class);
+    Destination data = mock(Destination.class);
+    Destination request = mock(Destination.class);
+    DeviceSessionManagement context = new DeviceSessionManagement(
+        device, "/device", DataFilter.ALWAYS_SEND, mock(BusHandler.class), null);
+    context.setSession(sharedSession);
+    context.setHardwareManager(manager);
+    context.setDestination(data);
+    context.setRequest(request);
+
+    context.stop();
+
+    verify(trigger).removeTask(context);
+    verify(manager).unsubscribe(data, context);
+    verify(manager).unsubscribe(request, context);
+    verifyNoInteractions(sharedSession);
+  }
+
+  @Test
   void startRegistersSchemaForNewDeviceDestination() throws Exception {
     SchemaConfig schema = schema("shared-source");
     Destination destination = mock(Destination.class);
