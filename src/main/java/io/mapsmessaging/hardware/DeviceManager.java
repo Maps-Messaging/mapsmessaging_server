@@ -281,17 +281,23 @@ public class DeviceManager implements ServiceManager, Agent, ClientConnection, M
   public synchronized void stop() {
     if (!enabled) return;
     starting = false;
-    stopAll();
-    if (deviceBusManager != null) {
-      deviceBusManager.close();
-    }
-    Session current = session;
-    session = null;
-    if (current != null) {
+    try {
+      stopAll();
+    } finally {
       try {
-        SessionManager.getInstance().close(current, true);
-      } catch (IOException exception) {
-        logger.log(ServerLogMessages.DEVICE_PUBLISH_EXCEPTION, exception);
+        if (deviceBusManager != null) {
+          deviceBusManager.close();
+        }
+      } finally {
+        Session current = session;
+        session = null;
+        if (current != null) {
+          try {
+            SessionManager.getInstance().close(current, true);
+          } catch (IOException exception) {
+            logger.log(ServerLogMessages.DEVICE_PUBLISH_EXCEPTION, exception);
+          }
+        }
       }
     }
   }
@@ -302,6 +308,10 @@ public class DeviceManager implements ServiceManager, Agent, ClientConnection, M
     status.setName(getName());
     if(enabled){
       if(deviceBusManager == null){
+        status.setStatus(Status.ERROR);
+        status.setComment(errorMessage);
+      }
+      else if (errorMessage != null) {
         status.setStatus(Status.ERROR);
         status.setComment(errorMessage);
       }
@@ -316,12 +326,12 @@ public class DeviceManager implements ServiceManager, Agent, ClientConnection, M
   }
 
   public void initialise() {
-    if(!enabled) return;
+    if (!enabled || session == null) return;
     startAll();
   }
 
   public void startAll() {
-    if(!enabled) return;
+    if (!enabled || session == null) return;
     logger.log(ServerLogMessages.DEVICE_MANAGER_START_ALL);
     for(BusHandler busHandler:busHandlers){
       busHandler.start();
