@@ -147,7 +147,7 @@ public abstract class BusHandler implements Runnable {
   protected abstract  Map<String, DeviceController> scan();
 
   @Override
-  public void run() {
+  public synchronized void run() {
     Map<String, DeviceController> map = scan();
     for (Map.Entry<String, DeviceController> entry : map.entrySet()) {
       if (!foundDevices.containsKey(entry.getKey())) {
