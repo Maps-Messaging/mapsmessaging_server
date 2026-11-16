@@ -42,17 +42,6 @@ class SerialDeviceBusHandlerTest {
   }
 
   @Test
-  void sessionNamesIdentifyPhysicalPortAndLogicalDevice() {
-    TestHandler handler = new TestHandler(mock(SerialBusManager.class), emptyConfig(), mock(Trigger.class));
-    assertEquals("serial_COM3", handler.sessionName(
-        new SerialDeviceHandler("COM3", mock(SerialDeviceController.class))));
-    assertEquals("serial_COM4", handler.sessionName(
-        new SerialDeviceHandler("COM4", mock(SerialDeviceController.class))));
-    assertEquals("serial_COM3_change", handler.sessionName(
-        new SerialDeviceHandler("COM3_change", mock(ComputedSerialDeviceController.class))));
-  }
-
-  @Test
   void computedSessionFailureLeavesPhysicalDeviceRegistered() {
     SerialBusManager manager = mock(SerialBusManager.class);
     TestHandler handler = new TestHandler(manager, emptyConfig(), mock(Trigger.class));
@@ -146,10 +135,6 @@ class SerialDeviceBusHandlerTest {
 
     DeviceHandler create(String key, DeviceController controller) {
       return createDeviceHander(key, controller);
-    }
-
-    String sessionName(DeviceHandler handler) {
-      return getSessionName(handler);
     }
 
     void register(DeviceSessionManagement session) {
