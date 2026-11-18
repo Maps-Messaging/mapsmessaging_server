@@ -76,6 +76,57 @@ class SharedGroupSessionIdentityTest {
     assertSame(second, manager.get(destination, low));
   }
 
+  @Test
+  void removingSharedGroupDoesNotRemoveOrdinaryOrAnotherSharedGroup() {
+    NormalSubscriptionModeManager manager = new NormalSubscriptionModeManager();
+    DestinationImpl destination = mock(DestinationImpl.class);
+    SubscriptionContext ordinaryContext = new SubscriptionContext("topic/orders");
+    SubscriptionContext groupA = shared("workers-A");
+    SubscriptionContext groupB = shared("workers-B");
+    Subscription ordinary = mock(Subscription.class);
+    Subscription first = mock(Subscription.class);
+    Subscription second = mock(Subscription.class);
+    when(ordinary.getContext()).thenReturn(ordinaryContext);
+    when(first.getContext()).thenReturn(groupA);
+    when(second.getContext()).thenReturn(groupB);
+
+    manager.add(ordinary, destination);
+    manager.add(first, destination);
+    manager.add(second, destination);
+    assertSame(first, manager.remove(destination, groupA));
+
+    assertNull(manager.get(destination, groupA));
+    assertSame(ordinary, manager.get(destination, ordinaryContext));
+    assertSame(second, manager.get(destination, groupB));
+  }
+
+  @Test
+  void shutdownClosesOrdinaryAndEachSharedGroupExactlyOnce() throws Exception {
+    NormalSubscriptionModeManager manager = new NormalSubscriptionModeManager();
+    DestinationImpl destination = mock(DestinationImpl.class);
+    SubscriptionContext ordinaryContext = new SubscriptionContext("topic/orders");
+    SubscriptionContext groupA = shared("workers-A");
+    SubscriptionContext groupB = shared("workers-B");
+    Subscription ordinary = mock(Subscription.class);
+    Subscription first = mock(Subscription.class);
+    Subscription second = mock(Subscription.class);
+    when(ordinary.getContext()).thenReturn(ordinaryContext);
+    when(first.getContext()).thenReturn(groupA);
+    when(second.getContext()).thenReturn(groupB);
+
+    manager.add(ordinary, destination);
+    manager.add(first, destination);
+    manager.add(second, destination);
+    manager.shutdown();
+
+    verify(ordinary, times(1)).close();
+    verify(first, times(1)).close();
+    verify(second, times(1)).close();
+    assertNull(manager.get(destination, groupA));
+    assertNull(manager.get(destination, groupB));
+    assertNull(manager.get(destination, ordinaryContext));
+  }
+
   private static SubscriptionContext shared(String group) {
     return new SubscriptionContextBuilder("topic/orders", ClientAcknowledgement.AUTO)
         .setSharedName(group).build();
