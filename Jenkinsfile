@@ -52,6 +52,7 @@ def engineRegressionClasses = [
     "io.mapsmessaging.engine.destination.subscription.builders.SharedSelectorPartitionRegressionTest",
     "io.mapsmessaging.engine.destination.subscription.state.MessageStateRestartRecoveryTest",
     "io.mapsmessaging.engine.destination.delayed.TransactionBucketFailureRegressionTest",
+    "io.mapsmessaging.engine.destination.tasks.NoInterestCleanupRegressionTest",
     "io.mapsmessaging.engine.destination.subscription.state.BoundedSharedMessageStateRegressionTest",
 ] as Set
 
