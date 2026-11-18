@@ -1,0 +1,92 @@
+/*
+ * Copyright [ 2024 - 2026 ] MapsMessaging B.V.
+ * Licensed under the Apache License, Version 2.0 with the Commons Clause.
+ */
+package io.mapsmessaging.engine.destination.subscription.modes;
+
+import io.mapsmessaging.api.SubscriptionContextBuilder;
+import io.mapsmessaging.api.features.ClientAcknowledgement;
+import io.mapsmessaging.api.features.DestinationMode;
+import io.mapsmessaging.api.features.QualityOfService;
+import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
+import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
+import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
+import io.mapsmessaging.engine.tasks.Response;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * Covers a wildcard subscription registered before the destination exists.
+ * Multiple matching contexts must not silently select whichever was iterated first.
+ */
+class DynamicDestinationSubscriptionSelectionRegressionTest {
+
+  @Test
+  void lateDestinationChoosesHighestQosIndependentOfRegistrationOrder() {
+    SubscriptionContext low = context(QualityOfService.AT_MOST_ONCE);
+    SubscriptionContext high = context(QualityOfService.EXACTLY_ONCE);
+    DestinationImpl destination = destination("sensors/temperature");
+
+    RecordingManager first = new RecordingManager();
+    first.created(mock(SubscriptionController.class), destination, List.of(
+        new DestinationSet(low, Map.of()),
+        new DestinationSet(high, Map.of())));
+    assertEquals(1, first.scheduled.size());
+    assertSame(high, first.scheduled.get(0));
+
+    RecordingManager reverse = new RecordingManager();
+    reverse.created(mock(SubscriptionController.class), destination, List.of(
+        new DestinationSet(high, Map.of()),
+        new DestinationSet(low, Map.of())));
+    assertEquals(1, reverse.scheduled.size());
+    assertSame(high, reverse.scheduled.get(0));
+  }
+
+  @Test
+  void lateDestinationDoesNotScheduleUnrelatedFilters() {
+    DestinationImpl destination = destination("sensors/temperature");
+    SubscriptionContext matching = new SubscriptionContext("sensors/+");
+    SubscriptionContext unrelated = new SubscriptionContext("vehicles/#");
+
+    RecordingManager manager = new RecordingManager();
+    manager.created(mock(SubscriptionController.class), destination, List.of(
+        new DestinationSet(unrelated, Map.of()),
+        new DestinationSet(matching, Map.of())));
+
+    assertEquals(List.of(matching), manager.scheduled);
+  }
+
+  private static SubscriptionContext context(QualityOfService qos) {
+    return new SubscriptionContextBuilder("sensors/+", ClientAcknowledgement.AUTO)
+        .setQos(qos).build();
+  }
+
+  private static DestinationImpl destination(String name) {
+    DestinationImpl destination = mock(DestinationImpl.class);
+    when(destination.getFullyQualifiedNamespace()).thenReturn(name);
+    return destination;
+  }
+
+  private static final class RecordingManager extends NormalSubscriptionModeManager {
+    private final List<SubscriptionContext> scheduled = new ArrayList<>();
+
+    @Override
+    protected Future<Response> scheduleSubscription(SubscriptionController controller,
+        SubscriptionContext context, DestinationImpl destination, AtomicLong counter) {
+      scheduled.add(context);
+      return CompletableFuture.completedFuture(null);
+    }
+  }
+}
