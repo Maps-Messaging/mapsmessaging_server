@@ -54,6 +54,27 @@ class SharedSubscriptionMembershipRegressionTest {
   }
 
   @Test
+  void removingReplacedSessionDoesNotRemoveCurrentMember() throws Exception {
+    Fixture fixture = fixture("topic/membership/reconnect");
+    SessionImpl original = session("same-display", mock(MessageCallback.class));
+    MessageCallback currentCallback = mock(MessageCallback.class);
+    SessionImpl current = session("same-display", currentCallback);
+
+    add(fixture, original, "member-1");
+    add(fixture, current, "member-1");
+    fixture.shared.removeSession(original);
+
+    Message message = new MessageBuilder().setId(3L).build();
+    when(fixture.destination.getMessage(3L)).thenReturn(message);
+    fixture.state.register(message);
+    Message selected = fixture.shared.retrieveNextMessageWithFlowControl();
+    assertNotNull(selected);
+    fixture.shared.sendMessage(selected);
+
+    verify(currentCallback).sendMessage(eq(fixture.destination), any(), eq(message), any());
+  }
+
+  @Test
   void removingMemberUsesItsRegisteredSessionIdNotTheSessionDisplayName() throws Exception {
     Fixture fixture = fixture("topic/membership/removal");
     MessageCallback removedCallback = mock(MessageCallback.class);
