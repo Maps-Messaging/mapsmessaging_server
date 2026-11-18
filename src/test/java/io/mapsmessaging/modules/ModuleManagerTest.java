@@ -65,29 +65,20 @@ class ModuleManagerTest {
   }
 
   @Test
-  void startsAndStopsApplicationsByPriority() {
+  void moduleManagerDoesNotOwnApplicationLifecycle() {
     List<String> calls = new ArrayList<>();
-    TestApplication late = new TestApplication("late", calls, 700, 200);
-    TestApplication early = new TestApplication("early", calls, 500, 400);
-    ModuleManager host = new ModuleManager(List.of(late, early));
-    host.load(new ModuleContext(null, null, null));
+    TestApplication first = new TestApplication("first", calls, 700, 200);
+    TestApplication second = new TestApplication("second", calls, 500, 400);
+    ModuleManager manager = new ModuleManager(List.of(first, second));
+    manager.load(new ModuleContext(null, null, null));
     calls.clear();
 
-    assertEquals("Application Host", host.getName());
-    assertEquals(Status.STOPPED, host.getStatus().getStatus());
-    host.start();
-    assertEquals(List.of("start:early", "start:late"), calls);
-    assertEquals(Status.OK, host.getStatus().getStatus());
-    calls.clear();
-    host.stop();
-    assertEquals(List.of("stop:late", "stop:early"), calls);
-    assertEquals(Status.STOPPED, host.getStatus().getStatus());
-  }
-
-  @Test
-  void refusesToStartBeforeDiscovery() {
-    ModuleManager host = new ModuleManager(List.of());
-    assertThrows(IllegalStateException.class, host::start);
+    assertEquals(List.of(first, second), manager.getApplications());
+    assertEquals(700, first.getStartPriority());
+    assertEquals(500, second.getStartPriority());
+    assertEquals(200, first.getStopPriority());
+    assertEquals(400, second.getStopPriority());
+    assertTrue(calls.isEmpty());
   }
 
   private static final class TestApplication implements MapsModule {

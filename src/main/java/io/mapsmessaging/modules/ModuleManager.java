@@ -18,12 +18,8 @@
 
 package io.mapsmessaging.modules;
 
-import io.mapsmessaging.dto.rest.system.Status;
-import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
-import io.mapsmessaging.utilities.Agent;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -31,17 +27,16 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
- * Discovers applications and collects their pre-initialization metadata.
- * The owning subsystem manager registers the host in its existing lifecycle.
+ * Discovers modules and collects their pre-initialization metadata.
+ * The owning subsystem manager registers each module in its existing lifecycle.
  */
-public class ModuleManager implements Agent {
+public class ModuleManager {
 
   private final Iterable<? extends MapsModule> providers;
   private final List<MapsModule> applications;
   private final List<String> restApiPackages;
   private final List<ManagerConfigProvider> configProviders;
   private boolean loaded;
-  private boolean started;
 
   public ModuleManager() {
     this(ServiceLoader.load(MapsModule.class));
@@ -93,57 +88,6 @@ public class ModuleManager implements Agent {
     restApiPackages.addAll(packages);
     configProviders.addAll(configs);
     loaded = true;
-  }
-
-  @Override
-  public String getName() {
-    return "Application Host";
-  }
-
-  @Override
-  public String getDescription() {
-    return "Manages optional application subsystems";
-  }
-
-  @Override
-  public void start() {
-    if (!loaded) {
-      throw new IllegalStateException("Applications have not been loaded");
-    }
-    List<MapsModule> ordered = new ArrayList<>(applications);
-    ordered.sort(Comparator.comparingInt(MapsModule::getStartPriority));
-    for (MapsModule application : ordered) {
-      application.start();
-    }
-    started = true;
-  }
-
-  @Override
-  public void stop() {
-    List<MapsModule> ordered = new ArrayList<>(applications);
-    ordered.sort(Comparator.comparingInt(MapsModule::getStopPriority));
-    for (MapsModule application : ordered) {
-      application.stop();
-    }
-    started = false;
-  }
-
-  @Override
-  public SubSystemStatusDTO getStatus() {
-    SubSystemStatusDTO status = new SubSystemStatusDTO();
-    status.setName(getName());
-    status.setStatus(started ? Status.OK : Status.STOPPED);
-    for (MapsModule application : applications) {
-      SubSystemStatusDTO applicationStatus = application.getStatus();
-      if (applicationStatus.getStatus() == Status.ERROR) {
-        status.setStatus(Status.ERROR);
-        break;
-      }
-      if (applicationStatus.getStatus() == Status.WARN && status.getStatus() == Status.OK) {
-        status.setStatus(Status.WARN);
-      }
-    }
-    return status;
   }
 
   public List<MapsModule> getApplications() {

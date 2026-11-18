@@ -19,6 +19,7 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.modules.MapsModule;
 import io.mapsmessaging.modules.ModuleContext;
 import io.mapsmessaging.modules.ModuleManager;
 import io.mapsmessaging.aggregator.AggregatorManager;
@@ -271,7 +272,9 @@ public class SubSystemManager {
   private void loadModules(DestinationManager destinationManager) {
     moduleManager = new ModuleManager();
     moduleManager.load(new ModuleContext(featureManager, destinationManager, getSessionManager()));
-    addToMap(550, 960, moduleManager);
+    for (MapsModule module : moduleManager.getApplications()) {
+      addToMap(module.getStartPriority(), module.getStopPriority(), module);
+    }
     RestApiServerManager restApiServerManager = getRestApiServerManager();
     if (restApiServerManager != null) {
       restApiServerManager.addPackageNameList(moduleManager.getRestApiPackages());
