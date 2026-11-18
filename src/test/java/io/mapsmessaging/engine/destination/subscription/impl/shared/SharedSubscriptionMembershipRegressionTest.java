@@ -21,8 +21,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -114,6 +116,8 @@ class SharedSubscriptionMembershipRegressionTest {
     fixture.shared.sendMessage(message);
 
     verify(removedCallback, never()).sendMessage(eq(fixture.destination), any(), eq(message), any());
+    assertFalse(fixture.state.hasMessagesInFlight());
+    assertTrue(fixture.state.hasAtRestMessages());
   }
 
   @Test
@@ -131,6 +135,8 @@ class SharedSubscriptionMembershipRegressionTest {
     fixture.shared.sendMessage(message);
 
     verify(oldCallback, never()).sendMessage(eq(fixture.destination), any(), eq(message), any());
+    assertFalse(fixture.state.hasMessagesInFlight());
+    assertTrue(fixture.state.hasAtRestMessages());
   }
 
   @Test
