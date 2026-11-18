@@ -64,6 +64,10 @@ class NoInterestCleanupRegressionTest {
   }
 
   private static final class Probe extends SubscriptionTask {
+    @Override
+    public io.mapsmessaging.engine.tasks.Response taskCall() {
+      return new io.mapsmessaging.engine.tasks.VoidResponse();
+    }
   }
 
   private record Fixture(DestinationImpl destination, DestinationStats stats,
