@@ -44,6 +44,22 @@ class AcknowledgementCreditContractTest {
   }
 
   @Test
+  void clientCreditRequiresExplicitRefreshAfterAcknowledgement() {
+    ClientAcknowledgementController acknowledgements =
+        new ClientAcknowledgementController(new ClientCreditManager(1));
+
+    assertTrue(acknowledgements.canSend());
+    acknowledgements.sent(message(30));
+    assertFalse(acknowledgements.canSend());
+
+    acknowledgements.ack(30);
+    assertFalse(acknowledgements.canSend(),
+        "Acknowledgement must not replenish client-managed credit");
+    assertTrue(acknowledgements.setMaxOutstanding(1));
+    assertTrue(acknowledgements.canSend());
+  }
+
+  @Test
   void individualAcknowledgementsReleaseOnlyTheSpecifiedMessage() {
     IndividualAcknowledgementController acknowledgements =
         new IndividualAcknowledgementController(new FixedCreditManager(3));
