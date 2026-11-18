@@ -112,7 +112,7 @@ class StatisticalAnalyserCoverageTest {
     StatisticalAnalyser analyser = analyser(1, List.of(), List.of("value"));
     ParsedObject resolver = mock(ParsedObject.class);
     when(resolver.getKeys()).thenReturn(List.of("value"));
-    when(resolver.get("value")).thenReturn(10, null);
+    when(resolver.get("value")).thenReturn(10, (Object) null);
     injectFormatter(analyser, formatter(resolver));
 
     JsonObject value = json(analyser.ingest(event())).getAsJsonObject("value");
