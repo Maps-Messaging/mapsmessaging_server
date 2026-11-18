@@ -108,7 +108,7 @@ public class SessionDetails extends PersistentObject {
   public Map<String, SubscriptionContext> getSubscriptionContextMap(){
     Map<String, SubscriptionContext> map = new LinkedHashMap<>();
     for(SubscriptionContext context:subscriptionContextList){
-      map.put(context.getAlias(), context); // Pre-populate with persistent data
+      map.put(context.isSharedSubscription() ? context.getKey() : context.getAlias(), context); // Preserve distinct named groups during reload
     }
     return map;
   }
