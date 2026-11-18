@@ -50,6 +50,10 @@ public abstract class CommonSubscriptionBuilder extends SubscriptionBuilder {
   // in fact no filters, we now need to find the relevant bucket this subscription falls into or create a new one
   //
   protected Subscription construct(String name, SessionImpl session, String sessionId) throws IOException {
+    return construct(name, session, sessionId, false);
+  }
+
+  protected Subscription construct(String name, SessionImpl session, String sessionId, boolean namedSharedGroup) throws IOException {
     // Lookup the top level subscription manager for this share name
     SharedSubscriptionManager sharedSubscriptionManager = destination.findShareRegister(name);
     if (sharedSubscriptionManager == null) {
@@ -58,7 +62,9 @@ public abstract class CommonSubscriptionBuilder extends SubscriptionBuilder {
     }
 
     // Now see if there is an existing subscription that matches this unique instance
-    String lookupName = name;
+    String lookupName = namedSharedGroup
+        ? "g_" + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(name.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+        : name;
     if (parserExecutor != null) {
       lookupName += "_selector_" + parserExecutor.hashCode();
     } else {
@@ -75,6 +81,7 @@ public abstract class CommonSubscriptionBuilder extends SubscriptionBuilder {
 
     SharedSubscription sharedSubscription = sharedSubscriptionManager.find(lookupName);
     if (sharedSubscription == null) {
+      String registrationId = namedSharedGroup ? "shared-group:" + lookupName : sessionId;
       // Will need to create a new one here for each shared subscription!!
       // ToDo!!!!
       MessageStateManagerImpl messageStateManager = DestinationStateManagerFactory.create(destination, true, "shared_" + lookupName, 0L, 0);
@@ -84,9 +91,9 @@ public abstract class CommonSubscriptionBuilder extends SubscriptionBuilder {
       CreditManager creditManager = new FixedCreditManager(1024);
       AcknowledgementController acknowledgementController = new AutoAcknowledgementController(creditManager);
       if (parserExecutor != null) {
-        sharedSubscription = new SharedSelectorSubscription(destination, context, parserExecutor, sessionId, proxy, acknowledgementController, lookupName);
+        sharedSubscription = new SharedSelectorSubscription(destination, context, parserExecutor, registrationId, proxy, acknowledgementController, lookupName, name);
       } else {
-        sharedSubscription = new SharedSubscription(destination, context, sessionId, messageStateManager, acknowledgementController, lookupName);
+        sharedSubscription = new SharedSubscription(destination, context, registrationId, messageStateManager, acknowledgementController, lookupName, name);
       }
       sharedSubscriptionManager.add(lookupName, sharedSubscription);
     }
