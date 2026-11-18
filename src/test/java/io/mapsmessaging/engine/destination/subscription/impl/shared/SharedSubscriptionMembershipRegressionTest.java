@@ -83,10 +83,10 @@ class SharedSubscriptionMembershipRegressionTest {
     add(fixture, only, "only");
     fixture.shared.removeSession(only);
 
-    Message message = new MessageBuilder().setId(3L).build();
-    when(fixture.destination.getMessage(3L)).thenReturn(message);
-    fixture.state.register(message);
-    assertNull(fixture.shared.retrieveNextMessageWithFlowControl());
+    verify(fixture.destination).removeSubscription("shared-session");
+    org.junit.jupiter.api.Assertions.assertTrue(
+        fixture.destination.findShareRegister(fixture.destination.getFullyQualifiedNamespace()).isEmpty(),
+        "Removing the final member must remove the shared group registration");
   }
 
   private static Fixture fixture(String name) {
