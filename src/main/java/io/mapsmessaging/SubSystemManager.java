@@ -235,13 +235,6 @@ public class SubSystemManager {
     if(featureManager.isEnabled("management.restApi")) {
       RestApiServerManager restApiServerManager = new RestApiServerManager();
       addToMap(1200, 400, restApiServerManager);
-      /*
-      List<String> restApiPackages = stateManagerAgent.getRestApiPackageList();
-      if(!restApiPackages.isEmpty()){
-        restApiServerManager.addPackageNameList(restApiPackages);
-      }
-
-       */
     }
 
     if(featureManager.isEnabled("interConnections.pushSupport") ||

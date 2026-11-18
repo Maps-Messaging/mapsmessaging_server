@@ -93,10 +93,9 @@ def blockFor = { String className ->
         className == "io.mapsmessaging.network.EndPointURLTest") {
         return "JUnit - Network Core"
     }
-    if (className.startsWith("io.mapsmessaging.state.") ||
-        className.startsWith("io.mapsmessaging.ha.") ||
+    if (className.startsWith("io.mapsmessaging.ha.") ||
         className.startsWith("io.mapsmessaging.license.")) {
-        return "JUnit - State-HA-License"
+        return "JUnit - HA-License"
     }
     if (className.startsWith("io.mapsmessaging.utilities.") ||
         className.startsWith("io.mapsmessaging.configuration.") ||
