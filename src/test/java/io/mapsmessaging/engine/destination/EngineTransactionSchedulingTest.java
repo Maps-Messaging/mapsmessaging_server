@@ -59,6 +59,8 @@ class EngineTransactionSchedulingTest {
     DestinationImpl destination = mock(DestinationImpl.class, CALLS_REAL_METHODS);
     set(destination, "transactionMessageManager", mock(TransactionalMessageManager.class));
     set(destination, "subscriptionManager", mock(DestinationSubscriptionManager.class));
+    set(destination, "subscriptionTaskQueue", mock(io.mapsmessaging.utilities.threads.tasks.TaskScheduler.class));
+    set(destination, "resourceTaskQueue", mock(io.mapsmessaging.utilities.threads.tasks.PriorityTaskScheduler.class));
     return destination;
   }
 
