@@ -155,6 +155,8 @@ class DestinationSetUsageTest {
     Assertions.assertTrue(set.add(first));
     Assertions.assertEquals(1, set.size());
     Assertions.assertTrue(set.contains(first));
+    Assertions.assertFalse(set.add(first));
+    Assertions.assertEquals(1, set.size());
 
     Assertions.assertTrue(set.add(replacement));
     Assertions.assertEquals(1, set.size());
