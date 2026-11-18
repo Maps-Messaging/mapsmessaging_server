@@ -42,7 +42,7 @@ public class SharedSubscriptionManager {
   }
 
   public void close() {
-    for (SharedSubscription sharedSubscription : activeSubscriptions.values()) {
+    for (SharedSubscription sharedSubscription : new ArrayList<>(activeSubscriptions.values())) {
       sharedSubscription.close();
     }
   }
