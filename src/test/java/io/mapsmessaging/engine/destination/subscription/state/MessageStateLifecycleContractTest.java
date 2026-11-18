@@ -46,7 +46,7 @@ class MessageStateLifecycleContractTest {
 
     assertFalse(state.hasMessagesInFlight());
     assertTrue(state.hasAtRestMessages());
-    assertEquals(11L, state.nextMessageId());
+    assertEquals(Long.valueOf(11L), state.nextMessageId());
     assertTrue(state.hasMessage(11));
   }
 
