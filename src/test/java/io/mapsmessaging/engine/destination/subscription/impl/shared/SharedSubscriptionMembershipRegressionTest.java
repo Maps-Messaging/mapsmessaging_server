@@ -98,6 +98,42 @@ class SharedSubscriptionMembershipRegressionTest {
   }
 
   @Test
+  void removedMemberCannotReceiveMessageReservedBeforeRemoval() throws Exception {
+    Fixture fixture = fixture("topic/membership/reserved-removal");
+    MessageCallback removedCallback = mock(MessageCallback.class);
+    SessionImpl removed = session("removed", removedCallback);
+    add(fixture, removed, "removed");
+    add(fixture, session("remaining", mock(MessageCallback.class)), "remaining");
+
+    Message message = new MessageBuilder().setId(40L).build();
+    when(fixture.destination.getMessage(40L)).thenReturn(message);
+    fixture.state.register(message);
+    assertNotNull(fixture.shared.retrieveNextMessageWithFlowControl());
+
+    fixture.shared.removeSession(removed);
+    fixture.shared.sendMessage(message);
+
+    verify(removedCallback, never()).sendMessage(eq(fixture.destination), any(), eq(message), any());
+  }
+
+  @Test
+  void replacedMemberCannotReceiveMessageReservedBeforeReplacement() throws Exception {
+    Fixture fixture = fixture("topic/membership/reserved-replacement");
+    MessageCallback oldCallback = mock(MessageCallback.class);
+    add(fixture, session("member", oldCallback), "member-1");
+
+    Message message = new MessageBuilder().setId(41L).build();
+    when(fixture.destination.getMessage(41L)).thenReturn(message);
+    fixture.state.register(message);
+    assertNotNull(fixture.shared.retrieveNextMessageWithFlowControl());
+
+    add(fixture, session("member", mock(MessageCallback.class)), "member-1");
+    fixture.shared.sendMessage(message);
+
+    verify(oldCallback, never()).sendMessage(eq(fixture.destination), any(), eq(message), any());
+  }
+
+  @Test
   void removingFinalMemberLeavesNoEligibleConsumer() throws Exception {
     Fixture fixture = fixture("topic/membership/last");
     SessionImpl only = session("only", mock(MessageCallback.class));
