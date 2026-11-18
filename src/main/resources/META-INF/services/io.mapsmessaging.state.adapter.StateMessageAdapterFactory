@@ -1,3 +1,0 @@
-io.mapsmessaging.state.adapter.mti.MtiStatusAdapterFactory
-io.mapsmessaging.state.adapter.cot.CotIngestAdapterFactory
-io.mapsmessaging.state.kpi.KpiAdapterFactory
