@@ -251,6 +251,63 @@ class MessageManagerTest {
     Assertions.assertEquals(List.of(100L), manager.getBucketIds());
   }
 
+  @Test
+  void removingUnknownBucketDoesNotChangeOtherPendingMessages() {
+    MessageManager manager = new MessageManager(new BitSetFactoryImpl(8192));
+    manager.register(10L, newMessage(100L));
+    manager.register(20L, newMessage(200L));
+
+    Assertions.assertTrue(manager.removeBucket(999L).isEmpty());
+    Assertions.assertEquals(2L, manager.size());
+    Assertions.assertEquals(List.of(10L, 20L), manager.getBucketIds());
+    Assertions.assertEquals(Long.valueOf(100L), manager.getNext(10L));
+    Assertions.assertEquals(Long.valueOf(200L), manager.getNext(20L));
+  }
+
+  @Test
+  void removingOneBucketPreservesUnrelatedBucketAndItsCount() {
+    MessageManager manager = new MessageManager(new BitSetFactoryImpl(8192));
+    manager.register(10L, newMessage(101L));
+    manager.register(10L, newMessage(102L));
+    manager.register(20L, newMessage(201L));
+
+    Queue<Long> removed = manager.removeBucket(10L);
+
+    Assertions.assertEquals(List.of(101L, 102L), List.copyOf(removed));
+    Assertions.assertEquals(1L, manager.size());
+    Assertions.assertEquals(List.of(20L), manager.getBucketIds());
+    Assertions.assertNull(manager.getNext(10L));
+    Assertions.assertEquals(Long.valueOf(201L), manager.getNext(20L));
+  }
+
+  @Test
+  void abortAfterPartialMessageProcessingOnlyAccountsForRemainingMessages() {
+    MessageManager manager = new MessageManager(new BitSetFactoryImpl(8192));
+    manager.register(10L, newMessage(101L));
+    manager.register(10L, newMessage(102L));
+    manager.register(10L, newMessage(103L));
+    Assertions.assertTrue(manager.remove(10L, 102L));
+
+    Queue<Long> removed = manager.removeBucket(10L);
+
+    Assertions.assertEquals(List.of(101L, 103L), List.copyOf(removed));
+    Assertions.assertEquals(0L, manager.size());
+    Assertions.assertTrue(manager.isEmpty());
+    Assertions.assertTrue(manager.getBucketIds().isEmpty());
+  }
+
+  @Test
+  void repeatedBucketRemovalDoesNotDecrementPendingCountTwice() {
+    MessageManager manager = new MessageManager(new BitSetFactoryImpl(8192));
+    manager.register(10L, newMessage(101L));
+    manager.register(20L, newMessage(201L));
+
+    Assertions.assertEquals(1, manager.removeBucket(10L).size());
+    Assertions.assertTrue(manager.removeBucket(10L).isEmpty());
+    Assertions.assertEquals(1L, manager.size());
+    Assertions.assertEquals(List.of(20L), manager.getBucketIds());
+  }
+
   private Message newMessage(long id) {
     Message message = mock(Message.class);
     when(message.getIdentifier()).thenReturn(id);
