@@ -75,7 +75,8 @@ class SharedSubscriptionGroupIsolationRegressionTest {
     when(destination.getTypePath()).thenReturn(List.of("type=EngineIsolationTest"));
     when(destination.getSubscriptionBitsetFactory())
         .thenReturn(new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
-    when(destination.findShareRegister(name)).thenAnswer(invocation -> registry.get(name));
+    when(destination.findShareRegister(org.mockito.ArgumentMatchers.anyString()))
+        .thenAnswer(invocation -> registry.get(invocation.getArgument(0)));
     doAnswer(invocation -> {
       SharedSubscriptionManager manager = invocation.getArgument(0);
       registry.add(manager.getName(), manager);
