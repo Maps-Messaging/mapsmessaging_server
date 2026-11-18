@@ -146,7 +146,7 @@ public class SharedSubscription extends DestinationSubscription {
   public void sendMessage(Message message) {
     SessionSharedSubscription subscription = reservedSubscription;
     reservedSubscription = null;
-    if (subscription != null && subscription.getSessionImpl() != null && subscription.canSend()) {
+    if (subscription != null && subscription.isActive() && subscription.getSessionImpl() != null && subscription.canSend()) {
       subscription.sendMessage(message);
       return;
     }
@@ -183,16 +183,19 @@ public class SharedSubscription extends DestinationSubscription {
     }
 
     public void add(SessionSharedSubscription subscription) {
-      SessionSharedSubscription previous = lookupMap.put(subscription.getSessionId(), subscription);
+      SessionSharedSubscription previous = lookupMap.get(subscription.getSessionId());
       if (previous != null) {
+        previous.deactivate();
         previous.releaseProtocolSendSlot();
         flatMap.remove(previous);
       }
+      lookupMap.put(subscription.getSessionId(), subscription);
       flatMap.add(subscription);
     }
 
     public void close() {
       for (SessionSharedSubscription subscription : flatMap) {
+        subscription.deactivate();
         subscription.releaseProtocolSendSlot();
       }
       lookupMap.clear();
@@ -210,6 +213,7 @@ public class SharedSubscription extends DestinationSubscription {
         for (Map.Entry<String, SessionSharedSubscription> entry : lookupMap.entrySet()) {
           if (entry.getValue().getSessionImpl() == sessionImpl) {
             sub = entry.getValue();
+            sub.deactivate();
             lookupMap.remove(entry.getKey());
             break;
           }
