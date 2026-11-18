@@ -183,10 +183,9 @@ public class SubscriptionContext  extends PersistentObject implements Comparable
   }
 
   public String getKey(){
-    String key = getCorrectedPath();
-    key = destinationMode.getNamespace()+key;
-    return key.replace("//", "/");
-
+    String key = destinationMode.getNamespace() + getCorrectedPath();
+    key = key.replace("//", "/");
+    return isSharedSubscription() ? key + "\u0000" + sharedName : key;
   }
 
   public String getFilter() {
