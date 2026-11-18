@@ -19,6 +19,9 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.apps.MapsApplication;
+import io.mapsmessaging.apps.MapsApplicationContext;
+import io.mapsmessaging.apps.MapsApplicationHost;
 import io.mapsmessaging.aggregator.AggregatorManager;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.EnvironmentConfig;
@@ -68,6 +71,8 @@ public class SubSystemManager {
   private final String uniqueId;
   private final int sessionPipeLines;
   private final FeatureManager featureManager;
+  @Getter
+  private MapsApplicationHost applicationHost;
   @Getter
   @Setter
   private ModelStore modelStore;
@@ -261,6 +266,19 @@ public class SubSystemManager {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
     addOptionalML();
+    loadApplications(destinationManager);
+  }
+
+  private void loadApplications(DestinationManager destinationManager) {
+    applicationHost = new MapsApplicationHost();
+    applicationHost.load(new MapsApplicationContext(featureManager, destinationManager, getSessionManager()));
+    for (MapsApplication application : applicationHost.getApplications()) {
+      addToMap(application.getStartPriority(), application.getStopPriority(), application);
+    }
+    RestApiServerManager restApiServerManager = getRestApiServerManager();
+    if (restApiServerManager != null) {
+      restApiServerManager.addPackageNameList(applicationHost.getRestApiPackages());
+    }
   }
 
   private void addOptionalML(){
