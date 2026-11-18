@@ -214,6 +214,19 @@ public class SubscriptionController implements DestinationManagerListener {
    * @return true if there was such a subscription to start with else false if unable to locate the subscription
    */
   public boolean delSubscription(String id) {
+    if (id.startsWith("$share/")) {
+      int separator = id.indexOf('/', "$share/".length());
+      if (separator > "$share/".length()) {
+        String group = id.substring("$share/".length(), separator);
+        String filter = id.substring(separator + 1);
+        for (SubscriptionContext context : contextMap.values()) {
+          if (context.isSharedSubscription() && group.equals(context.getSharedName()) && filter.equals(context.getFilter())) {
+            return removeSubscriptionByNamespace(context.getKey());
+          }
+        }
+      }
+      return false;
+    }
     // The destination namespace remains the primary subscription identity.
     if (removeSubscriptionByNamespace(id)) {
       return true;
@@ -363,8 +376,16 @@ public class SubscriptionController implements DestinationManagerListener {
     return subscriptionModeManager.get(DestinationMode.NORMAL).get(destination);
   }
 
+  public Subscription get(DestinationImpl destination, SubscriptionContext context) {
+    return subscriptionModeManager.get(context.getDestinationMode()).get(destination, context);
+  }
+
   public Subscription remove(DestinationImpl destination) {
-    return  subscriptionModeManager.get(DestinationMode.NORMAL).remove(destination);
+    return subscriptionModeManager.get(DestinationMode.NORMAL).remove(destination);
+  }
+
+  public Subscription remove(DestinationImpl destination, SubscriptionContext context) {
+    return subscriptionModeManager.get(context.getDestinationMode()).remove(destination, context);
   }
 
   public Subscription getSchema(DestinationImpl destination) {
