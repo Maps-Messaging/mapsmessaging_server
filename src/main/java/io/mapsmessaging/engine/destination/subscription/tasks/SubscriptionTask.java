@@ -53,7 +53,7 @@ public class SubscriptionTask extends EngineTask {
         // We are now looking at the base queue so we need to find "shared_<Name Of Queue>_normal"
         subscription = controller.createBrowserSubscription(context, destination.getSubscription(destination.getFullyQualifiedNamespace()), destination);
       } else {
-        subscription = controller.get(destination);
+        subscription = controller.get(destination, context);
         if (subscription != null) {
           subscription.addContext(context);
         } else {
