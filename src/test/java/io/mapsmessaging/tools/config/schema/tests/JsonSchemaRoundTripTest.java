@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.Error;
@@ -50,9 +51,10 @@ class JsonSchemaRoundTripTest {
 
   private static final Map<String, Class<?>> dtoMap = buildMap();
 
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-      .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
-      .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+  private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+      .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+      .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+      .build();
 
   private final JsonSchemaValidator validator;
 

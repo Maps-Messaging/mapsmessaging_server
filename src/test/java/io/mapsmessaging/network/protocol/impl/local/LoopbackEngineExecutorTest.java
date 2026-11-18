@@ -36,12 +36,12 @@ class LoopbackEngineExecutorTest {
         new LoopbackEngineExecutor(1, 32, "test-loopback", false);
 
     try {
-      long callerThreadId = Thread.currentThread().getId();
+      long callerThreadId = Thread.currentThread().threadId();
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<Long> executionThreadId = new AtomicReference<>();
 
       boolean accepted = executor.submit(() -> {
-        executionThreadId.set(Thread.currentThread().getId());
+        executionThreadId.set(Thread.currentThread().threadId());
         latch.countDown();
       });
 

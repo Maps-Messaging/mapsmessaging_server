@@ -22,6 +22,8 @@ package io.mapsmessaging.api.transformers;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 
+import org.mockito.quality.Strictness;
+
 import java.nio.charset.StandardCharsets;
 
 import static org.mockito.Mockito.*;
@@ -39,7 +41,7 @@ public final class TransformationTestSupport {
   }
 
   public static Message mockMessage(byte[] opaqueData) {
-    Message message = mock(Message.class, withSettings().lenient());
+    Message message = mock(Message.class, withSettings().strictness(Strictness.LENIENT));
     when(message.getOpaqueData()).thenReturn(opaqueData);
     return message;
   }
