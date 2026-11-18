@@ -441,10 +441,6 @@
               <version>1.18.48</version>
             </path>
           </annotationProcessorPaths>
-          <compilerArgs>
-            <arg>-h</arg>
-            <arg>src/main/cpp/</arg>
-          </compilerArgs>
         </configuration>
       </plugin>
 
