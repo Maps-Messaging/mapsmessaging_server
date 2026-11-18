@@ -33,7 +33,9 @@ class DestinationSubscriptionConcurrentMutationRegressionTest {
       f.manager.put("joining", joining);
       f.release.countDown();
 
-      assertEquals(1, publish.get(5, TimeUnit.SECONDS));
+      int delivered = publish.get(5, TimeUnit.SECONDS);
+      assertTrue(delivered >= 1 && delivered <= 2,
+          "A join at the delivery boundary may affect the current publication, but dispatch must finish");
       assertTrue(f.manager.hasSubscriptions());
     } finally {
       f.close();
