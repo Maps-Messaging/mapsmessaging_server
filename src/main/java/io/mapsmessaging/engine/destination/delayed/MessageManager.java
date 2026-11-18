@@ -185,6 +185,8 @@ public class MessageManager {
   public synchronized @NonNull @NotNull Queue<Long> removeBucket(long bucketId) {
     DelayedBucket bucket = treeList.remove(bucketId);
     if (bucket != null) {
+      removeFromStructure(bucketId);
+      counter.addAndGet(-bucket.size());
       return bucket.getQueue();
     }
     return new ArrayDeque<>();
