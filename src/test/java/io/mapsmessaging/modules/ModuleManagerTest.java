@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.apps;
+package io.mapsmessaging.modules;
 
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
@@ -28,12 +28,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MapsApplicationHostTest {
+class ModuleManagerTest {
 
   @Test
   void emptyDiscoveryDoesNotRequireAnExtension() {
-    MapsApplicationHost host = new MapsApplicationHost(List.of());
-    host.load(new MapsApplicationContext(null, null, null));
+    ModuleManager host = new ModuleManager(List.of());
+    host.load(new ModuleContext(null, null, null));
     assertTrue(host.getApplications().isEmpty());
     assertTrue(host.getRestApiPackages().isEmpty());
     assertTrue(host.getConfigProviders().isEmpty());
@@ -43,8 +43,8 @@ class MapsApplicationHostTest {
   void readsMetadataBeforeInitializeAndPreservesPriorities() {
     List<String> calls = new ArrayList<>();
     TestApplication application = new TestApplication("twin", calls);
-    MapsApplicationHost host = new MapsApplicationHost(List.of(application));
-    host.load(new MapsApplicationContext(null, null, null));
+    ModuleManager host = new ModuleManager(List.of(application));
+    host.load(new ModuleContext(null, null, null));
 
     assertEquals(List.of("packages", "configs", "initialize"), calls);
     assertEquals(List.of("io.mapsmessaging.twins.rest"), host.getRestApiPackages());
@@ -52,15 +52,15 @@ class MapsApplicationHostTest {
     assertSame(application, host.getApplications().get(0));
     assertEquals(550, host.getApplications().get(0).getStartPriority());
     assertEquals(960, host.getApplications().get(0).getStopPriority());
-    assertThrows(IllegalStateException.class, () -> host.load(new MapsApplicationContext(null, null, null)));
+    assertThrows(IllegalStateException.class, () -> host.load(new ModuleContext(null, null, null)));
   }
 
   @Test
   void rejectsDuplicateAgentNamesWithoutInitializing() {
     List<String> calls = new ArrayList<>();
-    MapsApplicationHost host = new MapsApplicationHost(List.of(
+    ModuleManager host = new ModuleManager(List.of(
         new TestApplication("same", calls), new TestApplication("same", calls)));
-    assertThrows(IllegalStateException.class, () -> host.load(new MapsApplicationContext(null, null, null)));
+    assertThrows(IllegalStateException.class, () -> host.load(new ModuleContext(null, null, null)));
     assertFalse(calls.contains("initialize"));
   }
 
@@ -69,8 +69,8 @@ class MapsApplicationHostTest {
     List<String> calls = new ArrayList<>();
     TestApplication late = new TestApplication("late", calls, 700, 200);
     TestApplication early = new TestApplication("early", calls, 500, 400);
-    MapsApplicationHost host = new MapsApplicationHost(List.of(late, early));
-    host.load(new MapsApplicationContext(null, null, null));
+    ModuleManager host = new ModuleManager(List.of(late, early));
+    host.load(new ModuleContext(null, null, null));
     calls.clear();
 
     assertEquals("Application Host", host.getName());
@@ -86,11 +86,11 @@ class MapsApplicationHostTest {
 
   @Test
   void refusesToStartBeforeDiscovery() {
-    MapsApplicationHost host = new MapsApplicationHost(List.of());
+    ModuleManager host = new ModuleManager(List.of());
     assertThrows(IllegalStateException.class, host::start);
   }
 
-  private static final class TestApplication implements MapsApplication {
+  private static final class TestApplication implements MapsModule {
     private final String name;
     private final List<String> calls;
     private final int startPriority;
@@ -167,7 +167,7 @@ class MapsApplicationHostTest {
     }
 
     @Override
-    public void initialize(MapsApplicationContext context) {
+    public void initialize(ModuleContext context) {
       calls.add("initialize");
     }
   }

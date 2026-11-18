@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.apps;
+package io.mapsmessaging.modules;
 
 import io.mapsmessaging.utilities.Agent;
 
@@ -26,12 +26,12 @@ import java.util.List;
  * An optional subsystem discoverable using {@link java.util.ServiceLoader}.
  *
  * <p>The host may call {@link #getRestApiPackages()} and
- * {@link #getConfigProviders()} before {@link #initialize(MapsApplicationContext)}.
+ * {@link #getConfigProviders()} before {@link #initialize(ModuleContext)}.
  * Implementations must therefore make these methods independent of initialization.
  * Start and stop are managed by the server's existing agent lifecycle.
  * Lower priority values run first for both startup and shutdown.
  */
-public interface MapsApplication extends Agent {
+public interface MapsModule extends Agent {
 
   int getStartPriority();
 
@@ -41,5 +41,5 @@ public interface MapsApplication extends Agent {
 
   List<ManagerConfigProvider> getConfigProviders();
 
-  void initialize(MapsApplicationContext context);
+  void initialize(ModuleContext context);
 }

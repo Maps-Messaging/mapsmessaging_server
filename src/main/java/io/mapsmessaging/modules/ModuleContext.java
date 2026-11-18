@@ -16,16 +16,17 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.apps;
+package io.mapsmessaging.modules;
 
-import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
+import io.mapsmessaging.engine.destination.DestinationManager;
+import io.mapsmessaging.engine.session.SessionManager;
+import io.mapsmessaging.license.FeatureManager;
 
 /**
- * Describes a configuration type contributed by an optional application.
+ * Server services available to an application during initialization.
  */
-public interface ManagerConfigProvider {
-
-  String getType();
-
-  Class<? extends BaseManagerConfigDTO> getConfigClass();
+public record ModuleContext(
+    FeatureManager featureManager,
+    DestinationManager destinationManager,
+    SessionManager sessionManager) {
 }

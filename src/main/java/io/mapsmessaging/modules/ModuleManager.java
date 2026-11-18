@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.apps;
+package io.mapsmessaging.modules;
 
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -34,20 +34,20 @@ import java.util.Set;
  * Discovers applications and collects their pre-initialization metadata.
  * The owning subsystem manager registers the host in its existing lifecycle.
  */
-public class MapsApplicationHost implements Agent {
+public class ModuleManager implements Agent {
 
-  private final Iterable<? extends MapsApplication> providers;
-  private final List<MapsApplication> applications;
+  private final Iterable<? extends MapsModule> providers;
+  private final List<MapsModule> applications;
   private final List<String> restApiPackages;
   private final List<ManagerConfigProvider> configProviders;
   private boolean loaded;
   private boolean started;
 
-  public MapsApplicationHost() {
-    this(ServiceLoader.load(MapsApplication.class));
+  public ModuleManager() {
+    this(ServiceLoader.load(MapsModule.class));
   }
 
-  public MapsApplicationHost(Iterable<? extends MapsApplication> providers) {
+  public ModuleManager(Iterable<? extends MapsModule> providers) {
     this.providers = Objects.requireNonNull(providers, "providers");
     applications = new ArrayList<>();
     restApiPackages = new ArrayList<>();
@@ -57,17 +57,17 @@ public class MapsApplicationHost implements Agent {
   /**
    * Reads metadata before initializing any application. This method is single-use.
    */
-  public void load(MapsApplicationContext context) {
+  public void load(ModuleContext context) {
     if (loaded) {
       throw new IllegalStateException("Applications have already been loaded");
     }
     Objects.requireNonNull(context, "context");
     Set<String> names = new HashSet<>();
-    List<MapsApplication> discovered = new ArrayList<>();
+    List<MapsModule> discovered = new ArrayList<>();
     List<String> packages = new ArrayList<>();
     List<ManagerConfigProvider> configs = new ArrayList<>();
     Set<String> types = new HashSet<>();
-    for (MapsApplication application : providers) {
+    for (MapsModule application : providers) {
       Objects.requireNonNull(application, "application");
       String name = Objects.requireNonNull(application.getName(), "application name");
       if (!names.add(name)) {
@@ -86,7 +86,7 @@ public class MapsApplicationHost implements Agent {
       configs.addAll(applicationConfigs);
       discovered.add(application);
     }
-    for (MapsApplication application : discovered) {
+    for (MapsModule application : discovered) {
       application.initialize(context);
     }
     applications.addAll(discovered);
@@ -110,9 +110,9 @@ public class MapsApplicationHost implements Agent {
     if (!loaded) {
       throw new IllegalStateException("Applications have not been loaded");
     }
-    List<MapsApplication> ordered = new ArrayList<>(applications);
-    ordered.sort(Comparator.comparingInt(MapsApplication::getStartPriority));
-    for (MapsApplication application : ordered) {
+    List<MapsModule> ordered = new ArrayList<>(applications);
+    ordered.sort(Comparator.comparingInt(MapsModule::getStartPriority));
+    for (MapsModule application : ordered) {
       application.start();
     }
     started = true;
@@ -120,9 +120,9 @@ public class MapsApplicationHost implements Agent {
 
   @Override
   public void stop() {
-    List<MapsApplication> ordered = new ArrayList<>(applications);
-    ordered.sort(Comparator.comparingInt(MapsApplication::getStopPriority));
-    for (MapsApplication application : ordered) {
+    List<MapsModule> ordered = new ArrayList<>(applications);
+    ordered.sort(Comparator.comparingInt(MapsModule::getStopPriority));
+    for (MapsModule application : ordered) {
       application.stop();
     }
     started = false;
@@ -133,7 +133,7 @@ public class MapsApplicationHost implements Agent {
     SubSystemStatusDTO status = new SubSystemStatusDTO();
     status.setName(getName());
     status.setStatus(started ? Status.OK : Status.STOPPED);
-    for (MapsApplication application : applications) {
+    for (MapsModule application : applications) {
       SubSystemStatusDTO applicationStatus = application.getStatus();
       if (applicationStatus.getStatus() == Status.ERROR) {
         status.setStatus(Status.ERROR);
@@ -146,7 +146,7 @@ public class MapsApplicationHost implements Agent {
     return status;
   }
 
-  public List<MapsApplication> getApplications() {
+  public List<MapsModule> getApplications() {
     return List.copyOf(applications);
   }
 

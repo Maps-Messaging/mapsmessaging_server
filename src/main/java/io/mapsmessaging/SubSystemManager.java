@@ -19,8 +19,8 @@
 
 package io.mapsmessaging;
 
-import io.mapsmessaging.apps.MapsApplicationContext;
-import io.mapsmessaging.apps.MapsApplicationHost;
+import io.mapsmessaging.modules.ModuleContext;
+import io.mapsmessaging.modules.ModuleManager;
 import io.mapsmessaging.aggregator.AggregatorManager;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.EnvironmentConfig;
@@ -71,7 +71,7 @@ public class SubSystemManager {
   private final int sessionPipeLines;
   private final FeatureManager featureManager;
   @Getter
-  private MapsApplicationHost applicationHost;
+  private ModuleManager moduleManager;
   @Getter
   @Setter
   private ModelStore modelStore;
@@ -265,16 +265,16 @@ public class SubSystemManager {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
     addOptionalML();
-    loadApplications(destinationManager);
+    loadModules(destinationManager);
   }
 
-  private void loadApplications(DestinationManager destinationManager) {
-    applicationHost = new MapsApplicationHost();
-    applicationHost.load(new MapsApplicationContext(featureManager, destinationManager, getSessionManager()));
-    addToMap(550, 960, applicationHost);
+  private void loadModules(DestinationManager destinationManager) {
+    moduleManager = new ModuleManager();
+    moduleManager.load(new ModuleContext(featureManager, destinationManager, getSessionManager()));
+    addToMap(550, 960, moduleManager);
     RestApiServerManager restApiServerManager = getRestApiServerManager();
     if (restApiServerManager != null) {
-      restApiServerManager.addPackageNameList(applicationHost.getRestApiPackages());
+      restApiServerManager.addPackageNameList(moduleManager.getRestApiPackages());
     }
   }
 
