@@ -194,7 +194,7 @@ def blockNames = [
     "JUnit - Network Monitor",
     "JUnit - Discovery",
     "JUnit - Network Core",
-    "JUnit - State-HA-License",
+    "JUnit - HA-License",
     "JUnit - Utilities-Config",
     "JUnit - Misc"
 ]
