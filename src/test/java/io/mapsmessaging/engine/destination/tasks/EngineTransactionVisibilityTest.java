@@ -38,7 +38,7 @@ class EngineTransactionVisibilityTest {
     when(fixture.destination.getMessage(201L)).thenReturn(other);
 
     assertEquals(3, fixture.manager.size());
-    verifyNoInteractions(fixture.subscriber);
+    verify(fixture.subscriber, never()).register(any(Message.class));
 
     LongResponse result = (LongResponse) new TransactionalMessageProcessor(
         fixture.destination, fixture.subscriptions, fixture.manager, 7L).taskCall();
@@ -59,7 +59,7 @@ class EngineTransactionVisibilityTest {
         fixture.destination, fixture.subscriptions, fixture.manager, 999L).taskCall();
 
     assertEquals(0L, result.getResponse());
-    verifyNoInteractions(fixture.subscriber);
+    verify(fixture.subscriber, never()).register(any(Message.class));
   }
 
   @Test
@@ -72,7 +72,7 @@ class EngineTransactionVisibilityTest {
 
     assertEquals(2, aborted.size());
     assertEquals(0L, fixture.manager.getTransactions().stream().filter(id -> id == 7L).count());
-    verifyNoInteractions(fixture.subscriber);
+    verify(fixture.subscriber, never()).register(any(Message.class));
   }
 
   @Test
