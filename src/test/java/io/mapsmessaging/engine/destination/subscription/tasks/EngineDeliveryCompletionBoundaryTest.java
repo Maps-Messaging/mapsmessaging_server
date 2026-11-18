@@ -35,6 +35,7 @@ class EngineDeliveryCompletionBoundaryTest {
     DestinationSubscription subscription = mock(DestinationSubscription.class);
     AcknowledgementController controller = mock(AcknowledgementController.class);
     when(subscription.getDestinationImpl()).thenReturn(mock(DestinationImpl.class));
+    when(controller.messageSent()).thenReturn((Long) null);
 
     new MessageDeliveredListener(subscription, controller).taskCall();
 
