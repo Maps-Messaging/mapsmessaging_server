@@ -29,6 +29,12 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.List;
 import java.util.Queue;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -306,6 +312,70 @@ class MessageManagerTest {
     Assertions.assertTrue(manager.removeBucket(10L).isEmpty());
     Assertions.assertEquals(1L, manager.size());
     Assertions.assertEquals(List.of(20L), manager.getBucketIds());
+  }
+
+  @Test
+  void concurrentRegistrationsAndDuplicatesProduceOneEntryPerIdentifier() throws Exception {
+    MessageManager manager = new MessageManager(new BitSetFactoryImpl(8192));
+    ExecutorService executor = Executors.newFixedThreadPool(4);
+    CountDownLatch start = new CountDownLatch(1);
+    List<Future<?>> tasks = new ArrayList<>();
+
+    try {
+      for (int worker = 0; worker < 4; worker++) {
+        final int offset = worker * 25;
+        tasks.add(executor.submit(() -> {
+          start.await();
+          for (int i = 0; i < 25; i++) {
+            Message message = newMessage(offset + i + 1L);
+            manager.register(77L, message);
+            manager.register(77L, message);
+          }
+          return null;
+        }));
+      }
+      start.countDown();
+      for (Future<?> task : tasks) {
+        task.get(10, TimeUnit.SECONDS);
+      }
+
+      Assertions.assertEquals(100L, manager.size());
+      Assertions.assertEquals(List.of(77L), manager.getBucketIds());
+      Assertions.assertEquals(100, manager.removeBucket(77L).size());
+      Assertions.assertEquals(0L, manager.size());
+    } finally {
+      executor.shutdownNow();
+    }
+  }
+
+  @Test
+  void concurrentRemovalOfDistinctBucketsDoesNotChangeThirdBucket() throws Exception {
+    MessageManager manager = new MessageManager(new BitSetFactoryImpl(8192));
+    manager.register(11L, newMessage(111L));
+    manager.register(22L, newMessage(222L));
+    manager.register(33L, newMessage(333L));
+    ExecutorService executor = Executors.newFixedThreadPool(2);
+    CountDownLatch start = new CountDownLatch(1);
+
+    try {
+      Future<Queue<Long>> first = executor.submit(() -> {
+        start.await();
+        return manager.removeBucket(11L);
+      });
+      Future<Queue<Long>> second = executor.submit(() -> {
+        start.await();
+        return manager.removeBucket(22L);
+      });
+      start.countDown();
+
+      Assertions.assertEquals(List.of(111L), List.copyOf(first.get(10, TimeUnit.SECONDS)));
+      Assertions.assertEquals(List.of(222L), List.copyOf(second.get(10, TimeUnit.SECONDS)));
+      Assertions.assertEquals(1L, manager.size());
+      Assertions.assertEquals(List.of(33L), manager.getBucketIds());
+      Assertions.assertEquals(Long.valueOf(333L), manager.getNext(33L));
+    } finally {
+      executor.shutdownNow();
+    }
   }
 
   private Message newMessage(long id) {
