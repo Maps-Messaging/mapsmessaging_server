@@ -77,7 +77,8 @@ class SharedSelectorPartitionRegressionTest {
     when(destination.getTypePath()).thenReturn(List.of("type=SharedSelectorPartitionTest"));
     when(destination.getSubscriptionBitsetFactory()).thenReturn(
         new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE));
-    when(destination.findShareRegister(topic)).thenAnswer(invocation -> registry.get(topic));
+    when(destination.findShareRegister(anyString()))
+        .thenAnswer(invocation -> registry.get(invocation.getArgument(0)));
     doAnswer(invocation -> {
       SharedSubscriptionManager group = invocation.getArgument(0);
       registry.add(group.getName(), group);
