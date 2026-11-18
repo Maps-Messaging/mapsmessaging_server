@@ -47,7 +47,7 @@ class EngineSubscriptionTaskLifecycleTest {
     SubscriptionController controller = mock(SubscriptionController.class);
     SubscriptionContext context = new SubscriptionContext("topic/orders/#");
     Subscription subscription = mock(Subscription.class);
-    when(controller.get(destination)).thenReturn(subscription);
+    when(controller.get(destination, context)).thenReturn(subscription);
     AtomicLong remaining = new AtomicLong(1);
 
     new SubscriptionTask(controller, context, destination, remaining).taskCall();
@@ -81,7 +81,7 @@ class EngineSubscriptionTaskLifecycleTest {
     doAnswer(invocation -> { contexts.remove(invocation.<SubscriptionContext>getArgument(0)); return null; })
         .when(subscription).removeContext(removed);
     when(subscription.getContexts()).thenAnswer(invocation -> new ArrayList<>(contexts));
-    when(controller.get(destination)).thenReturn(subscription);
+    when(controller.get(destination, removed)).thenReturn(subscription);
     DestinationSet set = new DestinationSet(removed, Map.of());
     AtomicLong pending = new AtomicLong(1);
 
@@ -89,7 +89,7 @@ class EngineSubscriptionTaskLifecycleTest {
         new UnsubscribeTask(controller, destination, set, pending).taskCall());
 
     verify(subscription).removeContext(removed);
-    verify(controller, never()).remove(destination);
+    verify(controller, never()).remove(destination, removed);
     verify(subscription, never()).delete();
     assertEquals(1, contexts.size());
     assertEquals(0L, pending.get());
@@ -101,7 +101,7 @@ class EngineSubscriptionTaskLifecycleTest {
     SubscriptionController controller = mock(SubscriptionController.class);
     SubscriptionContext removed = new SubscriptionContext("topic/orders/#");
     Subscription subscription = mock(Subscription.class);
-    when(controller.get(destination)).thenReturn(subscription);
+    when(controller.get(destination, removed)).thenReturn(subscription);
     when(subscription.getContexts()).thenReturn(List.of());
     AtomicLong pending = new AtomicLong(1);
 
@@ -109,7 +109,7 @@ class EngineSubscriptionTaskLifecycleTest {
         new DestinationSet(removed, Map.of()), pending).taskCall();
 
     verify(subscription).removeContext(removed);
-    verify(controller).remove(destination);
+    verify(controller).remove(destination, removed);
     verify(subscription).delete();
     assertEquals(0L, pending.get());
   }
@@ -120,7 +120,7 @@ class EngineSubscriptionTaskLifecycleTest {
     SubscriptionController controller = mock(SubscriptionController.class);
     SubscriptionContext removed = new SubscriptionContext("topic/orders/#");
     Subscription subscription = mock(Subscription.class);
-    when(controller.get(destination)).thenReturn(subscription);
+    when(controller.get(destination, removed)).thenReturn(subscription);
     when(subscription.getContexts()).thenReturn(List.of());
     doThrow(new IOException("delete failed")).when(subscription).delete();
     AtomicLong pending = new AtomicLong(1);
