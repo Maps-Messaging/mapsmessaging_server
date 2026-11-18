@@ -23,10 +23,10 @@ class RetainedMessageLifecycleContractTest {
     try {
       assertNull(manager.current());
       assertNull(manager.replace(10L));
-      assertEquals(10L, manager.current());
-      assertEquals(10L, manager.replace(20L));
-      assertEquals(20L, manager.current());
-      assertEquals(20L, manager.replace(null));
+      assertEquals(Long.valueOf(10L), manager.current());
+      assertEquals(Long.valueOf(10L), manager.replace(20L));
+      assertEquals(Long.valueOf(20L), manager.current());
+      assertEquals(Long.valueOf(20L), manager.replace(null));
       assertNull(manager.current());
     } finally {
       manager.close();
@@ -38,15 +38,15 @@ class RetainedMessageLifecycleContractTest {
     RetainManager first = new RetainManager(true, directory.toString());
     try {
       first.replace(42L);
-      assertEquals(42L, first.current());
+      assertEquals(Long.valueOf(42L), first.current());
     } finally {
       first.close();
     }
 
     RetainManager reopened = new RetainManager(true, directory.toString());
     try {
-      assertEquals(42L, reopened.current());
-      assertEquals(42L, reopened.replace(null));
+      assertEquals(Long.valueOf(42L), reopened.current());
+      assertEquals(Long.valueOf(42L), reopened.replace(null));
       assertNull(reopened.current());
     } finally {
       reopened.close();
