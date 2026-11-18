@@ -327,7 +327,7 @@ public abstract class SubscriptionModeManager {
     }
   }
 
-  private void closeSubscriptions(Map<DestinationImpl, Subscription> subscriptions, boolean close){
+  private void closeSubscriptions(Map<?, Subscription> subscriptions, boolean close){
     List<Subscription> closeList = new ArrayList<>(subscriptions.values());
     subscriptions.clear();
     for (Subscription subscription : closeList) {
