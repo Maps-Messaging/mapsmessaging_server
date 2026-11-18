@@ -54,6 +54,8 @@ def engineRegressionClasses = [
     "io.mapsmessaging.engine.destination.delayed.TransactionBucketFailureRegressionTest",
     "io.mapsmessaging.engine.destination.tasks.NoInterestCleanupRegressionTest",
     "io.mapsmessaging.engine.destination.subscription.state.BoundedSharedMessageStateRegressionTest",
+    "io.mapsmessaging.engine.destination.subscription.modes.SharedGroupSessionIdentityTest",
+    "io.mapsmessaging.engine.session.persistence.SessionDetailsSharedGroupIdentityTest",
 ] as Set
 
 def blockFor = { String className ->
