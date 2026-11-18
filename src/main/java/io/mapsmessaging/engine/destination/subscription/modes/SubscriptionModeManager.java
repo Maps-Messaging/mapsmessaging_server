@@ -157,7 +157,10 @@ public abstract class SubscriptionModeManager {
     //
     if (!normalList.isEmpty()) {
       List<SubscriptionContext> selected = new ArrayList<>();
-      normalList.stream().filter(context -> !context.isSharedSubscription()).findFirst().ifPresent(selected::add);
+      normalList.stream()
+          .filter(context -> !context.isSharedSubscription())
+          .max(Comparator.comparingInt(context -> context.getQualityOfService().getLevel()))
+          .ifPresent(selected::add);
       normalList.stream().filter(SubscriptionContext::isSharedSubscription).forEach(selected::add);
       for (SubscriptionContext context : selected) {
         Future<Response> response = scheduleSubscription(controller, context, destinationImpl, new AtomicLong(1));
