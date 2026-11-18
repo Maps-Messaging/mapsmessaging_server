@@ -40,6 +40,7 @@ public class SharedSubscription extends DestinationSubscription {
 
   private final SessionSubscriptionMap subscriptions;
   private final String shareName;
+  private final String registryName;
   private SessionSharedSubscription reservedSubscription;
 
   public SharedSubscription(DestinationImpl destinationImpl,
@@ -48,9 +49,21 @@ public class SharedSubscription extends DestinationSubscription {
       MessageStateManager messageStateManager,
       AcknowledgementController acknowledgementController,
       String shareName) {
+    this(destinationImpl, info, id, messageStateManager, acknowledgementController,
+        shareName, destinationImpl.getFullyQualifiedNamespace());
+  }
+
+  public SharedSubscription(DestinationImpl destinationImpl,
+      SubscriptionContext info,
+      String id,
+      MessageStateManager messageStateManager,
+      AcknowledgementController acknowledgementController,
+      String shareName,
+      String registryName) {
     super(destinationImpl, info, null, id, acknowledgementController, messageStateManager);
     subscriptions = new SessionSubscriptionMap();
     this.shareName = shareName;
+    this.registryName = registryName;
   }
 
   @Override
@@ -61,10 +74,10 @@ public class SharedSubscription extends DestinationSubscription {
     }
     super.close();
     subscriptions.close();
-    SharedSubscriptionManager register = destinationImpl.findShareRegister(destinationImpl.getFullyQualifiedNamespace());
+    SharedSubscriptionManager register = destinationImpl.findShareRegister(registryName);
     register.delete(shareName);
     if (register.isEmpty()) {
-      destinationImpl.delShareRegistry(destinationImpl.getFullyQualifiedNamespace());
+      destinationImpl.delShareRegistry(registryName);
     }
   }
 
