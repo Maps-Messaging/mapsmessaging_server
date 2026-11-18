@@ -38,7 +38,19 @@ public class SharedSelectorSubscription extends SharedSubscription {
       MessageStateManager messageStateManager,
       AcknowledgementController acknowledgementController,
       String name) {
-    super(destinationImpl, info, id, messageStateManager, acknowledgementController, name);
+    this(destinationImpl, info, parserExecutor, id, messageStateManager,
+        acknowledgementController, name, destinationImpl.getFullyQualifiedNamespace());
+  }
+
+  public SharedSelectorSubscription(DestinationImpl destinationImpl,
+      SubscriptionContext info,
+      ParserExecutor parserExecutor,
+      String id,
+      MessageStateManager messageStateManager,
+      AcknowledgementController acknowledgementController,
+      String name,
+      String registryName) {
+    super(destinationImpl, info, id, messageStateManager, acknowledgementController, name, registryName);
     this.parserExecutor = parserExecutor;
   }
 
