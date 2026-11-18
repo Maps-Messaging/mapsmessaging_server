@@ -25,9 +25,10 @@ import java.util.List;
 /**
  * An optional subsystem discoverable using {@link java.util.ServiceLoader}.
  *
- * <p>The host may call {@link #getRestApiPackages()} and
- * {@link #getConfigProviders()} before {@link #initialize(ModuleContext)}.
- * Implementations must therefore make these methods independent of initialization.
+ * <p>{@link #getRestApiPackages()} and {@link #getConfigProviders()} describe
+ * module configuration and may be called at any time, including before
+ * {@link #initialize(ModuleContext)}. They must not depend on runtime
+ * initialization, create services, or have side effects.
  * Start and stop are managed by the server's existing agent lifecycle.
  * Lower priority values run first for both startup and shutdown.
  */

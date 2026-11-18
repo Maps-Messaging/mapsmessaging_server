@@ -37,6 +37,7 @@ public class ModuleManager {
   private final List<String> restApiPackages;
   private final List<ManagerConfigProvider> configProviders;
   private boolean loaded;
+  private boolean initialized;
 
   public ModuleManager() {
     this(ServiceLoader.load(MapsModule.class));
@@ -50,13 +51,13 @@ public class ModuleManager {
   }
 
   /**
-   * Reads metadata before initializing any application. This method is single-use.
+   * Discovers module declarations without initializing runtime services.
+   * Metadata is available immediately after this call.
    */
-  public void load(ModuleContext context) {
+  public void discover() {
     if (loaded) {
-      throw new IllegalStateException("Applications have already been loaded");
+      throw new IllegalStateException("Modules have already been discovered");
     }
-    Objects.requireNonNull(context, "context");
     Set<String> names = new HashSet<>();
     List<MapsModule> discovered = new ArrayList<>();
     List<String> packages = new ArrayList<>();
@@ -81,13 +82,36 @@ public class ModuleManager {
       configs.addAll(applicationConfigs);
       discovered.add(application);
     }
-    for (MapsModule application : discovered) {
-      application.initialize(context);
-    }
     applications.addAll(discovered);
     restApiPackages.addAll(packages);
     configProviders.addAll(configs);
     loaded = true;
+  }
+
+  /**
+   * Initializes discovered modules after their metadata has been made available.
+   */
+  public void initialize(ModuleContext context) {
+    if (!loaded) {
+      throw new IllegalStateException("Modules have not been discovered");
+    }
+    if (initialized) {
+      throw new IllegalStateException("Modules have already been initialized");
+    }
+    Objects.requireNonNull(context, "context");
+    for (MapsModule application : applications) {
+      application.initialize(context);
+    }
+    initialized = true;
+  }
+
+  /**
+   * Convenience operation preserving discovery followed by initialization.
+   */
+  public void load(ModuleContext context) {
+    Objects.requireNonNull(context, "context");
+    discover();
+    initialize(context);
   }
 
   public List<MapsModule> getApplications() {

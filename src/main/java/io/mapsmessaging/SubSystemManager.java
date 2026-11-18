@@ -271,13 +271,14 @@ public class SubSystemManager {
 
   private void loadModules(DestinationManager destinationManager) {
     moduleManager = new ModuleManager();
-    moduleManager.load(new ModuleContext(featureManager, destinationManager, getSessionManager()));
-    for (MapsModule module : moduleManager.getApplications()) {
-      addToMap(module.getStartPriority(), module.getStopPriority(), module);
-    }
+    moduleManager.discover();
     RestApiServerManager restApiServerManager = getRestApiServerManager();
     if (restApiServerManager != null) {
       restApiServerManager.addPackageNameList(moduleManager.getRestApiPackages());
+    }
+    moduleManager.initialize(new ModuleContext(featureManager, destinationManager, getSessionManager()));
+    for (MapsModule module : moduleManager.getApplications()) {
+      addToMap(module.getStartPriority(), module.getStopPriority(), module);
     }
   }
 

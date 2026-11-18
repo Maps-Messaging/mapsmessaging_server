@@ -56,6 +56,31 @@ class ModuleManagerTest {
   }
 
   @Test
+  void metadataIsAvailableBeforeInitializationAndCanBeReadRepeatedly() {
+    List<String> calls = new ArrayList<>();
+    TestApplication application = new TestApplication("twin", calls);
+    ModuleManager manager = new ModuleManager(List.of(application));
+
+    manager.discover();
+    assertEquals(List.of("packages", "configs"), calls);
+    assertEquals(List.of("io.mapsmessaging.twins.rest"), manager.getRestApiPackages());
+    assertEquals(List.of("io.mapsmessaging.twins.rest"), manager.getRestApiPackages());
+    assertEquals(1, manager.getConfigProviders().size());
+    assertEquals(1, manager.getConfigProviders().size());
+    assertThrows(IllegalStateException.class, manager::discover);
+
+    manager.initialize(new ModuleContext(null, null, null));
+    assertEquals(List.of("packages", "configs", "initialize"), calls);
+    assertThrows(IllegalStateException.class, () -> manager.initialize(new ModuleContext(null, null, null)));
+  }
+
+  @Test
+  void initializationRequiresDiscovery() {
+    ModuleManager manager = new ModuleManager(List.of());
+    assertThrows(IllegalStateException.class, () -> manager.initialize(new ModuleContext(null, null, null)));
+  }
+
+  @Test
   void rejectsDuplicateAgentNamesWithoutInitializing() {
     List<String> calls = new ArrayList<>();
     ModuleManager host = new ModuleManager(List.of(
