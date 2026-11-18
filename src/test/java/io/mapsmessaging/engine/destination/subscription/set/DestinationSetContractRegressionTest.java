@@ -86,6 +86,60 @@ class DestinationSetContractRegressionTest {
     assertTrue(DestinationSet.matches("$SYS/#", "$SYS/uptime"));
   }
 
+  @Test
+  void removeIfWithNoMatchesLeavesEveryDestinationUnchanged() {
+    DestinationSet set = set("sensors/#", "sensors/one", "sensors/two");
+
+    assertFalse(set.removeIf(destination -> destination.getFullyQualifiedNamespace().startsWith("vehicles/")));
+    assertEquals(2, set.size());
+    assertTrue(set.contains("sensors/one"));
+    assertTrue(set.contains("sensors/two"));
+  }
+
+  @Test
+  void retainAllWithEmptyCollectionRemovesEveryDestination() {
+    DestinationSet set = set("sensors/#", "sensors/one", "sensors/two");
+
+    assertTrue(set.retainAll(Set.of()));
+    assertTrue(set.isEmpty());
+    assertFalse(set.retainAll(Set.of()));
+  }
+
+  @Test
+  void repeatedAddOfSameDestinationDoesNotChangeSetOrReportChange() {
+    DestinationSet set = set("sensors/#", "sensors/one");
+    DestinationImpl existing = set.iterator().next();
+
+    assertFalse(set.add(existing));
+    assertFalse(set.add(existing));
+    assertEquals(1, set.size());
+    assertTrue(set.contains(existing));
+  }
+
+  @Test
+  void newInstanceAtSameNamespaceReplacesOldDestinationWithoutGrowingSet() {
+    DestinationSet set = set("sensors/#", "sensors/one");
+    DestinationImpl original = set.iterator().next();
+    DestinationImpl replacement = mock(DestinationImpl.class);
+    when(replacement.getFullyQualifiedNamespace()).thenReturn("sensors/one");
+
+    assertTrue(set.add(replacement));
+    assertEquals(1, set.size());
+    assertTrue(set.contains(replacement));
+    assertFalse(set.contains(original));
+    assertFalse(set.add(replacement));
+  }
+
+  @Test
+  void removeIfCanDeleteAllMatchesAndAnEmptySetRemainsStable() {
+    DestinationSet set = set("sensors/#", "sensors/one", "sensors/two");
+
+    assertTrue(set.removeIf(destination -> true));
+    assertTrue(set.isEmpty());
+    assertFalse(set.removeIf(destination -> true));
+    assertEquals(0, set.size());
+  }
+
   private static DestinationSet set(String filter, String... names) {
     SubscriptionContext context = new SubscriptionContext(filter);
     Map<String, DestinationImpl> destinations = new LinkedHashMap<>();
