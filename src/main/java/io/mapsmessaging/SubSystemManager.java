@@ -19,7 +19,6 @@
 
 package io.mapsmessaging;
 
-import io.mapsmessaging.apps.MapsApplication;
 import io.mapsmessaging.apps.MapsApplicationContext;
 import io.mapsmessaging.apps.MapsApplicationHost;
 import io.mapsmessaging.aggregator.AggregatorManager;
@@ -272,9 +271,7 @@ public class SubSystemManager {
   private void loadApplications(DestinationManager destinationManager) {
     applicationHost = new MapsApplicationHost();
     applicationHost.load(new MapsApplicationContext(featureManager, destinationManager, getSessionManager()));
-    for (MapsApplication application : applicationHost.getApplications()) {
-      addToMap(application.getStartPriority(), application.getStopPriority(), application);
-    }
+    addToMap(550, 960, applicationHost);
     RestApiServerManager restApiServerManager = getRestApiServerManager();
     if (restApiServerManager != null) {
       restApiServerManager.addPackageNameList(applicationHost.getRestApiPackages());

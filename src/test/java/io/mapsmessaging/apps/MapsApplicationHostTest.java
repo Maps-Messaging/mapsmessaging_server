@@ -19,6 +19,7 @@
 package io.mapsmessaging.apps;
 
 import io.mapsmessaging.dto.rest.config.BaseManagerConfigDTO;
+import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import org.junit.jupiter.api.Test;
 
@@ -63,13 +64,47 @@ class MapsApplicationHostTest {
     assertFalse(calls.contains("initialize"));
   }
 
+  @Test
+  void startsAndStopsApplicationsByPriority() {
+    List<String> calls = new ArrayList<>();
+    TestApplication late = new TestApplication("late", calls, 700, 200);
+    TestApplication early = new TestApplication("early", calls, 500, 400);
+    MapsApplicationHost host = new MapsApplicationHost(List.of(late, early));
+    host.load(new MapsApplicationContext(null, null, null));
+    calls.clear();
+
+    assertEquals("Application Host", host.getName());
+    assertEquals(Status.STOPPED, host.getStatus().getStatus());
+    host.start();
+    assertEquals(List.of("start:early", "start:late"), calls);
+    assertEquals(Status.OK, host.getStatus().getStatus());
+    calls.clear();
+    host.stop();
+    assertEquals(List.of("stop:late", "stop:early"), calls);
+    assertEquals(Status.STOPPED, host.getStatus().getStatus());
+  }
+
+  @Test
+  void refusesToStartBeforeDiscovery() {
+    MapsApplicationHost host = new MapsApplicationHost(List.of());
+    assertThrows(IllegalStateException.class, host::start);
+  }
+
   private static final class TestApplication implements MapsApplication {
     private final String name;
     private final List<String> calls;
+    private final int startPriority;
+    private final int stopPriority;
 
     private TestApplication(String name, List<String> calls) {
+      this(name, calls, 550, 960);
+    }
+
+    private TestApplication(String name, List<String> calls, int startPriority, int stopPriority) {
       this.name = name;
       this.calls = calls;
+      this.startPriority = startPriority;
+      this.stopPriority = stopPriority;
     }
 
     @Override
@@ -84,25 +119,29 @@ class MapsApplicationHostTest {
 
     @Override
     public SubSystemStatusDTO getStatus() {
-      return new SubSystemStatusDTO();
+      SubSystemStatusDTO status = new SubSystemStatusDTO();
+      status.setStatus(Status.OK);
+      return status;
     }
 
     @Override
     public void start() {
+      calls.add("start:" + name);
     }
 
     @Override
     public void stop() {
+      calls.add("stop:" + name);
     }
 
     @Override
     public int getStartPriority() {
-      return 550;
+      return startPriority;
     }
 
     @Override
     public int getStopPriority() {
-      return 960;
+      return stopPriority;
     }
 
     @Override
