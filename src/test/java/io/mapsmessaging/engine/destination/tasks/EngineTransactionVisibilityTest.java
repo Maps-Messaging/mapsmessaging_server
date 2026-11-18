@@ -91,6 +91,45 @@ class EngineTransactionVisibilityTest {
     assertTrue(fixture.manager.isEmpty());
   }
 
+
+  @Test
+  void subscriberFailureLeavesTransactionMessageAvailableForRetry() throws Exception {
+    Fixture fixture = fixture();
+    Message message = message(401);
+    fixture.manager.register(15L, message);
+    when(fixture.destination.getMessage(401L)).thenReturn(message);
+    when(fixture.subscriber.register(message))
+        .thenThrow(new IllegalStateException("subscriber failed"))
+        .thenReturn(1);
+
+    assertThrows(IllegalStateException.class, () -> new TransactionalMessageProcessor(
+        fixture.destination, fixture.subscriptions, fixture.manager, 15L).taskCall());
+
+    assertEquals(1L, fixture.manager.size());
+    assertEquals(Long.valueOf(401L), fixture.manager.getNext(15L));
+
+    LongResponse retried = (LongResponse) new TransactionalMessageProcessor(
+        fixture.destination, fixture.subscriptions, fixture.manager, 15L).taskCall();
+    assertEquals(1L, retried.getResponse());
+    assertTrue(fixture.manager.isEmpty());
+  }
+
+  @Test
+  void duplicateCommitAfterSuccessfulCommitDoesNotRedispatchMessage() throws Exception {
+    Fixture fixture = fixture();
+    Message message = message(501);
+    fixture.manager.register(20L, message);
+    when(fixture.destination.getMessage(501L)).thenReturn(message);
+
+    new TransactionalMessageProcessor(
+        fixture.destination, fixture.subscriptions, fixture.manager, 20L).taskCall();
+    LongResponse duplicate = (LongResponse) new TransactionalMessageProcessor(
+        fixture.destination, fixture.subscriptions, fixture.manager, 20L).taskCall();
+
+    assertEquals(0L, duplicate.getResponse());
+    verify(fixture.subscriber, times(1)).register(message);
+  }
+
   private static Message message(long identifier) {
     return new MessageBuilder().setId(identifier).build();
   }
