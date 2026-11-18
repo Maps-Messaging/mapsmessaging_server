@@ -175,9 +175,9 @@ class MessageManagerTest {
     Assertions.assertEquals(12L, removed.poll());
     Assertions.assertNull(removed.poll());
 
-    // Counter is not adjusted by removeBucket(). That’s a contract decision.
-    // If you expect size() to change here, this test should enforce it (and code must change).
-    Assertions.assertEquals(3, manager.size());
+    Assertions.assertEquals(0, manager.size());
+    Assertions.assertTrue(manager.isEmpty());
+    Assertions.assertTrue(manager.getBucketIds().isEmpty());
 
     Assertions.assertNull(manager.getNext(100L));
   }
