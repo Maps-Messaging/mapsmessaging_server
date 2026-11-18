@@ -65,7 +65,9 @@ public class ClientAcknowledgementController implements AcknowledgementControlle
 
   @Override
   public boolean canSend() {
-    return outstanding.size() < creditManager.getCurrentCredit();
+    return creditManager instanceof ClientCreditManager
+        ? creditManager.getCurrentCredit() > 0
+        : outstanding.size() < creditManager.getCurrentCredit();
   }
 
   @Override
