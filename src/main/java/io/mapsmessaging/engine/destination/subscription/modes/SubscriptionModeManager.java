@@ -52,23 +52,25 @@ public abstract class SubscriptionModeManager {
   @Getter
   protected final DestinationMode mode;
   protected final Map<DestinationImpl, Subscription> activeSubscriptions;
+  private final Map<DestinationImpl, Map<String, Subscription>> sharedSubscriptions;
 
   protected Logger logger;
 
   protected SubscriptionModeManager(DestinationMode mode) {
     this.mode = mode;
-    activeSubscriptions =  new LinkedHashMap<>();
+    activeSubscriptions = new LinkedHashMap<>();
+    sharedSubscriptions = new LinkedHashMap<>();
   }
 
   public void setDeliveryStateCoordinator(io.mapsmessaging.engine.session.DeliveryStateCoordinator coordinator) {
-    for (Subscription subscription : activeSubscriptions.values()) {
+    for (Subscription subscription : allSubscriptions()) {
       subscription.setDeliveryStateCoordinator(coordinator);
     }
   }
 
   public java.util.concurrent.CompletableFuture<Void> acknowledgeRecoveredDelivery(
       io.mapsmessaging.storage.delivery.PacketIdStore.Delivery delivery) {
-    for (Subscription subscription : activeSubscriptions.values()) {
+    for (Subscription subscription : allSubscriptions()) {
       if (!subscription.isContextEmpty() && subscription.getDeliveryKey().equals(delivery.topic())) {
         return subscription.acknowledgeRecoveredDelivery(delivery.messageId());
       }
@@ -78,14 +80,16 @@ public abstract class SubscriptionModeManager {
 
   public void shutdown(){
     closeSubscriptions(activeSubscriptions, true);
+    closeSharedSubscriptions(true);
   }
 
   public void close(boolean closeOnly) {
     closeSubscriptions(activeSubscriptions, closeOnly);
+    closeSharedSubscriptions(closeOnly);
   }
 
   public SubscribedEventManager wake(SessionImpl sessionImpl, DestinationImpl destination) {
-    for (Subscription subscription : activeSubscriptions.values()) {
+    for (Subscription subscription : allSubscriptions()) {
       if (subscription.getContext() != null && subscription.getContext().getFilter().equals(destination.getFullyQualifiedNamespace())) {
         subscription.wakeUp(sessionImpl);
         if (subscription instanceof DestinationSubscription destinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
@@ -97,7 +101,7 @@ public abstract class SubscriptionModeManager {
   }
 
   public void wakeAll(SessionImpl sessionImpl) {
-    for (Subscription subscription : activeSubscriptions.values()) {
+    for (Subscription subscription : allSubscriptions()) {
       subscription.wakeUp(sessionImpl);
       if (subscription instanceof DestinationSubscription matchedDestinationSubscription && subscription.getContext() != null && subscription.getContext().getRetainHandler().equals(RetainHandler.SEND_IF_NEW)) {
         queueRetainedMessage((matchedDestinationSubscription).getDestinationImpl(), subscription);
@@ -111,10 +115,15 @@ public abstract class SubscriptionModeManager {
         entry.getValue().hibernate();
       }
     }
+    for (Map.Entry<DestinationImpl, Map<String, Subscription>> entry : sharedSubscriptions.entrySet()) {
+      if (entry.getKey().getFullyQualifiedNamespace().equals(subscriptionId)) {
+        entry.getValue().values().forEach(Subscription::hibernate);
+      }
+    }
   }
 
   public void hibernate() {
-    for (Subscription subscription : activeSubscriptions.values()) {
+    for (Subscription subscription : allSubscriptions()) {
       subscription.hibernate();
     }
   }
@@ -147,20 +156,25 @@ public abstract class SubscriptionModeManager {
     // by QoS
     //
     if (!normalList.isEmpty()) {
-      Future<Response> response = scheduleSubscription(controller, normalList.get(0), destinationImpl, new AtomicLong(1));
-      try{
-        response.get(60, TimeUnit.SECONDS);
-      }
-      catch (InterruptedException in){
-        Thread.currentThread().interrupt();
-      } catch( ExecutionException | TimeoutException e) {
-        logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, e);
+      List<SubscriptionContext> selected = new ArrayList<>();
+      normalList.stream().filter(context -> !context.isSharedSubscription()).findFirst().ifPresent(selected::add);
+      normalList.stream().filter(SubscriptionContext::isSharedSubscription).forEach(selected::add);
+      for (SubscriptionContext context : selected) {
+        Future<Response> response = scheduleSubscription(controller, context, destinationImpl, new AtomicLong(1));
+        try {
+          response.get(60, TimeUnit.SECONDS);
+        } catch (InterruptedException interrupted) {
+          Thread.currentThread().interrupt();
+          return;
+        } catch (ExecutionException | TimeoutException failure) {
+          logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE_SUB_ERROR, failure);
+        }
       }
     }
   }
 
   public void deleted(DestinationImpl destinationImpl, Map<String, DestinationSet> subscriptions) {
-    if (activeSubscriptions.containsKey(destinationImpl)) {
+    if (activeSubscriptions.containsKey(destinationImpl) || sharedSubscriptions.containsKey(destinationImpl)) {
       //
       // Create a list of destination sets that have this destination in its mapping
       //
@@ -178,6 +192,7 @@ public abstract class SubscriptionModeManager {
         }
       }
       activeSubscriptions.remove(destinationImpl);
+      sharedSubscriptions.remove(destinationImpl);
     }
   }
 
@@ -220,15 +235,61 @@ public abstract class SubscriptionModeManager {
   }
 
   public void add(Subscription subscription, DestinationImpl destinationImpl) {
-    activeSubscriptions.put(destinationImpl, subscription);
+    SubscriptionContext context = subscription.getContext();
+    if (context != null && context.isSharedSubscription()) {
+      sharedSubscriptions.computeIfAbsent(destinationImpl, ignored -> new LinkedHashMap<>())
+          .put(sharedKey(context), subscription);
+    } else {
+      activeSubscriptions.put(destinationImpl, subscription);
+    }
   }
 
   public Subscription get(DestinationImpl destination) {
     return activeSubscriptions.get(destination);
   }
 
+  public Subscription get(DestinationImpl destination, SubscriptionContext context) {
+    if (!context.isSharedSubscription()) {
+      return get(destination);
+    }
+    Map<String, Subscription> members = sharedSubscriptions.get(destination);
+    return members == null ? null : members.get(sharedKey(context));
+  }
+
   public Subscription remove(DestinationImpl destination) {
     return activeSubscriptions.remove(destination);
+  }
+
+  public Subscription remove(DestinationImpl destination, SubscriptionContext context) {
+    if (!context.isSharedSubscription()) {
+      return remove(destination);
+    }
+    Map<String, Subscription> members = sharedSubscriptions.get(destination);
+    if (members == null) {
+      return null;
+    }
+    Subscription removed = members.remove(sharedKey(context));
+    if (members.isEmpty()) {
+      sharedSubscriptions.remove(destination);
+    }
+    return removed;
+  }
+
+  private String sharedKey(SubscriptionContext context) {
+    return context.getKey() + "\u0000" + Objects.toString(context.getSelector(), "");
+  }
+
+  private List<Subscription> allSubscriptions() {
+    List<Subscription> all = new ArrayList<>(activeSubscriptions.values());
+    sharedSubscriptions.values().forEach(group -> all.addAll(group.values()));
+    return all;
+  }
+
+  private void closeSharedSubscriptions(boolean closeOnly) {
+    for (Map<String, Subscription> group : sharedSubscriptions.values()) {
+      closeSubscriptions(group, closeOnly);
+    }
+    sharedSubscriptions.clear();
   }
 
   protected abstract UnsubscribeTask createUnsubscribeTask( SubscriptionController controller, DestinationImpl destination, DestinationSet destinationSet, AtomicLong counter);
