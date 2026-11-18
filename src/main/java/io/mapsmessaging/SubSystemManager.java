@@ -19,6 +19,9 @@
 
 package io.mapsmessaging;
 
+import io.mapsmessaging.modules.MapsModule;
+import io.mapsmessaging.modules.ModuleContext;
+import io.mapsmessaging.modules.ModuleManager;
 import io.mapsmessaging.aggregator.AggregatorManager;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.EnvironmentConfig;
@@ -46,7 +49,6 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.selector.model.ModelStore;
-import io.mapsmessaging.state.StateManagerAgent;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.service.Service;
@@ -69,6 +71,8 @@ public class SubSystemManager {
   private final String uniqueId;
   private final int sessionPipeLines;
   private final FeatureManager featureManager;
+  @Getter
+  private ModuleManager moduleManager;
   @Getter
   @Setter
   private ModelStore modelStore;
@@ -166,11 +170,6 @@ public class SubSystemManager {
     return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
-  public StateManagerAgent getStateManager() {
-    return ((StateManagerAgent) agentMap.get("State Manager").getAgent());
-  }
-
-
   public DeviceManager getDeviceManager() {
     AgentOrder order = agentMap.get("Device Manager");
     if(order != null) {
@@ -219,7 +218,6 @@ public class SubSystemManager {
     DestinationManager destinationManager = new DestinationManager(featureManager);
     TransformationManager.getInstance();
 
-    StateManagerAgent stateManagerAgent;
 
     addToMap(10, 2000, AuthManager.getInstance());
     addToMap(50, 1100, SchemaManager.getInstance());
@@ -228,20 +226,15 @@ public class SubSystemManager {
     addToMap(300, 11, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
-    stateManagerAgent = new StateManagerAgent();
-    addToMap(550, 960, stateManagerAgent);
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
     addToMap(750, 250, new AggregatorManager());
 
+
     if(featureManager.isEnabled("management.restApi")) {
       RestApiServerManager restApiServerManager = new RestApiServerManager();
       addToMap(1200, 400, restApiServerManager);
-      List<String> restApiPackages = stateManagerAgent.getRestApiPackageList();
-      if(!restApiPackages.isEmpty()){
-        restApiServerManager.addPackageNameList(restApiPackages);
-      }
     }
 
     if(featureManager.isEnabled("interConnections.pushSupport") ||
@@ -266,6 +259,20 @@ public class SubSystemManager {
       addToMap(2200, 70, new DeviceManager(featureManager));
     }
     addOptionalML();
+    loadModules(destinationManager);
+  }
+
+  private void loadModules(DestinationManager destinationManager) {
+    moduleManager = new ModuleManager();
+    moduleManager.discover();
+    RestApiServerManager restApiServerManager = getRestApiServerManager();
+    if (restApiServerManager != null) {
+      restApiServerManager.addPackageNameList(moduleManager.getRestApiPackages());
+    }
+    moduleManager.initialize(new ModuleContext(featureManager, destinationManager, getSessionManager()));
+    for (MapsModule module : moduleManager.getApplications()) {
+      addToMap(module.getStartPriority(), module.getStopPriority(), module);
+    }
   }
 
   private void addOptionalML(){

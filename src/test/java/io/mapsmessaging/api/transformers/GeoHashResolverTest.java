@@ -26,6 +26,7 @@ import io.mapsmessaging.selector.IdentifierResolver;
 import io.mapsmessaging.utilities.GeoHashUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.mockito.quality.Strictness;
 
 import static io.mapsmessaging.api.transformers.TransformationAssertions.assertDropped;
 import static io.mapsmessaging.api.transformers.TransformationAssertions.assertNotDropped;
@@ -88,7 +89,7 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
         "layout", "chars-per-segment"
     ));
 
-    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(id.get("latitude")).thenReturn(-33.8688);
     when(id.get("longitude")).thenReturn(151.2093);
 
@@ -117,7 +118,7 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
         "layout", "raw"
     ));
 
-    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(id.get("latitude")).thenReturn(-33.8688);
     when(id.get("longitude")).thenReturn(151.2093);
 
@@ -146,7 +147,7 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
         "layout", "two-per-segment"
     ));
 
-    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(id.get("latitude")).thenReturn(-33.8688);
     when(id.get("longitude")).thenReturn(151.2093);
 
@@ -179,7 +180,7 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
     double latRad = Math.toRadians(-33.8688);
     double lonRad = Math.toRadians(151.2093);
 
-    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(id.get("latitude")).thenReturn(latRad);
     when(id.get("longitude")).thenReturn(lonRad);
 
@@ -208,7 +209,7 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
         "onMissing", "skip"
     ));
 
-    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(id.get("latitude")).thenReturn(null);
     when(id.get("longitude")).thenReturn(null);
 
@@ -235,7 +236,7 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
         "onMissing", "drop"
     ));
 
-    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(id.get("latitude")).thenReturn(null);
     when(id.get("longitude")).thenReturn(null);
 
@@ -262,7 +263,7 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
         "defaultTo", "0,0"
     ));
 
-    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(id.get("latitude")).thenReturn(null);
     when(id.get("longitude")).thenReturn(null);
 
@@ -292,7 +293,7 @@ class GeoHashResolverTest extends AbstractDroppingTransformationTest {
         "lonKeys", "lon,longitudeDeg"
     ));
 
-    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver id = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(id.get("latitude")).thenReturn(null);
     when(id.get("longitude")).thenReturn(null);
     when(id.get("lat")).thenReturn(-33.8688);

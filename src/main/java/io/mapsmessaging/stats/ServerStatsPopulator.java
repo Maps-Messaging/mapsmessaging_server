@@ -128,7 +128,7 @@ public class ServerStatsPopulator {
     CpuStats cpu = new CpuStats();
     if (osBean instanceof com.sun.management.OperatingSystemMXBean extended) {
       cpu.setProcessCpuLoadPercent(extended.getProcessCpuLoad() * 100);
-      cpu.setSystemCpuLoadPercent(extended.getSystemCpuLoad() * 100);
+      cpu.setSystemCpuLoadPercent(extended.getCpuLoad() * 100);
       cpu.setProcessCpuTimeMillis(extended.getProcessCpuTime() / 1_000_000);
     }
     return cpu;

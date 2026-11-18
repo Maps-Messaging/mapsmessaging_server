@@ -113,9 +113,9 @@ public abstract class ApiTestBase extends BaseTestConfig {
   private static void waitUntilHealthy(Duration timeout) {
     RestAssuredConfig restAssuredConfig = RestAssuredConfig.config()
         .httpClient(HttpClientConfig.httpClientConfig()
-            .setParam("http.connection.timeout", 2_000)
-            .setParam("http.socket.timeout", 2_000)
-            .setParam("http.connection-manager.timeout", 2_000));
+            .connectTimeout(Duration.ofMillis(2_000))
+            .readTimeout(Duration.ofMillis(2_000))
+            .connectionRequestTimeout(Duration.ofMillis(2_000)));
 
     Instant deadline = Instant.now().plus(timeout);
     Throwable lastError = null;

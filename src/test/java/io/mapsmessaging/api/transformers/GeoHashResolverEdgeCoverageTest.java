@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
+import org.mockito.quality.Strictness;
 
 import java.util.stream.Stream;
 
@@ -111,7 +112,7 @@ class GeoHashResolverEdgeCoverageTest {
         "latKeys", latKeys,
         "lonKeys", lonKeys);
 
-    IdentifierResolver identifiers = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver identifiers = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(identifiers.get("latitude")).thenReturn(null);
     when(identifiers.get("longitude")).thenReturn(null);
     when(identifiers.get(resolvedLatKey)).thenReturn(latitude);
@@ -142,7 +143,7 @@ class GeoHashResolverEdgeCoverageTest {
     ParsedMessage result;
     try (MockedStatic<Filter> filter = mockStatic(Filter.class)) {
       if (resolverPresent) {
-        IdentifierResolver identifiers = mock(IdentifierResolver.class, withSettings().lenient());
+        IdentifierResolver identifiers = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
         when(identifiers.get("latitude")).thenReturn(latitude);
         when(identifiers.get("longitude")).thenReturn(longitude);
         filter.when(() -> Filter.getTopicResolver(anyString(), any())).thenReturn(identifiers);
@@ -196,7 +197,7 @@ class GeoHashResolverEdgeCoverageTest {
 
   private static ParsedMessage transform(
       GeoHashResolver resolver, Object latitude, Object longitude) {
-    IdentifierResolver identifiers = mock(IdentifierResolver.class, withSettings().lenient());
+    IdentifierResolver identifiers = mock(IdentifierResolver.class, withSettings().strictness(Strictness.LENIENT));
     when(identifiers.get("latitude")).thenReturn(latitude);
     when(identifiers.get("longitude")).thenReturn(longitude);
     return transform(resolver, identifiers);
