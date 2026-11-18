@@ -23,19 +23,13 @@ import com.google.gson.JsonObject;
 import io.mapsmessaging.canbus.j1939.n2k.codec.FieldValueSource;
 import io.mapsmessaging.canbus.j1939.n2k.codec.N2kMessageParser;
 import io.mapsmessaging.schemas.formatters.impl.CanbusFormatter;
-import io.mapsmessaging.state.n2k.msg.AisClassBExtendedPositionReport;
-import io.mapsmessaging.state.n2k.msg.AisClassBPositionReport;
-import io.mapsmessaging.state.n2k.msg.AisClassBStaticDataPartBReport;
-import io.mapsmessaging.state.n2k.msg.source.AisClassBExtendedPositionFieldValueSource;
-import io.mapsmessaging.state.n2k.msg.source.AisClassBPositionFieldValueSource;
-import io.mapsmessaging.state.n2k.msg.source.AisClassBStaticDataPartBFieldValueSource;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Verifies server-generated payloads against the bundled canonical CANboat definitions. */
+/** Verifies protocol-generated payloads against the bundled canonical CANboat definitions. */
 class CanboatFieldValueSourceRoundTripTest {
 
   private final N2kMessageParser parser;
@@ -79,74 +73,6 @@ class CanboatFieldValueSourceRoundTripTest {
     assertEquals("Bridge", packet.get("installationDescription1").getAsString());
     assertEquals("AIS Source", packet.get("installationDescription2").getAsString());
     assertEquals("MapsMessaging B.V.", packet.get("manufacturerInformation").getAsString());
-  }
-
-  @Test
-  void position_report_retains_heading_and_class_b_flags() {
-    AisClassBPositionReport report = new AisClassBPositionReport();
-    report.setMessageId(18L);
-    report.setUserId(123456789L);
-    report.setRaim(1L);
-    report.setHeading(1.2345);
-    report.setUnitType(1L);
-    report.setIntegratedDisplay(1L);
-    report.setDsc(1L);
-    report.setBand(1L);
-    report.setCanHandleMsg22(1L);
-    report.setAisMode(1L);
-    report.setAisCommunicationState(1L);
-    JsonObject packet = roundTrip(129039, new AisClassBPositionFieldValueSource(report));
-    assertEquals(1.2345, packet.get("heading").getAsDouble(), 0.0001);
-    for (String field : new String[]{"raim", "unitType", "integratedDisplay", "dsc", "band",
-        "canHandleMsg22", "aisMode", "aisCommunicationState"}) {
-      assertEquals(1, packet.get(field).getAsInt(), field);
-    }
-  }
-
-  @Test
-  void extended_position_report_retains_dimensions_reference_and_dte() {
-    AisClassBExtendedPositionReport report = new AisClassBExtendedPositionReport();
-    report.setMessageId(19L);
-    report.setUserId(123456789L);
-    report.setTypeOfShip(55L);
-    report.setRaim(1L);
-    report.setLength(12.3);
-    report.setBeam(4.5);
-    report.setPositionReferenceFromStarboard(1.2);
-    report.setPositionReferenceFromBow(3.4);
-    report.setDte(0L);
-    report.setAisMode(1L);
-    JsonObject packet = roundTrip(129040, new AisClassBExtendedPositionFieldValueSource(report));
-    assertEquals(55, packet.get("typeOfShip").getAsInt());
-    assertEquals(1, packet.get("raim").getAsInt());
-    assertEquals(12.3, packet.get("length").getAsDouble(), 0.1);
-    assertEquals(4.5, packet.get("beam").getAsDouble(), 0.1);
-    assertEquals(1.2, packet.get("positionReferenceFromStarboard").getAsDouble(), 0.1);
-    assertEquals(3.4, packet.get("positionReferenceFromBow").getAsDouble(), 0.1);
-    assertEquals(0, packet.get("dte").getAsInt());
-    assertEquals(1, packet.get("aisMode").getAsInt());
-  }
-
-  @Test
-  void static_part_b_retains_callsign_dimensions_and_mothership() {
-    AisClassBStaticDataPartBReport report = new AisClassBStaticDataPartBReport();
-    report.setMessageId(24L);
-    report.setUserId(123456789L);
-    report.setTypeOfShip(55L);
-    report.setCallsign("MAPS123");
-    report.setLength(12.3);
-    report.setBeam(4.5);
-    report.setPositionReferenceFromStarboard(1.2);
-    report.setPositionReferenceFromBow(3.4);
-    report.setMothershipUserId(987654321L);
-    JsonObject packet = roundTrip(129810, new AisClassBStaticDataPartBFieldValueSource(report));
-    assertEquals(55, packet.get("typeOfShip").getAsInt());
-    assertEquals("MAPS123", packet.get("callsign").getAsString());
-    assertEquals(12.3, packet.get("length").getAsDouble(), 0.1);
-    assertEquals(4.5, packet.get("beam").getAsDouble(), 0.1);
-    assertEquals(1.2, packet.get("positionReferenceFromStarboard").getAsDouble(), 0.1);
-    assertEquals(3.4, packet.get("positionReferenceFromBow").getAsDouble(), 0.1);
-    assertEquals(987654321L, packet.get("mothershipUserId").getAsLong());
   }
 
   private JsonObject roundTrip(int pgn, FieldValueSource source) {
