@@ -46,11 +46,11 @@ public class UnsubscribeTask extends EngineTask {
   }
 
   protected Subscription lookupSubscription(DestinationImpl destination) {
-    return  controller.get(destination);
+    return controller.get(destination, destinationSet.getContext());
   }
 
   protected Subscription removeDestination(DestinationImpl destination) {
-    return  controller.remove(destination);
+    return controller.remove(destination, destinationSet.getContext());
   }
 
   @Override
