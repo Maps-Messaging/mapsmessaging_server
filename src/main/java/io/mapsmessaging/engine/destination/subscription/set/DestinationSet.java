@@ -118,8 +118,7 @@ public class DestinationSet implements Set<DestinationImpl> {
   @Override
   public boolean add(DestinationImpl destination) {
     if (matches(context, destination.getFullyQualifiedNamespace())) {
-      matching.put(destination.getFullyQualifiedNamespace(), destination);
-      return true;
+      return matching.put(destination.getFullyQualifiedNamespace(), destination) != destination;
     }
     return false;
   }
@@ -159,7 +158,7 @@ public class DestinationSet implements Set<DestinationImpl> {
 
   @Override
   public boolean retainAll(@NonNull @NotNull Collection<?> c) {
-    return false;
+    return matching.values().retainAll(c);
   }
 
   @Override
@@ -175,13 +174,7 @@ public class DestinationSet implements Set<DestinationImpl> {
 
   @Override
   public boolean removeIf(@NotNull Predicate<? super DestinationImpl> filter) {
-    for (DestinationImpl destinationImpl : matching.values()) {
-      if (filter.test(destinationImpl)) {
-        remove(destinationImpl);
-        return true;
-      }
-    }
-    return false;
+    return matching.values().removeIf(filter);
   }
 
   @Override
