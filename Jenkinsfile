@@ -23,7 +23,43 @@ def mavenCommon = [
     "-U"
 ].join(" ")
 
+// MSG-444: isolate engine regressions from the established engine test blocks.
+// Tests listed here must run exactly once and retain the normal JUnit/coverage reporting.
+def engineRegressionClasses = [
+    "io.mapsmessaging.engine.destination.subscription.builders.SharedSubscriptionGroupIsolationRegressionTest",
+    "io.mapsmessaging.engine.destination.subscription.set.DestinationSetContractRegressionTest",
+    "io.mapsmessaging.engine.destination.subscription.modes.DynamicDestinationSubscriptionSelectionRegressionTest",
+    "io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionDeliveryIsolationTest",
+    "io.mapsmessaging.engine.destination.subscription.DestinationSubscriptionDispatchContractTest",
+    "io.mapsmessaging.engine.destination.subscription.state.MessageStateLifecycleContractTest",
+    "io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionMembershipRegressionTest",
+    "io.mapsmessaging.engine.destination.subscription.transaction.AcknowledgementCreditContractTest",
+    "io.mapsmessaging.engine.destination.subscription.state.MessageStateConcurrentLifecycleTest",
+    "io.mapsmessaging.engine.destination.subscription.SubscriptionFactoryRoutingContractTest",
+    "io.mapsmessaging.engine.destination.RetainedMessageLifecycleContractTest",
+    "io.mapsmessaging.engine.destination.subscription.impl.shared.SharedSubscriptionManagerCloseRegressionTest",
+    "io.mapsmessaging.engine.destination.tasks.StoreMessageRoutingContractTest",
+    "io.mapsmessaging.engine.destination.subscription.tasks.EngineSubscriptionTaskLifecycleTest",
+    "io.mapsmessaging.engine.destination.subscription.state.QueueBrowserStateIsolationTest",
+    "io.mapsmessaging.engine.destination.subscription.builders.SelectorCompilationContractTest",
+    "io.mapsmessaging.engine.destination.subscription.modes.RecoveredDeliveryRoutingTest",
+    "io.mapsmessaging.engine.destination.subscription.SubscriptionContextPersistenceContractTest",
+    "io.mapsmessaging.engine.destination.tasks.EngineTransactionVisibilityTest",
+    "io.mapsmessaging.engine.destination.subscription.DestinationSubscriptionConcurrentMutationRegressionTest",
+    "io.mapsmessaging.engine.destination.EngineTransactionSchedulingTest",
+    "io.mapsmessaging.engine.destination.subscription.tasks.EngineDeliveryCompletionBoundaryTest",
+    "io.mapsmessaging.engine.destination.subscription.impl.ClientSubscriptionControlBoundaryTest",
+    "io.mapsmessaging.engine.destination.subscription.builders.SharedSelectorPartitionRegressionTest",
+    "io.mapsmessaging.engine.destination.subscription.state.MessageStateRestartRecoveryTest",
+    "io.mapsmessaging.engine.destination.delayed.TransactionBucketFailureRegressionTest",
+    "io.mapsmessaging.engine.destination.subscription.state.BoundedSharedMessageStateRegressionTest",
+] as Set
+
 def blockFor = { String className ->
+    if (engineRegressionClasses.contains(className)) {
+        return "JUnit - Engine Regression"
+    }
+
     if (className == "io.mapsmessaging.network.protocol.impl.mqtt.ServerTopicTest") {
         return "Long - ServerTopicTest"
     }
@@ -189,6 +225,7 @@ def blockNames = [
     "JUnit - REST",
     "JUnit - Destination Engine",
     "JUnit - Subscription Engine",
+    "JUnit - Engine Regression",
     "JUnit - API",
     "JUnit - Transformers",
     "JUnit - Aggregator-Analytics",
