@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.mapsmessaging.dto.rest.auth.SecurityManagerDTO;
 import io.mapsmessaging.dto.rest.config.ml.MLModelManagerDTO;
 import io.mapsmessaging.dto.rest.schema.SchemaManagerConfigDTO;
-import io.mapsmessaging.state.config.TwinManagerConfigDTO;
+//import io.mapsmessaging.state.config.TwinManagerConfigDTO;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
         SecurityManagerDTO.class,
         NetworkManagerConfigDTO.class,
         DeviceManagerConfigDTO.class,
-        TwinManagerConfigDTO.class
+//        TwinManagerConfigDTO.class
     }
     ,
     discriminatorMapping = {
@@ -51,7 +51,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
         @DiscriminatorMapping(value = "SecurityManagerDTO", schema = SecurityManagerDTO.class),
         @DiscriminatorMapping(value = "NetworkManagerConfigDTO", schema = NetworkManagerConfigDTO.class),
         @DiscriminatorMapping(value = "DeviceManagerConfigDTO", schema = DeviceManagerConfigDTO.class),
-        @DiscriminatorMapping(value = "TwinManagerConfigDTO", schema = TwinManagerConfigDTO.class)
+//        @DiscriminatorMapping(value = "TwinManagerConfigDTO", schema = TwinManagerConfigDTO.class)
     }
 )
 public abstract class BaseManagerConfigDTO extends BaseConfigDTO {

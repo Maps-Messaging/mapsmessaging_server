@@ -46,7 +46,6 @@ import io.mapsmessaging.rest.RestApiServerManager;
 import io.mapsmessaging.rest.jolokia.JolokaManager;
 import io.mapsmessaging.routing.RoutingManager;
 import io.mapsmessaging.selector.model.ModelStore;
-import io.mapsmessaging.state.StateManagerAgent;
 import io.mapsmessaging.utilities.Agent;
 import io.mapsmessaging.utilities.AgentOrder;
 import io.mapsmessaging.utilities.service.Service;
@@ -166,11 +165,6 @@ public class SubSystemManager {
     return (SessionManager) agentMap.get("Session Manager").getAgent();
   }
 
-  public StateManagerAgent getStateManager() {
-    return ((StateManagerAgent) agentMap.get("State Manager").getAgent());
-  }
-
-
   public DeviceManager getDeviceManager() {
     AgentOrder order = agentMap.get("Device Manager");
     if(order != null) {
@@ -219,7 +213,6 @@ public class SubSystemManager {
     DestinationManager destinationManager = new DestinationManager(featureManager);
     TransformationManager.getInstance();
 
-    StateManagerAgent stateManagerAgent;
 
     addToMap(10, 2000, AuthManager.getInstance());
     addToMap(50, 1100, SchemaManager.getInstance());
@@ -228,20 +221,22 @@ public class SubSystemManager {
     addToMap(300, 11, new DiscoveryManager(uniqueId));
     addToMap(400, 1200, securityManager);
     addToMap(500, 950, destinationManager);
-    stateManagerAgent = new StateManagerAgent();
-    addToMap(550, 960, stateManagerAgent);
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
     addToMap(750, 250, new AggregatorManager());
 
+
     if(featureManager.isEnabled("management.restApi")) {
       RestApiServerManager restApiServerManager = new RestApiServerManager();
       addToMap(1200, 400, restApiServerManager);
+      /*
       List<String> restApiPackages = stateManagerAgent.getRestApiPackageList();
       if(!restApiPackages.isEmpty()){
         restApiServerManager.addPackageNameList(restApiPackages);
       }
+
+       */
     }
 
     if(featureManager.isEnabled("interConnections.pushSupport") ||
