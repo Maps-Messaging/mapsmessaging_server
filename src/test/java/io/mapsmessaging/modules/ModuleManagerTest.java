@@ -90,6 +90,18 @@ class ModuleManagerTest {
   }
 
   @Test
+  void rejectsDuplicateConfigurationTypesWithoutInitializing() {
+    List<String> calls = new ArrayList<>();
+    TestApplication first = new TestApplication("first", calls, 550, 960, "shared");
+    TestApplication second = new TestApplication("second", calls, 550, 960, "shared");
+    ModuleManager manager = new ModuleManager(List.of(first, second));
+
+    IllegalStateException exception = assertThrows(IllegalStateException.class, manager::discover);
+    assertEquals("Duplicate application configuration type: shared", exception.getMessage());
+    assertFalse(calls.contains("initialize"));
+  }
+
+  @Test
   void moduleManagerDoesNotOwnApplicationLifecycle() {
     List<String> calls = new ArrayList<>();
     TestApplication first = new TestApplication("first", calls, 700, 200);
@@ -111,16 +123,22 @@ class ModuleManagerTest {
     private final List<String> calls;
     private final int startPriority;
     private final int stopPriority;
+    private final String configType;
 
     private TestApplication(String name, List<String> calls) {
       this(name, calls, 550, 960);
     }
 
     private TestApplication(String name, List<String> calls, int startPriority, int stopPriority) {
+      this(name, calls, startPriority, stopPriority, name);
+    }
+
+    private TestApplication(String name, List<String> calls, int startPriority, int stopPriority, String configType) {
       this.name = name;
       this.calls = calls;
       this.startPriority = startPriority;
       this.stopPriority = stopPriority;
+      this.configType = configType;
     }
 
     @Override
@@ -172,7 +190,7 @@ class ModuleManagerTest {
       return List.of(new ManagerConfigProvider() {
         @Override
         public String getType() {
-          return "test";
+          return configType;
         }
 
         @Override
