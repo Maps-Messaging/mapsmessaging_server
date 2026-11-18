@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SessionSharedSubscription extends Subscription {
 
@@ -50,6 +51,7 @@ public class SessionSharedSubscription extends Subscription {
   private final MessageDeliveryCompletionTask completionTask;
   private final String sessionId;
   private final String deliveryKey;
+  private final AtomicBoolean active = new AtomicBoolean(true);
   private volatile boolean flowControlBlocked;
   @SuppressWarnings("java:S3077") // Volatile safely publishes the reference; coordinator operations synchronize internally.
   private volatile io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator;
@@ -71,6 +73,7 @@ public class SessionSharedSubscription extends Subscription {
 
   @Override
   public void cancel() throws IOException {
+    deactivate();
     traceCleanupState("CANCEL-BEGIN");
     clearDeliveryMappings();
     releaseProtocolSendSlot();
@@ -138,6 +141,14 @@ public class SessionSharedSubscription extends Subscription {
 
   public boolean canSend() {
     return acknowledgementController.canSend();
+  }
+
+  boolean isActive() {
+    return active.get();
+  }
+
+  void deactivate() {
+    active.set(false);
   }
 
   boolean canAttemptSend() {
