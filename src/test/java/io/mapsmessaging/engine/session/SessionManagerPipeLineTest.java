@@ -1124,7 +1124,7 @@ class SessionManagerPipeLineTest {
     destinationCleanup.complete(null);
     awaitAndRunQueuedTask();
     assertNull(close.get(5, TimeUnit.SECONDS));
-    awaitAndRunQueuedTask();
+    runQueuedUntil(reconnect::isDone);
     assertSame(replacement, reconnect.get(5, TimeUnit.SECONDS));
     assertSame(replacement, pipeline.getSessions().get(0));
     assertEquals(1L, connected.sum());
