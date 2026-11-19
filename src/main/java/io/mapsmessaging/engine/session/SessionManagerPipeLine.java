@@ -218,10 +218,12 @@ public class SessionManagerPipeLine {
 
     long remainingMillis = sessionDetails.getExpiryTime() - System.currentTimeMillis();
     if (remainingMillis > 0) {
-      scheduleExpiry(controller, remainingMillis, TimeUnit.MILLISECONDS);
+      scheduleAsyncExpiry(controller, remainingMillis);
     } else {
       markDisconnected(controller);
-      finaliseController(controller, ControllerCloseReason.EXPIRED);
+      orderLifecycle(sessionId, () -> onSessionQueue(() ->
+          beginFinaliseControllerAsync(controller, ControllerCloseReason.EXPIRED, WillFinalisation.RUN)
+              .thenApply(done -> (Void) null)));
     }
   }
 
@@ -553,7 +555,7 @@ public class SessionManagerPipeLine {
     Future<?> task = SessionExpiryTask.scheduleAsync(expiryScheduler, taskScheduler,
         () -> orderLifecycle(controller.getSessionId(),
             () -> onSessionQueue(() -> beginFinaliseControllerAsync(controller, ControllerCloseReason.EXPIRED,
-                WillFinalisation.RUN).thenApply(done -> null))),
+                WillFinalisation.RUN).thenApply(done -> (Void) null))),
         remainingMillis, TimeUnit.MILLISECONDS);
     controller.setTimeout(task);
     markDisconnected(controller);
