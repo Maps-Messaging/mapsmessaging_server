@@ -146,7 +146,7 @@ public class SharedSubscription extends DestinationSubscription {
   public void sendMessage(Message message) {
     SessionSharedSubscription subscription = reservedSubscription;
     reservedSubscription = null;
-    if (subscription != null && subscription.isActive() && subscription.getSessionImpl() != null && subscription.canSend()) {
+    if (subscription != null && subscription.isActive() && subscription.getSessionImpl() != null && !subscription.getSessionImpl().isClosed() && subscription.canSend()) {
       subscription.sendMessage(message);
       return;
     }
