@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.aggregate;
+package io.mapsmessaging.fusion.aggregate;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.message.Message;

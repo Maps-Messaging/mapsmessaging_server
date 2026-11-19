@@ -6,7 +6,7 @@
  *
  */
 
-package io.mapsmessaging.aggregator;
+package io.mapsmessaging.fusion;
 
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
@@ -16,8 +16,8 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.api.transformers.ParsedMessage;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionContributionMode;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.FusionContributionMode;
+import io.mapsmessaging.dto.rest.config.fusion.FusionInputConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
