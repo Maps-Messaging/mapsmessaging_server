@@ -32,6 +32,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -145,6 +147,53 @@ class BulkRemoveMessageTaskFailureTest {
     verify(fixture.destination, never()).removeMessage(1L);
     assertEquals(0, fixture.deferred.size());
     assertEquals(0, fixture.continuations.size());
+  }
+
+  @Test
+  void repeatedRemovalFailuresPreserveDeferredIdUntilLaterSuccessfulAttempt() throws Exception {
+    Fixture fixture = new Fixture();
+    AtomicInteger attempts = new AtomicInteger();
+    doAnswer(invocation -> {
+      if (attempts.incrementAndGet() <= 2) {
+        throw new IOException("Transient storage failure");
+      }
+      return null;
+    }).when(fixture.destination).removeMessage(2L);
+
+    fixture.task(1L, 2L, 3L).call();
+    assertEquals(List.of(new Deferred(List.of(2L), false)), fixture.deferred);
+
+    fixture.task(2L).call();
+    assertEquals(List.of(new Deferred(List.of(2L), false), new Deferred(List.of(2L), false)), fixture.deferred);
+
+    fixture.task(2L).call();
+    assertEquals(2, fixture.deferred.size());
+    assertEquals(3, attempts.get());
+    verify(fixture.destination).removeMessage(1L);
+    verify(fixture.destination).removeMessage(3L);
+    verify(fixture.destination, times(3)).removeMessage(2L);
+    verify(fixture.destination, times(2)).holdCompletedMessage(2L);
+  }
+
+  @Test
+  void repeatedPreparationDeferralsNeverDeletePendingMessagesUntilAllowed() throws Exception {
+    Fixture fixture = new Fixture();
+    when(fixture.destination.prepareCompletedRemoval(any())).thenReturn(false, false, true);
+
+    fixture.task(11L, 12L).call();
+    fixture.task(11L, 12L).call();
+
+    assertEquals(List.of(
+        new Deferred(List.of(11L, 12L), true),
+        new Deferred(List.of(11L, 12L), true)), fixture.deferred);
+    verify(fixture.destination, never()).removeMessage(11L);
+    verify(fixture.destination, never()).removeMessage(12L);
+
+    fixture.task(11L, 12L).call();
+
+    verify(fixture.destination).removeMessage(11L);
+    verify(fixture.destination).removeMessage(12L);
+    assertEquals(2, fixture.deferred.size());
   }
 
   private record Deferred(List<Long> ids, boolean batchFailure) {
