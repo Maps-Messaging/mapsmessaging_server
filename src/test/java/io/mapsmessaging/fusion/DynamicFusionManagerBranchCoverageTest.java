@@ -8,10 +8,10 @@
 
 package io.mapsmessaging.aggregator;
 
-import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
+import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,9 +29,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.*;
 
-class DynamicAggregatorManagerBranchCoverageTest {
+class DynamicFusionManagerBranchCoverageTest {
 
-  private DynamicAggregatorManager manager;
+  private DynamicFusionManager manager;
 
   @AfterEach
   void stopManager() {
@@ -65,7 +65,7 @@ class DynamicAggregatorManagerBranchCoverageTest {
       List<String> values, String destination, String expected) throws Exception {
     manager = manager("/sensor/+/value");
 
-    assertEquals(expected, invoke("buildAggregatorKey",
+    assertEquals(expected, invoke("buildFusionKey",
         new Class<?>[]{List.class, String.class}, values, destination));
   }
 
@@ -79,9 +79,9 @@ class DynamicAggregatorManagerBranchCoverageTest {
   }
 
   @Test
-  void sendMessageCompletesWhenMappedAggregatorHasDisappeared() throws Exception {
+  void sendMessageCompletesWhenMappedFusionHasDisappeared() throws Exception {
     manager = manager("/sensor/+/value");
-    mapField("topicToAggregatorKey").put("/sensor/a/value", "a");
+    mapField("topicToFusionKey").put("/sensor/a/value", "a");
     AtomicInteger completionCount = new AtomicInteger();
     MessageEvent event =
         new MessageEvent("/sensor/a/value", null, null, completionCount::incrementAndGet);
@@ -93,10 +93,10 @@ class DynamicAggregatorManagerBranchCoverageTest {
   }
 
   @Test
-  void sendMessageDelegatesToMappedAggregatorAndRefreshesLastSeen() throws Exception {
+  void sendMessageDelegatesToMappedFusionAndRefreshesLastSeen() throws Exception {
     manager = manager("/sensor/+/value");
-    StaticAggregator aggregator = mock(StaticAggregator.class);
-    mapField("topicToAggregatorKey").put("/sensor/a/value", "a");
+    StaticFusion aggregator = mock(StaticFusion.class);
+    mapField("topicToFusionKey").put("/sensor/a/value", "a");
     mapField("aggregatorsByKey").put("a", aggregator);
     mapField("aggregatorLastSeen").put("a", 1L);
     MessageEvent event = new MessageEvent("/sensor/a/value", null, null, () -> fail("delegated"));
@@ -108,34 +108,34 @@ class DynamicAggregatorManagerBranchCoverageTest {
   }
 
   @Test
-  void createOrResolveReusesExistingAggregatorAndCachesNewTopic() throws Exception {
+  void createOrResolveReusesExistingFusionAndCachesNewTopic() throws Exception {
     manager = manager("/sensor/+/value");
-    StaticAggregator aggregator = mock(StaticAggregator.class);
+    StaticFusion aggregator = mock(StaticFusion.class);
     mapField("aggregatorsByKey").put("a", aggregator);
 
-    String key = (String) invoke("createOrResolveAggregatorKey",
+    String key = (String) invoke("createOrResolveFusionKey",
         new Class<?>[]{String.class}, "/sensor/a/value");
 
     assertEquals("a", key);
-    assertEquals("a", mapField("topicToAggregatorKey").get("/sensor/a/value"));
+    assertEquals("a", mapField("topicToFusionKey").get("/sensor/a/value"));
     assertTrue((Long) mapField("aggregatorLastSeen").get("a") > 0L);
     verifyNoInteractions(aggregator);
   }
 
   @Test
   void createOrResolveReturnsNullForEveryUnmatchedTemplate() throws Exception {
-    AggregatorConfigDTO config = config("/sensor/+/value", "/status/+/state");
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config);
+    FusionConfigDTO config = config("/sensor/+/value", "/status/+/state");
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config);
 
-    assertNull(invoke("createOrResolveAggregatorKey",
+    assertNull(invoke("createOrResolveFusionKey",
         new Class<?>[]{String.class}, "/other/a/value"));
-    assertTrue(mapField("topicToAggregatorKey").isEmpty());
+    assertTrue(mapField("topicToFusionKey").isEmpty());
     assertTrue(mapField("aggregatorsByKey").isEmpty());
   }
 
   @Test
   void resolvedConfigCopiesTemplateBehaviourAndResolvesEveryInput() throws Exception {
-    AggregatorConfigDTO config = config("/sensor/+/value", "/status/+/state");
+    FusionConfigDTO config = config("/sensor/+/value", "/status/+/state");
     config.setName("fleet");
     config.setEnabled(false);
     config.setOutputTopic("/combined/{topicName}");
@@ -143,9 +143,9 @@ class DynamicAggregatorManagerBranchCoverageTest {
     config.setTimeoutMs(6_789L);
     config.setEmitFirstEventImmediately(true);
     config.setMaxEventsPerTopic(17);
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config);
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config);
 
-    AggregatorConfigDTO resolved = (AggregatorConfigDTO) invoke(
+    FusionConfigDTO resolved = (FusionConfigDTO) invoke(
         "buildResolvedConfig",
         new Class<?>[]{String.class, List.class},
         "alpha",
@@ -167,11 +167,11 @@ class DynamicAggregatorManagerBranchCoverageTest {
 
   @Test
   void resolvedConfigLeavesOutputUntouchedWithoutPlaceholder() throws Exception {
-    AggregatorConfigDTO config = config("/sensor/+/value");
+    FusionConfigDTO config = config("/sensor/+/value");
     config.setOutputTopic("/combined/static");
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config);
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config);
 
-    AggregatorConfigDTO resolved = (AggregatorConfigDTO) invoke(
+    FusionConfigDTO resolved = (FusionConfigDTO) invoke(
         "buildResolvedConfig",
         new Class<?>[]{String.class, List.class},
         "alpha",
@@ -182,11 +182,11 @@ class DynamicAggregatorManagerBranchCoverageTest {
   }
 
   @Test
-  void destinationDeletionStopsAggregatorOnLastReference() throws Exception {
+  void destinationDeletionStopsFusionOnLastReference() throws Exception {
     manager = manager("/sensor/+/value");
-    StaticAggregator aggregator = mock(StaticAggregator.class);
+    StaticFusion aggregator = mock(StaticFusion.class);
     mapField("aggregatorsByKey").put("a", aggregator);
-    mapField("topicToAggregatorKey").put("/sensor/a/value", "a");
+    mapField("topicToFusionKey").put("/sensor/a/value", "a");
     mapField("aggregatorLastSeen").put("a", 10L);
 
     manager.destinationDeleted("/sensor/a/value");
@@ -197,12 +197,12 @@ class DynamicAggregatorManagerBranchCoverageTest {
   }
 
   @Test
-  void destinationDeletionContainsAggregatorStopFailure() throws Exception {
+  void destinationDeletionContainsFusionStopFailure() throws Exception {
     manager = manager("/sensor/+/value");
-    StaticAggregator aggregator = mock(StaticAggregator.class);
+    StaticFusion aggregator = mock(StaticFusion.class);
     doThrow(new IllegalStateException("stop")).when(aggregator).stop();
     mapField("aggregatorsByKey").put("a", aggregator);
-    mapField("topicToAggregatorKey").put("/sensor/a/value", "a");
+    mapField("topicToFusionKey").put("/sensor/a/value", "a");
     mapField("aggregatorLastSeen").put("a", 10L);
 
     assertDoesNotThrow(() -> manager.destinationDeleted("/sensor/a/value"));
@@ -212,55 +212,55 @@ class DynamicAggregatorManagerBranchCoverageTest {
   }
 
   @Test
-  void removeAggregatorClearsOnlyTopicsOwnedByThatKey() throws Exception {
+  void removeFusionClearsOnlyTopicsOwnedByThatKey() throws Exception {
     manager = manager("/sensor/+/value");
-    StaticAggregator a = mock(StaticAggregator.class);
-    StaticAggregator b = mock(StaticAggregator.class);
+    StaticFusion a = mock(StaticFusion.class);
+    StaticFusion b = mock(StaticFusion.class);
     mapField("aggregatorsByKey").put("a", a);
     mapField("aggregatorsByKey").put("b", b);
-    mapField("topicToAggregatorKey").put("/a/1", "a");
-    mapField("topicToAggregatorKey").put("/a/2", "a");
-    mapField("topicToAggregatorKey").put("/b/1", "b");
+    mapField("topicToFusionKey").put("/a/1", "a");
+    mapField("topicToFusionKey").put("/a/2", "a");
+    mapField("topicToFusionKey").put("/b/1", "b");
     mapField("aggregatorLastSeen").put("a", 1L);
     mapField("aggregatorLastSeen").put("b", 2L);
 
-    invoke("removeAggregator", new Class<?>[]{String.class}, "a");
+    invoke("removeFusion", new Class<?>[]{String.class}, "a");
 
     verify(a).stop();
     verifyNoInteractions(b);
-    assertEquals(Map.of("/b/1", "b"), mapField("topicToAggregatorKey"));
+    assertEquals(Map.of("/b/1", "b"), mapField("topicToFusionKey"));
     assertEquals(Map.of("b", 2L), mapField("aggregatorLastSeen"));
   }
 
   @Test
-  void removeUnknownAggregatorStillCleansDanglingMappings() throws Exception {
+  void removeUnknownFusionStillCleansDanglingMappings() throws Exception {
     manager = manager("/sensor/+/value");
-    mapField("topicToAggregatorKey").put("/a/1", "a");
-    mapField("topicToAggregatorKey").put("/b/1", "b");
+    mapField("topicToFusionKey").put("/a/1", "a");
+    mapField("topicToFusionKey").put("/b/1", "b");
     mapField("aggregatorLastSeen").put("a", 1L);
 
-    invoke("removeAggregator", new Class<?>[]{String.class}, "a");
+    invoke("removeFusion", new Class<?>[]{String.class}, "a");
 
-    assertEquals(Map.of("/b/1", "b"), mapField("topicToAggregatorKey"));
+    assertEquals(Map.of("/b/1", "b"), mapField("topicToFusionKey"));
     assertFalse(mapField("aggregatorLastSeen").containsKey("a"));
   }
 
   @Test
   void cleanupUsesFifteenSecondMinimumExpiry() throws Exception {
-    AggregatorConfigDTO config = config("/sensor/+/value");
+    FusionConfigDTO config = config("/sensor/+/value");
     config.setTimeoutMs(1_000L);
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config);
-    StaticAggregator stale = mock(StaticAggregator.class);
-    StaticAggregator fresh = mock(StaticAggregator.class);
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config);
+    StaticFusion stale = mock(StaticFusion.class);
+    StaticFusion fresh = mock(StaticFusion.class);
     long now = System.currentTimeMillis();
     mapField("aggregatorsByKey").put("stale", stale);
     mapField("aggregatorsByKey").put("fresh", fresh);
-    mapField("topicToAggregatorKey").put("/stale", "stale");
-    mapField("topicToAggregatorKey").put("/fresh", "fresh");
+    mapField("topicToFusionKey").put("/stale", "stale");
+    mapField("topicToFusionKey").put("/fresh", "fresh");
     mapField("aggregatorLastSeen").put("stale", now - 16_000L);
     mapField("aggregatorLastSeen").put("fresh", now - 14_000L);
 
-    invoke("cleanupInactiveAggregators", new Class<?>[0]);
+    invoke("cleanupInactiveFusions", new Class<?>[0]);
 
     verify(stale).stop();
     verifyNoInteractions(fresh);
@@ -270,18 +270,18 @@ class DynamicAggregatorManagerBranchCoverageTest {
 
   @Test
   void cleanupUsesThreeTimesConfiguredTimeoutAboveMinimum() throws Exception {
-    AggregatorConfigDTO config = config("/sensor/+/value");
+    FusionConfigDTO config = config("/sensor/+/value");
     config.setTimeoutMs(10_000L);
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config);
-    StaticAggregator stale = mock(StaticAggregator.class);
-    StaticAggregator fresh = mock(StaticAggregator.class);
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config);
+    StaticFusion stale = mock(StaticFusion.class);
+    StaticFusion fresh = mock(StaticFusion.class);
     long now = System.currentTimeMillis();
     mapField("aggregatorsByKey").put("stale", stale);
     mapField("aggregatorsByKey").put("fresh", fresh);
     mapField("aggregatorLastSeen").put("stale", now - 31_000L);
     mapField("aggregatorLastSeen").put("fresh", now - 29_000L);
 
-    invoke("cleanupInactiveAggregators", new Class<?>[0]);
+    invoke("cleanupInactiveFusions", new Class<?>[0]);
 
     verify(stale).stop();
     verifyNoInteractions(fresh);
@@ -294,8 +294,8 @@ class DynamicAggregatorManagerBranchCoverageTest {
     assertDoesNotThrow(() -> manager.sendMessage(new MessageEvent(null, null, null, null)));
   }
 
-  private DynamicAggregatorManager manager(String topic) {
-    return new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config(topic));
+  private DynamicFusionManager manager(String topic) {
+    return new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config(topic));
   }
 
   @SuppressWarnings("unchecked")
@@ -311,28 +311,28 @@ class DynamicAggregatorManagerBranchCoverageTest {
 
   private Object invoke(String methodName, Class<?>[] parameterTypes, Object... args)
       throws Exception {
-    Method method = DynamicAggregatorManager.class.getDeclaredMethod(methodName, parameterTypes);
+    Method method = DynamicFusionManager.class.getDeclaredMethod(methodName, parameterTypes);
     method.setAccessible(true);
     return method.invoke(manager, args);
   }
 
   @SuppressWarnings("unchecked")
   private Map<Object, Object> mapField(String name) throws Exception {
-    Field field = DynamicAggregatorManager.class.getDeclaredField(name);
+    Field field = DynamicFusionManager.class.getDeclaredField(name);
     field.setAccessible(true);
     return (Map<Object, Object>) field.get(manager);
   }
 
-  private static AggregatorConfigDTO config(String... topics) {
-    List<AggregatorInputConfigDTO> inputs = Stream.of(topics)
+  private static FusionConfigDTO config(String... topics) {
+    List<FusionInputConfigDTO> inputs = Stream.of(topics)
         .map(topic -> {
-          AggregatorInputConfigDTO input = new AggregatorInputConfigDTO();
+          FusionInputConfigDTO input = new FusionInputConfigDTO();
           input.setTopicName(topic);
           return input;
         })
         .toList();
 
-    AggregatorConfigDTO config = new AggregatorConfigDTO();
+    FusionConfigDTO config = new FusionConfigDTO();
     config.setName("agg");
     config.setEnabled(true);
     config.setInputs(inputs);

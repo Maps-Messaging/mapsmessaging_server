@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class BaseAggreagtorTest extends BaseTestConfig {
+public class BaseFusionTest extends BaseTestConfig {
 
 
   protected Session createSession(String sessionId, MessageListener listener) throws LoginException, IOException {

@@ -22,22 +22,22 @@ package io.mapsmessaging.aggregator;
 import lombok.Data;
 
 @Data
-public class AggregatorSpec {
+public class FusionSpec {
 
   private final String outputTopic;
   private final String in1;
   private final String in2;
   private final String in3;
 
-  private AggregatorSpec(String outputTopic, String in1, String in2, String in3) {
+  private FusionSpec(String outputTopic, String in1, String in2, String in3) {
     this.outputTopic = outputTopic;
     this.in1 = in1;
     this.in2 = in2;
     this.in3 = in3;
   }
 
-  public static AggregatorSpec aggregator1() {
-    return new AggregatorSpec(
+  public static FusionSpec aggregator1() {
+    return new FusionSpec(
         "/aggregator1/out1",
         "/aggregator1/in1",
         "/aggregator1/in2",
@@ -45,8 +45,8 @@ public class AggregatorSpec {
     );
   }
 
-  public static AggregatorSpec aggregator2() {
-    return new AggregatorSpec(
+  public static FusionSpec aggregator2() {
+    return new FusionSpec(
         "/aggregator2/out1",
         "/aggregator2/in1",
         "/aggregator2/in2",

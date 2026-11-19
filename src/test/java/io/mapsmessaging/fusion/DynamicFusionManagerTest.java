@@ -1,9 +1,9 @@
 package io.mapsmessaging.aggregator;
 
-import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
+import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,9 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DynamicAggregatorManagerTest {
+class DynamicFusionManagerTest {
 
-  private DynamicAggregatorManager manager;
+  private DynamicFusionManager manager;
 
   @AfterEach
   void stopManager() {
@@ -28,8 +28,8 @@ class DynamicAggregatorManagerTest {
   }
 
   @Test
-  void blankAndUnmatchedDestinationsCompleteWithoutCreatingAnAggregator() {
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/value"));
+  void blankAndUnmatchedDestinationsCompleteWithoutCreatingAnFusion() {
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config("/sensor/+/value"));
 
     AtomicBoolean blankCompleted = new AtomicBoolean();
     manager.sendMessage(new MessageEvent(" ", null, null, () -> blankCompleted.set(true)));
@@ -43,8 +43,8 @@ class DynamicAggregatorManagerTest {
   @Test
   @SuppressWarnings("unchecked")
   void wildcardMatchingExtractsSingleAndTailValues() throws Exception {
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/data/#"));
-    Method method = DynamicAggregatorManager.class.getDeclaredMethod("matchAndExtract", String.class, String.class);
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config("/sensor/+/data/#"));
+    Method method = DynamicFusionManager.class.getDeclaredMethod("matchAndExtract", String.class, String.class);
     method.setAccessible(true);
 
     assertEquals(
@@ -61,8 +61,8 @@ class DynamicAggregatorManagerTest {
   @Test
   @SuppressWarnings("unchecked")
   void wildcardMatchingCoversMismatchLengthAndTerminalHashCases() throws Exception {
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/data/#"));
-    Method method = DynamicAggregatorManager.class.getDeclaredMethod("matchAndExtract", String.class, String.class);
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config("/sensor/+/data/#"));
+    Method method = DynamicFusionManager.class.getDeclaredMethod("matchAndExtract", String.class, String.class);
     method.setAccessible(true);
 
     assertNull(method.invoke(manager, "/sensor/+/data/#", "/sensor"));
@@ -79,15 +79,15 @@ class DynamicAggregatorManagerTest {
 
   @Test
   void helperMethodsResolveWildcardsKeysAndNames() throws Exception {
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/data/#"));
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config("/sensor/+/data/#"));
 
     Method applyWildcardValues =
-        DynamicAggregatorManager.class.getDeclaredMethod("applyWildcardValues", String.class, List.class);
+        DynamicFusionManager.class.getDeclaredMethod("applyWildcardValues", String.class, List.class);
     applyWildcardValues.setAccessible(true);
-    Method buildAggregatorKey =
-        DynamicAggregatorManager.class.getDeclaredMethod("buildAggregatorKey", List.class, String.class);
-    buildAggregatorKey.setAccessible(true);
-    Method sanitiseKey = DynamicAggregatorManager.class.getDeclaredMethod("sanitiseKey", String.class);
+    Method buildFusionKey =
+        DynamicFusionManager.class.getDeclaredMethod("buildFusionKey", List.class, String.class);
+    buildFusionKey.setAccessible(true);
+    Method sanitiseKey = DynamicFusionManager.class.getDeclaredMethod("sanitiseKey", String.class);
     sanitiseKey.setAccessible(true);
 
     assertEquals(
@@ -96,21 +96,21 @@ class DynamicAggregatorManagerTest {
     );
     assertEquals(
         "alpha/gps/raw",
-        buildAggregatorKey.invoke(manager, List.of("alpha", "gps/raw"), "/sensor/alpha/data/gps/raw")
+        buildFusionKey.invoke(manager, List.of("alpha", "gps/raw"), "/sensor/alpha/data/gps/raw")
     );
     assertEquals(
         "/plain/topic",
-        buildAggregatorKey.invoke(manager, List.of(), "/plain/topic")
+        buildFusionKey.invoke(manager, List.of(), "/plain/topic")
     );
     assertEquals("alpha_beta___", sanitiseKey.invoke(manager, "alpha/beta/#+"));
   }
 
   @Test
   void connectionMetadataAndUnknownDestinationDeletionAreStable() {
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/value"));
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config("/sensor/+/value"));
 
     assertEquals(30000L, manager.getTimeOut());
-    assertEquals("DynamicAggregatorManager-agg", manager.getName());
+    assertEquals("DynamicFusionManager-agg", manager.getName());
     assertEquals("1.0", manager.getVersion());
     assertNull(manager.getPrincipal());
     assertEquals("", manager.getAuthenticationConfig());
@@ -124,7 +124,7 @@ class DynamicAggregatorManagerTest {
 
   @Test
   void completionTaskRunsOnceAndExceptionsAreContained() {
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/value"));
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config("/sensor/+/value"));
     AtomicInteger completions = new AtomicInteger();
 
     manager.sendMessage(new MessageEvent(null, null, null, completions::incrementAndGet));
@@ -139,12 +139,12 @@ class DynamicAggregatorManagerTest {
 
   @Test
   void resolvedConfigAppliesWildcardToInputAndOutputWithoutMutatingTemplate() throws Exception {
-    AggregatorConfigDTO template = config("/sensor/+/value");
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), template);
-    Method method = DynamicAggregatorManager.class.getDeclaredMethod("buildResolvedConfig", String.class, List.class);
+    FusionConfigDTO template = config("/sensor/+/value");
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), template);
+    Method method = DynamicFusionManager.class.getDeclaredMethod("buildResolvedConfig", String.class, List.class);
     method.setAccessible(true);
 
-    AggregatorConfigDTO resolved = (AggregatorConfigDTO) method.invoke(manager, "vehicle-7", List.of("vehicle-7"));
+    FusionConfigDTO resolved = (FusionConfigDTO) method.invoke(manager, "vehicle-7", List.of("vehicle-7"));
 
     assertEquals("agg-vehicle-7", resolved.getName());
     assertEquals("/out/vehicle-7", resolved.getOutputTopic());
@@ -154,10 +154,10 @@ class DynamicAggregatorManagerTest {
 
 
   @Test
-  void destinationDeletionKeepsSharedAggregatorUntilLastResolvedTopicIsRemoved() throws Exception {
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/value"));
+  void destinationDeletionKeepsSharedFusionUntilLastResolvedTopicIsRemoved() throws Exception {
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config("/sensor/+/value"));
 
-    Map<String, String> topics = mapField("topicToAggregatorKey");
+    Map<String, String> topics = mapField("topicToFusionKey");
     Map<String, Long> lastSeen = mapField("aggregatorLastSeen");
     topics.put("/sensor/a/value", "a");
     topics.put("/sensor/a/secondary", "a");
@@ -176,10 +176,10 @@ class DynamicAggregatorManagerTest {
   }
 
   @Test
-  void cleanupRemovesExpiredAggregatorStateAndKeepsRecentState() throws Exception {
-    manager = new DynamicAggregatorManager(new AggregatorWorkScheduler(1, 4, 1), config("/sensor/+/value"));
+  void cleanupRemovesExpiredFusionStateAndKeepsRecentState() throws Exception {
+    manager = new DynamicFusionManager(new FusionWorkScheduler(1, 4, 1), config("/sensor/+/value"));
 
-    Map<String, String> topics = mapField("topicToAggregatorKey");
+    Map<String, String> topics = mapField("topicToFusionKey");
     Map<String, Long> lastSeen = mapField("aggregatorLastSeen");
     long now = System.currentTimeMillis();
     topics.put("/sensor/stale/value", "stale");
@@ -187,7 +187,7 @@ class DynamicAggregatorManagerTest {
     lastSeen.put("stale", now - 20_000L);
     lastSeen.put("fresh", now);
 
-    Method cleanup = DynamicAggregatorManager.class.getDeclaredMethod("cleanupInactiveAggregators");
+    Method cleanup = DynamicFusionManager.class.getDeclaredMethod("cleanupInactiveFusions");
     cleanup.setAccessible(true);
     cleanup.invoke(manager);
 
@@ -199,16 +199,16 @@ class DynamicAggregatorManagerTest {
 
   @SuppressWarnings("unchecked")
   private <K, V> Map<K, V> mapField(String name) throws Exception {
-    Field field = DynamicAggregatorManager.class.getDeclaredField(name);
+    Field field = DynamicFusionManager.class.getDeclaredField(name);
     field.setAccessible(true);
     return (Map<K, V>) field.get(manager);
   }
 
-  private static AggregatorConfigDTO config(String topic) {
-    AggregatorInputConfigDTO input = new AggregatorInputConfigDTO();
+  private static FusionConfigDTO config(String topic) {
+    FusionInputConfigDTO input = new FusionInputConfigDTO();
     input.setTopicName(topic);
 
-    AggregatorConfigDTO config = new AggregatorConfigDTO();
+    FusionConfigDTO config = new FusionConfigDTO();
     config.setName("agg");
     config.setEnabled(true);
     config.setInputs(List.of(input));
