@@ -17,13 +17,13 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.config.aggregator;
+package io.mapsmessaging.config.fusion;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.FusionInputConfigDTO;
 
 
 public class FusionInputConfig extends FusionInputConfigDTO implements Config {

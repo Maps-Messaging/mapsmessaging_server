@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config.aggregator;
+package io.mapsmessaging.dto.rest.config.fusion;
 
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;

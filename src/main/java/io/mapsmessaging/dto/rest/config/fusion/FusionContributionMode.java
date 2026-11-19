@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.dto.rest.config.aggregator;
+package io.mapsmessaging.dto.rest.config.fusion;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;

@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.config;
 
-import io.mapsmessaging.config.aggregator.FusionConfig;
+import io.mapsmessaging.config.fusion.FusionConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.FusionManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
