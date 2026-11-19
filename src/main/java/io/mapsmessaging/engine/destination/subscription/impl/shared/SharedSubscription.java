@@ -95,6 +95,10 @@ public class SharedSubscription extends DestinationSubscription {
     } else {
       schedule();
     }
+    if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+      QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "MEMBER-SCHEDULED", -1,
+          "member", sessionId, "members", subscriptions.size());
+    }
     return subscription;
   }
 
@@ -160,9 +164,18 @@ public class SharedSubscription extends DestinationSubscription {
 
   @Override
   protected boolean isReady() {
-    if (super.isReady()) {
+    boolean parentReady = super.isReady();
+    if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+      QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "SHARED-READINESS", -1,
+          "parentReady", parentReady, "members", subscriptions.size());
+    }
+    if (parentReady) {
       for (SessionSharedSubscription subscription : subscriptions.flatMap) {
         if (subscription.canAttemptSend()) {
+          if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+            QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "SHARED-ELIGIBLE", -1,
+                "member", subscription.getSessionId());
+          }
           return true;
         }
       }
