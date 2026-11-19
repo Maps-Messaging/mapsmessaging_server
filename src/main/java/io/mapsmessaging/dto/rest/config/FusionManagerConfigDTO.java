@@ -20,7 +20,7 @@
 package io.mapsmessaging.dto.rest.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,8 +29,8 @@ import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "Aggregator Manager Configuration DTO (Stage 1)")
-public class AggregatorManagerConfigDTO extends BaseManagerConfigDTO {
+@Schema(description = "Fusion Manager Configuration DTO (Stage 1)")
+public class FusionManagerConfigDTO extends BaseManagerConfigDTO {
 
   @Schema(
       description = "Number of worker stripes (threads) used to run aggregators. 0 means auto (CPU heuristic).",
@@ -87,15 +87,15 @@ public class AggregatorManagerConfigDTO extends BaseManagerConfigDTO {
       requiredMode = Schema.RequiredMode.REQUIRED,
       minLength = 1
   )
-  protected List<AggregatorConfigDTO> aggregatorConfigList;
+  protected List<FusionConfigDTO> aggregatorConfigList;
 
-  public AggregatorManagerConfigDTO() {
-    super("AggregatorManagerConfigDTO");
+  public FusionManagerConfigDTO() {
+    super("FusionManagerConfigDTO");
   }
 
   @JsonIgnore
   @Override
   public String getSimpleName() {
-    return "Aggregations";
+    return "Event Fusion";
   }
 }

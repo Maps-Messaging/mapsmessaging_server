@@ -19,9 +19,9 @@
 
 package io.mapsmessaging.config;
 
-import io.mapsmessaging.config.aggregator.AggregatorConfig;
+import io.mapsmessaging.config.aggregator.FusionConfig;
 import io.mapsmessaging.configuration.ConfigurationProperties;
-import io.mapsmessaging.dto.rest.config.AggregatorManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.FusionManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
 import io.mapsmessaging.license.FeatureManager;
 import io.mapsmessaging.utilities.configuration.ConfigurationManager;
@@ -32,9 +32,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @NoArgsConstructor
-public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implements Config, ConfigManager {
+public class FusionManagerConfig extends FusionManagerConfigDTO implements Config, ConfigManager {
 
-  private AggregatorManagerConfig(ConfigurationProperties fullConfig) {
+  private FusionManagerConfig(ConfigurationProperties fullConfig) {
     ConfigurationProperties config = (ConfigurationProperties) fullConfig.get("data");
     stripeCount = readInt(config, "stripeCount", stripeCount);
     maxBatchPerAggregator = readInt(config, "maxBatchPerAggregator", maxBatchPerAggregator);
@@ -47,23 +47,23 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
       Object dataObject = config.get("aggregatorConfigList");
       if (dataObject instanceof List) {
         for (ConfigurationProperties entry : (List<ConfigurationProperties>) dataObject) {
-          aggregatorConfigList.add(new AggregatorConfig(entry));
+          aggregatorConfigList.add(new FusionConfig(entry));
         }
       } else if (dataObject instanceof ConfigurationProperties configurationProperties) {
-        aggregatorConfigList.add(new AggregatorConfig(configurationProperties));
+        aggregatorConfigList.add(new FusionConfig(configurationProperties));
       }
     }
   }
 
-  public static AggregatorManagerConfig getInstance() {
-    return ConfigurationManager.getInstance().getConfiguration(AggregatorManagerConfig.class);
+  public static FusionManagerConfig getInstance() {
+    return ConfigurationManager.getInstance().getConfiguration(FusionManagerConfig.class);
   }
 
   @Override
   public boolean update(BaseConfigDTO config) {
     boolean hasChanged = false;
 
-    if (config instanceof AggregatorManagerConfigDTO newConfig) {
+    if (config instanceof FusionManagerConfigDTO newConfig) {
 
       if (this.stripeCount != newConfig.getStripeCount()) {
         this.stripeCount = newConfig.getStripeCount();
@@ -118,7 +118,7 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
     configurationProperties.put("maxAggregators", maxAggregators);
 
     aggregatorConfigList.stream()
-        .map(aggregatorConfigDTO -> ((AggregatorConfig) aggregatorConfigDTO).toConfigurationProperties())
+        .map(aggregatorConfigDTO -> ((FusionConfig) aggregatorConfigDTO).toConfigurationProperties())
         .forEachOrdered(dataList::add);
 
     configurationProperties.put("data", dataList);
@@ -127,7 +127,19 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
 
   @Override
   public ConfigManager load(FeatureManager featureManager) {
-    return new AggregatorManagerConfig(ConfigurationManager.getInstance().getProperties(getName()));
+    ConfigurationManager configurationManager = ConfigurationManager.getInstance();
+    ConfigurationProperties properties = configurationManager.getProperties(getName());
+    // A renamed legacy YAML file can still contain its original top-level key.
+    java.nio.file.Path configDirectory = java.nio.file.Path.of("conf");
+    boolean bothPresent = java.nio.file.Files.exists(configDirectory.resolve("AggregatorManager.yaml"))
+        && java.nio.file.Files.exists(configDirectory.resolve("FusionManager.yaml"));
+    if (!bothPresent && !(properties.get("data") instanceof ConfigurationProperties)) {
+      ConfigurationProperties legacy = configurationManager.getProperties("AggregatorManager");
+      if (legacy.get("data") instanceof ConfigurationProperties) {
+        properties = legacy;
+      }
+    }
+    return new FusionManagerConfig(properties);
   }
 
   @Override
@@ -137,7 +149,7 @@ public class AggregatorManagerConfig extends AggregatorManagerConfigDTO implemen
 
   @Override
   public String getName() {
-    return "AggregatorManager";
+    return "FusionManager";
   }
 
   private int readInt(ConfigurationProperties config, String key, int defaultValue) {

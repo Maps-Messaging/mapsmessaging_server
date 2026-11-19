@@ -22,7 +22,7 @@ package io.mapsmessaging.dto.rest.config.aggregator;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(
-    title = "Aggregator Window Close Mode",
+    title = "Fusion Window Close Mode",
     description = "Defines how an aggregation window is closed."
 )
 public enum WindowCloseMode {
