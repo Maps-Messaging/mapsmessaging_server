@@ -584,6 +584,9 @@ public class SessionManagerPipeLine {
     for (String sessionId : getSessionIds()) {
       closings.add(closeAsync(sessionId, true));
     }
+    for (String sessionId : Set.copyOf(unfinishedCloses.keySet())) {
+      closings.add(closeAsync(sessionId, true));
+    }
     // Logically closed sessions are no longer in sessions but may still own destination cleanup.
     synchronized (pendingLifecycle) {
       closings.addAll(pendingLifecycle.values());
