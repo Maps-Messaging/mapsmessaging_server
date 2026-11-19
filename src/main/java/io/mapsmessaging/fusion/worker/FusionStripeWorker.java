@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.worker;
+package io.mapsmessaging.fusion.worker;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -65,7 +65,7 @@ public class FusionStripeWorker implements Runnable {
         try {
           drained = workItem.drainOnce(maxBatchPerWorkItem);
         } catch (Throwable ignored) {
-          logger.log(ServerLogMessages.AGGREGATOR_DRAIN_FAILED, workItem.getName(), ignored);
+          logger.log(ServerLogMessages.FUSION_DRAIN_FAILED, workItem.getName(), ignored);
         }
 
         if (drained > 0) {
@@ -85,7 +85,7 @@ public class FusionStripeWorker implements Runnable {
           try {
             item.checkTimeout();
           } catch (Throwable ignored) {
-            logger.log(ServerLogMessages.AGGREGATOR_TIMEOUT_FAILED, item.getName(), ignored);
+            logger.log(ServerLogMessages.FUSION_TIMEOUT_FAILED, item.getName(), ignored);
           }
         }
         lastTimeoutTickMillis = now;

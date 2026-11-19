@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.worker;
+package io.mapsmessaging.fusion.worker;
 
 public interface FusionWorkItem {
 

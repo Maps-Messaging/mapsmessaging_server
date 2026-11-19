@@ -17,15 +17,15 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.config.aggregator;
+package io.mapsmessaging.config.fusion;
 
 import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
+import io.mapsmessaging.dto.rest.config.fusion.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.FusionInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.WindowCloseMode;
 
 import java.util.ArrayList;
 import java.util.List;
