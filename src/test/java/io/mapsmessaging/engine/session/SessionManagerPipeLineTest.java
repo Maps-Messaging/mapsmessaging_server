@@ -1138,6 +1138,49 @@ class SessionManagerPipeLineTest {
     assertEquals(1L, connected.sum());
   }
 
+  @Test
+  void failedDestinationCleanupPreventsSameIdSessionReplacement() throws Exception {
+    String sessionId = "failed-cleanup-barrier";
+    SessionContext originalContext = mock(SessionContext.class);
+    SessionContext replacementContext = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext security =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SubscriptionController controller = controller(sessionId, false);
+    SessionImpl original = mock(SessionImpl.class);
+
+    when(originalContext.getId()).thenReturn(sessionId);
+    when(replacementContext.getId()).thenReturn(sessionId);
+    when(originalContext.getSecurityContext()).thenReturn(security);
+    when(details.getUniqueId()).thenReturn("failed-close-id");
+    when(details.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
+    when(persistentSessionManager.getSessionDetails(originalContext)).thenReturn(details);
+    when(subscriptionControllerFactory.create(eq(originalContext), eq(destinationManager), anyMap())).thenReturn(controller);
+    when(sessionFactory.create(eq(originalContext), eq(security), eq(destinationManager), eq(controller),
+        eq(persistentSessionManager))).thenReturn(original);
+    when(original.getName()).thenReturn(sessionId);
+    when(original.getSubscriptionController()).thenReturn(controller);
+
+    pipeline.create(originalContext);
+    CompletableFuture<Void> destinationFailure = new CompletableFuture<>();
+    when(controller.closeAsync(false)).thenReturn(destinationFailure);
+    CompletableFuture<Void> closing = pipeline.closeAsync(original, true);
+    CompletableFuture<SessionImpl> replacement = pipeline.createAsync(replacementContext);
+
+    awaitAndRunQueuedTask();
+    assertFalse(pipeline.hasSessions());
+    assertFalse(closing.isDone());
+    destinationFailure.completeExceptionally(new IOException("Destination cleanup failed"));
+
+    runQueuedUntil(() -> closing.isDone() && replacement.isDone());
+    assertThrows(java.util.concurrent.ExecutionException.class, () -> closing.get(5, TimeUnit.SECONDS));
+    assertThrows(java.util.concurrent.ExecutionException.class, () -> replacement.get(5, TimeUnit.SECONDS));
+    assertFalse(pipeline.hasSessions());
+    verify(original).markClosing();
+    verify(original, never()).close();
+    verify(sessionFactory, times(1)).create(any(), any(), any(), any(), any());
+  }
+
   private void runQueuedUntil(BooleanSupplier condition) {
     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
     while (!condition.getAsBoolean() && System.nanoTime() < deadline) {
