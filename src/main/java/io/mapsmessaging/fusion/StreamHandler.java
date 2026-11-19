@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator;
+package io.mapsmessaging.fusion;
 
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.Session;
@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_SUBSCRIPTION_ADDED;
+import static io.mapsmessaging.logging.ServerLogMessages.FUSION_SUBSCRIPTION_ADDED;
 
 public class StreamHandler {
 
@@ -116,6 +116,6 @@ public class StreamHandler {
     }
     SubscriptionContext context = builder.build();
     subscriptionManager = session.addSubscription(context);
-    logger.log(AGGREGATOR_SUBSCRIPTION_ADDED, config.getTopicName());
+    logger.log(FUSION_SUBSCRIPTION_ADDED, config.getTopicName());
   }
 }

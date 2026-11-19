@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.mailbox;
+package io.mapsmessaging.fusion.mailbox;
 
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -27,8 +27,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
-import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_QUEUE_DRAIN;
-import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_QUEUE_OFFER;
+import static io.mapsmessaging.logging.ServerLogMessages.FUSION_QUEUE_DRAIN;
+import static io.mapsmessaging.logging.ServerLogMessages.FUSION_QUEUE_OFFER;
 
 public class QueueBackedMpscMailbox<T> implements FusionMailbox<T> {
 
@@ -48,7 +48,7 @@ public class QueueBackedMpscMailbox<T> implements FusionMailbox<T> {
   @Override
   public boolean offer(T item) {
     Objects.requireNonNull(item, "item must not be null");
-    logger.log(AGGREGATOR_QUEUE_OFFER, item);
+    logger.log(FUSION_QUEUE_OFFER, item);
     this.offeredCount.incrementAndGet();
     return this.queue.offer(item);
   }
@@ -56,7 +56,7 @@ public class QueueBackedMpscMailbox<T> implements FusionMailbox<T> {
   @Override
   public int drainTo(Consumer<T> consumer, int maxItems) {
     Objects.requireNonNull(consumer, "consumer must not be null");
-    logger.log(AGGREGATOR_QUEUE_DRAIN, maxItems);
+    logger.log(FUSION_QUEUE_DRAIN, maxItems);
     if (maxItems <= 0) {
       return 0;
     }

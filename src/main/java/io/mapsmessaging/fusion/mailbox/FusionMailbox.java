@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.mailbox;
+package io.mapsmessaging.fusion.mailbox;
 
 import java.util.function.Consumer;
 
