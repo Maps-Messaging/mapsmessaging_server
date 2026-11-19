@@ -164,7 +164,7 @@ public class SharedSubscription extends DestinationSubscription {
 
   @Override
   protected boolean isReady() {
-    boolean parentReady = super.isReady();
+    boolean parentReady = isReadyIgnoringSessionState();
     if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
       QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "SHARED-READINESS", -1,
           "parentReady", parentReady, "members", subscriptions.size());
