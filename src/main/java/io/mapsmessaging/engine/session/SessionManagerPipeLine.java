@@ -571,6 +571,10 @@ public class SessionManagerPipeLine {
     for (String sessionId : getSessionIds()) {
       closings.add(closeAsync(sessionId, true));
     }
+    // Logically closed sessions are no longer in sessions but may still own destination cleanup.
+    synchronized (pendingLifecycle) {
+      closings.addAll(pendingLifecycle.values());
+    }
     return CompletableFuture.allOf(closings.toArray(CompletableFuture[]::new))
         .whenCompleteAsync((ignored, failure) -> taskScheduler.shutdown(), ForkJoinPool.commonPool());
   }
