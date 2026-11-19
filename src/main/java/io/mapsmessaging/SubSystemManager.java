@@ -22,7 +22,7 @@ package io.mapsmessaging;
 import io.mapsmessaging.modules.MapsModule;
 import io.mapsmessaging.modules.ModuleContext;
 import io.mapsmessaging.modules.ModuleManager;
-import io.mapsmessaging.aggregator.FusionManager;
+import io.mapsmessaging.fusion.FusionManager;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;

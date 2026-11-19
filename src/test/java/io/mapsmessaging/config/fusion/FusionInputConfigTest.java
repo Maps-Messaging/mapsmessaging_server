@@ -1,8 +1,8 @@
-package io.mapsmessaging.config.aggregator;
+package io.mapsmessaging.config.fusion;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.FusionInputConfigDTO;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

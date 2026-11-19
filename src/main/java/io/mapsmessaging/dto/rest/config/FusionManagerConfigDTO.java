@@ -20,7 +20,7 @@
 package io.mapsmessaging.dto.rest.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.FusionConfigDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
