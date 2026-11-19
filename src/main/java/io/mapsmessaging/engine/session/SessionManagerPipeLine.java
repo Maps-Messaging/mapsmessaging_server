@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Supplier;
 
 //
 // One SessionManagerPipeLine owns the serial execution order for a hash partition of session IDs.
@@ -89,6 +90,7 @@ public class SessionManagerPipeLine {
   private final LongAdder disconnectedSessions;
   private final LongAdder expiredSessions;
   private final WillTaskManager willTaskManager;
+  private final Map<String, CompletableFuture<Void>> pendingLifecycle = new HashMap<>();
 
   SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected, LongAdder expired) {
     this(destinationManager, lookup, connected, disconnected, expired, new SingleConcurrentTaskScheduler("SessionManagerPipeLine"), (task, delay, unit) -> io.mapsmessaging.utilities.threads.SimpleTaskScheduler.getInstance().schedule(task, delay, unit), new SessionStateFileStore(), new SubscriptionControllerFactory(), new SessionFactory(), WillTaskManager.getInstance());
@@ -377,6 +379,192 @@ public class SessionManagerPipeLine {
       persistentControllers.put(context.getId(), replacement);
     }
     return replacement;
+  }
+
+  /**
+   * A per-session asynchronous lifecycle chain. A destination can complete work later without
+   * occupying this pipeline's only executor, while a replacement waits logically for that work.
+   */
+  private <T> CompletableFuture<T> orderLifecycle(String sessionId, Supplier<CompletableFuture<T>> operation) {
+    CompletableFuture<T> result = new CompletableFuture<>();
+    CompletableFuture<Void> tail = result.handle((value, failure) -> null);
+    CompletableFuture<Void> previous;
+    synchronized (pendingLifecycle) {
+      previous = pendingLifecycle.put(sessionId, tail);
+    }
+    if (previous == null) {
+      previous = CompletableFuture.completedFuture(null);
+    }
+    previous.whenCompleteAsync((ignored, ignoredFailure) -> {
+      try {
+        operation.get().whenCompleteAsync((value, failure) -> {
+          if (failure != null) {
+            result.completeExceptionally(failure);
+          } else {
+            result.complete(value);
+          }
+        }, ForkJoinPool.commonPool());
+      } catch (Throwable failure) {
+        result.completeExceptionally(failure);
+      }
+    }, ForkJoinPool.commonPool());
+    tail.whenComplete((ignored, failure) -> {
+      synchronized (pendingLifecycle) {
+        pendingLifecycle.remove(sessionId, tail);
+      }
+    });
+    return result;
+  }
+
+  /** Run short lifecycle steps on the session queue and complete outside both serial schedulers. */
+  private <T> CompletableFuture<T> onSessionQueue(Callable<CompletableFuture<T>> action) {
+    CompletableFuture<T> result = new CompletableFuture<>();
+    try {
+      taskScheduler.submit(() -> {
+        try {
+          action.call().whenCompleteAsync((value, failure) -> {
+            if (failure != null) {
+              result.completeExceptionally(failure);
+            } else {
+              result.complete(value);
+            }
+          }, ForkJoinPool.commonPool());
+        } catch (Throwable failure) {
+          result.completeExceptionally(failure);
+        }
+        return null;
+      });
+    } catch (RuntimeException failure) {
+      result.completeExceptionally(failure);
+    }
+    return result;
+  }
+
+  public CompletableFuture<SessionImpl> createAsync(SessionContext context) {
+    return orderLifecycle(context.getId(), () -> onSessionQueue(() -> prepareCreateAsync(context)));
+  }
+
+  private CompletableFuture<SessionImpl> prepareCreateAsync(SessionContext context) {
+    SessionImpl previous = sessions.get(context.getId());
+    CompletableFuture<Void> closed = previous == null
+        ? CompletableFuture.completedFuture(null) : beginCloseAsync(previous, true);
+    return closed.thenCompose(ignored -> onSessionQueue(() -> {
+      SubscriptionController controller = persistentControllers.get(context.getId());
+      if (context.isResetState() && controller != null) {
+        cancelPendingExpiry(controller);
+        return beginFinaliseControllerAsync(controller, ControllerCloseReason.RESET, WillFinalisation.NONE)
+            .thenCompose(reset -> onSessionQueue(() -> {
+              SessionDetails details = storeLookup.getSessionDetails(context);
+              details.clearSubscriptions();
+              return CompletableFuture.completedFuture(create(context));
+            }));
+      }
+      return CompletableFuture.completedFuture(create(context));
+    }));
+  }
+
+  public CompletableFuture<Void> closeAsync(SessionImpl session, boolean clearWillTask) {
+    return orderLifecycle(session.getName(), () -> onSessionQueue(() -> beginCloseAsync(session, clearWillTask)));
+  }
+
+  public CompletableFuture<Void> closeAsync(String sessionId, boolean clearWillTask) {
+    return orderLifecycle(sessionId, () -> onSessionQueue(() -> {
+      SessionImpl active = sessions.get(sessionId);
+      CompletableFuture<Void> closed = active == null ? CompletableFuture.completedFuture(null)
+          : beginCloseAsync(active, clearWillTask);
+      return closed.thenCompose(ignored -> onSessionQueue(() -> {
+        SubscriptionController idle = getIdleSubscriptions(sessionId);
+        if (idle == null) {
+          return CompletableFuture.completedFuture(null);
+        }
+        Future<?> timeout = idle.getTimeout();
+        if (timeout != null) {
+          timeout.cancel(false);
+          idle.setTimeout(null);
+        }
+        return beginFinaliseControllerAsync(idle, ControllerCloseReason.TERMINATED,
+            clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN).thenApply(done -> null);
+      }));
+    }));
+  }
+
+  private CompletableFuture<Void> beginCloseAsync(SessionImpl session, boolean clearWillTask) {
+    if (sessions.get(session.getName()) != session) {
+      return CompletableFuture.completedFuture(null);
+    }
+    SubscriptionController controller = session.getSubscriptionController();
+    long expiry = session.getExpiry();
+    boolean hibernate = session instanceof PersistentSession && expiry > 0;
+    long expiryTime = hibernate ? System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry) : 0L;
+    CompletableFuture<Void> cleanup = hibernate ? controller.hibernateAllAsync() : controller.closeAsync(false);
+    return cleanup.thenCompose(ignored -> onSessionQueue(() -> {
+      if (!sessions.remove(session.getName(), session)) {
+        return CompletableFuture.completedFuture(null);
+      }
+      session.close();
+      if (hibernate) {
+        session.setExpiryTime(expiryTime);
+        handleWill(session.getName(), clearWillTask);
+        scheduleAsyncExpiry(controller, Math.max(0L, expiryTime - System.currentTimeMillis()));
+      } else {
+        completeControllerFinalisation(controller, ControllerCloseReason.TERMINATED,
+            clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN);
+      }
+      connectedSessions.decrement();
+      return CompletableFuture.completedFuture(null);
+    }));
+  }
+
+  private CompletableFuture<Boolean> beginFinaliseControllerAsync(
+      SubscriptionController controller, ControllerCloseReason reason, WillFinalisation will) {
+    String sessionId = controller.getSessionId();
+    if (sessions.containsKey(sessionId)
+        || (controller.isPersistent() && persistentControllers.get(sessionId) != controller)) {
+      return CompletableFuture.completedFuture(false);
+    }
+    return controller.closeAsync(false).thenCompose(ignored -> onSessionQueue(() ->
+        CompletableFuture.completedFuture(completeControllerFinalisation(controller, reason, will))));
+  }
+
+  private boolean completeControllerFinalisation(
+      SubscriptionController controller, ControllerCloseReason reason, WillFinalisation will) {
+    String sessionId = controller.getSessionId();
+    if (sessions.containsKey(sessionId)
+        || (controller.isPersistent() && !persistentControllers.remove(sessionId, controller))) {
+      return false;
+    }
+    clearDisconnected(controller);
+    if (reason.expired) {
+      expiredSessions.increment();
+    }
+    finaliseWill(sessionId, will);
+    if (reason.deletePersistence) {
+      deletePersistence(sessionId);
+    }
+    return true;
+  }
+
+  private void scheduleAsyncExpiry(SubscriptionController controller, long remainingMillis) {
+    Future<?> task = SessionExpiryTask.scheduleAsync(expiryScheduler, taskScheduler,
+        () -> orderLifecycle(controller.getSessionId(),
+            () -> onSessionQueue(() -> beginFinaliseControllerAsync(controller, ControllerCloseReason.EXPIRED,
+                WillFinalisation.RUN).thenApply(done -> null))),
+        remainingMillis, TimeUnit.MILLISECONDS);
+    controller.setTimeout(task);
+    markDisconnected(controller);
+  }
+
+  /** Complete all active and disconnected sessions before stopping the session executor. */
+  public CompletableFuture<Void> stopAsync() {
+    List<CompletableFuture<Void>> closings = new ArrayList<>();
+    for (String sessionId : Set.copyOf(sessions.keySet())) {
+      closings.add(closeAsync(sessionId, true));
+    }
+    for (String sessionId : getSessionIds()) {
+      closings.add(closeAsync(sessionId, true));
+    }
+    return CompletableFuture.allOf(closings.toArray(CompletableFuture[]::new))
+        .whenCompleteAsync((ignored, failure) -> taskScheduler.shutdown(), ForkJoinPool.commonPool());
   }
 
   private boolean cancelPendingExpiry(SubscriptionController subscriptionManager) {
