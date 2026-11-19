@@ -125,7 +125,6 @@ public class SessionManager {
   public @NonNull @NotNull CompletableFuture<Session> closeAsync(@NonNull @NotNull Session session, boolean clearWillTask) {
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
     try {
-      session.getSession().markClosing();
       MessageDaemon.getInstance().getSubSystemManager().getSessionManager()
           .closeAsync(session.getSession(), clearWillTask)
           .whenCompleteAsync((ignored, failure) -> {
