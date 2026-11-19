@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import org.junit.jupiter.api.Assertions;
 
@@ -85,6 +86,7 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
       byte[] write = new byte[size];
       List<byte[]> list = parseToBytes(filename);
       OutputStream outputStream = testClient.getOutputStream();
+      System.err.println("Fragmented input: chunkSize=" + size + ", fast=" + fast + ", source=" + filename);
       for (byte[] source: list) {
         int idx = 0;
         while (idx < source.length) {
@@ -95,8 +97,14 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
             x++;
           }
 
-          outputStream.write(write, 0, x);
-          outputStream.flush();
+          try {
+            outputStream.write(write, 0, x);
+            testClient.bytesWritten.addAndGet(x);
+            outputStream.flush();
+          } catch (IOException failure) {
+            testClient.logState("write failure at source offset=" + (idx - x) + ", chunkSize=" + x + ", cause=" + failure);
+            throw failure;
+          }
           if (!fast) {
             long delay = Math.abs(rdm.nextInt(2));
             delay(delay);
@@ -105,8 +113,14 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
       }
       if(endFrame != null) {
         delay(END_FRAME_DELAY);
-        outputStream.write(endFrame);
-        outputStream.flush();
+        try {
+          outputStream.write(endFrame);
+          testClient.bytesWritten.addAndGet(endFrame.length);
+          outputStream.flush();
+        } catch (IOException failure) {
+          testClient.logState("end-frame write failure: " + failure);
+          throw failure;
+        }
       }
       waitForCompletion(testClient, totalFrames);
     }
@@ -154,6 +168,9 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
           end = System.currentTimeMillis() + 60000;
         }
       }
+      if (testClient.getFrameCounter() != noOfEvents) {
+        testClient.logState("timeout waiting for frames; expected=" + noOfEvents);
+      }
       Assertions.assertEquals(noOfEvents, testClient.getFrameCounter());
     }
   }
@@ -195,6 +212,9 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
     final InputStream inputStream;
     final int frameCharacter;
     AtomicInteger frameCounter = new AtomicInteger(0);
+    final AtomicLong bytesWritten = new AtomicLong();
+    final AtomicLong bytesRead = new AtomicLong();
+    volatile boolean clientClosing;
     ByteArrayOutputStream recordedResponses;
 
     public TestClient(String host, int port, long msDelay, int frameCharacter) throws IOException {
@@ -210,12 +230,14 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
       connection.setTcpNoDelay(true);
       outputStream = connection.getOutputStream();
       inputStream = connection.getInputStream();
+      logState("connected");
       readThread = new Thread(() -> {
         byte[] tmp = new byte[1024 * 1024];
         while (true) {
           try {
             int len = inputStream.read(tmp);
             if (len > 0) {
+              bytesRead.addAndGet(len);
               if(recordedResponses != null){
                 recordedResponses.write(tmp, 0, len);
               }
@@ -228,10 +250,12 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
                 }
               }
             } else {
+              logState("peer EOF");
               dumpResponseBuffer();
               break;
             }
           } catch (IOException e) {
+            logState("read failure: " + e);
             dumpResponseBuffer();
             break;
           }
@@ -258,7 +282,16 @@ public class SimpleBufferBasedTest extends BaseTestConfig {
       }
     }
 
+    void logState(String reason) {
+      System.err.println("Fragmented input [" + connection.getRemoteSocketAddress() + "] " + reason
+          + ", bytesWritten=" + bytesWritten.get() + ", bytesRead=" + bytesRead.get()
+          + ", frameMarkers=" + frameCounter.get() + ", clientClosing=" + clientClosing
+          + ", socketClosed=" + connection.isClosed());
+    }
+
     public void close() throws IOException {
+      clientClosing = true;
+      logState("client close");
       outputStream.close();
       inputStream.close();
       connection.close();
