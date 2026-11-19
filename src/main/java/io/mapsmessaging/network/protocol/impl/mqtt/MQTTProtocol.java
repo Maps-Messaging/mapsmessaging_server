@@ -93,6 +93,7 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
 
   private ScheduledFuture<?> connectionTimeOut = null;
   private volatile boolean rejectingConnection;
+  private static final java.util.logging.Logger connectionTrace = java.util.logging.Logger.getLogger(MQTTProtocol.class.getName() + ".connectionTrace");
 
   public MQTTProtocol(EndPoint endPoint) throws IOException {
     super(endPoint, endPoint.getConfig().getProtocolConfig("mqtt"));
@@ -360,6 +361,9 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
       registerRead();
       return false;
     } catch (MalformedException | IOException | java.io.UncheckedIOException e) {
+      connectionTrace.warning("MQTT3 closing after packet error: sessionPresent=" + (session != null)
+          + ", packetPosition=" + packet.position() + ", packetLimit=" + packet.limit()
+          + ", reason=" + e);
       logger.log(ServerLogMessages.MALFORMED, e, e.getMessage());
       endPoint.close();
     }
@@ -374,6 +378,11 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
         logger.log(ServerLogMessages.RECEIVE_PACKET, mqtt);
       }
       EndPoint.totalReceived.increment();
+      if (mqtt instanceof Connect || session == null) {
+        connectionTrace.info("MQTT3 inbound packet type=" + mqtt.getControlPacketId()
+            + ", sessionPresent=" + (session != null) + ", rejecting=" + rejectingConnection
+            + ", remainingBuffered=" + packet.available());
+      }
       PacketListener packetListener = packetListenerFactory.getListener(mqtt.getControlPacketId());
       MQTTPacket response = packetListener.handlePacket(mqtt, session, endPoint, this);
       if (mqtt instanceof Connect connect && !connect.hasSupportedProtocolLevel()) {
