@@ -120,7 +120,9 @@ public class SessionManager {
   public void close(@NonNull @NotNull Session session, boolean clearWillTask) throws IOException {
     ThreadStateContext threadContext = ThreadLocalContext.get();
     Object domain = threadContext == null ? null : threadContext.get("domain");
-    if (DestinationImpl.SUBSCRIPTION_TASK_KEY.equals(domain) || "SessionManagerPipeLine".equals(domain)) {
+    if (DestinationImpl.SUBSCRIPTION_TASK_KEY.equals(domain)
+        || DestinationImpl.RESOURCE_TASK_KEY.equals(domain)
+        || "SessionManagerPipeLine".equals(domain)) {
       throw new IOException("Blocking session close from an engine serial task would deadlock; use closeAsync");
     }
     try {
