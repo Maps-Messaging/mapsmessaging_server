@@ -20,16 +20,21 @@
 package io.mapsmessaging.engine.session;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 class SessionExpiryTask implements Future<Void> {
 
   private final ExecutorService pipelineExecutor;
   private final Runnable cleanup;
+  private final Supplier<? extends CompletionStage<Void>> asyncCleanup;
+  private boolean asyncStarted;
   private final CompletableFuture<Void> completion;
 
   private Future<?> timerFuture;
@@ -45,7 +50,22 @@ class SessionExpiryTask implements Future<Void> {
   private SessionExpiryTask(ExecutorService pipelineExecutor, Runnable cleanup) {
     this.pipelineExecutor = pipelineExecutor;
     this.cleanup = cleanup;
+    this.asyncCleanup = null;
     completion = new CompletableFuture<>();
+  }
+
+  private SessionExpiryTask(ExecutorService pipelineExecutor, Supplier<? extends CompletionStage<Void>> cleanup) {
+    this.pipelineExecutor = pipelineExecutor;
+    this.cleanup = null;
+    this.asyncCleanup = cleanup;
+    completion = new CompletableFuture<>();
+  }
+
+  static SessionExpiryTask scheduleAsync(SessionExpiryScheduler scheduler, ExecutorService pipelineExecutor,
+      Supplier<? extends CompletionStage<Void>> cleanup, long delay, TimeUnit unit) {
+    SessionExpiryTask task = new SessionExpiryTask(pipelineExecutor, cleanup);
+    task.timerFuture = scheduler.schedule(task::timerFired, delay, unit);
+    return task;
   }
 
   private synchronized void timerFired() {
@@ -55,10 +75,27 @@ class SessionExpiryTask implements Future<Void> {
     try {
       cleanupFuture = pipelineExecutor.submit(() -> {
         try {
-          if (!completion.isCancelled()) {
-            cleanup.run();
+          if (completion.isCancelled()) {
+            return;
           }
-          completion.complete(null);
+          if (asyncCleanup == null) {
+            cleanup.run();
+            completion.complete(null);
+          } else {
+            synchronized (SessionExpiryTask.this) {
+              if (completion.isCancelled()) {
+                return;
+              }
+              asyncStarted = true;
+            }
+            asyncCleanup.get().whenCompleteAsync((ignored, failure) -> {
+              if (failure == null) {
+                completion.complete(null);
+              } else {
+                completion.completeExceptionally(failure);
+              }
+            }, ForkJoinPool.commonPool());
+          }
         } catch (Throwable throwable) {
           completion.completeExceptionally(throwable);
         }
@@ -73,7 +110,7 @@ class SessionExpiryTask implements Future<Void> {
 
   @Override
   public synchronized boolean cancel(boolean mayInterruptIfRunning) {
-    if (completion.isDone()) {
+    if (completion.isDone() || asyncStarted) {
       return false;
     }
     if (timerFuture != null) {
