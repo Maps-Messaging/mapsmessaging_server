@@ -19,14 +19,14 @@
 
 package io.mapsmessaging.aggregator.worker;
 
-import io.mapsmessaging.aggregator.AggregatorEnvelope;
+import io.mapsmessaging.aggregator.FusionEnvelope;
 import io.mapsmessaging.aggregator.ProcessedHandler;
 import io.mapsmessaging.aggregator.StreamHandler;
 import io.mapsmessaging.aggregator.mailbox.QueueBackedMpscMailbox;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionContributionMode;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
 import org.junit.jupiter.api.Test;
 
@@ -37,18 +37,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AggregatorWorkerTest {
+class FusionWorkerTest {
 
   @Test
   void allInputs_firstAndLastModes_publishExpectedContributionsAndRunCompletions() {
-    QueueBackedMpscMailbox<AggregatorEnvelope> mailbox = new QueueBackedMpscMailbox<>(10);
+    QueueBackedMpscMailbox<FusionEnvelope> mailbox = new QueueBackedMpscMailbox<>(10);
     CapturingProcessedHandler processedHandler = new CapturingProcessedHandler();
-    AggregatorWorker worker = worker(
+    FusionWorker worker = worker(
         mailbox,
         processedHandler,
         WindowCloseMode.ALL_INPUTS,
-        handler(AggregatorContributionMode.FIRST),
-        handler(AggregatorContributionMode.LAST)
+        handler(FusionContributionMode.FIRST),
+        handler(FusionContributionMode.LAST)
     );
     AtomicInteger completions = new AtomicInteger();
     MessageEvent firstForFirstInput = event("first-1", completions::incrementAndGet);
@@ -56,10 +56,10 @@ class AggregatorWorkerTest {
     MessageEvent firstForLastInput = event("last-1", completions::incrementAndGet);
     MessageEvent replacementForLastInput = event("last-2", completions::incrementAndGet);
 
-    mailbox.offer(new AggregatorEnvelope(0, firstForFirstInput));
-    mailbox.offer(new AggregatorEnvelope(0, ignoredForFirstInput));
-    mailbox.offer(new AggregatorEnvelope(1, firstForLastInput));
-    mailbox.offer(new AggregatorEnvelope(1, replacementForLastInput));
+    mailbox.offer(new FusionEnvelope(0, firstForFirstInput));
+    mailbox.offer(new FusionEnvelope(0, ignoredForFirstInput));
+    mailbox.offer(new FusionEnvelope(1, firstForLastInput));
+    mailbox.offer(new FusionEnvelope(1, replacementForLastInput));
 
     assertEquals(4, worker.drainOnce(10));
 
@@ -71,23 +71,23 @@ class AggregatorWorkerTest {
 
   @Test
   void timeoutOnly_zeroTimeout_publishesPartialWindowAndResetsForNextWindow() {
-    QueueBackedMpscMailbox<AggregatorEnvelope> mailbox = new QueueBackedMpscMailbox<>(10);
+    QueueBackedMpscMailbox<FusionEnvelope> mailbox = new QueueBackedMpscMailbox<>(10);
     CapturingProcessedHandler processedHandler = new CapturingProcessedHandler();
-    AggregatorWorker worker = worker(
+    FusionWorker worker = worker(
         mailbox,
         processedHandler,
         WindowCloseMode.TIMEOUT_ONLY,
-        handler(AggregatorContributionMode.LAST),
-        handler(AggregatorContributionMode.LAST)
+        handler(FusionContributionMode.LAST),
+        handler(FusionContributionMode.LAST)
     );
     MessageEvent firstWindowEvent = event("first-window", null);
     MessageEvent secondWindowEvent = event("second-window", null);
 
-    mailbox.offer(new AggregatorEnvelope(0, firstWindowEvent));
+    mailbox.offer(new FusionEnvelope(0, firstWindowEvent));
     worker.drainOnce(10);
     worker.checkTimeout();
 
-    mailbox.offer(new AggregatorEnvelope(1, secondWindowEvent));
+    mailbox.offer(new FusionEnvelope(1, secondWindowEvent));
     worker.drainOnce(10);
     worker.checkTimeout();
 
@@ -100,18 +100,18 @@ class AggregatorWorkerTest {
 
   @Test
   void completionFailure_doesNotPreventWindowPublication() {
-    QueueBackedMpscMailbox<AggregatorEnvelope> mailbox = new QueueBackedMpscMailbox<>(1);
+    QueueBackedMpscMailbox<FusionEnvelope> mailbox = new QueueBackedMpscMailbox<>(1);
     CapturingProcessedHandler processedHandler = new CapturingProcessedHandler();
-    AggregatorWorker worker = worker(
+    FusionWorker worker = worker(
         mailbox,
         processedHandler,
         WindowCloseMode.ALL_INPUTS,
-        handler(AggregatorContributionMode.LAST)
+        handler(FusionContributionMode.LAST)
     );
     MessageEvent event = event("input", () -> {
       throw new IllegalStateException("completion failed");
     });
-    mailbox.offer(new AggregatorEnvelope(0, event));
+    mailbox.offer(new FusionEnvelope(0, event));
 
     assertDoesNotThrow(() -> worker.drainOnce(1));
     assertEquals(1, processedHandler.windows.size());
@@ -120,12 +120,12 @@ class AggregatorWorkerTest {
 
   @Test
   void scheduledFlag_allowsOnlyOneOutstandingSignalUntilCleared() {
-    AggregatorWorker worker = worker(
+    FusionWorker worker = worker(
         new QueueBackedMpscMailbox<>(1),
         contributions -> {
         },
         WindowCloseMode.TIMEOUT_ONLY,
-        handler(AggregatorContributionMode.LAST)
+        handler(FusionContributionMode.LAST)
     );
 
     assertTrue(worker.tryMarkScheduled());
@@ -136,17 +136,17 @@ class AggregatorWorkerTest {
     assertTrue(worker.tryMarkScheduled());
   }
 
-  private AggregatorWorker worker(
-      QueueBackedMpscMailbox<AggregatorEnvelope> mailbox,
+  private FusionWorker worker(
+      QueueBackedMpscMailbox<FusionEnvelope> mailbox,
       ProcessedHandler processedHandler,
       WindowCloseMode closeMode,
       StreamHandler... handlers
   ) {
-    return new AggregatorWorker("worker", mailbox, handlers, 0, processedHandler, closeMode, false);
+    return new FusionWorker("worker", mailbox, handlers, 0, processedHandler, closeMode, false);
   }
 
-  private StreamHandler handler(AggregatorContributionMode mode) {
-    AggregatorInputConfigDTO config = new AggregatorInputConfigDTO();
+  private StreamHandler handler(FusionContributionMode mode) {
+    FusionInputConfigDTO config = new FusionInputConfigDTO();
     config.setTopicName("/input");
     config.setContributionMode(mode);
     return new StreamHandler(config);

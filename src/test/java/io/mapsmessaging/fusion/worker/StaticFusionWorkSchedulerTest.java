@@ -28,17 +28,17 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class StaticAggregatorWorkSchedulerTest {
+class StaticFusionWorkSchedulerTest {
 
   @Test
   void stripeCountZeroResolvesToPositive() {
-    AggregatorWorkScheduler scheduler = new AggregatorWorkScheduler(0, 10, 1);
+    FusionWorkScheduler scheduler = new FusionWorkScheduler(0, 10, 1);
     assertNotNull(scheduler);
   }
 
   @Test
   void signalTriggersDrainAndIsIdempotent() throws Exception {
-    AggregatorWorkScheduler scheduler = new AggregatorWorkScheduler(1, 10, 1);
+    FusionWorkScheduler scheduler = new FusionWorkScheduler(1, 10, 1);
     FakeWorkItem workItem = new FakeWorkItem("A", 100);
 
     scheduler.register(workItem);
@@ -63,7 +63,7 @@ class StaticAggregatorWorkSchedulerTest {
 
   @Test
   void maxBatchLimitsDrainAndResignals() throws Exception {
-    AggregatorWorkScheduler scheduler = new AggregatorWorkScheduler(1, 7, 1);
+    FusionWorkScheduler scheduler = new FusionWorkScheduler(1, 7, 1);
     FakeWorkItem workItem = new FakeWorkItem("B", 50);
 
     scheduler.register(workItem);
@@ -82,7 +82,7 @@ class StaticAggregatorWorkSchedulerTest {
 
   @Test
   void timeoutTickCallsCheckTimeout() throws Exception {
-    AggregatorWorkScheduler scheduler = new AggregatorWorkScheduler(1, 10, 1);
+    FusionWorkScheduler scheduler = new FusionWorkScheduler(1, 10, 1);
     FakeWorkItem workItem = new FakeWorkItem("C", 0);
 
     scheduler.register(workItem);
@@ -99,7 +99,7 @@ class StaticAggregatorWorkSchedulerTest {
     }
   }
 
-  private static class FakeWorkItem implements AggregatorWorkItem {
+  private static class FakeWorkItem implements FusionWorkItem {
 
     private final String name;
     private final AtomicInteger remainingWork;
