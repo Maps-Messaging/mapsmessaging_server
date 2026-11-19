@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -227,6 +229,7 @@ class SessionManagerPipeLineScaleTest {
       SessionDetails details = mock(SessionDetails.class);
       SessionDetails removed = mock(SessionDetails.class);
       SubscriptionController controller = controller(sessionId, true);
+      when(controller.closeAsync(false)).thenReturn(CompletableFuture.completedFuture(null));
       WillTaskImpl willTask = mock(WillTaskImpl.class);
 
       when(details.getExpiryTime()).thenReturn(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
@@ -255,7 +258,7 @@ class SessionManagerPipeLineScaleTest {
     assertEquals(sessionCount, harness.expiryScheduler.pendingTasks());
 
     harness.expiryScheduler.fireAll();
-    harness.executor.runAll();
+    harness.executor.runUntil(() -> harness.expired.sum() == sessionCount);
 
     assertEquals(0, harness.connected.sum());
     assertEquals(0, harness.disconnected.sum());
@@ -268,7 +271,7 @@ class SessionManagerPipeLineScaleTest {
       String sessionId = "persistent-" + i;
       SubscriptionController controller = controllers.get(sessionId);
       WillTaskImpl willTask = willTasks.get(sessionId);
-      verify(controller, times(1)).close(false);
+      verify(controller, times(1)).closeAsync(false);
       verify(willTask, times(1)).cancel();
       verify(willTask, times(1)).run();
       verify(harness.persistentSessionManager, times(1)).removeSessionDetails(sessionId);
@@ -459,6 +462,20 @@ class SessionManagerPipeLineScaleTest {
       while ((task = tasks.poll()) != null) {
         task.run();
       }
+    }
+
+    void runUntil(BooleanSupplier condition) {
+      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
+      while (!condition.getAsBoolean() && System.nanoTime() < deadline) {
+        Runnable task = tasks.poll();
+        if (task == null) {
+          Thread.onSpinWait();
+        } else {
+          task.run();
+        }
+      }
+      assertTrue(condition.getAsBoolean(), "Asynchronous session expiry did not complete");
+      runAll();
     }
   }
 }
