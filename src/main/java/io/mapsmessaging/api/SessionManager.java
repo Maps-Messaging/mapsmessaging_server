@@ -24,6 +24,9 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
+import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
+import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -83,20 +86,26 @@ public class SessionManager {
       completableFuture.completeExceptionally(e);
       return completableFuture;
     }
-    Callable<SessionImpl> task = () -> {
-      SessionImpl sessionImpl = null;
-      try {
-        sessionImpl = MessageDaemon.getInstance().getSubSystemManager().getSessionManager().create(sessionContext);
-        Session session = AuthManager.getInstance().isAuthorisationEnabled()? new AuthSession(sessionImpl, listener) : new Session(sessionImpl, listener);
-        completableFuture.complete(session);
-      }
-      catch(Throwable t) {
-        logger.log(SESSION_ERROR_DURING_CREATION, t);
-        completableFuture.completeExceptionally(t);
-      }
-      return sessionImpl;
-    };
-    MessageDaemon.getInstance().getSubSystemManager().getSessionManager().submit(sessionContext.getId(), task);
+    try {
+      MessageDaemon.getInstance().getSubSystemManager().getSessionManager().createAsync(sessionContext)
+          .whenCompleteAsync((sessionImpl, failure) -> {
+            if (failure != null) {
+              logger.log(SESSION_ERROR_DURING_CREATION, failure);
+              completableFuture.completeExceptionally(failure);
+              return;
+            }
+            try {
+              Session session = AuthManager.getInstance().isAuthorisationEnabled()
+                  ? new AuthSession(sessionImpl, listener) : new Session(sessionImpl, listener);
+              completableFuture.complete(session);
+            } catch (Throwable error) {
+              logger.log(SESSION_ERROR_DURING_CREATION, error);
+              completableFuture.completeExceptionally(error);
+            }
+          }, ForkJoinPool.commonPool());
+    } catch (RuntimeException failure) {
+      completableFuture.completeExceptionally(failure);
+    }
     return completableFuture;
   }
 
@@ -109,6 +118,11 @@ public class SessionManager {
    * @throws IOException Thrown if the underlying file system raises exception during the close phases
    */
   public void close(@NonNull @NotNull Session session, boolean clearWillTask) throws IOException {
+    ThreadStateContext threadContext = ThreadLocalContext.get();
+    Object domain = threadContext == null ? null : threadContext.get("domain");
+    if (DestinationImpl.SUBSCRIPTION_TASK_KEY.equals(domain) || "SessionManagerPipeLine".equals(domain)) {
+      throw new IOException("Blocking session close from an engine serial task would deadlock; use closeAsync");
+    }
     try {
       closeAsync(session, clearWillTask).get();
     } catch (ExecutionException e) {
@@ -120,17 +134,24 @@ public class SessionManager {
 
   public @NonNull @NotNull CompletableFuture<Session> closeAsync(@NonNull @NotNull Session session, boolean clearWillTask) {
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
-    Callable<Void> task = () -> {
-      try {
-        MessageDaemon.getInstance().getSubSystemManager().getSessionManager().close(session.getSession(), clearWillTask);
-        session.close();
-        completableFuture.complete(session);
-      } catch (Exception e) {
-        completableFuture.completeExceptionally(e);
-      }
-      return null;
-    };
-    MessageDaemon.getInstance().getSubSystemManager().getSessionManager().submit(session.getName(), task);
+    try {
+      MessageDaemon.getInstance().getSubSystemManager().getSessionManager()
+          .closeAsync(session.getSession(), clearWillTask)
+          .whenCompleteAsync((ignored, failure) -> {
+            if (failure != null) {
+              completableFuture.completeExceptionally(failure);
+              return;
+            }
+            try {
+              session.close();
+              completableFuture.complete(session);
+            } catch (Exception error) {
+              completableFuture.completeExceptionally(error);
+            }
+          }, ForkJoinPool.commonPool());
+    } catch (RuntimeException failure) {
+      completableFuture.completeExceptionally(failure);
+    }
     return completableFuture;
   }
 
