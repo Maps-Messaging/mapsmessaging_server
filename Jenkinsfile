@@ -121,7 +121,7 @@ def blockFor = { String className ->
     }
     if (className.startsWith("io.mapsmessaging.aggregator.") ||
         className.startsWith("io.mapsmessaging.analytics.")) {
-        return "JUnit - Aggregator-Analytics"
+        return "JUnit - Event Fusion-Analytics"
     }
     if (className.startsWith("io.mapsmessaging.network.monitor.")) {
         return "JUnit - Network Monitor"
@@ -232,7 +232,7 @@ def blockNames = [
     "JUnit - Engine Regression",
     "JUnit - API",
     "JUnit - Transformers",
-    "JUnit - Aggregator-Analytics",
+    "JUnit - Event Fusion-Analytics",
     "JUnit - Network Monitor",
     "JUnit - Discovery",
     "JUnit - Network Core",

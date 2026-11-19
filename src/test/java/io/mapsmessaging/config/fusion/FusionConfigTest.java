@@ -2,7 +2,7 @@ package io.mapsmessaging.config.aggregator;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +11,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AggregatorConfigTest {
+class FusionConfigTest {
 
   @Test
   void parsesMapInputsAndCaseInsensitiveWindowMode() {
@@ -19,7 +19,7 @@ class AggregatorConfigTest {
     properties.put("windowCloseMode", "timeout_only");
     properties.put("inputs", List.of(Map.of("topicName", "/sensor/+/value", "selector", "quality > 0")));
 
-    AggregatorConfig config = new AggregatorConfig(properties);
+    FusionConfig config = new FusionConfig(properties);
 
     assertEquals(WindowCloseMode.TIMEOUT_ONLY, config.getWindowCloseMode());
     assertEquals(1, config.getInputs().size());
@@ -34,16 +34,16 @@ class AggregatorConfigTest {
     input.put("topicName", "/sensor/#");
     properties.put("inputs", input);
 
-    AggregatorConfig source = new AggregatorConfig(properties);
-    AggregatorConfig restored = new AggregatorConfig(source.toConfigurationProperties());
+    FusionConfig source = new FusionConfig(properties);
+    FusionConfig restored = new FusionConfig(source.toConfigurationProperties());
 
     assertTrue(restored.isEmitFirstEventImmediately());
   }
 
   @Test
   void updateAppliesScalarChangesAndThenBecomesIdempotent() {
-    AggregatorConfig config = new AggregatorConfig(baseProperties());
-    AggregatorConfigDTO updated = new AggregatorConfigDTO();
+    FusionConfig config = new FusionConfig(baseProperties());
+    FusionConfigDTO updated = new FusionConfigDTO();
     updated.setName("updated");
     updated.setEnabled(false);
     updated.setOutputTopic("/new/out");

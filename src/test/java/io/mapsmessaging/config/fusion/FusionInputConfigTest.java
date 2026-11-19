@@ -2,12 +2,12 @@ package io.mapsmessaging.config.aggregator;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class AggregatorInputConfigTest {
+class FusionInputConfigTest {
 
   @Test
   void topicAndSelectorRoundTrip() {
@@ -15,7 +15,7 @@ class AggregatorInputConfigTest {
     properties.put("topicName", "/sensor/+/value");
     properties.put("selector", "quality > 0");
 
-    AggregatorInputConfig restored = new AggregatorInputConfig(new AggregatorInputConfig(properties).toConfigurationProperties());
+    FusionInputConfig restored = new FusionInputConfig(new FusionInputConfig(properties).toConfigurationProperties());
 
     assertEquals("/sensor/+/value", restored.getTopicName());
     assertEquals("quality > 0", restored.getSelector());
@@ -23,7 +23,7 @@ class AggregatorInputConfigTest {
 
   @Test
   void blankSelectorIsOmittedFromPackedConfiguration() {
-    AggregatorInputConfig config = new AggregatorInputConfig(new ConfigurationProperties());
+    FusionInputConfig config = new FusionInputConfig(new ConfigurationProperties());
 
     ConfigurationProperties packed = config.toConfigurationProperties();
 
@@ -33,8 +33,8 @@ class AggregatorInputConfigTest {
 
   @Test
   void updateAppliesTopicAndSelectorAndRejectsUnrelatedDto() {
-    AggregatorInputConfig config = new AggregatorInputConfig(new ConfigurationProperties());
-    AggregatorInputConfigDTO updated = new AggregatorInputConfigDTO();
+    FusionInputConfig config = new FusionInputConfig(new ConfigurationProperties());
+    FusionInputConfigDTO updated = new FusionInputConfigDTO();
     updated.setTopicName("/updated/#");
     updated.setSelector("state = 'ACTIVE'");
 
