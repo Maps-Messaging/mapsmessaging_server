@@ -26,7 +26,7 @@ Persistent ownership and disconnected state are deliberately separate. A persist
 `SessionImpl.close()` closes only resources owned by the active session, such as authentication state, keep-alive scheduling, closure tasks, and namespace mappings.
 It must not close or shut down the `SubscriptionController`.
 
-All final controller destruction passes through `SessionManagerPipeLine.finaliseController(...)`.
+All final controller destruction belongs to `SessionManagerPipeLine`. The existing synchronous `finaliseController(...)` path is retained for legacy/internal callers, while production asynchronous closure uses `beginFinaliseControllerAsync(...)` and `completeControllerFinalisation(...)` after destination task completion.
 
 Do not add another direct `SubscriptionController.close(false)` lifecycle path in `SessionImpl`, protocol code, JMX code, test helpers, expiry callbacks, or shutdown code.
 
@@ -40,6 +40,20 @@ must execute through that pipeline's serial executor.
 The global expiry scheduler only determines when expiry becomes eligible to run. It does not own session cleanup.
 
 `SessionExpiryTask` bridges the timer and the pipeline executor so its `Future` represents actual cleanup completion rather than merely the timer callback firing.
+
+## Asynchronous destination cleanup (MSG-446)
+
+Destination subscription state is owned by each destination's serial subscription scheduler.
+Session close, delete and persistent-session hibernation dispatch lifecycle work to those destination schedulers, then coordinate completion per session ID.
+
+- The session scheduler does not block on destination completion.
+- Destination cleanup submission is dispatched outside the session scheduler because an idle destination scheduler may run tasks inline on the submitting thread.
+- A lightweight virtual waiter observes each destination task's `Future`, including late cancellation and exceptions. No destination or session task waits for another task queue.
+- Final session resource closure, controller bookkeeping, Will handling and terminal persistence cleanup are deferred until successful destination cleanup.
+- Create/reconnect, replacement, close, reset and expiry operations for the same session ID are sequenced by an asynchronous completion barrier.
+- The public synchronous `SessionManager.close()` rejects calls from engine serial task domains; callers there must use `closeAsync()`.
+- Closing failures remain visible and unsuccessful destination cleanup remains eligible for a later retry. Successfully completed destinations are not deleted again.
+- Expiry completion represents the full asynchronous cleanup, not merely the timer firing or entry into the session queue.
 
 ## Active session identity
 
