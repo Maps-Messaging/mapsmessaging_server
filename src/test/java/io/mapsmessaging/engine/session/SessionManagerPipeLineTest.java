@@ -40,6 +40,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.concurrent.atomic.LongAdder;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -469,14 +470,15 @@ class SessionManagerPipeLineTest {
     when(persistentSessionManager.removeSessionDetails(sessionId)).thenReturn(details);
     when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
 
+    when(expiredController.closeAsync(false)).thenReturn(CompletableFuture.completedFuture(null));
     pipeline.addDisconnectedSession(sessionId, details, subscriptions);
     expiryScheduler.fire();
-    executor.runNext();
+    runQueuedUntil(() -> expired.sum() == 1);
 
     assertNull(pipeline.getIdleSubscriptions(sessionId));
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
-    verify(expiredController).close(false);
+    verify(expiredController).closeAsync(false);
     verify(persistentSessionManager).removeSessionDetails(sessionId);
     verify(stateFileStore).delete(stateFile);
 
@@ -589,9 +591,10 @@ class SessionManagerPipeLineTest {
     when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
+    when(controller.closeAsync(false)).thenReturn(CompletableFuture.completedFuture(null));
     pipeline.addDisconnectedSession(sessionId, details, subscriptions);
     expiryScheduler.fire();
-    executor.runNext();
+    runQueuedUntil(() -> expired.sum() == 1);
 
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
@@ -600,7 +603,7 @@ class SessionManagerPipeLineTest {
 
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
-    verify(controller, times(1)).close(false);
+    verify(controller, times(1)).closeAsync(false);
     verify(persistentSessionManager, times(1)).removeSessionDetails(sessionId);
     verify(stateFileStore, times(1)).delete(stateFile);
   }
@@ -620,12 +623,15 @@ class SessionManagerPipeLineTest {
     when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
     doThrow(new IOException("expected")).when(stateFileStore).delete(stateFile);
+    when(controller.closeAsync(false)).thenReturn(CompletableFuture.completedFuture(null));
 
     assertDoesNotThrow(() -> pipeline.addDisconnectedSession(sessionId, details, subscriptions));
+    runQueuedUntil(() -> !pipeline.hasSubscriptions());
 
     assertNull(pipeline.getIdleSubscriptions(sessionId));
     assertEquals(0, disconnected.sum());
-    verify(controller).close(false);
+    verify(controller).closeAsync(false);
+    verify(stateFileStore).delete(stateFile);
   }
 
   @Test
@@ -999,6 +1005,7 @@ class SessionManagerPipeLineTest {
         eq(persistentSessionManager))).thenReturn(session);
     when(session.getName()).thenReturn(sessionId);
     when(session.getExpiry()).thenReturn(30L);
+    when(session.getSubscriptionController()).thenReturn(controller);
 
     pipeline.create(context);
     CompletableFuture<Void> hibernation = new CompletableFuture<>();
@@ -1040,6 +1047,7 @@ class SessionManagerPipeLineTest {
     when(sessionFactory.create(eq(context), eq(securityContext), eq(destinationManager), eq(controller),
         eq(persistentSessionManager))).thenReturn(session);
     when(session.getName()).thenReturn(sessionId);
+    when(session.getSubscriptionController()).thenReturn(controller);
 
     pipeline.create(context);
     CompletableFuture<Void> destinationCleanup = new CompletableFuture<>();
@@ -1094,7 +1102,9 @@ class SessionManagerPipeLineTest {
     when(sessionFactory.create(eq(replacementContext), eq(security), eq(destinationManager), eq(newController),
         eq(persistentSessionManager))).thenReturn(replacement);
     when(original.getName()).thenReturn(id);
+    when(original.getSubscriptionController()).thenReturn(oldController);
     when(replacement.getName()).thenReturn(id);
+    when(replacement.getSubscriptionController()).thenReturn(newController);
 
     pipeline.create(originalContext);
     CompletableFuture<Void> destinationCleanup = new CompletableFuture<>();
@@ -1118,6 +1128,18 @@ class SessionManagerPipeLineTest {
     assertSame(replacement, reconnect.get(5, TimeUnit.SECONDS));
     assertSame(replacement, pipeline.getSessions().get(0));
     assertEquals(1L, connected.sum());
+  }
+
+  private void runQueuedUntil(BooleanSupplier condition) {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (!condition.getAsBoolean() && System.nanoTime() < deadline) {
+      if (executor.queuedTasks() > 0) {
+        executor.runNext();
+      } else {
+        Thread.onSpinWait();
+      }
+    }
+    assertTrue(condition.getAsBoolean(), "Asynchronous session cleanup did not reach its expected state");
   }
 
   private void awaitAndRunQueuedTask() {
