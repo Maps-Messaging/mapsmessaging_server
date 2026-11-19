@@ -495,6 +495,9 @@ public class SessionManagerPipeLine {
       connectedSessions.decrement();
       unfinishedCloses.put(session.getName(), session);
       pendingCloseWill.put(session, clearWillTask);
+      if (session instanceof PersistentSession && session.getExpiry() > 0) {
+        markDisconnected(session.getSubscriptionController());
+      }
     }
   }
 
