@@ -152,7 +152,7 @@ public class SessionSharedSubscription extends Subscription {
   }
 
   boolean canAttemptSend() {
-    return !flowControlBlocked && sessionImpl != null && canSend();
+    return active.get() && !flowControlBlocked && sessionImpl != null && !sessionImpl.isClosed() && canSend();
   }
 
   boolean tryAcquireProtocolSendSlot(Message message) {
