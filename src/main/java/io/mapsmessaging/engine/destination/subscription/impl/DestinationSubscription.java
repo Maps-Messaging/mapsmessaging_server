@@ -677,10 +677,13 @@ public class DestinationSubscription extends Subscription {
           "atRest", messageStateManager.hasAtRestMessages(), "contextEmpty", isContextEmpty(),
           "canSend", acknowledgementController.canSend());
     }
+    return isReadyIgnoringSessionState() && (sessionImpl == null || !sessionImpl.isClosed());
+  }
+
+  protected boolean isReadyIgnoringSessionState() {
     return (!isPaused &&
         !sync &&
         !hibernating &&
-        (sessionImpl == null || !sessionImpl.isClosed()) &&
         messageStateManager.hasAtRestMessages() &&
         !isContextEmpty() &&
         acknowledgementController.canSend());
