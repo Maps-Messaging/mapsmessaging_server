@@ -146,7 +146,7 @@ public class SessionImpl {
    * @return true if the session is closed, false otherwise
    */
   @Getter
-  private boolean isClosed;
+  private volatile boolean isClosed;
 
   @Getter
   private final SessionContext context;
@@ -220,6 +220,11 @@ public class SessionImpl {
    * 5. Closes the closure task manager.
    * 6. Clears the namespace mapping.
    */
+  /** Immediately prevents further use while destination cleanup proceeds asynchronously. */
+  public void markClosing() {
+    isClosed = true;
+  }
+
   synchronized void close() {
     logger.log(ServerLogMessages.SESSION_MANAGER_CLOSING_SESSION, context.getId());
     isClosed = true;
