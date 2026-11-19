@@ -147,18 +147,44 @@ public abstract class SubscriptionModeManager {
   /** Close the owning destination's subscription state before discarding the session's index. */
   public CompletableFuture<Void> closeAsync(boolean closeOnly) {
     List<CompletableFuture<Void>> tasks = new ArrayList<>();
+    List<LifecycleResult> completed = new ArrayList<>();
     for (Map.Entry<DestinationImpl, Subscription> entry : activeSubscriptions.entrySet()) {
-      tasks.add(submitLifecycle(entry.getKey(), () -> closeSubscription(entry.getValue(), closeOnly)));
+      DestinationImpl destination = entry.getKey();
+      Subscription subscription = entry.getValue();
+      CompletableFuture<Void> task = submitLifecycle(destination, () -> closeSubscription(subscription, closeOnly));
+      tasks.add(task);
+      completed.add(new LifecycleResult(task, () -> activeSubscriptions.remove(destination, subscription)));
     }
     for (Map.Entry<DestinationImpl, Map<String, Subscription>> entry : sharedSubscriptions.entrySet()) {
-      for (Subscription subscription : entry.getValue().values()) {
-        tasks.add(submitLifecycle(entry.getKey(), () -> closeSubscription(subscription, closeOnly)));
+      DestinationImpl destination = entry.getKey();
+      for (Map.Entry<String, Subscription> member : entry.getValue().entrySet()) {
+        String key = member.getKey();
+        Subscription subscription = member.getValue();
+        CompletableFuture<Void> task = submitLifecycle(destination, () -> closeSubscription(subscription, closeOnly));
+        tasks.add(task);
+        completed.add(new LifecycleResult(task, () -> {
+          Map<String, Subscription> group = sharedSubscriptions.get(destination);
+          if (group != null && group.remove(key, subscription) && group.isEmpty()) {
+            sharedSubscriptions.remove(destination);
+          }
+        }));
       }
     }
-    return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).thenRun(() -> {
-      activeSubscriptions.clear();
-      sharedSubscriptions.clear();
+    return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).handle((ignored, failure) -> {
+      // Preserve failed destinations for retry; never delete successfully closed members twice.
+      for (LifecycleResult result : completed) {
+        if (result.future.isDone() && !result.future.isCompletedExceptionally() && !result.future.isCancelled()) {
+          result.remove.run();
+        }
+      }
+      if (failure != null) {
+        throw new java.util.concurrent.CompletionException(failure);
+      }
+      return null;
     });
+  }
+
+  private record LifecycleResult(CompletableFuture<Void> future, Runnable remove) {
   }
 
   private static void closeSubscription(Subscription subscription, boolean closeOnly) throws IOException {
