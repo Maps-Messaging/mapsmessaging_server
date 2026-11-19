@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * This test class uses runId embedded in JSON payload for filtering, so it remains stable even if
  * correlation propagation / dataMap propagation changes.
  */
-class StaticAggregatorSystemTest extends BaseAggreagtorTest {
+class StaticFusionSystemTest extends BaseFusionTest {
 
   private static final long COMPLETE_PUBLISH_DEADLINE_MS = 500;
   private static final long TIMEOUT_MS = 5000;
@@ -63,25 +63,25 @@ class StaticAggregatorSystemTest extends BaseAggreagtorTest {
 
   @Test
   void aggregator1_completePublishesImmediately() throws Exception {
-    AggregatorSpec spec = AggregatorSpec.aggregator1();
+    FusionSpec spec = FusionSpec.aggregator1();
     runCompletePublishesImmediately(spec);
   }
 
   @Test
   void aggregator1_partialWaitsForTimeout() throws Exception {
-    AggregatorSpec spec = AggregatorSpec.aggregator1();
+    FusionSpec spec = FusionSpec.aggregator1();
     runPartialWaitsForTimeout(spec);
   }
 
 
   @Test
   void aggregator1_lastWinsWithinWindow() throws Exception {
-    AggregatorSpec spec = AggregatorSpec.aggregator1();
+    FusionSpec spec = FusionSpec.aggregator1();
     runLastWinsWithinWindow(spec);
   }
 
 
-  private void runCompletePublishesImmediately(AggregatorSpec spec) throws LoginException, IOException, ExecutionException, InterruptedException, TimeoutException {
+  private void runCompletePublishesImmediately(FusionSpec spec) throws LoginException, IOException, ExecutionException, InterruptedException, TimeoutException {
 
     String runId = newRunId();
     BlockingQueue<Message> outQueue = new LinkedBlockingQueue<>();
@@ -127,7 +127,7 @@ class StaticAggregatorSystemTest extends BaseAggreagtorTest {
     }
   }
 
-  private void runPartialWaitsForTimeout(AggregatorSpec spec)
+  private void runPartialWaitsForTimeout(FusionSpec spec)
       throws LoginException, IOException, ExecutionException, InterruptedException, TimeoutException {
 
     String runId = newRunId();
@@ -175,7 +175,7 @@ class StaticAggregatorSystemTest extends BaseAggreagtorTest {
     }
   }
 
-  private void runLastWinsWithinWindow(AggregatorSpec spec)
+  private void runLastWinsWithinWindow(FusionSpec spec)
       throws LoginException, IOException, ExecutionException, InterruptedException, TimeoutException {
 
     String runId = newRunId();

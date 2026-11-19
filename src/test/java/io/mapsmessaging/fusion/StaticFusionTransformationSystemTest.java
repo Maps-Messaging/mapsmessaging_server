@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * Current intent:
  * - Publish messy JSON inputs on /aggregator2/in1, /in2, /in3.
- * - Aggregator outputs the standard envelope JSON (for now).
+ * - Fusion outputs the standard envelope JSON (for now).
  * - Once inbound jsonMutate is configured, each input payload should be reduced to:
  *     in1: { "runId": "...", "temp": 20 }
  *     in2: { "runId": "...", "humidity": 60 }
@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * The test is expected to FAIL until transformers are configured. That is intentional.
  */
-class StaticAggregatorTransformationSystemTest extends BaseAggreagtorTest {
+class StaticFusionTransformationSystemTest extends BaseFusionTest {
 
   private static final long COMPLETE_PUBLISH_DEADLINE_MS = 500;
   private static final String JSON_CONTENT_TYPE = "application/json";

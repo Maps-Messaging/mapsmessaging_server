@@ -45,13 +45,13 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * Intent:
  * - Publish already-clean JSON inputs on /aggregator3/in1, /in2, /in3.
- * - Aggregator builds its normal envelope internally, then outbound transformers reshape it.
+ * - Fusion builds its normal envelope internally, then outbound transformers reshape it.
  * - Expected final output is a flat JSON object containing:
  *     { "runId": "...", "temp": 20, "humidity": 60, "pressure": 990 }
  *
- * Aggregator-3 outbound transformers are configured in the test AggregatorManager.yaml.
+ * Fusion-3 outbound transformers are configured in the test FusionManager.yaml.
  */
-class StaticAggregatorOutboundTransformationSystemTest extends BaseAggreagtorTest {
+class StaticFusionOutboundTransformationSystemTest extends BaseFusionTest {
 
   private static final long COMPLETE_PUBLISH_DEADLINE_MS = 5000;
   private static final String JSON_CONTENT_TYPE = "application/json";

@@ -16,8 +16,8 @@ import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.api.transformers.ParsedMessage;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionContributionMode;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -33,12 +33,12 @@ class StreamHandlerBranchCoverageTest {
 
   @Test
   void exposesConfiguredTopicAndContributionMode() {
-    AggregatorInputConfigDTO config = config("/sensor/+/value", null);
-    config.setContributionMode(AggregatorContributionMode.FIRST);
+    FusionInputConfigDTO config = config("/sensor/+/value", null);
+    config.setContributionMode(FusionContributionMode.FIRST);
     StreamHandler handler = new StreamHandler(config);
 
     assertEquals("/sensor/+/value", handler.getTopicName());
-    assertEquals(AggregatorContributionMode.FIRST, handler.getContributionMode());
+    assertEquals(FusionContributionMode.FIRST, handler.getContributionMode());
   }
 
   @Test
@@ -221,8 +221,8 @@ class StreamHandlerBranchCoverageTest {
     return (List<InterServerTransformation>) field.get(handler);
   }
 
-  private AggregatorInputConfigDTO config(String topic, String selector) {
-    AggregatorInputConfigDTO config = new AggregatorInputConfigDTO();
+  private FusionInputConfigDTO config(String topic, String selector) {
+    FusionInputConfigDTO config = new FusionInputConfigDTO();
     config.setTopicName(topic);
     config.setSelector(selector);
     return config;
