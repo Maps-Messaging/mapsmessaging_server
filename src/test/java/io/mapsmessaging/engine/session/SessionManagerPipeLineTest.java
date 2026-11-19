@@ -980,6 +980,49 @@ class SessionManagerPipeLineTest {
   }
 
   @Test
+  void persistentCloseWaitsForQueuedHibernationBeforeSchedulingExpiry() throws Exception {
+    String sessionId = "async-persistent-hibernation";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SubscriptionController controller = controller(sessionId, true);
+    PersistentSession session = mock(PersistentSession.class);
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(context.isPersistentSession()).thenReturn(true);
+    when(details.getUniqueId()).thenReturn("persistent-hibernation-id");
+    when(details.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(eq(context), eq(destinationManager), anyMap())).thenReturn(controller);
+    when(sessionFactory.create(eq(context), eq(securityContext), eq(destinationManager), eq(controller),
+        eq(persistentSessionManager))).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
+    when(session.getExpiry()).thenReturn(30L);
+
+    pipeline.create(context);
+    CompletableFuture<Void> hibernation = new CompletableFuture<>();
+    when(controller.hibernateAllAsync()).thenReturn(hibernation);
+
+    CompletableFuture<Void> closing = pipeline.closeAsync(session, true);
+    awaitAndRunQueuedTask();
+    assertFalse(closing.isDone());
+    assertNull(controller.getTimeout(), "Expiry must not start before destination hibernation completes");
+    verify(session, never()).close();
+
+    hibernation.complete(null);
+    awaitAndRunQueuedTask();
+    assertNull(closing.get(5, TimeUnit.SECONDS));
+    verify(session).close();
+    verify(controller).hibernateAllAsync();
+    verify(controller, never()).closeAsync(false);
+    assertNotNull(controller.getTimeout());
+    assertSame(controller, pipeline.getIdleSubscriptions(sessionId));
+    assertEquals(1L, disconnected.sum());
+    assertEquals(0L, connected.sum());
+  }
+
+  @Test
   void asynchronousCloseWaitsForDestinationCleanupWithoutBlockingSessionQueue() throws Exception {
     String sessionId = "async-close-session";
     SessionContext context = mock(SessionContext.class);
