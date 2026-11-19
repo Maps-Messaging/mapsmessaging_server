@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -969,6 +970,113 @@ class SessionManagerPipeLineTest {
 
   private Future<?> timeoutOf(SubscriptionController controller) {
     return controller.getTimeout();
+  }
+
+  @Test
+  void asynchronousCloseWaitsForDestinationCleanupWithoutBlockingSessionQueue() throws Exception {
+    String sessionId = "async-close-session";
+    SessionContext context = mock(SessionContext.class);
+    SessionDetails details = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext securityContext =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SubscriptionController controller = controller(sessionId, false);
+    SessionImpl session = mock(SessionImpl.class);
+    when(context.getId()).thenReturn(sessionId);
+    when(context.getSecurityContext()).thenReturn(securityContext);
+    when(details.getUniqueId()).thenReturn("async-close-id");
+    when(details.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
+    when(persistentSessionManager.getSessionDetails(context)).thenReturn(details);
+    when(subscriptionControllerFactory.create(eq(context), eq(destinationManager), anyMap())).thenReturn(controller);
+    when(sessionFactory.create(eq(context), eq(securityContext), eq(destinationManager), eq(controller),
+        eq(persistentSessionManager))).thenReturn(session);
+    when(session.getName()).thenReturn(sessionId);
+
+    pipeline.create(context);
+    CompletableFuture<Void> destinationCleanup = new CompletableFuture<>();
+    when(controller.closeAsync(false)).thenReturn(destinationCleanup);
+
+    CompletableFuture<Void> close = pipeline.closeAsync(session, true);
+    awaitAndRunQueuedTask();
+    assertFalse(close.isDone(), "Session close must await all destination completion callbacks");
+    verify(session, never()).close();
+
+    Future<?> unrelated = pipeline.submit((Callable<String>) () -> "still processing");
+    executor.runNext();
+    assertEquals("still processing", unrelated.get(5, TimeUnit.SECONDS));
+    assertFalse(close.isDone(), "The session scheduler must remain available during cleanup");
+
+    destinationCleanup.complete(null);
+    awaitAndRunQueuedTask();
+    assertNull(close.get(5, TimeUnit.SECONDS));
+    verify(session).close();
+    verify(controller).closeAsync(false);
+    assertEquals(0L, connected.sum());
+  }
+
+  @Test
+  void replacementIsHeldBehindAsynchronousCloseForSameSessionId() throws Exception {
+    String id = "replacement-barrier";
+    SessionContext originalContext = mock(SessionContext.class);
+    SessionContext replacementContext = mock(SessionContext.class);
+    SessionDetails originalDetails = mock(SessionDetails.class);
+    SessionDetails replacementDetails = mock(SessionDetails.class);
+    io.mapsmessaging.engine.session.security.SecurityContext security =
+        mock(io.mapsmessaging.engine.session.security.SecurityContext.class);
+    SubscriptionController oldController = controller(id, false);
+    SubscriptionController newController = controller(id, false);
+    SessionImpl original = mock(SessionImpl.class);
+    SessionImpl replacement = mock(SessionImpl.class);
+
+    when(originalContext.getId()).thenReturn(id);
+    when(replacementContext.getId()).thenReturn(id);
+    when(originalContext.getSecurityContext()).thenReturn(security);
+    when(replacementContext.getSecurityContext()).thenReturn(security);
+    when(originalDetails.getUniqueId()).thenReturn("old-id");
+    when(replacementDetails.getUniqueId()).thenReturn("new-id");
+    when(originalDetails.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
+    when(replacementDetails.getSubscriptionContextMap()).thenReturn(new LinkedHashMap<>());
+    when(persistentSessionManager.getSessionDetails(originalContext)).thenReturn(originalDetails);
+    when(persistentSessionManager.getSessionDetails(replacementContext)).thenReturn(replacementDetails);
+    when(subscriptionControllerFactory.create(eq(originalContext), eq(destinationManager), anyMap())).thenReturn(oldController);
+    when(subscriptionControllerFactory.create(eq(replacementContext), eq(destinationManager), anyMap())).thenReturn(newController);
+    when(sessionFactory.create(eq(originalContext), eq(security), eq(destinationManager), eq(oldController),
+        eq(persistentSessionManager))).thenReturn(original);
+    when(sessionFactory.create(eq(replacementContext), eq(security), eq(destinationManager), eq(newController),
+        eq(persistentSessionManager))).thenReturn(replacement);
+    when(original.getName()).thenReturn(id);
+    when(replacement.getName()).thenReturn(id);
+
+    pipeline.create(originalContext);
+    CompletableFuture<Void> destinationCleanup = new CompletableFuture<>();
+    when(oldController.closeAsync(false)).thenReturn(destinationCleanup);
+    CompletableFuture<Void> close = pipeline.closeAsync(original, true);
+    CompletableFuture<SessionImpl> reconnect = pipeline.createAsync(replacementContext);
+
+    awaitAndRunQueuedTask();
+    assertFalse(close.isDone());
+    assertFalse(reconnect.isDone());
+    verify(sessionFactory, never()).create(eq(replacementContext), any(), any(), any(), any());
+
+    Future<?> unrelated = pipeline.submit((Callable<String>) () -> "unblocked");
+    executor.runNext();
+    assertEquals("unblocked", unrelated.get(5, TimeUnit.SECONDS));
+
+    destinationCleanup.complete(null);
+    awaitAndRunQueuedTask();
+    assertNull(close.get(5, TimeUnit.SECONDS));
+    awaitAndRunQueuedTask();
+    assertSame(replacement, reconnect.get(5, TimeUnit.SECONDS));
+    assertSame(replacement, pipeline.getSessions().get(0));
+    assertEquals(1L, connected.sum());
+  }
+
+  private void awaitAndRunQueuedTask() {
+    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    while (executor.queuedTasks() == 0 && System.nanoTime() < deadline) {
+      Thread.onSpinWait();
+    }
+    assertTrue(executor.queuedTasks() > 0, "No session lifecycle continuation was queued");
+    executor.runNext();
   }
 
   private static final class CapturingExpiryScheduler implements SessionExpiryScheduler {
