@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -110,6 +112,65 @@ class SessionExpiryTaskTest {
     assertFalse(task.isCancelled());
     assertEquals(1, cleanupCalls.get());
     assertNull(task.get());
+  }
+
+  @Test
+  void asynchronousExpiryIsIncompleteUntilDestinationCleanupFinishes() throws Exception {
+    ManualExpiryScheduler scheduler = new ManualExpiryScheduler();
+    ManualExecutor executor = new ManualExecutor();
+    CompletableFuture<Void> destinationCleanup = new CompletableFuture<>();
+    SessionExpiryTask task = SessionExpiryTask.scheduleAsync(
+        scheduler, executor, () -> destinationCleanup, 30, TimeUnit.SECONDS);
+
+    scheduler.fire();
+    assertFalse(task.isDone());
+    executor.runNext();
+
+    assertFalse(task.isDone(), "Timer and session task completion must not mean destination cleanup completed");
+    assertFalse(task.cancel(false), "Running asynchronous expiry owns the lifecycle and must not be cancelled by reconnect");
+
+    destinationCleanup.complete(null);
+    assertNull(task.get(5, TimeUnit.SECONDS));
+    assertTrue(task.isDone());
+    assertFalse(task.isCancelled());
+  }
+
+  @Test
+  void asynchronousExpiryPropagatesDestinationCleanupFailure() throws Exception {
+    ManualExpiryScheduler scheduler = new ManualExpiryScheduler();
+    ManualExecutor executor = new ManualExecutor();
+    CompletableFuture<Void> destinationCleanup = new CompletableFuture<>();
+    SessionExpiryTask task = SessionExpiryTask.scheduleAsync(
+        scheduler, executor, () -> destinationCleanup, 30, TimeUnit.SECONDS);
+
+    scheduler.fire();
+    executor.runNext();
+    destinationCleanup.completeExceptionally(new IllegalStateException("Destination cleanup failed"));
+
+    ExecutionException failure = assertThrows(ExecutionException.class,
+        () -> task.get(5, TimeUnit.SECONDS));
+    assertTrue(failure.getCause().getMessage().contains("Destination cleanup failed"));
+    assertFalse(task.isCancelled());
+  }
+
+  @Test
+  void cancellingQueuedAsynchronousExpiryPreventsCleanup() {
+    ManualExpiryScheduler scheduler = new ManualExpiryScheduler();
+    ManualExecutor executor = new ManualExecutor();
+    AtomicInteger calls = new AtomicInteger();
+    SessionExpiryTask task = SessionExpiryTask.scheduleAsync(
+        scheduler, executor, () -> {
+          calls.incrementAndGet();
+          return CompletableFuture.completedFuture(null);
+        }, 30, TimeUnit.SECONDS);
+
+    scheduler.fire();
+    assertEquals(1, executor.queuedTasks());
+    assertTrue(task.cancel(false));
+    executor.runNext();
+
+    assertTrue(task.isCancelled());
+    assertEquals(0, calls.get());
   }
 
   private static final class ManualExpiryScheduler implements SessionExpiryScheduler {
