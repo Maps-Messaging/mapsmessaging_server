@@ -46,12 +46,14 @@ The global expiry scheduler only determines when expiry becomes eligible to run.
 Destination subscription state is owned by each destination's serial subscription scheduler.
 Session close, delete and persistent-session hibernation dispatch lifecycle work to those destination schedulers, then coordinate completion per session ID.
 
+- Public `SessionManager.close()` marks the session logically closed, registers asynchronous cleanup and returns without waiting. `closeAsync()` still completes only after full cleanup.
+- A pipeline close task removes the old session from the active registry and updates connected-session accounting before destination cleanup; same-ID creation waits for the pending cleanup barrier.
 - The session scheduler does not block on destination completion.
 - Destination cleanup submission is dispatched outside the session scheduler because an idle destination scheduler may run tasks inline on the submitting thread.
 - A lightweight virtual waiter observes each destination task's `Future`, including late cancellation and exceptions. No destination or session task waits for another task queue.
 - Final session resource closure, controller bookkeeping, Will handling and terminal persistence cleanup are deferred until successful destination cleanup.
 - Create/reconnect, replacement, close, reset and expiry operations for the same session ID are sequenced by an asynchronous completion barrier.
-- The public synchronous `SessionManager.close()` rejects calls from engine serial task domains; callers there must use `closeAsync()`.
+- Protocol close paths need no completion handlers or changes: `close()` is non-blocking in all execution domains, including selectors. Callers requiring full cleanup use `closeAsync()`.
 - Closing failures remain visible and unsuccessful destination cleanup remains eligible for a later retry. Successfully completed destinations are not deleted again.
 - Expiry completion represents the full asynchronous cleanup, not merely the timer firing or entry into the session queue.
 
