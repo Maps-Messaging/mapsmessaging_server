@@ -139,6 +139,7 @@ public class ConfigurationManager {
     if (ConsulManagerFactory.getInstance().isStarted()) {
       defaultManager = processConsulConfig(serverId);
     }
+    FusionConfigFileMigration.migrateDirectory(java.nio.file.Path.of("conf"));
     YamlPropertyManager yamlPropertyManager = new FileYamlPropertyManager();
     propertyManagers.add(yamlPropertyManager);
     for (PropertyManager manager : propertyManagers) {
