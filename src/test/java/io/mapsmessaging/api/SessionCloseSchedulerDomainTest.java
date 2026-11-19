@@ -22,6 +22,11 @@ class SessionCloseSchedulerDomainTest {
   }
 
   @Test
+  void destinationResourceTaskCannotSynchronouslyCloseSession() {
+    assertBlockingCloseRejected(DestinationImpl.RESOURCE_TASK_KEY);
+  }
+
+  @Test
   void sessionSchedulerTaskCannotSynchronouslyCloseSession() {
     assertBlockingCloseRejected("SessionManagerPipeLine");
   }
