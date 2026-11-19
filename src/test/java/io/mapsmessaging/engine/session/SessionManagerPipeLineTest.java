@@ -1057,6 +1057,10 @@ class SessionManagerPipeLineTest {
     when(controller.closeAsync(false)).thenReturn(destinationCleanup);
 
     CompletableFuture<Void> close = pipeline.closeAsync(session, true);
+    assertFalse(pipeline.hasSessions(), "Logical close must remove the active session before the queue runs");
+    assertEquals(0L, connected.sum(), "Connected-session accounting must update before close returns");
+    verify(session).markClosing();
+    assertFalse(close.isDone(), "Destination cleanup is still pending");
     awaitAndRunQueuedTask();
     assertFalse(close.isDone(), "Session close must await all destination completion callbacks");
     assertFalse(pipeline.hasSessions(), "Logical close must be visible before destination cleanup completes");
