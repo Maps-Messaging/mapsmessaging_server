@@ -33,6 +33,7 @@ import io.mapsmessaging.engine.destination.subscription.set.DestinationSet;
 import io.mapsmessaging.engine.destination.subscription.tasks.UnsubscribeTask;
 import io.mapsmessaging.engine.session.SessionImpl;
 import io.mapsmessaging.engine.tasks.ListResponse;
+import io.mapsmessaging.engine.tasks.VoidResponse;
 import io.mapsmessaging.engine.tasks.Response;
 import io.mapsmessaging.engine.tasks.SubscriptionResponse;
 import io.mapsmessaging.logging.Logger;
@@ -41,6 +42,7 @@ import lombok.Getter;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -126,6 +128,71 @@ public abstract class SubscriptionModeManager {
     for (Subscription subscription : allSubscriptions()) {
       subscription.hibernate();
     }
+  }
+
+  /** Execute each subscription's hibernation in its owning destination's serial domain. */
+  public CompletableFuture<Void> hibernateAsync() {
+    List<CompletableFuture<Void>> tasks = new ArrayList<>();
+    for (Map.Entry<DestinationImpl, Subscription> entry : activeSubscriptions.entrySet()) {
+      tasks.add(submitLifecycle(entry.getKey(), entry.getValue()::hibernate));
+    }
+    for (Map.Entry<DestinationImpl, Map<String, Subscription>> entry : sharedSubscriptions.entrySet()) {
+      for (Subscription subscription : entry.getValue().values()) {
+        tasks.add(submitLifecycle(entry.getKey(), subscription::hibernate));
+      }
+    }
+    return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new));
+  }
+
+  /** Close the owning destination's subscription state before discarding the session's index. */
+  public CompletableFuture<Void> closeAsync(boolean closeOnly) {
+    List<CompletableFuture<Void>> tasks = new ArrayList<>();
+    for (Map.Entry<DestinationImpl, Subscription> entry : activeSubscriptions.entrySet()) {
+      tasks.add(submitLifecycle(entry.getKey(), () -> closeSubscription(entry.getValue(), closeOnly)));
+    }
+    for (Map.Entry<DestinationImpl, Map<String, Subscription>> entry : sharedSubscriptions.entrySet()) {
+      for (Subscription subscription : entry.getValue().values()) {
+        tasks.add(submitLifecycle(entry.getKey(), () -> closeSubscription(subscription, closeOnly)));
+      }
+    }
+    return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).thenRun(() -> {
+      activeSubscriptions.clear();
+      sharedSubscriptions.clear();
+    });
+  }
+
+  private static void closeSubscription(Subscription subscription, boolean closeOnly) throws IOException {
+    if (closeOnly) {
+      subscription.close();
+    } else {
+      subscription.delete();
+    }
+  }
+
+  private CompletableFuture<Void> submitLifecycle(DestinationImpl destination, LifecycleAction action) {
+    CompletableFuture<Void> completion = new CompletableFuture<>();
+    try {
+      Future<Response> scheduled = destination.submit(() -> {
+        try {
+          action.run();
+          completion.complete(null);
+        } catch (Throwable failure) {
+          completion.completeExceptionally(failure);
+        }
+        return new VoidResponse();
+      });
+      if (scheduled.isCancelled()) {
+        completion.completeExceptionally(new java.util.concurrent.CancellationException("Destination lifecycle task cancelled"));
+      }
+    } catch (RuntimeException failure) {
+      completion.completeExceptionally(failure);
+    }
+    return completion;
+  }
+
+  @FunctionalInterface
+  private interface LifecycleAction {
+    void run() throws IOException;
   }
 
   protected abstract String adjustUnsubscribeId(String id);
