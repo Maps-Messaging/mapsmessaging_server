@@ -59,6 +59,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -196,17 +197,22 @@ public class SubscriptionController implements DestinationManagerListener {
   public CompletableFuture<Void> closeAsync(boolean closeOnly) {
     logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
     destinationManager.removeListener(this);
-    List<CompletableFuture<Void>> tasks = new ArrayList<>();
-    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
-      tasks.add(manager.closeAsync(closeOnly));
-    }
-    return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).thenRun(() -> {
-      subscriptions.clear();
-      contextMap.clear();
-      if (subscriptionControllerJMX != null) {
-        subscriptionControllerJMX.close();
+    // The destination scheduler may execute a newly submitted task on its caller.
+    // Do not submit from the session scheduler, or cleanup could occupy its only worker.
+    return CompletableFuture.supplyAsync(() -> {
+      List<CompletableFuture<Void>> tasks = new ArrayList<>();
+      for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+        tasks.add(manager.closeAsync(closeOnly));
       }
-    });
+      return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new));
+    }, ForkJoinPool.commonPool()).thenCompose(completion -> completion)
+        .thenRunAsync(() -> {
+          subscriptions.clear();
+          contextMap.clear();
+          if (subscriptionControllerJMX != null) {
+            subscriptionControllerJMX.close();
+          }
+        }, ForkJoinPool.commonPool());
   }
 
   /** Hibernation retains persistent subscriptions but serializes their state changes. */
@@ -215,11 +221,13 @@ public class SubscriptionController implements DestinationManagerListener {
       return CompletableFuture.completedFuture(null);
     }
     sessionImpl = null;
-    List<CompletableFuture<Void>> tasks = new ArrayList<>();
-    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
-      tasks.add(manager.hibernateAsync());
-    }
-    return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new));
+    return CompletableFuture.supplyAsync(() -> {
+      List<CompletableFuture<Void>> tasks = new ArrayList<>();
+      for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+        tasks.add(manager.hibernateAsync());
+      }
+      return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new));
+    }, ForkJoinPool.commonPool()).thenCompose(completion -> completion);
   }
 
   public boolean isHibernating() {
