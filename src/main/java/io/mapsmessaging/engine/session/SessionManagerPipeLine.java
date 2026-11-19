@@ -482,6 +482,9 @@ public class SessionManagerPipeLine {
   public CompletableFuture<Void> closeAsync(String sessionId, boolean clearWillTask) {
     return orderLifecycle(sessionId, () -> onSessionQueue(() -> {
       SessionImpl active = sessions.get(sessionId);
+      if (active == null) {
+        active = unfinishedCloses.get(sessionId);
+      }
       CompletableFuture<Void> closed = active == null ? CompletableFuture.completedFuture(null)
           : beginCloseAsync(active, clearWillTask);
       return closed.thenCompose(ignored -> onSessionQueue(() -> {
