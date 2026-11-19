@@ -31,8 +31,8 @@ public enum ServerLogMessages implements LogMessage {
   //-------------------------------------------------------------------------------------------------------------
   // <editor-fold desc="Failure diagnostics">
   MESSAGE_DAEMON_START_FAILED(LEVEL.FATAL, SERVER_CATEGORY.DAEMON, "Unexpected error starting the messaging daemon"),
-  AGGREGATOR_DRAIN_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to drain aggregator worker '{}'"),
-  AGGREGATOR_TIMEOUT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to check timeout for aggregator worker '{}'"),
+  FUSION_DRAIN_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to drain fusion worker '{}'"),
+  FUSION_TIMEOUT_FAILED(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Failed to check timeout for fusion worker '{}'"),
   SUBSCRIPTION_AUTHORISATION_CHECK_FAILED(LEVEL.ERROR, SERVER_CATEGORY.AUTHORISATION, "Failed to check subscription authorisation for '{}'"),
   JSON_MAPPER_TRANSFORMATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.TRANSFORMATION, "Failed to apply JSON mapping for source '{}'"),
   ROUTE_MANAGER_EVALUATION_FAILED(LEVEL.WARN, SERVER_CATEGORY.NETWORK, "Failed to evaluate connection routes"),
@@ -504,20 +504,20 @@ public enum ServerLogMessages implements LogMessage {
   // </editor-fold>
 
   // <editor-fold desc="Write Task log messages">
-  AGGREGATOR_MANAGER_TASK_CREATED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager created with {} aggregators"),
-  AGGREGATOR_MANAGER_TASK_CREATED_NO_CONFIG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager created with no aggregators"),
-  AGGREGATOR_MANAGER_TASK_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager started {} aggregators"),
-  AGGREGATOR_MANAGER_TASK_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator Manager stopped {} aggregators"),
-  AGGREGATOR_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator started with {} handlers"),
-  AGGREGATOR_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} failed to started, raised exception"),
-  AGGREGATOR_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Aggregator stopped with {} handlers"),
-  AGGREGATOR_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Aggregator {}, completed with {} events"),
-  AGGREGATOR_COMPLETION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Aggregator {} completion task failed to complete, raised exception"),
-  AGGREGATOR_EVENT_RECEIVED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Aggregator {} received event from {}"),
-  AGGREGATOR_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Aggregator {} dropped event from {}"),
-  AGGREGATOR_QUEUE_OFFER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue offered envelope for {}"),
-  AGGREGATOR_QUEUE_DRAIN(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue drained {} items"),
-  AGGREGATOR_SUBSCRIPTION_ADDED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Adding subscription to {}"),
+  FUSION_MANAGER_TASK_CREATED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Fusion Manager created with {} fusion instances"),
+  FUSION_MANAGER_TASK_CREATED_NO_CONFIG(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Fusion Manager created with no fusion instances"),
+  FUSION_MANAGER_TASK_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Fusion Manager started {} fusion instances"),
+  FUSION_MANAGER_TASK_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Fusion Manager stopped {} fusion instances"),
+  FUSION_STARTED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Fusion started with {} handlers"),
+  FUSION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Fusion {} failed to started, raised exception"),
+  FUSION_STOPPED(LEVEL.INFO, SERVER_CATEGORY.ENGINE, "Fusion stopped with {} handlers"),
+  FUSION_COMPLETED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Fusion {}, completed with {} events"),
+  FUSION_COMPLETION_EXCEPTION(LEVEL.ERROR, SERVER_CATEGORY.ENGINE, "Fusion {} completion task failed to complete, raised exception"),
+  FUSION_EVENT_RECEIVED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Fusion {} received event from {}"),
+  FUSION_EVENT_DROPPED(LEVEL.WARN, SERVER_CATEGORY.ENGINE, "Fusion {} dropped event from {}"),
+  FUSION_QUEUE_OFFER(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue offered envelope for {}"),
+  FUSION_QUEUE_DRAIN(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Mailbox queue drained {} items"),
+  FUSION_SUBSCRIPTION_ADDED(LEVEL.DEBUG, SERVER_CATEGORY.ENGINE, "Adding subscription to {}"),
 
   // </editor-fold>
 

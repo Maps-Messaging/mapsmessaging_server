@@ -95,7 +95,7 @@ class JsonSchemaRoundTripTest {
 
   private static Map<String, Class<?>> buildMap(){
     Map<String, Class<?>> map = new HashMap<>();
-    map.put("AggregatorManager", AggregatorManagerConfigDTO.class);
+    map.put("FusionManager", FusionManagerConfigDTO.class);
     map.put("AuthManager", AuthManagerConfigDTO.class);
     map.put("DestinationManager",  DestinationManagerConfigDTO.class);
     map.put("DeviceManager", DeviceManagerConfigDTO.class);
