@@ -520,6 +520,7 @@ class SessionManagerPipeLineTest {
     when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
+    when(controller.closeAsync(false)).thenReturn(CompletableFuture.completedFuture(null));
     pipeline.addDisconnectedSession(sessionId, details, subscriptions);
 
     assertSame(controller, pipeline.getIdleSubscriptions(sessionId));
@@ -533,11 +534,13 @@ class SessionManagerPipeLineTest {
     assertEquals(1, executor.queuedTasks());
 
     executor.runNext();
+    awaitAndRunQueuedTask();
+    awaitAndRunQueuedTask();
 
     assertNull(pipeline.getIdleSubscriptions(sessionId));
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
-    verify(controller).close(false);
+    verify(controller).closeAsync(false);
     verify(stateFileStore).delete(stateFile);
   }
 
@@ -556,13 +559,17 @@ class SessionManagerPipeLineTest {
     when(persistentSessionManager.getDataPath()).thenReturn("/tmp/sessions");
     when(subscriptionControllerFactory.create(sessionId, details, destinationManager, subscriptions)).thenReturn(controller);
 
+    when(controller.closeAsync(false)).thenReturn(CompletableFuture.completedFuture(null));
     pipeline.addDisconnectedSession(sessionId, details, subscriptions);
+
+    awaitAndRunQueuedTask();
+    awaitAndRunQueuedTask();
 
     assertNull(pipeline.getIdleSubscriptions(sessionId));
     assertEquals(0, disconnected.sum());
     assertEquals(1, expired.sum());
     assertNull(expiryScheduler.task);
-    verify(controller).close(false);
+    verify(controller).closeAsync(false);
     verify(stateFileStore).delete(stateFile);
   }
 
