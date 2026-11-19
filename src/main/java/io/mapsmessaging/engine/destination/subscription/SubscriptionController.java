@@ -192,6 +192,36 @@ public class SubscriptionController implements DestinationManagerListener {
     }
   }
 
+  /** Complete destination-serialized termination before releasing controller-owned structures. */
+  public CompletableFuture<Void> closeAsync(boolean closeOnly) {
+    logger.log(ServerLogMessages.SUBSCRIPTION_MGR_CLOSE, sessionId);
+    destinationManager.removeListener(this);
+    List<CompletableFuture<Void>> tasks = new ArrayList<>();
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      tasks.add(manager.closeAsync(closeOnly));
+    }
+    return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new)).thenRun(() -> {
+      subscriptions.clear();
+      contextMap.clear();
+      if (subscriptionControllerJMX != null) {
+        subscriptionControllerJMX.close();
+      }
+    });
+  }
+
+  /** Hibernation retains persistent subscriptions but serializes their state changes. */
+  public CompletableFuture<Void> hibernateAllAsync() {
+    if (sessionImpl == null) {
+      return CompletableFuture.completedFuture(null);
+    }
+    sessionImpl = null;
+    List<CompletableFuture<Void>> tasks = new ArrayList<>();
+    for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
+      tasks.add(manager.hibernateAsync());
+    }
+    return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new));
+  }
+
   public boolean isHibernating() {
     return sessionImpl == null;
   }
