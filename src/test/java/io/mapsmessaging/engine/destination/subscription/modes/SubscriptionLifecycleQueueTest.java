@@ -110,11 +110,37 @@ class SubscriptionLifecycleQueueTest {
     assertTrue(manager.get(destination) == subscription);
   }
 
+  @Test
+  void cancellationAfterSubmissionFailsClosureWithoutDiscardingSubscription() throws Exception {
+    NormalSubscriptionModeManager manager = new NormalSubscriptionModeManager();
+    DestinationImpl destination = mock(DestinationImpl.class);
+    CompletableFuture<Response> queued = new CompletableFuture<>();
+    when(destination.submit(any(Callable.class))).thenReturn(queued);
+    Subscription subscription = mock(Subscription.class);
+    manager.add(subscription, destination);
+
+    CompletableFuture<Void> finished = manager.closeAsync(false);
+    queued.cancel(false);
+
+    assertThrows(ExecutionException.class, () -> finished.get(5, TimeUnit.SECONDS));
+    verify(subscription, never()).delete();
+    assertTrue(manager.get(destination) == subscription);
+  }
+
   private static DestinationImpl destination(Queue<Callable<Response>> tasks) {
     DestinationImpl destination = mock(DestinationImpl.class);
     when(destination.submit(any(Callable.class))).thenAnswer(invocation -> {
-      tasks.add(invocation.getArgument(0));
-      return CompletableFuture.completedFuture(new VoidResponse());
+      Callable<Response> task = invocation.getArgument(0);
+      CompletableFuture<Response> response = new CompletableFuture<>();
+      tasks.add(() -> {
+        try {
+          response.complete(task.call());
+        } catch (Throwable failure) {
+          response.completeExceptionally(failure);
+        }
+        return new VoidResponse();
+      });
+      return response;
     });
     return destination;
   }
