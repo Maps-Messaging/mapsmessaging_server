@@ -152,6 +152,12 @@ public class SessionSharedSubscription extends Subscription {
   }
 
   boolean canAttemptSend() {
+    if (QueueCleanupTrace.isEnabled(sharedSubscription.getDestinationImpl().getFullyQualifiedNamespace())) {
+      QueueCleanupTrace.record(sharedSubscription.getDestinationImpl().getFullyQualifiedNamespace(), "MEMBER-READINESS", -1,
+          "member", sessionId, "active", active.get(), "blocked", flowControlBlocked,
+          "attached", sessionImpl != null, "closed", sessionImpl != null && sessionImpl.isClosed(),
+          "canSend", canSend());
+    }
     return active.get() && !flowControlBlocked && sessionImpl != null && !sessionImpl.isClosed() && canSend();
   }
 
