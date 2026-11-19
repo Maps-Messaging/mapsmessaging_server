@@ -10,6 +10,7 @@ import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.storage.delivery.PacketIdStore;
 import io.mapsmessaging.storage.delivery.TargetDataTempDirFactory;
+import io.mapsmessaging.test.WaitForState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -18,7 +19,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,15 +98,24 @@ class SessionPacketIdStoreTest {
     SubscriptionControllerFactory factory = mock(SubscriptionControllerFactory.class);
     when(factory.create(eq("client"), any(), any(), anyMap())).thenReturn(controller);
     LongAdder expired = new LongAdder();
-    SessionManagerPipeLine pipeline = new SessionManagerPipeLine(mock(DestinationManager.class), manager,
-        new LongAdder(), new LongAdder(), expired, mock(ExecutorService.class), mock(SessionExpiryScheduler.class),
-        new SessionStateFileStore(), factory, mock(SessionFactory.class), mock(WillTaskManager.class));
-    pipeline.addDisconnectedSession("client", manager.getSessionDetails("client"), Map.of());
-    assertEquals(1, expired.sum());
-    assertFalse(Files.exists(path));
-    assertFalse(Files.exists(Path.of(session.getStoreName())));
-    assertNull(manager.getSessionDetails("client"));
-    verify(controller).close(false);
+    when(controller.closeAsync(false)).thenReturn(CompletableFuture.completedFuture(null));
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    try {
+      SessionManagerPipeLine pipeline = new SessionManagerPipeLine(mock(DestinationManager.class), manager,
+          new LongAdder(), new LongAdder(), expired, executor, mock(SessionExpiryScheduler.class),
+          new SessionStateFileStore(), factory, mock(SessionFactory.class), mock(WillTaskManager.class));
+      pipeline.addDisconnectedSession("client", manager.getSessionDetails("client"), Map.of());
+      WaitForState.waitFor(5, TimeUnit.SECONDS, () -> expired.sum() == 1
+          && !Files.exists(path) && !Files.exists(Path.of(session.getStoreName()))
+          && manager.getSessionDetails("client") == null);
+      assertEquals(1, expired.sum());
+      assertFalse(Files.exists(path));
+      assertFalse(Files.exists(Path.of(session.getStoreName())));
+      assertNull(manager.getSessionDetails("client"));
+      verify(controller).closeAsync(false);
+    } finally {
+      executor.shutdownNow();
+    }
   }
 
   @Test
