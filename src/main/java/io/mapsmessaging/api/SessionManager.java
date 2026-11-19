@@ -24,9 +24,6 @@ import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.engine.session.SessionContext;
 import io.mapsmessaging.engine.session.SessionImpl;
-import io.mapsmessaging.engine.destination.DestinationImpl;
-import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
-import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import io.mapsmessaging.engine.session.security.SecurityContext;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -118,25 +115,17 @@ public class SessionManager {
    * @throws IOException Thrown if the underlying file system raises exception during the close phases
    */
   public void close(@NonNull @NotNull Session session, boolean clearWillTask) throws IOException {
-    ThreadStateContext threadContext = ThreadLocalContext.get();
-    Object domain = threadContext == null ? null : threadContext.get("domain");
-    if (DestinationImpl.SUBSCRIPTION_TASK_KEY.equals(domain)
-        || DestinationImpl.RESOURCE_TASK_KEY.equals(domain)
-        || "SessionManagerPipeLine".equals(domain)) {
-      throw new IOException("Blocking session close from an engine serial task would deadlock; use closeAsync");
-    }
-    try {
-      closeAsync(session, clearWillTask).get();
-    } catch (ExecutionException e) {
-      throw new IOException(e);
-    } catch (InterruptedException interruptedException) {
-      Thread.currentThread().interrupt();
-    }
+    closeAsync(session, clearWillTask).whenComplete((ignored, failure) -> {
+      if (failure != null) {
+        logger.log(ServerLogMessages.SESSION_CLOSE_EXCEPTION, failure);
+      }
+    });
   }
 
   public @NonNull @NotNull CompletableFuture<Session> closeAsync(@NonNull @NotNull Session session, boolean clearWillTask) {
     CompletableFuture<Session> completableFuture = new CompletableFuture<>();
     try {
+      session.getSession().markClosing();
       MessageDaemon.getInstance().getSubSystemManager().getSessionManager()
           .closeAsync(session.getSession(), clearWillTask)
           .whenCompleteAsync((ignored, failure) -> {
