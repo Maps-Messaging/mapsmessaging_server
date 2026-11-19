@@ -658,6 +658,7 @@ public class DestinationSubscription extends Subscription {
     return (!isPaused &&
         !sync &&
         !hibernating &&
+        (sessionImpl == null || !sessionImpl.isClosed()) &&
         messageStateManager.hasAtRestMessages() &&
         !isContextEmpty() &&
         acknowledgementController.canSend());
