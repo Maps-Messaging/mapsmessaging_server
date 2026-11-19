@@ -1014,6 +1014,9 @@ class SessionManagerPipeLineTest {
     CompletableFuture<Void> closing = pipeline.closeAsync(session, true);
     awaitAndRunQueuedTask();
     assertFalse(closing.isDone());
+    assertFalse(pipeline.hasSessions(), "Logical close must remove the active session before cleanup completes");
+    assertEquals(0L, connected.sum());
+    verify(session).markClosing();
     assertNull(controller.getTimeout(), "Expiry must not start before destination hibernation completes");
     verify(session, never()).close();
 
@@ -1056,6 +1059,9 @@ class SessionManagerPipeLineTest {
     CompletableFuture<Void> close = pipeline.closeAsync(session, true);
     awaitAndRunQueuedTask();
     assertFalse(close.isDone(), "Session close must await all destination completion callbacks");
+    assertFalse(pipeline.hasSessions(), "Logical close must be visible before destination cleanup completes");
+    assertEquals(0L, connected.sum());
+    verify(session).markClosing();
     verify(session, never()).close();
 
     Future<?> unrelated = pipeline.submit((Callable<String>) () -> "still processing");
@@ -1115,6 +1121,8 @@ class SessionManagerPipeLineTest {
     awaitAndRunQueuedTask();
     assertFalse(close.isDone());
     assertFalse(reconnect.isDone());
+    assertFalse(pipeline.hasSessions(), "Old session is logically closed while replacement waits");
+    verify(original).markClosing();
     verify(sessionFactory, never()).create(eq(replacementContext), any(), any(), any(), any());
 
     Future<?> unrelated = pipeline.submit((Callable<String>) () -> "unblocked");
