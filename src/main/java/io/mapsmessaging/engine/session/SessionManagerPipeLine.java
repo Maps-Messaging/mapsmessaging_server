@@ -496,28 +496,29 @@ public class SessionManagerPipeLine {
   }
 
   private CompletableFuture<Void> beginCloseAsync(SessionImpl session, boolean clearWillTask) {
-    if (sessions.get(session.getName()) != session) {
+    if (!sessions.remove(session.getName(), session)) {
       return CompletableFuture.completedFuture(null);
     }
+    session.markClosing();
+    connectedSessions.decrement();
     SubscriptionController controller = session.getSubscriptionController();
     long expiry = session.getExpiry();
     boolean hibernate = session instanceof PersistentSession && expiry > 0;
     long expiryTime = hibernate ? System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry) : 0L;
+    if (hibernate) {
+      handleWill(session.getName(), clearWillTask);
+    } else {
+      finaliseWill(session.getName(), clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN);
+    }
     CompletableFuture<Void> cleanup = hibernate ? controller.hibernateAllAsync() : controller.closeAsync(false);
     return cleanup.thenCompose(ignored -> onSessionQueue(() -> {
-      if (!sessions.remove(session.getName(), session)) {
-        return CompletableFuture.completedFuture(null);
-      }
       session.close();
       if (hibernate) {
         session.setExpiryTime(expiryTime);
-        handleWill(session.getName(), clearWillTask);
         scheduleAsyncExpiry(controller, Math.max(0L, expiryTime - System.currentTimeMillis()));
       } else {
-        completeControllerFinalisation(controller, ControllerCloseReason.TERMINATED,
-            clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN);
+        completeControllerFinalisation(controller, ControllerCloseReason.TERMINATED, WillFinalisation.NONE);
       }
-      connectedSessions.decrement();
       return CompletableFuture.completedFuture(null);
     }));
   }
