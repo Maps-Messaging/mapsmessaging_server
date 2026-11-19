@@ -32,10 +32,10 @@ import java.util.List;
 @EqualsAndHashCode(callSuper=false)
 @NoArgsConstructor
 @Schema(
-    title = "Aggregator Input Configuration DTO",
-    description = "Per-input configuration for an Aggregator. Supports optional selector and transformer chain."
+    title = "Fusion Input Configuration DTO",
+    description = "Per-input configuration for an Fusion. Supports optional selector and transformer chain."
 )
-public class AggregatorInputConfigDTO extends BaseConfigDTO {
+public class FusionInputConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Input topic name",
@@ -73,10 +73,10 @@ public class AggregatorInputConfigDTO extends BaseConfigDTO {
       requiredMode = Schema.RequiredMode.NOT_REQUIRED,
       nullable = true
   )
-  protected AggregatorContributionMode contributionMode = AggregatorContributionMode.LAST;
+  protected FusionContributionMode contributionMode = FusionContributionMode.LAST;
 
 
-  public AggregatorInputConfigDTO(AggregatorInputConfigDTO copy){
+  public FusionInputConfigDTO(FusionInputConfigDTO copy){
     this.topicName = copy.getTopicName();
     this.selector = copy.getSelector();
     this.transformer = copy.getTransformer();

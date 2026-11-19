@@ -23,8 +23,8 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
 
 import java.util.ArrayList;
@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class AggregatorConfig extends AggregatorConfigDTO implements Config {
+public class FusionConfig extends FusionConfigDTO implements Config {
 
-  public AggregatorConfig(ConfigurationProperties props) {
+  public FusionConfig(ConfigurationProperties props) {
     this.name = props.getProperty("name", "");
     this.enabled = props.getBooleanProperty("enabled", enabled);
     this.outputTopic = props.getProperty("outputTopic", "");
@@ -56,22 +56,22 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
   }
 
   @SuppressWarnings("unchecked")
-  private List<AggregatorInputConfigDTO> unpackInputs(ConfigurationProperties props) {
-    List<AggregatorInputConfigDTO> inputList = new ArrayList<>();
+  private List<FusionInputConfigDTO> unpackInputs(ConfigurationProperties props) {
+    List<FusionInputConfigDTO> inputList = new ArrayList<>();
 
     Object inputsObject = props.get("inputs");
     if (inputsObject instanceof List) {
       for (Object entry : (List<?>) inputsObject) {
         if (entry instanceof ConfigurationProperties inputProperties) {
-          inputList.add(new AggregatorInputConfig(inputProperties));
+          inputList.add(new FusionInputConfig(inputProperties));
         } else if (entry instanceof Map) {
-          inputList.add(new AggregatorInputConfig(new ConfigurationProperties((Map<String, Object>) entry)));
+          inputList.add(new FusionInputConfig(new ConfigurationProperties((Map<String, Object>) entry)));
         }
       }
     } else if (inputsObject instanceof ConfigurationProperties inputProperties) {
-      inputList.add(new AggregatorInputConfig(inputProperties));
+      inputList.add(new FusionInputConfig(inputProperties));
     } else if (inputsObject instanceof Map) {
-      inputList.add(new AggregatorInputConfig(new ConfigurationProperties((Map<String, Object>) inputsObject)));
+      inputList.add(new FusionInputConfig(new ConfigurationProperties((Map<String, Object>) inputsObject)));
     }
 
     return inputList;
@@ -94,8 +94,8 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
 
     List<ConfigurationProperties> inputsList = new ArrayList<>();
     if (inputs != null) {
-      for (AggregatorInputConfigDTO inputConfigDTO : inputs) {
-        inputsList.add(((AggregatorInputConfig) inputConfigDTO).toConfigurationProperties());
+      for (FusionInputConfigDTO inputConfigDTO : inputs) {
+        inputsList.add(((FusionInputConfig) inputConfigDTO).toConfigurationProperties());
       }
     }
     configurationProperties.put("inputs", inputsList);
@@ -111,7 +111,7 @@ public class AggregatorConfig extends AggregatorConfigDTO implements Config {
   public boolean update(BaseConfigDTO update) {
     boolean hasChanged = false;
 
-    if (update instanceof AggregatorConfigDTO config) {
+    if (update instanceof FusionConfigDTO config) {
       if (!safeEquals(this.name, config.getName())) {
         this.name = config.getName();
         hasChanged = true;

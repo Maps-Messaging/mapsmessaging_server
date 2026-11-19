@@ -23,12 +23,12 @@ import io.mapsmessaging.config.Config;
 import io.mapsmessaging.config.transformer.TransformationConfigFactory;
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 
 
-public class AggregatorInputConfig extends AggregatorInputConfigDTO implements Config {
+public class FusionInputConfig extends FusionInputConfigDTO implements Config {
 
-  public AggregatorInputConfig(ConfigurationProperties props) {
+  public FusionInputConfig(ConfigurationProperties props) {
     this.topicName = props.getProperty("topicName", "");
     this.selector = props.getProperty("selector", "");
 
@@ -59,7 +59,7 @@ public class AggregatorInputConfig extends AggregatorInputConfigDTO implements C
   public boolean update(BaseConfigDTO update) {
     boolean hasChanged = false;
 
-    if (update instanceof AggregatorInputConfigDTO config) {
+    if (update instanceof FusionInputConfigDTO config) {
       if (!safeEquals(this.topicName, config.getTopicName())) {
         this.topicName = config.getTopicName();
         hasChanged = true;

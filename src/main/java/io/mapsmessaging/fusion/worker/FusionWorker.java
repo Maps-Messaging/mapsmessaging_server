@@ -19,20 +19,20 @@
 
 package io.mapsmessaging.aggregator.worker;
 
-import io.mapsmessaging.aggregator.AggregatorEnvelope;
+import io.mapsmessaging.aggregator.FusionEnvelope;
 import io.mapsmessaging.aggregator.ProcessedHandler;
 import io.mapsmessaging.aggregator.StreamHandler;
-import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
+import io.mapsmessaging.aggregator.mailbox.FusionMailbox;
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionContributionMode;
 import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AggregatorWorker implements AggregatorWorkItem {
+public class FusionWorker implements FusionWorkItem {
   private final AtomicBoolean scheduled;
   private final String name;
-  private final AggregatorMailbox<AggregatorEnvelope> mailbox;
+  private final FusionMailbox<FusionEnvelope> mailbox;
   private final StreamHandler[] handlers;
   private final ProcessedHandler handler;
   private final long timeoutMillis;
@@ -43,9 +43,9 @@ public class AggregatorWorker implements AggregatorWorkItem {
 
   private long deadlineMillis;
 
-  public AggregatorWorker(
+  public FusionWorker(
       String name,
-      AggregatorMailbox<AggregatorEnvelope> mailbox,
+      FusionMailbox<FusionEnvelope> mailbox,
       StreamHandler[] handlers,
       long timeoutMillis,
       ProcessedHandler handler,
@@ -101,7 +101,7 @@ public class AggregatorWorker implements AggregatorWorkItem {
     }
   }
 
-  private void processEnvelope(AggregatorEnvelope envelope) {
+  private void processEnvelope(FusionEnvelope envelope) {
     long now = System.currentTimeMillis();
     if (deadlineMillis < 0) {
       deadlineMillis = now + currentTimeout;
@@ -118,8 +118,8 @@ public class AggregatorWorker implements AggregatorWorkItem {
     }
   }
 
-  private void applyContribution(int index, MessageEvent message, AggregatorContributionMode mode) {
-    if (mode == AggregatorContributionMode.FIRST) {
+  private void applyContribution(int index, MessageEvent message, FusionContributionMode mode) {
+    if (mode == FusionContributionMode.FIRST) {
       if (!seen[index]) {
         contributions[index] = message;
         seen[index] = true;

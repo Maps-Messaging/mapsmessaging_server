@@ -25,7 +25,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(
     description = "Contribution policy for a single input within a window"
 )
-public enum AggregatorContributionMode {
+public enum FusionContributionMode {
 
   @Schema(description = "Keep the first event received for the window and drop subsequent events")
   FIRST,

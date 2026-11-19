@@ -32,10 +32,10 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @Schema(
-    title = "Aggregator Configuration DTO (Stage 1)",
-    description = "Stage 1 Aggregator configuration. Fan-in time-bucket aggregation only: no correlation, no DLQ, no policies, no persistence."
+    title = "Fusion Configuration DTO (Stage 1)",
+    description = "Stage 1 Fusion configuration. Fan-in time-bucket aggregation only: no correlation, no DLQ, no policies, no persistence."
 )
-public class AggregatorConfigDTO extends BaseConfigDTO {
+public class FusionConfigDTO extends BaseConfigDTO {
 
   @Schema(
       description = "Unique name of this aggregator instance",
@@ -63,7 +63,7 @@ public class AggregatorConfigDTO extends BaseConfigDTO {
       nullable = false,
       minLength = 1
   )
-  protected List<AggregatorInputConfigDTO> inputs;
+  protected List<FusionInputConfigDTO> inputs;
 
   @Schema(
       description = "Output topic for the aggregated envelope",
