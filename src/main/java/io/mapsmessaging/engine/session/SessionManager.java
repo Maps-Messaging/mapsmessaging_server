@@ -119,10 +119,13 @@ public class SessionManager implements Agent {
     if (logger.isInfoEnabled()) {
       logger.log(ServerLogMessages.SESSION_MANAGER_STOPPING);
     }
-    for (SessionManagerPipeLine pipeLine : sessionPipeLines) {
-      pipeLine.stop();
+    CompletableFuture<?>[] closings = Arrays.stream(sessionPipeLines)
+        .map(SessionManagerPipeLine::stopAsync).toArray(CompletableFuture[]::new);
+    try {
+      CompletableFuture.allOf(closings).join();
+    } finally {
+      willTaskManager.stop();
     }
-    willTaskManager.stop();
     sessionManagerJMX.close();
   }
 
@@ -188,15 +191,27 @@ public class SessionManager implements Agent {
     logger.log(ServerLogMessages.SESSION_MANAGER_CLOSE, sessionImpl.getName());
     sessionPipeLines[getPipeLineIndex(sessionImpl.getName())].close(sessionImpl, clearWillTask);
   }
+  /** Asynchronous lifecycle operations are ordered by session identity, not by blocking the queue. */
+  public CompletableFuture<SessionImpl> createAsync(SessionContext context) {
+    if (context.getInternalSessionId() == 0) {
+      context.setInternalSessionId(uniqueSessionId.incrementAndGet());
+    } else if (uniqueSessionId.get() < context.getInternalSessionId()) {
+      uniqueSessionId.accumulateAndGet(context.getInternalSessionId() + 1, Math::max);
+    }
+    logger.log(ServerLogMessages.SESSION_MANAGER_CREATE, context.toString());
+    return sessionPipeLines[getPipeLineIndex(context.getId())].createAsync(context);
+  }
+
+  public CompletableFuture<Void> closeAsync(SessionImpl session, boolean clearWillTask) {
+    logger.log(ServerLogMessages.SESSION_MANAGER_CLOSE, session.getName());
+    return sessionPipeLines[getPipeLineIndex(session.getName())].closeAsync(session, clearWillTask);
+  }
+
   //</editor-fold>
 
   //<editor-fold desc="Administrative session close">
   public void close(String sessionId, boolean clearWillTask) {
-    SessionManagerPipeLine pipeLine = sessionPipeLines[getPipeLineIndex(sessionId)];
-    pipeLine.submit((Callable<Void>) () -> {
-      pipeLine.close(sessionId, clearWillTask);
-      return null;
-    });
+    sessionPipeLines[getPipeLineIndex(sessionId)].closeAsync(sessionId, clearWillTask);
   }
   //</editor-fold>
 
