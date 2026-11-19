@@ -24,6 +24,9 @@ import io.mapsmessaging.admin.SessionManagerJMX;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.engine.destination.DestinationManager;
+import io.mapsmessaging.engine.destination.DestinationImpl;
+import io.mapsmessaging.utilities.threads.tasks.ThreadLocalContext;
+import io.mapsmessaging.utilities.threads.tasks.ThreadStateContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionController;
 import io.mapsmessaging.engine.session.persistence.SessionDetails;
@@ -117,6 +120,13 @@ public class SessionManager implements Agent {
   }
 
   public void stop() {
+    ThreadStateContext context = ThreadLocalContext.get();
+    Object domain = context == null ? null : context.get("domain");
+    if (DestinationImpl.SUBSCRIPTION_TASK_KEY.equals(domain)
+        || DestinationImpl.RESOURCE_TASK_KEY.equals(domain)
+        || "SessionManagerPipeLine".equals(domain)) {
+      throw new IllegalStateException("Engine stop cannot wait for lifecycle cleanup inside a serial task scheduler");
+    }
     if (logger.isInfoEnabled()) {
       logger.log(ServerLogMessages.SESSION_MANAGER_STOPPING);
     }
@@ -126,8 +136,8 @@ public class SessionManager implements Agent {
       CompletableFuture.allOf(closings).join();
     } finally {
       willTaskManager.stop();
+      sessionManagerJMX.close();
     }
-    sessionManagerJMX.close();
   }
 
   @SuppressWarnings("java:S1452")
