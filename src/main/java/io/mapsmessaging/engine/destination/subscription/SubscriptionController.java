@@ -352,6 +352,7 @@ public class SubscriptionController implements DestinationManagerListener {
     }
     if (this.sessionImpl == null) {
       this.sessionImpl = sessionImpl;
+      hibernationCompletion = null;
       identity = sessionImpl.getSecurityContext().getIdentity();
     }
   }
