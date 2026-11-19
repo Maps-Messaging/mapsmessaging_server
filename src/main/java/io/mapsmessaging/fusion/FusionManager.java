@@ -19,11 +19,11 @@
 
 package io.mapsmessaging.aggregator;
 
-import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
-import io.mapsmessaging.config.AggregatorManagerConfig;
-import io.mapsmessaging.dto.rest.config.AggregatorManagerConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
+import io.mapsmessaging.config.FusionManagerConfig;
+import io.mapsmessaging.dto.rest.config.FusionManagerConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import io.mapsmessaging.dto.rest.system.Status;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
 import io.mapsmessaging.logging.Logger;
@@ -36,28 +36,28 @@ import java.util.List;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
-public class AggregatorManager implements Agent {
+public class FusionManager implements Agent {
 
-  private final List<Aggregator> aggregators;
-  private final Logger logger = LoggerFactory.getLogger(AggregatorManager.class);
-  private final AggregatorManagerConfigDTO config;
-  private AggregatorWorkScheduler aggregatorWorkScheduler;
+  private final List<Fusion> aggregators;
+  private final Logger logger = LoggerFactory.getLogger(FusionManager.class);
+  private final FusionManagerConfigDTO config;
+  private FusionWorkScheduler aggregatorWorkScheduler;
 
-  public AggregatorManager(){
-    config = ConfigurationManager.getInstance().getConfiguration(AggregatorManagerConfig.class);
+  public FusionManager(){
+    config = ConfigurationManager.getInstance().getConfiguration(FusionManagerConfig.class);
     aggregators = new ArrayList<>();
     if(config != null && config.getAggregatorConfigList() != null && !config.getAggregatorConfigList().isEmpty()) {
-      aggregatorWorkScheduler = new AggregatorWorkScheduler(
+      aggregatorWorkScheduler = new FusionWorkScheduler(
           config.getStripeCount(),
           config.getMaxBatchPerAggregator(),
           config.getIdleSleepMs()
       );
-      for (AggregatorConfigDTO aggregatorConfig : config.getAggregatorConfigList()) {
+      for (FusionConfigDTO aggregatorConfig : config.getAggregatorConfigList()) {
         if(containsWildcard(aggregatorConfig)){
-          aggregators.add(new DynamicAggregatorManager(aggregatorWorkScheduler, aggregatorConfig));
+          aggregators.add(new DynamicFusionManager(aggregatorWorkScheduler, aggregatorConfig));
         }
         else {
-          aggregators.add(new StaticAggregator(aggregatorWorkScheduler, aggregatorConfig));
+          aggregators.add(new StaticFusion(aggregatorWorkScheduler, aggregatorConfig));
         }
       }
       logger.log(AGGREGATOR_MANAGER_TASK_CREATED, config.getAggregatorConfigList().size());
@@ -69,7 +69,7 @@ public class AggregatorManager implements Agent {
 
   @Override
   public String getName() {
-    return "AggregatorManager";
+    return "FusionManager";
   }
 
   @Override
@@ -81,8 +81,8 @@ public class AggregatorManager implements Agent {
   public void start() {
     if(aggregatorWorkScheduler != null) {
       aggregatorWorkScheduler.start();
-      for (Aggregator staticAggregator : aggregators) {
-        staticAggregator.start();
+      for (Fusion staticFusion : aggregators) {
+        staticFusion.start();
       }
       logger.log(AGGREGATOR_MANAGER_TASK_STARTED, aggregators.size());
     }
@@ -92,8 +92,8 @@ public class AggregatorManager implements Agent {
   public void stop() {
     if(aggregatorWorkScheduler != null) {
       aggregatorWorkScheduler.stop();
-      for (Aggregator staticAggregator : aggregators) {
-        staticAggregator.stop();
+      for (Fusion staticFusion : aggregators) {
+        staticFusion.stop();
       }
       logger.log(AGGREGATOR_MANAGER_TASK_STOPPED, aggregators.size());
     }
@@ -109,13 +109,13 @@ public class AggregatorManager implements Agent {
     }
     else{
       status.setStatus(Status.OK);
-      status.setComment("Running Aggregators:"+config.getAggregatorConfigList().size());
+      status.setComment("Running Fusions:"+config.getAggregatorConfigList().size());
     }
     return status;
   }
 
-  private boolean containsWildcard(AggregatorConfigDTO config) {
-    for (AggregatorInputConfigDTO input : config.getInputs()) {
+  private boolean containsWildcard(FusionConfigDTO config) {
+    for (FusionInputConfigDTO input : config.getInputs()) {
       String topic = input.getTopicName();
       if (topic.contains("+") || topic.contains("#")) {
         return true;

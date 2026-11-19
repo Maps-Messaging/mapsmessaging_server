@@ -21,17 +21,17 @@ package io.mapsmessaging.aggregator;
 
 import io.mapsmessaging.aggregator.aggregate.AggregationStrategy;
 import io.mapsmessaging.aggregator.aggregate.EnvelopeAggregationStrategy;
-import io.mapsmessaging.aggregator.mailbox.AggregatorMailbox;
+import io.mapsmessaging.aggregator.mailbox.FusionMailbox;
 import io.mapsmessaging.aggregator.mailbox.QueueBackedMpscMailbox;
-import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
-import io.mapsmessaging.aggregator.worker.AggregatorWorker;
+import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
+import io.mapsmessaging.aggregator.worker.FusionWorker;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.api.transformers.ParsedMessage;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
@@ -50,12 +50,12 @@ import java.util.concurrent.*;
 
 import static io.mapsmessaging.logging.ServerLogMessages.*;
 
-public class StaticAggregator implements Aggregator, ClientConnection, MessageListener, ProcessedHandler {
+public class StaticFusion implements Fusion, ClientConnection, MessageListener, ProcessedHandler {
 
-  private final AggregatorConfigDTO configDTO;
+  private final FusionConfigDTO configDTO;
 
-  private final Logger logger = LoggerFactory.getLogger(StaticAggregator.class);
-  private final AggregatorWorkScheduler aggregatorWorkScheduler;
+  private final Logger logger = LoggerFactory.getLogger(StaticFusion.class);
+  private final FusionWorkScheduler aggregatorWorkScheduler;
   private final StreamHandler[] handlers;
   private final Map<String, Integer> topicIndexMap;
   private final AggregationStrategy strategy;
@@ -67,14 +67,14 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
   private Session session;
   private Destination outboundDestination;
 
-  private AggregatorMailbox<AggregatorEnvelope> mailbox;
-  private AggregatorWorker worker;
+  private FusionMailbox<FusionEnvelope> mailbox;
+  private FusionWorker worker;
 
-  public StaticAggregator(AggregatorWorkScheduler aggregatorWorkScheduler, AggregatorConfigDTO configDTO) {
+  public StaticFusion(FusionWorkScheduler aggregatorWorkScheduler, FusionConfigDTO configDTO) {
     this(aggregatorWorkScheduler, configDTO, true);
   }
 
-  public StaticAggregator(AggregatorWorkScheduler aggregatorWorkScheduler, AggregatorConfigDTO configDTO, boolean subscribeToInputs) {
+  public StaticFusion(FusionWorkScheduler aggregatorWorkScheduler, FusionConfigDTO configDTO, boolean subscribeToInputs) {
     this.configDTO = configDTO;
     this.emitFirstEventImmediately = configDTO.isEmitFirstEventImmediately();
     this.windowCloseMode = configDTO.getWindowCloseMode();
@@ -86,7 +86,7 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
     this.strategy = new EnvelopeAggregationStrategy();
 
     int index = 0;
-    for (AggregatorInputConfigDTO input : configDTO.getInputs()) {
+    for (FusionInputConfigDTO input : configDTO.getInputs()) {
       this.handlers[index] = new StreamHandler(input);
       this.topicIndexMap.put(input.getTopicName(), index);
       index++;
@@ -116,7 +116,7 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
         }
       }
 
-      worker = new AggregatorWorker(
+      worker = new FusionWorker(
           getName(),
           mailbox,
           handlers,
@@ -217,7 +217,7 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
       return;
     }
 
-    AggregatorEnvelope envelope = new AggregatorEnvelope(inputIndex, messageEvent);
+    FusionEnvelope envelope = new FusionEnvelope(inputIndex, messageEvent);
     boolean accepted = mailbox.offer(envelope);
     if (!accepted) {
       runCompletion(messageEvent);
@@ -255,7 +255,7 @@ public class StaticAggregator implements Aggregator, ClientConnection, MessageLi
 
   @Override
   public String getName() {
-    return "Aggregator-" + configDTO.getName();
+    return "Fusion-" + configDTO.getName();
   }
 
   @Override

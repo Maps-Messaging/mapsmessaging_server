@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.aggregator;
 
-public interface Aggregator {
+public interface Fusion {
   void start();
 
   void stop();

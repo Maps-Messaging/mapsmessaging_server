@@ -19,14 +19,14 @@
 
 package io.mapsmessaging.aggregator;
 
-import io.mapsmessaging.aggregator.worker.AggregatorWorkScheduler;
+import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.SessionContextBuilder;
 import io.mapsmessaging.api.SessionManager;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import io.mapsmessaging.engine.session.ClientConnection;
 import io.mapsmessaging.logging.Logger;
 import io.mapsmessaging.logging.LoggerFactory;
@@ -42,35 +42,35 @@ import java.util.concurrent.*;
 
 import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_EXCEPTION;
 
-public class DynamicAggregatorManager implements Aggregator, ClientConnection, MessageListener {
+public class DynamicFusionManager implements Fusion, ClientConnection, MessageListener {
 
-  private final Logger logger = LoggerFactory.getLogger(DynamicAggregatorManager.class);
+  private final Logger logger = LoggerFactory.getLogger(DynamicFusionManager.class);
 
-  private final AggregatorWorkScheduler aggregatorWorkScheduler;
-  private final AggregatorConfigDTO templateConfig;
+  private final FusionWorkScheduler aggregatorWorkScheduler;
+  private final FusionConfigDTO templateConfig;
 
   private final StreamHandler[] wildcardHandlers;
   private final Map<String, Integer> wildcardInputIndexMap;
-  private final Map<String, StaticAggregator> aggregatorsByKey;
-  private final Map<String, String> topicToAggregatorKey;
+  private final Map<String, StaticFusion> aggregatorsByKey;
+  private final Map<String, String> topicToFusionKey;
   private final Map<String, Long> aggregatorLastSeen;
 
   private final ScheduledExecutorService cleanupExecutor;
 
   private Session session;
 
-  public DynamicAggregatorManager(AggregatorWorkScheduler aggregatorWorkScheduler, AggregatorConfigDTO templateConfig) {
+  public DynamicFusionManager(FusionWorkScheduler aggregatorWorkScheduler, FusionConfigDTO templateConfig) {
     this.aggregatorWorkScheduler = aggregatorWorkScheduler;
     this.templateConfig = templateConfig;
     this.wildcardHandlers = new StreamHandler[templateConfig.getInputs().size()];
     this.wildcardInputIndexMap = new ConcurrentHashMap<>();
     this.aggregatorsByKey = new ConcurrentHashMap<>();
-    this.topicToAggregatorKey = new ConcurrentHashMap<>();
+    this.topicToFusionKey = new ConcurrentHashMap<>();
     this.aggregatorLastSeen = new ConcurrentHashMap<>();
     this.cleanupExecutor = Executors.newSingleThreadScheduledExecutor();
 
     int index = 0;
-    for (AggregatorInputConfigDTO inputConfig : templateConfig.getInputs()) {
+    for (FusionInputConfigDTO inputConfig : templateConfig.getInputs()) {
       wildcardHandlers[index] = new StreamHandler(inputConfig);
       wildcardInputIndexMap.put(inputConfig.getTopicName(), index);
       index++;
@@ -87,7 +87,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
 
       long cleanupPeriodMs = Math.max(templateConfig.getTimeoutMs(), 5000L);
       cleanupExecutor.scheduleAtFixedRate(
-          this::cleanupInactiveAggregators,
+          this::cleanupInactiveFusions,
           cleanupPeriodMs,
           cleanupPeriodMs,
           TimeUnit.MILLISECONDS
@@ -103,14 +103,14 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
   public void stop() {
     cleanupExecutor.shutdownNow();
 
-    for (StaticAggregator aggregator : aggregatorsByKey.values()) {
+    for (StaticFusion aggregator : aggregatorsByKey.values()) {
       try {
         aggregator.stop();
       } catch (Throwable ignored) {
       }
     }
     aggregatorsByKey.clear();
-    topicToAggregatorKey.clear();
+    topicToFusionKey.clear();
     aggregatorLastSeen.clear();
 
     for (StreamHandler handler : wildcardHandlers) {
@@ -138,16 +138,16 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
       return;
     }
 
-    String aggregatorKey = topicToAggregatorKey.get(destinationName);
+    String aggregatorKey = topicToFusionKey.get(destinationName);
     if (aggregatorKey == null) {
-      aggregatorKey = createOrResolveAggregatorKey(destinationName);
+      aggregatorKey = createOrResolveFusionKey(destinationName);
       if (aggregatorKey == null) {
         runCompletion(messageEvent);
         return;
       }
     }
 
-    StaticAggregator aggregator = aggregatorsByKey.get(aggregatorKey);
+    StaticFusion aggregator = aggregatorsByKey.get(aggregatorKey);
     if (aggregator == null) {
       runCompletion(messageEvent);
       return;
@@ -158,49 +158,49 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
   }
 
   public void destinationDeleted(String topicName) {
-    String aggregatorKey = topicToAggregatorKey.remove(topicName);
+    String aggregatorKey = topicToFusionKey.remove(topicName);
     if (aggregatorKey == null) {
       return;
     }
 
-    boolean stillReferenced = topicToAggregatorKey.containsValue(aggregatorKey);
+    boolean stillReferenced = topicToFusionKey.containsValue(aggregatorKey);
     if (!stillReferenced) {
-      removeAggregator(aggregatorKey);
+      removeFusion(aggregatorKey);
     }
   }
 
-  private String createOrResolveAggregatorKey(String destinationName) {
-    for (AggregatorInputConfigDTO inputConfig : templateConfig.getInputs()) {
+  private String createOrResolveFusionKey(String destinationName) {
+    for (FusionInputConfigDTO inputConfig : templateConfig.getInputs()) {
       String templateTopic = inputConfig.getTopicName();
       List<String> wildcardValues = matchAndExtract(templateTopic, destinationName);
       if (wildcardValues == null) {
         continue;
       }
 
-      String aggregatorKey = buildAggregatorKey(wildcardValues, destinationName);
-      StaticAggregator existing = aggregatorsByKey.get(aggregatorKey);
+      String aggregatorKey = buildFusionKey(wildcardValues, destinationName);
+      StaticFusion existing = aggregatorsByKey.get(aggregatorKey);
       if (existing != null) {
-        topicToAggregatorKey.put(destinationName, aggregatorKey);
+        topicToFusionKey.put(destinationName, aggregatorKey);
         aggregatorLastSeen.put(aggregatorKey, System.currentTimeMillis());
         return aggregatorKey;
       }
 
-      AggregatorConfigDTO resolvedConfig = buildResolvedConfig(aggregatorKey, wildcardValues);
-      StaticAggregator staticAggregator = new StaticAggregator(aggregatorWorkScheduler, resolvedConfig, false);
-      staticAggregator.start();
+      FusionConfigDTO resolvedConfig = buildResolvedConfig(aggregatorKey, wildcardValues);
+      StaticFusion staticFusion = new StaticFusion(aggregatorWorkScheduler, resolvedConfig, false);
+      staticFusion.start();
 
-      StaticAggregator previous = aggregatorsByKey.putIfAbsent(aggregatorKey, staticAggregator);
+      StaticFusion previous = aggregatorsByKey.putIfAbsent(aggregatorKey, staticFusion);
       if (previous != null) {
-        staticAggregator.stop();
+        staticFusion.stop();
       }
 
-      StaticAggregator activeAggregator = aggregatorsByKey.get(aggregatorKey);
-      for (AggregatorInputConfigDTO resolvedInput : resolvedConfig.getInputs()) {
-        topicToAggregatorKey.put(resolvedInput.getTopicName(), aggregatorKey);
+      StaticFusion activeFusion = aggregatorsByKey.get(aggregatorKey);
+      for (FusionInputConfigDTO resolvedInput : resolvedConfig.getInputs()) {
+        topicToFusionKey.put(resolvedInput.getTopicName(), aggregatorKey);
       }
       aggregatorLastSeen.put(aggregatorKey, System.currentTimeMillis());
 
-      if (activeAggregator != null) {
+      if (activeFusion != null) {
         return aggregatorKey;
       }
       return null;
@@ -208,8 +208,8 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     return null;
   }
 
-  private AggregatorConfigDTO buildResolvedConfig(String aggregatorKey, List<String> wildcardValues) {
-    AggregatorConfigDTO resolved = new AggregatorConfigDTO();
+  private FusionConfigDTO buildResolvedConfig(String aggregatorKey, List<String> wildcardValues) {
+    FusionConfigDTO resolved = new FusionConfigDTO();
     resolved.setName(templateConfig.getName() + "-" + sanitiseKey(aggregatorKey));
     resolved.setEnabled(templateConfig.isEnabled());
     String resolvedName = templateConfig.getOutputTopic();
@@ -225,8 +225,8 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     resolved.setMaxEventsPerTopic(templateConfig.getMaxEventsPerTopic());
     resolved.setOutputTransformers(templateConfig.getOutputTransformers());
 
-    List<AggregatorInputConfigDTO> resolvedInputs = new ArrayList<>();
-    for (AggregatorInputConfigDTO inputTemplate : templateConfig.getInputs()) {
+    List<FusionInputConfigDTO> resolvedInputs = new ArrayList<>();
+    for (FusionInputConfigDTO inputTemplate : templateConfig.getInputs()) {
       String resolvedTopic = applyWildcardValues(inputTemplate.getTopicName(), wildcardValues);
       resolvedInputs.add(copyInputTemplate(inputTemplate, resolvedTopic));
     }
@@ -234,8 +234,8 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     return resolved;
   }
 
-  private AggregatorInputConfigDTO copyInputTemplate(AggregatorInputConfigDTO inputTemplate, String resolvedTopic) {
-    AggregatorInputConfigDTO copy = new AggregatorInputConfigDTO(inputTemplate);
+  private FusionInputConfigDTO copyInputTemplate(FusionInputConfigDTO inputTemplate, String resolvedTopic) {
+    FusionInputConfigDTO copy = new FusionInputConfigDTO(inputTemplate);
     copy.setTopicName(resolvedTopic);
     return copy;
   }
@@ -315,7 +315,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     return resolved.toString();
   }
 
-  private String buildAggregatorKey(List<String> wildcardValues, String destinationName) {
+  private String buildFusionKey(List<String> wildcardValues, String destinationName) {
     if (wildcardValues == null || wildcardValues.isEmpty()) {
       return destinationName;
     }
@@ -326,7 +326,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     return value.replace('/', '_').replace('#', '_').replace('+', '_');
   }
 
-  private void cleanupInactiveAggregators() {
+  private void cleanupInactiveFusions() {
     long expiryMs = Math.max(templateConfig.getTimeoutMs() * 3, 15000L);
     long now = System.currentTimeMillis();
 
@@ -334,13 +334,13 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
       String aggregatorKey = entry.getKey();
       long lastSeen = entry.getValue();
       if ((now - lastSeen) >= expiryMs) {
-        removeAggregator(aggregatorKey);
+        removeFusion(aggregatorKey);
       }
     }
   }
 
-  private void removeAggregator(String aggregatorKey) {
-    StaticAggregator removed = aggregatorsByKey.remove(aggregatorKey);
+  private void removeFusion(String aggregatorKey) {
+    StaticFusion removed = aggregatorsByKey.remove(aggregatorKey);
     if (removed != null) {
       try {
         removed.stop();
@@ -349,7 +349,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
     }
 
     aggregatorLastSeen.remove(aggregatorKey);
-    topicToAggregatorKey.entrySet().removeIf(entry -> aggregatorKey.equals(entry.getValue()));
+    topicToFusionKey.entrySet().removeIf(entry -> aggregatorKey.equals(entry.getValue()));
   }
 
   private void runCompletion(MessageEvent event) {
@@ -369,7 +369,7 @@ public class DynamicAggregatorManager implements Aggregator, ClientConnection, M
 
   @Override
   public String getName() {
-    return "DynamicAggregatorManager-" + templateConfig.getName();
+    return "DynamicFusionManager-" + templateConfig.getName();
   }
 
   @Override

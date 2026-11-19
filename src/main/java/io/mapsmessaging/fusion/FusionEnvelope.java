@@ -26,7 +26,7 @@ import lombok.NonNull;
 
 @Getter
 @AllArgsConstructor
-public class AggregatorEnvelope {
+public class FusionEnvelope {
 
   private final int inputIndex;
 
