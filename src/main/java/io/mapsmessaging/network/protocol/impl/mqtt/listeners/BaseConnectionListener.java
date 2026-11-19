@@ -34,41 +34,37 @@ import io.mapsmessaging.network.protocol.transformation.TransformationManager;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 public abstract class BaseConnectionListener extends PacketListener {
 
   protected CompletableFuture<Session> createSession(EndPoint endPoint, Protocol protocol, SessionContextBuilder scb, String sessionId) {
-    CompletableFuture<Session> future = SessionManager.getInstance().createAsync(scb.build(), protocol);
-    future.thenApply(
-        session -> {
-          try {
-            ((MQTTProtocol) protocol).setSession(session);
-            session.login();
-            if (protocol.getProtocolMessageTransformation() == null) {
-              ProtocolMessageTransformation transformation =
-                  TransformationManager.getInstance()
-                      .getTransformation(
-                          endPoint.getProtocol(),
-                          endPoint.getName(),
-                          "mqtt",
-                          session.getSecurityContext().getUsername());
+    return SessionManager.getInstance().createAsync(scb.build(), protocol).thenApply(session -> {
+      try {
+        ((MQTTProtocol) protocol).setSession(session);
+        session.login();
+        if (protocol.getProtocolMessageTransformation() == null) {
+          ProtocolMessageTransformation transformation =
+              TransformationManager.getInstance()
+                  .getTransformation(
+                      endPoint.getProtocol(),
+                      endPoint.getName(),
+                      "mqtt",
+                      session.getSecurityContext().getUsername());
 
-              protocol.setProtocolMessageTransformation(transformation);
-            }
-            return session;
-          } catch (IOException ioe) {
-            logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, sessionId, ioe);
-            future.completeExceptionally(
-                new MalformedException("Unable to construct the required Will Topic"));
-          }
-          try {
-            endPoint.close();
-          } catch (IOException e) {
-            // Ignore
-          }
-          return null;
-        });
-    return future;
+          protocol.setProtocolMessageTransformation(transformation);
+        }
+        return session;
+      } catch (IOException ioe) {
+        logger.log(ServerLogMessages.MQTT_CONNECT_LISTENER_SESSION_EXCEPTION, sessionId, ioe);
+        try {
+          endPoint.close();
+        } catch (IOException e) {
+          // Ignore
+        }
+        throw new CompletionException(new MalformedException("Unable to construct the required Will Topic", ioe));
+      }
+    });
   }
 
   protected SessionContextBuilder getBuilder(Protocol protocol, String sessionId, boolean isClean, int keepAlive, String username, char[] pass) {
