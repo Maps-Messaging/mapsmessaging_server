@@ -341,6 +341,83 @@ class MessageStateManagerImplTest {
     }
   }
 
+  @Test
+  void mixedLifecycleTransitionsPreserveMessageOwnershipAndCounts() {
+    MessageStateManagerImpl manager = createManager();
+    Message first = createMessage(2101L, 1);
+    Message second = createMessage(2102L, 1);
+    Message expiring = createMessage(2103L, 1);
+    try {
+      manager.register(first);
+      manager.register(second);
+      manager.register(expiring);
+      assertMessageState(manager, Set.of(2101L, 2102L, 2103L), 3, false);
+
+      manager.allocate(first);
+      manager.allocate(second);
+      assertMessageState(manager, Set.of(2101L, 2102L, 2103L), 1, true);
+
+      Assertions.assertTrue(manager.rollback(2101L));
+      assertMessageState(manager, Set.of(2101L, 2102L, 2103L), 2, true);
+
+      manager.commit(2102L);
+      assertMessageState(manager, Set.of(2101L, 2103L), 2, false);
+
+      manager.expired(2103L);
+      assertMessageState(manager, Set.of(2101L), 1, false);
+
+      manager.allocate(first);
+      assertMessageState(manager, Set.of(2101L), 0, true);
+      Assertions.assertTrue(manager.rollback(2101L));
+      assertMessageState(manager, Set.of(2101L), 1, false);
+
+      manager.allocate(first);
+      manager.commit(2101L);
+      assertMessageState(manager, Set.of(), 0, false);
+    } finally {
+      Assertions.assertDoesNotThrow(manager::close);
+    }
+  }
+
+  @Test
+  void repeatedTerminalOperationsDoNotResurrectSettledMessages() {
+    MessageStateManagerImpl manager = createManager();
+    Message committed = createMessage(2201L, 1);
+    Message expired = createMessage(2202L, 1);
+    try {
+      manager.register(committed);
+      manager.register(expired);
+      manager.allocate(committed);
+      manager.allocate(expired);
+      manager.commit(2201L);
+      manager.expired(2202L);
+      assertMessageState(manager, Set.of(), 0, false);
+
+      Assertions.assertFalse(manager.rollback(2201L));
+      Assertions.assertFalse(manager.rollback(2202L));
+      manager.commit(2201L);
+      manager.expired(2202L);
+      manager.rollbackInFlightMessages();
+      assertMessageState(manager, Set.of(), 0, false);
+    } finally {
+      Assertions.assertDoesNotThrow(manager::close);
+    }
+  }
+
+  private static void assertMessageState(MessageStateManagerImpl manager, Set<Long> expectedIds,
+                                         int expectedAtRest, boolean expectedInFlight) {
+    Assertions.assertEquals(expectedIds, new HashSet<>(manager.getAll()));
+    Assertions.assertEquals(expectedIds.size(), manager.size());
+    Assertions.assertEquals(expectedAtRest, manager.pending());
+    Assertions.assertEquals(expectedAtRest > 0, manager.hasAtRestMessages());
+    Assertions.assertEquals(expectedInFlight, manager.hasMessagesInFlight());
+    Assertions.assertEquals(expectedIds.size() == 0, manager.isEmpty());
+    Assertions.assertEquals(expectedAtRest, manager.getAllAtRest().size());
+    for (long id : expectedIds) {
+      Assertions.assertTrue(manager.hasMessage(id));
+    }
+  }
+
   private MessageStateManagerImpl createManager() {
     BitSetFactory bitSetFactory = new BitSetFactoryImpl(Constants.BITSET_BLOCK_SIZE);
     return new MessageStateManagerImpl(MANAGER_NAME, UNIQUE_SESSION_ID, bitSetFactory);
