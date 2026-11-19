@@ -140,6 +140,66 @@ class SharedSubscriptionMembershipRegressionTest {
   }
 
   @Test
+  void rolledBackReservationIsDeliveredToRemainingMemberAfterRemoval() throws Exception {
+    Fixture fixture = fixture("topic/membership/redelivery-removal");
+    MessageCallback removedCallback = mock(MessageCallback.class);
+    MessageCallback remainingCallback = mock(MessageCallback.class);
+    SessionImpl removed = session("removed", removedCallback);
+    add(fixture, removed, "removed");
+    add(fixture, session("remaining", remainingCallback), "remaining");
+
+    Message message = new MessageBuilder().setId(42L).build();
+    when(fixture.destination.getMessage(42L)).thenReturn(message);
+    fixture.state.register(message);
+
+    assertNotNull(fixture.shared.retrieveNextMessageWithFlowControl());
+    fixture.shared.removeSession(removed);
+    fixture.shared.sendMessage(message);
+
+    assertFalse(fixture.state.hasMessagesInFlight());
+    assertTrue(fixture.state.hasAtRestMessages());
+    Message redelivery = fixture.shared.retrieveNextMessageWithFlowControl();
+    assertNotNull(redelivery);
+    fixture.shared.sendMessage(redelivery);
+
+    verify(removedCallback, never()).sendMessage(eq(fixture.destination), any(), eq(message), any());
+    verify(remainingCallback).sendMessage(eq(fixture.destination), any(), eq(message), any());
+    assertTrue(fixture.state.hasMessagesInFlight());
+    assertFalse(fixture.state.hasAtRestMessages());
+    assertTrue(fixture.state.hasMessage(42L));
+    org.junit.jupiter.api.Assertions.assertEquals(1, fixture.state.size());
+  }
+
+  @Test
+  void rolledBackReservationIsDeliveredToReplacementMember() throws Exception {
+    Fixture fixture = fixture("topic/membership/redelivery-replacement");
+    MessageCallback previousCallback = mock(MessageCallback.class);
+    MessageCallback replacementCallback = mock(MessageCallback.class);
+    add(fixture, session("previous", previousCallback), "member");
+
+    Message message = new MessageBuilder().setId(43L).build();
+    when(fixture.destination.getMessage(43L)).thenReturn(message);
+    fixture.state.register(message);
+    assertNotNull(fixture.shared.retrieveNextMessageWithFlowControl());
+
+    add(fixture, session("replacement", replacementCallback), "member");
+    fixture.shared.sendMessage(message);
+
+    assertFalse(fixture.state.hasMessagesInFlight());
+    assertTrue(fixture.state.hasAtRestMessages());
+    Message redelivery = fixture.shared.retrieveNextMessageWithFlowControl();
+    assertNotNull(redelivery);
+    fixture.shared.sendMessage(redelivery);
+
+    verify(previousCallback, never()).sendMessage(eq(fixture.destination), any(), eq(message), any());
+    verify(replacementCallback).sendMessage(eq(fixture.destination), any(), eq(message), any());
+    assertTrue(fixture.state.hasMessagesInFlight());
+    assertFalse(fixture.state.hasAtRestMessages());
+    assertTrue(fixture.state.hasMessage(43L));
+    org.junit.jupiter.api.Assertions.assertEquals(1, fixture.state.size());
+  }
+
+  @Test
   void removingFinalMemberLeavesNoEligibleConsumer() throws Exception {
     Fixture fixture = fixture("topic/membership/last");
     SessionImpl only = session("only", mock(MessageCallback.class));
