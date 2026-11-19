@@ -614,6 +614,9 @@ public class DestinationSubscription extends Subscription {
   @Override
   public void run() {
     ThreadLocalContext.checkDomain(DestinationImpl.SUBSCRIPTION_TASK_KEY);
+    if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+      QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "DELIVERY-TASK-BEGIN", -1, "session", sessionId);
+    }
     try {
       while (isReady()) {
         Message message = retrieveNextMessageWithFlowControl();
@@ -629,6 +632,10 @@ public class DestinationSubscription extends Subscription {
       // We get these because the End Point could be closed
     } catch (RuntimeException th) {
       logger.log(ServerLogMessages.DESTINATION_SUBSCRIPTION_TASK_FAILURE, destinationImpl.getFullyQualifiedNamespace(), sessionImpl.getName(), th);
+    } finally {
+      if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+        QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "DELIVERY-TASK-END", -1, "session", sessionId);
+      }
     }
   }
 
@@ -647,14 +654,29 @@ public class DestinationSubscription extends Subscription {
   }
 
   public boolean schedule() {
-    if (!flowControlBlocked && isReady()) {
+    boolean ready = !flowControlBlocked && isReady();
+    if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+      QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "SCHEDULE-CHECK", -1,
+          "session", sessionId, "blocked", flowControlBlocked, "ready", ready);
+    }
+    if (ready) {
       destinationImpl.scanForDelivery(this);
+      if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+        QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "SCHEDULE-SUBMITTED", -1, "session", sessionId);
+      }
       return true;
     }
     return false;
   }
 
   protected boolean isReady() {
+    if (QueueCleanupTrace.isEnabled(destinationImpl.getFullyQualifiedNamespace())) {
+      QueueCleanupTrace.record(destinationImpl.getFullyQualifiedNamespace(), "PARENT-READINESS", -1,
+          "session", sessionId, "paused", isPaused, "sync", sync, "hibernating", hibernating,
+          "sessionClosed", sessionImpl != null && sessionImpl.isClosed(),
+          "atRest", messageStateManager.hasAtRestMessages(), "contextEmpty", isContextEmpty(),
+          "canSend", acknowledgementController.canSend());
+    }
     return (!isPaused &&
         !sync &&
         !hibernating &&
