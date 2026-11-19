@@ -6,12 +6,12 @@
  *
  */
 
-package io.mapsmessaging.aggregator;
+package io.mapsmessaging.fusion;
 
-import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
+import io.mapsmessaging.fusion.worker.FusionWorkScheduler;
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.FusionInputConfigDTO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
