@@ -223,6 +223,9 @@ public class SessionImpl {
   /** Immediately prevents further use while destination cleanup proceeds asynchronously. */
   public void markClosing() {
     isClosed = true;
+    if (scheduledFuture != null) {
+      scheduledFuture.cancel(false);
+    }
   }
 
   synchronized void close() {
