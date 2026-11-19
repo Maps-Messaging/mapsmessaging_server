@@ -26,8 +26,8 @@ import io.mapsmessaging.api.SubscriptionContextBuilder;
 import io.mapsmessaging.api.features.ClientAcknowledgement;
 import io.mapsmessaging.api.transformers.InterServerTransformation;
 import io.mapsmessaging.api.transformers.ParsedMessage;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionContributionMode;
+import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.engine.destination.subscription.SubscriptionContext;
 import io.mapsmessaging.engine.transformers.TransformerManager;
@@ -43,12 +43,12 @@ import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_SUBSCRIPTION
 public class StreamHandler {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
-  private final AggregatorInputConfigDTO config;
+  private final FusionInputConfigDTO config;
   private final List<InterServerTransformation> transformation;
 
   private SubscribedEventManager subscriptionManager;
 
-  public StreamHandler(AggregatorInputConfigDTO config) {
+  public StreamHandler(FusionInputConfigDTO config) {
     this.config = config;
     transformation = new ArrayList<>();
   }
@@ -57,7 +57,7 @@ public class StreamHandler {
     return config.getTopicName();
   }
 
-  public AggregatorContributionMode getContributionMode() {
+  public FusionContributionMode getContributionMode() {
     return config.getContributionMode();
   }
 
