@@ -70,7 +70,7 @@ class SessionCloseSchedulerDomainTest {
         singleton.when(MessageDaemon::getInstance).thenReturn(daemon);
         assertTimeout(Duration.ofSeconds(2), () -> SessionManager.getInstance().close(session, true));
         assertFalse(pendingCleanup.isDone(), "The protocol must return before destination cleanup finishes");
-        verify(implementation).markClosing();
+        verify(engine).closeAsync(implementation, true);
       }
     } finally {
       if (previous == null) {
