@@ -450,14 +450,19 @@ public class SessionManagerPipeLine {
         ? CompletableFuture.completedFuture(null) : beginCloseAsync(previous, true);
     return closed.thenCompose(ignored -> onSessionQueue(() -> {
       SubscriptionController controller = persistentControllers.get(context.getId());
-      if (context.isResetState() && controller != null) {
-        cancelPendingExpiry(controller);
-        return beginFinaliseControllerAsync(controller, ControllerCloseReason.RESET, WillFinalisation.NONE)
-            .thenCompose(reset -> onSessionQueue(() -> {
-              SessionDetails details = storeLookup.getSessionDetails(context);
-              details.clearSubscriptions();
-              return CompletableFuture.completedFuture(create(context));
-            }));
+      if (controller != null) {
+        if (!cancelPendingExpiry(controller)) {
+          return beginFinaliseControllerAsync(controller, ControllerCloseReason.EXPIRED, WillFinalisation.RUN)
+              .thenCompose(expired -> onSessionQueue(() -> CompletableFuture.completedFuture(create(context))));
+        }
+        if (context.isResetState()) {
+          return beginFinaliseControllerAsync(controller, ControllerCloseReason.RESET, WillFinalisation.NONE)
+              .thenCompose(reset -> onSessionQueue(() -> {
+                SessionDetails details = storeLookup.getSessionDetails(context);
+                details.clearSubscriptions();
+                return CompletableFuture.completedFuture(create(context));
+              }));
+        }
       }
       return CompletableFuture.completedFuture(create(context));
     }));
