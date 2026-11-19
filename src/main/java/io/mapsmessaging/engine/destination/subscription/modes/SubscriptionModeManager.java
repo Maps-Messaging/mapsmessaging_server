@@ -173,17 +173,24 @@ public abstract class SubscriptionModeManager {
     CompletableFuture<Void> completion = new CompletableFuture<>();
     try {
       Future<Response> scheduled = destination.submit(() -> {
-        try {
-          action.run();
-          completion.complete(null);
-        } catch (Throwable failure) {
-          completion.completeExceptionally(failure);
-        }
+        action.run();
         return new VoidResponse();
       });
-      if (scheduled.isCancelled()) {
-        completion.completeExceptionally(new java.util.concurrent.CancellationException("Destination lifecycle task cancelled"));
-      }
+      // The scheduler exposes Future, not a completion callback. A virtual waiter
+      // observes failures and cancellations without holding a serial task worker.
+      Thread.startVirtualThread(() -> {
+        try {
+          scheduled.get();
+          completion.complete(null);
+        } catch (InterruptedException interrupted) {
+          Thread.currentThread().interrupt();
+          completion.completeExceptionally(interrupted);
+        } catch (ExecutionException failure) {
+          completion.completeExceptionally(failure.getCause());
+        } catch (RuntimeException failure) {
+          completion.completeExceptionally(failure);
+        }
+      });
     } catch (RuntimeException failure) {
       completion.completeExceptionally(failure);
     }
