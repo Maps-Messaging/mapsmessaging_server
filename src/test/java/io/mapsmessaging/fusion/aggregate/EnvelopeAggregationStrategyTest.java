@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.aggregate;
+package io.mapsmessaging.fusion.aggregate;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;

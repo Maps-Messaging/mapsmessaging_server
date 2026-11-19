@@ -1,9 +1,9 @@
-package io.mapsmessaging.config.aggregator;
+package io.mapsmessaging.config.fusion;
 
 import io.mapsmessaging.configuration.ConfigurationProperties;
 import io.mapsmessaging.dto.rest.config.BaseConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
+import io.mapsmessaging.dto.rest.config.fusion.FusionConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.WindowCloseMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

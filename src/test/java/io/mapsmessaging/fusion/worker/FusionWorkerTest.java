@@ -17,17 +17,17 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator.worker;
+package io.mapsmessaging.fusion.worker;
 
-import io.mapsmessaging.aggregator.FusionEnvelope;
-import io.mapsmessaging.aggregator.ProcessedHandler;
-import io.mapsmessaging.aggregator.StreamHandler;
-import io.mapsmessaging.aggregator.mailbox.QueueBackedMpscMailbox;
+import io.mapsmessaging.fusion.FusionEnvelope;
+import io.mapsmessaging.fusion.ProcessedHandler;
+import io.mapsmessaging.fusion.StreamHandler;
+import io.mapsmessaging.fusion.mailbox.QueueBackedMpscMailbox;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.MessageEvent;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionContributionMode;
-import io.mapsmessaging.dto.rest.config.aggregator.FusionInputConfigDTO;
-import io.mapsmessaging.dto.rest.config.aggregator.WindowCloseMode;
+import io.mapsmessaging.dto.rest.config.fusion.FusionContributionMode;
+import io.mapsmessaging.dto.rest.config.fusion.FusionInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.WindowCloseMode;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
