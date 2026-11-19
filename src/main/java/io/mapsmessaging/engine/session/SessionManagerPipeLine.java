@@ -91,6 +91,7 @@ public class SessionManagerPipeLine {
   private final LongAdder expiredSessions;
   private final WillTaskManager willTaskManager;
   private final Map<String, CompletableFuture<Void>> pendingLifecycle = new HashMap<>();
+  private final Map<String, SessionImpl> unfinishedCloses = new ConcurrentHashMap<>();
 
   SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected, LongAdder expired) {
     this(destinationManager, lookup, connected, disconnected, expired, new SingleConcurrentTaskScheduler("SessionManagerPipeLine"), (task, delay, unit) -> io.mapsmessaging.utilities.threads.SimpleTaskScheduler.getInstance().schedule(task, delay, unit), new SessionStateFileStore(), new SubscriptionControllerFactory(), new SessionFactory(), WillTaskManager.getInstance());
@@ -447,6 +448,10 @@ public class SessionManagerPipeLine {
   }
 
   private CompletableFuture<SessionImpl> prepareCreateAsync(SessionContext context) {
+    if (unfinishedCloses.containsKey(context.getId())) {
+      return CompletableFuture.failedFuture(new IllegalStateException(
+          "Previous session cleanup has not completed: " + context.getId()));
+    }
     SessionImpl previous = sessions.get(context.getId());
     CompletableFuture<Void> closed = previous == null
         ? CompletableFuture.completedFuture(null) : beginCloseAsync(previous, true);
@@ -496,19 +501,23 @@ public class SessionManagerPipeLine {
   }
 
   private CompletableFuture<Void> beginCloseAsync(SessionImpl session, boolean clearWillTask) {
-    if (!sessions.remove(session.getName(), session)) {
+    boolean firstClose = sessions.remove(session.getName(), session);
+    if (!firstClose && unfinishedCloses.get(session.getName()) != session) {
       return CompletableFuture.completedFuture(null);
     }
-    session.markClosing();
-    connectedSessions.decrement();
     SubscriptionController controller = session.getSubscriptionController();
     long expiry = session.getExpiry();
     boolean hibernate = session instanceof PersistentSession && expiry > 0;
     long expiryTime = hibernate ? System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry) : 0L;
-    if (hibernate) {
-      handleWill(session.getName(), clearWillTask);
-    } else {
-      finaliseWill(session.getName(), clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN);
+    if (firstClose) {
+      session.markClosing();
+      connectedSessions.decrement();
+      unfinishedCloses.put(session.getName(), session);
+      if (hibernate) {
+        handleWill(session.getName(), clearWillTask);
+      } else {
+        finaliseWill(session.getName(), clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN);
+      }
     }
     CompletableFuture<Void> cleanup = hibernate ? controller.hibernateAllAsync() : controller.closeAsync(false);
     return cleanup.thenCompose(ignored -> onSessionQueue(() -> {
@@ -519,6 +528,7 @@ public class SessionManagerPipeLine {
       } else {
         completeControllerFinalisation(controller, ControllerCloseReason.TERMINATED, WillFinalisation.NONE);
       }
+      unfinishedCloses.remove(session.getName(), session);
       return CompletableFuture.completedFuture(null);
     }));
   }
