@@ -17,9 +17,9 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator;
+package io.mapsmessaging.fusion;
 
-import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
+import io.mapsmessaging.fusion.worker.FusionWorkScheduler;
 import io.mapsmessaging.config.FusionManagerConfig;
 import io.mapsmessaging.dto.rest.config.FusionManagerConfigDTO;
 import io.mapsmessaging.dto.rest.config.aggregator.FusionConfigDTO;
@@ -60,10 +60,10 @@ public class FusionManager implements Agent {
           aggregators.add(new StaticFusion(aggregatorWorkScheduler, aggregatorConfig));
         }
       }
-      logger.log(AGGREGATOR_MANAGER_TASK_CREATED, config.getAggregatorConfigList().size());
+      logger.log(FUSION_MANAGER_TASK_CREATED, config.getAggregatorConfigList().size());
     }
     else{
-      logger.log(AGGREGATOR_MANAGER_TASK_CREATED);
+      logger.log(FUSION_MANAGER_TASK_CREATED);
     }
   }
 
@@ -84,7 +84,7 @@ public class FusionManager implements Agent {
       for (Fusion staticFusion : aggregators) {
         staticFusion.start();
       }
-      logger.log(AGGREGATOR_MANAGER_TASK_STARTED, aggregators.size());
+      logger.log(FUSION_MANAGER_TASK_STARTED, aggregators.size());
     }
   }
 
@@ -95,7 +95,7 @@ public class FusionManager implements Agent {
       for (Fusion staticFusion : aggregators) {
         staticFusion.stop();
       }
-      logger.log(AGGREGATOR_MANAGER_TASK_STOPPED, aggregators.size());
+      logger.log(FUSION_MANAGER_TASK_STOPPED, aggregators.size());
     }
   }
 

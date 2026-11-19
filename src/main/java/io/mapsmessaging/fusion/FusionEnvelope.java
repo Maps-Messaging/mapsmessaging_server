@@ -17,7 +17,7 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator;
+package io.mapsmessaging.fusion;
 
 import io.mapsmessaging.api.MessageEvent;
 import lombok.AllArgsConstructor;

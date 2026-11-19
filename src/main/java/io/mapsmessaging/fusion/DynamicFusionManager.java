@@ -17,9 +17,9 @@
  */
 
 
-package io.mapsmessaging.aggregator;
+package io.mapsmessaging.fusion;
 
-import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
+import io.mapsmessaging.fusion.worker.FusionWorkScheduler;
 import io.mapsmessaging.api.MessageEvent;
 import io.mapsmessaging.api.MessageListener;
 import io.mapsmessaging.api.Session;
@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
-import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_EXCEPTION;
+import static io.mapsmessaging.logging.ServerLogMessages.FUSION_EXCEPTION;
 
 public class DynamicFusionManager implements Fusion, ClientConnection, MessageListener {
 
@@ -93,7 +93,7 @@ public class DynamicFusionManager implements Fusion, ClientConnection, MessageLi
           TimeUnit.MILLISECONDS
       );
     } catch (ExecutionException | InterruptedException | TimeoutException |IOException e) {
-      logger.log(AGGREGATOR_EXCEPTION, templateConfig.getName(), e);
+      logger.log(FUSION_EXCEPTION, templateConfig.getName(), e);
       Thread.currentThread().interrupt();
       stop();
     }

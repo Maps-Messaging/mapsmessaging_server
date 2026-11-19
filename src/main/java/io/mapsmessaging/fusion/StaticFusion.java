@@ -17,14 +17,14 @@
  *  limitations under the License.
  */
 
-package io.mapsmessaging.aggregator;
+package io.mapsmessaging.fusion;
 
-import io.mapsmessaging.aggregator.aggregate.AggregationStrategy;
-import io.mapsmessaging.aggregator.aggregate.EnvelopeAggregationStrategy;
-import io.mapsmessaging.aggregator.mailbox.FusionMailbox;
-import io.mapsmessaging.aggregator.mailbox.QueueBackedMpscMailbox;
-import io.mapsmessaging.aggregator.worker.FusionWorkScheduler;
-import io.mapsmessaging.aggregator.worker.FusionWorker;
+import io.mapsmessaging.fusion.aggregate.AggregationStrategy;
+import io.mapsmessaging.fusion.aggregate.EnvelopeAggregationStrategy;
+import io.mapsmessaging.fusion.mailbox.FusionMailbox;
+import io.mapsmessaging.fusion.mailbox.QueueBackedMpscMailbox;
+import io.mapsmessaging.fusion.worker.FusionWorkScheduler;
+import io.mapsmessaging.fusion.worker.FusionWorker;
 import io.mapsmessaging.api.*;
 import io.mapsmessaging.api.features.DestinationType;
 import io.mapsmessaging.api.message.Message;
@@ -126,9 +126,9 @@ public class StaticFusion implements Fusion, ClientConnection, MessageListener, 
           emitFirstEventImmediately
       );
       aggregatorWorkScheduler.register(worker);
-      logger.log(AGGREGATOR_STARTED, configDTO.getInputs().size());
+      logger.log(FUSION_STARTED, configDTO.getInputs().size());
     } catch (ExecutionException | InterruptedException | TimeoutException | IOException e) {
-      logger.log(AGGREGATOR_EXCEPTION, configDTO.getName(), e);
+      logger.log(FUSION_EXCEPTION, configDTO.getName(), e);
       Thread.currentThread().interrupt();
       stop();
     }
@@ -163,12 +163,12 @@ public class StaticFusion implements Fusion, ClientConnection, MessageListener, 
         session = null;
       }
     }
-    logger.log(AGGREGATOR_STOPPED, configDTO.getInputs().size());
+    logger.log(FUSION_STOPPED, configDTO.getInputs().size());
   }
 
   @Override
   public void completed(MessageEvent[] contributions) {
-    logger.log(AGGREGATOR_COMPLETED, configDTO.getName(), configDTO.getInputs().size());
+    logger.log(FUSION_COMPLETED, configDTO.getName(), configDTO.getInputs().size());
 
     Message[] events = new Message[contributions.length];
     String[] topics = new String[contributions.length];
@@ -198,7 +198,7 @@ public class StaticFusion implements Fusion, ClientConnection, MessageListener, 
         outboundDestination.storeMessage(message);
       }
     } catch (IOException e) {
-      logger.log(AGGREGATOR_COMPLETION_EXCEPTION, configDTO.getName(), e);
+      logger.log(FUSION_COMPLETION_EXCEPTION, configDTO.getName(), e);
     }
   }
 
@@ -209,7 +209,7 @@ public class StaticFusion implements Fusion, ClientConnection, MessageListener, 
   }
 
   public void acceptResolvedEvent(String resolvedTopicName, @NotNull @NonNull MessageEvent messageEvent) {
-    logger.log(AGGREGATOR_EVENT_RECEIVED, configDTO.getName(), resolvedTopicName);
+    logger.log(FUSION_EVENT_RECEIVED, configDTO.getName(), resolvedTopicName);
 
     Integer inputIndex = topicIndexMap.get(resolvedTopicName);
     if (inputIndex == null) {
@@ -221,7 +221,7 @@ public class StaticFusion implements Fusion, ClientConnection, MessageListener, 
     boolean accepted = mailbox.offer(envelope);
     if (!accepted) {
       runCompletion(messageEvent);
-      logger.log(AGGREGATOR_EVENT_DROPPED, configDTO.getName(), resolvedTopicName);
+      logger.log(FUSION_EVENT_DROPPED, configDTO.getName(), resolvedTopicName);
       return;
     }
     aggregatorWorkScheduler.signal(worker);
