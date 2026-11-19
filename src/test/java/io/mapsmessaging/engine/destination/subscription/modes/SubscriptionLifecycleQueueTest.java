@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -125,6 +127,36 @@ class SubscriptionLifecycleQueueTest {
     assertThrows(ExecutionException.class, () -> finished.get(5, TimeUnit.SECONDS));
     verify(subscription, never()).delete();
     assertTrue(manager.get(destination) == subscription);
+  }
+
+  @Test
+  void retryAfterPartialFailureDoesNotCloseSuccessfulDestinationTwice() throws Exception {
+    NormalSubscriptionModeManager manager = new NormalSubscriptionModeManager();
+    Queue<Callable<Response>> firstTasks = new ArrayDeque<>();
+    Queue<Callable<Response>> secondTasks = new ArrayDeque<>();
+    DestinationImpl firstDestination = destination(firstTasks);
+    DestinationImpl secondDestination = destination(secondTasks);
+    Subscription first = mock(Subscription.class);
+    Subscription second = mock(Subscription.class);
+    doThrow(new IOException("temporary failure")).doNothing().when(second).delete();
+    manager.add(first, firstDestination);
+    manager.add(second, secondDestination);
+
+    CompletableFuture<Void> firstAttempt = manager.closeAsync(false);
+    firstTasks.remove().call();
+    secondTasks.remove().call();
+    assertThrows(ExecutionException.class, () -> firstAttempt.get(5, TimeUnit.SECONDS));
+    assertNull(manager.get(firstDestination));
+    assertTrue(manager.get(secondDestination) == second);
+
+    CompletableFuture<Void> retry = manager.closeAsync(false);
+    assertTrue(firstTasks.isEmpty(), "Successfully closed destination must not be scheduled twice");
+    secondTasks.remove().call();
+    assertNull(retry.get(5, TimeUnit.SECONDS));
+
+    verify(first).delete();
+    verify(second, times(2)).delete();
+    assertNull(manager.get(secondDestination));
   }
 
   private static DestinationImpl destination(Queue<Callable<Response>> tasks) {
