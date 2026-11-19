@@ -92,6 +92,7 @@ public class SessionManagerPipeLine {
   private final WillTaskManager willTaskManager;
   private final Map<String, CompletableFuture<Void>> pendingLifecycle = new HashMap<>();
   private final Map<String, SessionImpl> unfinishedCloses = new ConcurrentHashMap<>();
+  private final Map<SessionImpl, Boolean> pendingCloseWill = new ConcurrentHashMap<>();
 
   SessionManagerPipeLine(DestinationManager destinationManager, PersistentSessionManager lookup, LongAdder connected, LongAdder disconnected, LongAdder expired) {
     this(destinationManager, lookup, connected, disconnected, expired, new SingleConcurrentTaskScheduler("SessionManagerPipeLine"), (task, delay, unit) -> io.mapsmessaging.utilities.threads.SimpleTaskScheduler.getInstance().schedule(task, delay, unit), new SessionStateFileStore(), new SubscriptionControllerFactory(), new SessionFactory(), WillTaskManager.getInstance());
@@ -448,9 +449,9 @@ public class SessionManagerPipeLine {
   }
 
   private CompletableFuture<SessionImpl> prepareCreateAsync(SessionContext context) {
-    if (unfinishedCloses.containsKey(context.getId())) {
-      return CompletableFuture.failedFuture(new IllegalStateException(
-          "Previous session cleanup has not completed: " + context.getId()));
+    SessionImpl closing = unfinishedCloses.get(context.getId());
+    if (closing != null) {
+      return beginCloseAsync(closing, true).thenCompose(ignored -> prepareCreateAsync(context));
     }
     SessionImpl previous = sessions.get(context.getId());
     CompletableFuture<Void> closed = previous == null
@@ -476,7 +477,25 @@ public class SessionManagerPipeLine {
   }
 
   public CompletableFuture<Void> closeAsync(SessionImpl session, boolean clearWillTask) {
-    return orderLifecycle(session.getName(), () -> onSessionQueue(() -> beginCloseAsync(session, clearWillTask)));
+    synchronized (pendingLifecycle) {
+      CompletableFuture<Void> completion =
+          orderLifecycle(session.getName(), () -> onSessionQueue(() -> beginCloseAsync(session, clearWillTask)));
+      beginLogicalClose(session, clearWillTask);
+      return completion;
+    }
+  }
+
+  /** Register a closed session immediately, without waiting for destination cleanup. */
+  private void beginLogicalClose(SessionImpl session, boolean clearWillTask) {
+    synchronized (pendingLifecycle) {
+      if (!sessions.remove(session.getName(), session)) {
+        return;
+      }
+      session.markClosing();
+      connectedSessions.decrement();
+      unfinishedCloses.put(session.getName(), session);
+      pendingCloseWill.put(session, clearWillTask);
+    }
   }
 
   public CompletableFuture<Void> closeAsync(String sessionId, boolean clearWillTask) {
@@ -504,22 +523,20 @@ public class SessionManagerPipeLine {
   }
 
   private CompletableFuture<Void> beginCloseAsync(SessionImpl session, boolean clearWillTask) {
-    boolean firstClose = sessions.remove(session.getName(), session);
-    if (!firstClose && unfinishedCloses.get(session.getName()) != session) {
+    beginLogicalClose(session, clearWillTask);
+    if (unfinishedCloses.get(session.getName()) != session) {
       return CompletableFuture.completedFuture(null);
     }
     SubscriptionController controller = session.getSubscriptionController();
     long expiry = session.getExpiry();
     boolean hibernate = session instanceof PersistentSession && expiry > 0;
     long expiryTime = hibernate ? System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(expiry) : 0L;
-    if (firstClose) {
-      session.markClosing();
-      connectedSessions.decrement();
-      unfinishedCloses.put(session.getName(), session);
+    Boolean clearWill = pendingCloseWill.remove(session);
+    if (clearWill != null) {
       if (hibernate) {
-        handleWill(session.getName(), clearWillTask);
+        handleWill(session.getName(), clearWill);
       } else {
-        finaliseWill(session.getName(), clearWillTask ? WillFinalisation.CLEAR : WillFinalisation.RUN);
+        finaliseWill(session.getName(), clearWill ? WillFinalisation.CLEAR : WillFinalisation.RUN);
       }
     }
     CompletableFuture<Void> cleanup = hibernate ? controller.hibernateAllAsync() : controller.closeAsync(false);
