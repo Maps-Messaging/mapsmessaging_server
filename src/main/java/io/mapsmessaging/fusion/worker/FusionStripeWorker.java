@@ -26,13 +26,13 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-public class AggregatorStripeWorker implements Runnable {
+public class FusionStripeWorker implements Runnable {
 
-  private static final Logger logger = LoggerFactory.getLogger(AggregatorStripeWorker.class);
+  private static final Logger logger = LoggerFactory.getLogger(FusionStripeWorker.class);
 
   private static final int TIMEOUT_TICK_MS = 50;
 
-  private final AggregatorStripe stripe;
+  private final FusionStripe stripe;
   private final int maxBatchPerWorkItem;
   private final int idleSleepMs;
 
@@ -40,7 +40,7 @@ public class AggregatorStripeWorker implements Runnable {
 
   private long lastTimeoutTickMillis;
 
-  public AggregatorStripeWorker(AggregatorStripe stripe, int maxBatchPerWorkItem, int idleSleepMs) {
+  public FusionStripeWorker(FusionStripe stripe, int maxBatchPerWorkItem, int idleSleepMs) {
     this.stripe = stripe;
     this.maxBatchPerWorkItem = maxBatchPerWorkItem;
     this.idleSleepMs = idleSleepMs;
@@ -57,7 +57,7 @@ public class AggregatorStripeWorker implements Runnable {
     while (running) {
       boolean didWork = false;
 
-      AggregatorWorkItem workItem = stripe.pollReady();
+      FusionWorkItem workItem = stripe.pollReady();
       while (workItem != null) {
         workItem.clearScheduled();
 
@@ -81,7 +81,7 @@ public class AggregatorStripeWorker implements Runnable {
 
       long now = System.currentTimeMillis();
       if (now - lastTimeoutTickMillis >= TIMEOUT_TICK_MS) {
-        for (AggregatorWorkItem item : stripe.getRegistered()) {
+        for (FusionWorkItem item : stripe.getRegistered()) {
           try {
             item.checkTimeout();
           } catch (Throwable ignored) {

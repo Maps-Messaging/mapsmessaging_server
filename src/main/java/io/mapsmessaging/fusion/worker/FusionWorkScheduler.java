@@ -21,30 +21,30 @@ package io.mapsmessaging.aggregator.worker;
 
 import java.util.Objects;
 
-public class AggregatorWorkScheduler {
+public class FusionWorkScheduler {
 
   private static final String WORK_ITEM_REQUIRED = "workItem must not be null";
 
 
-  private final AggregatorStripe[] stripes;
-  private final AggregatorStripeWorker[] workers;
+  private final FusionStripe[] stripes;
+  private final FusionStripeWorker[] workers;
   private final Thread[] threads;
 
-  public AggregatorWorkScheduler(int stripeCount, int maxBatchPerWorkItem, int idleSleepMs) {
+  public FusionWorkScheduler(int stripeCount, int maxBatchPerWorkItem, int idleSleepMs) {
     int resolvedStripeCount = resolveStripeCount(stripeCount);
 
-    this.stripes = new AggregatorStripe[resolvedStripeCount];
-    this.workers = new AggregatorStripeWorker[resolvedStripeCount];
+    this.stripes = new FusionStripe[resolvedStripeCount];
+    this.workers = new FusionStripeWorker[resolvedStripeCount];
     this.threads = new Thread[resolvedStripeCount];
 
     for (int index = 0; index < resolvedStripeCount; index++) {
-      AggregatorStripe stripe = new AggregatorStripe();
+      FusionStripe stripe = new FusionStripe();
       stripes[index] = stripe;
 
-      AggregatorStripeWorker worker = new AggregatorStripeWorker(stripe, maxBatchPerWorkItem, idleSleepMs);
+      FusionStripeWorker worker = new FusionStripeWorker(stripe, maxBatchPerWorkItem, idleSleepMs);
       workers[index] = worker;
 
-      Thread thread = new Thread(worker, "AggregatorStripe-" + index);
+      Thread thread = new Thread(worker, "FusionStripe-" + index);
       thread.setDaemon(true);
       threads[index] = thread;
     }
@@ -57,7 +57,7 @@ public class AggregatorWorkScheduler {
   }
 
   public void stop() {
-    for (AggregatorStripeWorker worker : workers) {
+    for (FusionStripeWorker worker : workers) {
       worker.shutdown();
     }
     for (Thread thread : threads) {
@@ -69,17 +69,17 @@ public class AggregatorWorkScheduler {
     }
   }
 
-  public void register(AggregatorWorkItem workItem) {
+  public void register(FusionWorkItem workItem) {
     Objects.requireNonNull(workItem, WORK_ITEM_REQUIRED);
     stripes[computeStripe(workItem.getName())].add(workItem);
   }
 
-  public void unregister(AggregatorWorkItem workItem) {
+  public void unregister(FusionWorkItem workItem) {
     Objects.requireNonNull(workItem, WORK_ITEM_REQUIRED);
     stripes[computeStripe(workItem.getName())].remove(workItem);
   }
 
-  public void signal(AggregatorWorkItem workItem) {
+  public void signal(FusionWorkItem workItem) {
     Objects.requireNonNull(workItem, WORK_ITEM_REQUIRED);
     stripes[computeStripe(workItem.getName())].signal(workItem);
   }

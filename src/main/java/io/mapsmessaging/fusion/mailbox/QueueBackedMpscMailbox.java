@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_QUEUE_DRAIN;
 import static io.mapsmessaging.logging.ServerLogMessages.AGGREGATOR_QUEUE_OFFER;
 
-public class QueueBackedMpscMailbox<T> implements AggregatorMailbox<T> {
+public class QueueBackedMpscMailbox<T> implements FusionMailbox<T> {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final ArrayBlockingQueue<T> queue;

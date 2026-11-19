@@ -22,36 +22,36 @@ package io.mapsmessaging.aggregator.worker;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class AggregatorStripe {
+public class FusionStripe {
 
-  private final CopyOnWriteArrayList<AggregatorWorkItem> registered;
-  private final ConcurrentLinkedQueue<AggregatorWorkItem> readyQueue;
+  private final CopyOnWriteArrayList<FusionWorkItem> registered;
+  private final ConcurrentLinkedQueue<FusionWorkItem> readyQueue;
 
-  public AggregatorStripe() {
+  public FusionStripe() {
     this.registered = new CopyOnWriteArrayList<>();
     this.readyQueue = new ConcurrentLinkedQueue<>();
   }
 
-  public void add(AggregatorWorkItem workItem) {
+  public void add(FusionWorkItem workItem) {
     registered.add(workItem);
   }
 
-  public void remove(AggregatorWorkItem workItem) {
+  public void remove(FusionWorkItem workItem) {
     registered.remove(workItem);
     // No purge from readyQueue. scheduled flag makes stale entries harmless.
   }
 
-  public Iterable<AggregatorWorkItem> getRegistered() {
+  public Iterable<FusionWorkItem> getRegistered() {
     return registered;
   }
 
-  public void signal(AggregatorWorkItem workItem) {
+  public void signal(FusionWorkItem workItem) {
     if (workItem.tryMarkScheduled()) {
       readyQueue.offer(workItem);
     }
   }
 
-  public AggregatorWorkItem pollReady() {
+  public FusionWorkItem pollReady() {
     return readyQueue.poll();
   }
 }

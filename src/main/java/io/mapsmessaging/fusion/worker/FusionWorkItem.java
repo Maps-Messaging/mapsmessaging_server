@@ -19,7 +19,7 @@
 
 package io.mapsmessaging.aggregator.worker;
 
-public interface AggregatorWorkItem {
+public interface FusionWorkItem {
 
   String getName();
 

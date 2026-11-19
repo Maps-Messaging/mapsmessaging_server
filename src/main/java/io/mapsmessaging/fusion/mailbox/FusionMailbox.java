@@ -21,7 +21,7 @@ package io.mapsmessaging.aggregator.mailbox;
 
 import java.util.function.Consumer;
 
-public interface AggregatorMailbox<T> {
+public interface FusionMailbox<T> {
 
   boolean offer(T item);
 
