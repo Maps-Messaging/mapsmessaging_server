@@ -95,6 +95,7 @@ public class SubscriptionController implements DestinationManagerListener {
   // Session represents the remote client
   //
   private SessionImpl sessionImpl;
+  private CompletableFuture<Void> hibernationCompletion;
   @Getter
   private final io.mapsmessaging.engine.session.DeliveryStateCoordinator deliveryStateCoordinator =
       new io.mapsmessaging.engine.session.DeliveryStateCoordinator();
@@ -216,18 +217,34 @@ public class SubscriptionController implements DestinationManagerListener {
   }
 
   /** Hibernation retains persistent subscriptions but serializes their state changes. */
-  public CompletableFuture<Void> hibernateAllAsync() {
+  public synchronized CompletableFuture<Void> hibernateAllAsync() {
+    if (hibernationCompletion != null) {
+      return hibernationCompletion;
+    }
     if (sessionImpl == null) {
       return CompletableFuture.completedFuture(null);
     }
+    SessionImpl owner = sessionImpl;
     sessionImpl = null;
-    return CompletableFuture.supplyAsync(() -> {
+    CompletableFuture<Void> completion = CompletableFuture.supplyAsync(() -> {
       List<CompletableFuture<Void>> tasks = new ArrayList<>();
       for (SubscriptionModeManager manager : subscriptionModeManager.values()) {
         tasks.add(manager.hibernateAsync());
       }
       return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new));
-    }, ForkJoinPool.commonPool()).thenCompose(completion -> completion);
+    }, ForkJoinPool.commonPool()).thenCompose(waiting -> waiting);
+    hibernationCompletion = completion;
+    completion.whenComplete((ignored, failure) -> {
+      if (failure != null) {
+        synchronized (SubscriptionController.this) {
+          if (hibernationCompletion == completion) {
+            sessionImpl = owner;
+            hibernationCompletion = null;
+          }
+        }
+      }
+    });
+    return completion;
   }
 
   public boolean isHibernating() {
