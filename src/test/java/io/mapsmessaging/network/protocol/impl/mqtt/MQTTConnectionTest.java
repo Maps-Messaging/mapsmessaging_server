@@ -19,6 +19,7 @@
 
 package io.mapsmessaging.network.protocol.impl.mqtt;
 
+import io.mapsmessaging.engine.session.will.WillTaskManager;
 import io.mapsmessaging.security.uuid.UuidGenerator;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -130,9 +131,13 @@ class MQTTConnectionTest extends MQTTBaseTest {
       publisherOptions.setWill(topic, payload, 1, false);
       publisher.connect(publisherOptions);
 
+      Assertions.assertNotNull(WillTaskManager.getInstance().get(publisher.getClientId()),
+          "Will task was not registered after MQTT CONNECT");
       publisher.disconnectForcibly(0, 1000, false);
 
-      Assertions.assertTrue(willReceived.await(10, TimeUnit.SECONDS), "Will message was not published after ungraceful disconnect");
+      boolean published = willReceived.await(10, TimeUnit.SECONDS);
+      Assertions.assertTrue(published, "Will message was not published after ungraceful disconnect; taskStillRegistered="
+          + (WillTaskManager.getInstance().get(publisher.getClientId()) != null));
     } finally {
       if (subscriber.isConnected()) {
         subscriber.disconnect();
