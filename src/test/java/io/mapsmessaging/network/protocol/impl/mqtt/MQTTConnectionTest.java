@@ -143,7 +143,10 @@ class MQTTConnectionTest extends MQTTBaseTest {
         subscriber.disconnect();
       }
       subscriber.close();
-      publisher.close(true);
+      if (publisher.isConnected()) {
+        publisher.disconnectForcibly(0, 1000, false);
+      }
+      publisher.close();
     }
   }
 
