@@ -457,7 +457,7 @@ class MqttSessionDeliveryRecoveryTest {
       Session rejectedSession = mock(Session.class);
       when(rejectedSession.getOrCreatePacketIdStore(65535)).thenThrow(new IOException("cannot open journal"));
       io.mapsmessaging.api.SessionManager manager = mock(io.mapsmessaging.api.SessionManager.class);
-      when(manager.create(any(), same(fixture.protocol))).thenReturn(rejectedSession);
+      when(manager.createAsync(any(), same(fixture.protocol))).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(rejectedSession));
       try (var staticManager = mockStatic(io.mapsmessaging.api.SessionManager.class)) {
         staticManager.when(io.mapsmessaging.api.SessionManager::getInstance).thenReturn(manager);
         var listener = new io.mapsmessaging.network.protocol.impl.mqtt5.listeners.ConnectListener5();

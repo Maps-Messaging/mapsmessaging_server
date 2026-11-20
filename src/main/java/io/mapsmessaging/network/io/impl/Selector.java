@@ -30,6 +30,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
@@ -41,6 +43,7 @@ public class Selector implements SelectorInt {
   protected java.nio.channels.Selector channelSelector;
   private final Logger logger;
   private final AtomicBoolean isOpen;
+  private final Queue<Runnable> pendingCallbacks = new ConcurrentLinkedQueue<>();
   private long spinStartTime = 0L;
 
   public Selector() throws IOException {
@@ -58,7 +61,8 @@ public class Selector implements SelectorInt {
     while (isOpen.get()) {
       try {
         int selected = channelSelector.select();
-        if (selected == 0) {
+        int callbacks = processPendingCallbacks();
+        if (selected == 0 && callbacks == 0) {
           if (emptySelectCount == 0) {
             spinStartTime = System.nanoTime();
           }
@@ -73,9 +77,11 @@ public class Selector implements SelectorInt {
           }
           Thread.yield();
         } else {
-          Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
           emptySelectCount = 0;
-          processSelectionList(selectedKeys);
+          if (selected > 0) {
+            Set<SelectionKey> selectedKeys = channelSelector.selectedKeys();
+            processSelectionList(selectedKeys);
+          }
         }
       } catch (Throwable e) {
         logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL, e);
@@ -151,6 +157,36 @@ public class Selector implements SelectorInt {
   @Override
   public void close() {
     isOpen.set(false);
+    pendingCallbacks.clear();
+    channelSelector.wakeup();
+  }
+
+  public void execute(Runnable callback) {
+    if (isOpen.get()) {
+      pendingCallbacks.add(callback);
+      if (isOpen.get()) {
+        channelSelector.wakeup();
+      } else {
+        pendingCallbacks.remove(callback);
+      }
+    }
+  }
+
+  private int processPendingCallbacks() {
+    int processed = 0;
+    Runnable callback;
+    while (processed < 64 && isOpen.get() && (callback = pendingCallbacks.poll()) != null) {
+      try {
+        callback.run();
+      } catch (RuntimeException failure) {
+        logger.log(ServerLogMessages.SELECTOR_FAILED_ON_CALL, failure);
+      }
+      processed++;
+    }
+    if (!pendingCallbacks.isEmpty()) {
+      channelSelector.wakeup();
+    }
+    return processed;
   }
 
   public FutureTask<SelectionKey> register(SelectableChannel selectable, int key, Object attachment) {

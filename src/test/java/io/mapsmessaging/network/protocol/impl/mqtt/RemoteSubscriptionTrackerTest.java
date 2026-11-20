@@ -60,7 +60,7 @@ class RemoteSubscriptionTrackerTest {
     Protocol protocol = mqtt5 ? new MQTT5Protocol(endPoint) : new MQTTProtocol(endPoint);
     SelectorTask selector = mock(SelectorTask.class);
     when(selector.isOpen()).thenReturn(true);
-    Field field = protocol.getClass().getDeclaredField("selectorTask");
+    Field field = io.mapsmessaging.network.protocol.Protocol.class.getDeclaredField("selectorTask");
     field.setAccessible(true);
     field.set(protocol, selector);
     RemoteSubscriptionTracker pending = ((RemoteSubscriptionProtocol) protocol).getRemoteSubscriptionTracker();

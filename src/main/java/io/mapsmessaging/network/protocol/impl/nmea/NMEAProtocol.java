@@ -67,7 +67,7 @@ public class NMEAProtocol extends Protocol {
 
 
   private final Session session;
-  private final SelectorTask selectorTask;
+
   private final Map<String, Destination> sentenceMap;
   private final SentenceFactory sentenceFactory;
   private final String format;

@@ -69,7 +69,7 @@ public class LoRaProtocol extends Protocol {
 
   public final SelectorCallback protocolInterfaceManager;
   private final Logger logger;
-  private final SelectorTask selectorTask;
+
   @Getter
   private final byte address;
 

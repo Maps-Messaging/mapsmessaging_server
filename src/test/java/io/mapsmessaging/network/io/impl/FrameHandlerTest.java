@@ -63,7 +63,7 @@ class FrameHandlerTest {
     when(endpoint.getName()).thenReturn("rejected-connect");
     when(endpoint.getJMXTypePath()).thenReturn(List.of("Test=rejected-connect"));
     var protocol = new io.mapsmessaging.network.protocol.impl.mqtt.MQTTProtocol(endpoint);
-    var selector = protocol.getClass().getDeclaredField("selectorTask");
+    var selector = io.mapsmessaging.network.protocol.Protocol.class.getDeclaredField("selectorTask");
     selector.setAccessible(true);
     selector.set(protocol, fixture.selectorTask);
     doAnswer(invocation -> {

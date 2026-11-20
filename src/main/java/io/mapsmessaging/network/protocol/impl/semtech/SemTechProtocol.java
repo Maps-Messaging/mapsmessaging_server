@@ -56,7 +56,7 @@ public class SemTechProtocol extends Protocol {
 
   @Getter
   private final Logger logger;
-  private final SelectorTask selectorTask;
+
   private final PacketFactory packetFactory;
   private final Session session;
 

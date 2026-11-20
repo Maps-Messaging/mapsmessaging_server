@@ -171,6 +171,10 @@ public abstract class EndPoint implements Closeable {
     return false;
   }
 
+  public void executeOnSelector(Runnable callback) {
+    throw new UnsupportedOperationException("Endpoint has no selector callback queue");
+  }
+
   public abstract String getProtocol();
 
   public abstract int sendPacket(Packet packet) throws IOException;

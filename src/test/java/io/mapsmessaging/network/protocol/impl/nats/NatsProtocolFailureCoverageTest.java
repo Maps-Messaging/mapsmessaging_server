@@ -65,7 +65,7 @@ class NatsProtocolFailureCoverageTest {
       EndPoint endPoint, SelectorTask selectorTask, FrameFactory factory) throws Exception {
     NatsProtocol protocol = mock(NatsProtocol.class, CALLS_REAL_METHODS);
     set(Protocol.class, protocol, "endPoint", endPoint);
-    set(NatsProtocol.class, protocol, "selectorTask", selectorTask);
+    set(Protocol.class, protocol, "selectorTask", selectorTask);
     set(NatsProtocol.class, protocol, "logger", mock(Logger.class));
     set(NatsProtocol.class, protocol, "factory", factory);
     set(NatsProtocol.class, protocol, "outboundCompletions", new NatsOutboundCompletionTracker());
@@ -73,7 +73,7 @@ class NatsProtocolFailureCoverageTest {
   }
 
   private static void set(Class<?> owner, Object target, String name, Object value) throws Exception {
-    Field field = owner.getDeclaredField(name);
+    Field field = ("selectorTask".equals(name) ? Protocol.class : owner).getDeclaredField(name);
     field.setAccessible(true);
     field.set(target, value);
   }

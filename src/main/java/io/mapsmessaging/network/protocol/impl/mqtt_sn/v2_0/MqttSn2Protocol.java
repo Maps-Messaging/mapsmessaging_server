@@ -74,7 +74,7 @@ public final class MqttSn2Protocol extends Protocol {
   private static final Logger AUTH_LOGGER = LoggerFactory.getLogger(MqttSn2Protocol.class);
 
   private final MQTTSNInterfaceManager manager;
-  private final SelectorTask selectorTask;
+
   private final SocketAddress address;
   private final MqttSn2TopicAliases aliases = new MqttSn2TopicAliases();
   private final AtomicReference<Session> session = new AtomicReference<>();

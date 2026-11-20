@@ -175,6 +175,11 @@ public class WebSocketEndPoint extends EndPoint implements BufferedReadEndPoint 
   }
 
   @Override
+  public void executeOnSelector(Runnable callback) {
+    endPoint.executeOnSelector(callback);
+  }
+
+  @Override
   public FutureTask<SelectionKey> register(int selectionKey, Selectable runner) throws IOException {
     return endPoint.register(selectionKey, runner);
   }

@@ -43,7 +43,6 @@ public class MavlinkSerialProtocol extends MavlinkProtocol {
   private static final MavlinkDeviceKey DUMMY_KEY = new MavlinkDeviceKey(0, InetSocketAddress.createUnresolved("localhost", 0), 0);
 
   private final Logger logger = LoggerFactory.getLogger(MavlinkSerialProtocol.class);
-  private final SelectorTask selectorTask;
 
   protected MavlinkSerialProtocol(@NonNull @NotNull EndPoint endPoint,
                                   @NotNull @NonNull ProtocolConfigDTO protocolConfig) throws IOException {

@@ -500,13 +500,13 @@ class MQTT311ProtocolCoverageTest {
   }
 
   private static Object field(Object target, String name) throws Exception {
-    Field field = MQTTProtocol.class.getDeclaredField(name);
+    Field field = ("selectorTask".equals(name) ? io.mapsmessaging.network.protocol.Protocol.class : MQTTProtocol.class).getDeclaredField(name);
     field.setAccessible(true);
     return field.get(target);
   }
 
   private static void setField(Object target, String name, Object value) throws Exception {
-    Field field = MQTTProtocol.class.getDeclaredField(name);
+    Field field = ("selectorTask".equals(name) ? io.mapsmessaging.network.protocol.Protocol.class : MQTTProtocol.class).getDeclaredField(name);
     field.setAccessible(true);
     field.set(target, value);
   }

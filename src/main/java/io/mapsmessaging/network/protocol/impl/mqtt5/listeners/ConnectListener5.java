@@ -44,6 +44,7 @@ import io.mapsmessaging.security.uuid.UuidGenerator;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public class ConnectListener5 extends PacketListener5 {
 
@@ -82,7 +83,8 @@ public class ConnectListener5 extends PacketListener5 {
     if (!connect.isCleanSession() && sessionId.isEmpty()) {
       connAck.setStatusCode(StatusCode.CLIENT_IDENTIFIER_NOT_VALID);
     } else {
-      handleSessionCreation(protocol, sessionId, connect, connAck, scb, endPoint);
+      handleSessionCreation(protocol, sessionId, connect, connAck, scb, endPoint, sendResponseInfo);
+      return null;
     }
 
     if (connAck.getStatusCode() != StatusCode.SUCCESS) {
@@ -120,37 +122,65 @@ public class ConnectListener5 extends PacketListener5 {
 
   private void handleSessionCreation(Protocol protocol, String sessionId, Connect5 connect, ConnAck5 connAck, SessionContextBuilder scb, EndPoint endPoint)
       throws MalformedException {
-    Session session = null;
-    try {
-      session = createSession((MQTT5Protocol) protocol, sessionId, connect, scb);
-      ((MQTT5Protocol) protocol).setSession(session);
-      ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
-          endPoint.getProtocol(),
-          endPoint.getName(),
-          "mqtt",
-          session.getSecurityContext().getUsername()
-      );
-      protocol.setProtocolMessageTransformation(transformation);
-    } catch (LoginException e) {
-      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, e, sessionId);
-      try {
-        endPoint.close();
-      } catch (IOException ioException) {
-        // Ignore this since we know its in error anyway
-      }
-      throw new MalformedException("The Server MUST process a second CONNECT packet sent from a Client as a Protocol Error and close the Network Connection [MQTT-3.1.0-2]");
-    } catch (IOException | java.io.UncheckedIOException ioe) {
-      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, ioe, sessionId);
-      connAck.setStatusCode(StatusCode.TOPIC_NAME_INVALID);
-      return;
-    }
+    handleSessionCreation(protocol, sessionId, connect, connAck, scb, endPoint, false);
+  }
 
+  private void handleSessionCreation(Protocol protocol, String sessionId, Connect5 connect, ConnAck5 connAck, SessionContextBuilder scb,
+      EndPoint endPoint, boolean sendResponseInfo) throws MalformedException {
+    MQTT5Protocol mqtt = (MQTT5Protocol) protocol;
     try {
-      if (session != null) {
-        login(session, connAck, (MQTT5Protocol) protocol);
-      }
-    } catch (IOException e) {
-      connAck.setStatusCode(StatusCode.BAD_USERNAME_PASSWORD);
+      mqtt.suspendReadUntilEstablished();
+      createSession(mqtt, sessionId, connect, scb).whenComplete((session, failure) -> {
+        if (endPoint.isClosed()) {
+          if (session != null) SessionManager.getInstance().closeAsync(session, false);
+          return;
+        }
+        if (failure != null || session == null) {
+          Throwable reason = failure == null ? new IOException("No session created") : failure;
+          while (reason instanceof java.util.concurrent.CompletionException && reason.getCause() != null) {
+            reason = reason.getCause();
+          }
+          logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, reason, sessionId);
+          if (reason instanceof LoginException) {
+            try {
+              endPoint.close();
+            } catch (IOException ignored) {
+              // Session construction was rejected; the endpoint is unusable.
+            }
+            return;
+          }
+          connAck.setStatusCode(StatusCode.TOPIC_NAME_INVALID);
+        } else {
+          try {
+            mqtt.setSession(session);
+            ProtocolMessageTransformation transformation = TransformationManager.getInstance().getTransformation(
+                endPoint.getProtocol(), endPoint.getName(), "mqtt", session.getSecurityContext().getUsername());
+            protocol.setProtocolMessageTransformation(transformation);
+            login(session, connAck, mqtt);
+          } catch (IOException failureDuringLogin) {
+            logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, failureDuringLogin, sessionId);
+            connAck.setStatusCode(StatusCode.BAD_USERNAME_PASSWORD);
+          } catch (RuntimeException failureDuringSetup) {
+            logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, failureDuringSetup, sessionId);
+            connAck.setStatusCode(StatusCode.TOPIC_NAME_INVALID);
+          }
+        }
+        if (connAck.getStatusCode() != StatusCode.SUCCESS) {
+          closeAfterAcknowledgement(mqtt, connAck, endPoint);
+          logger.log(ServerLogMessages.MQTT5_CONNECTION_FAILED, connAck.toString());
+        }
+        if (sendResponseInfo) {
+          connAck.add(new ResponseInformation(connAck.getStatusCode().getDescription()));
+        }
+        mqtt.sendConnectAck(connAck);
+        if (connAck.getStatusCode() == StatusCode.SUCCESS) mqtt.establishmentComplete();
+      });
+    } catch (IOException | RuntimeException failure) {
+      logger.log(ServerLogMessages.MQTT5_FAILED_CONSTRUCTION, failure, sessionId);
+      connAck.setStatusCode(StatusCode.TOPIC_NAME_INVALID);
+      closeAfterAcknowledgement(mqtt, connAck, endPoint);
+      if (sendResponseInfo) connAck.add(new ResponseInformation(connAck.getStatusCode().getDescription()));
+      mqtt.sendConnectAck(connAck);
     }
   }
 
@@ -182,7 +212,7 @@ public class ConnectListener5 extends PacketListener5 {
     });
   }
 
-  private Session createSession(MQTT5Protocol protocol, String sessionId, Connect5 connect, SessionContextBuilder scb) throws LoginException, IOException {
+  private CompletableFuture<Session> createSession(MQTT5Protocol protocol, String sessionId, Connect5 connect, SessionContextBuilder scb) throws IOException {
     int keepAlive = MqttKeepAliveManager.negotiateServerKeepAlive(connect.getKeepAlive(), protocol.getMinimumKeepAlive(), protocol.getMqttConfig().getMaxServerKeepAlive());
     protocol.setKeepAlive(keepAlive * 1000L);
 
@@ -226,7 +256,7 @@ public class ConnectListener5 extends PacketListener5 {
     else{
       scb.isAuthorized(false);
     }
-    return SessionManager.getInstance().create(scb.build(), protocol);
+    return SessionManager.getInstance().createAsync(scb.build(), protocol);
   }
 
   private boolean parseProperties(MQTT5Protocol protocol, Connect5 connect, SessionContextBuilder scb) {

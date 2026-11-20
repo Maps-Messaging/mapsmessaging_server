@@ -38,7 +38,6 @@ import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
-import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.MqttKeepAliveManager;
@@ -66,7 +65,6 @@ import javax.security.auth.Subject;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -78,7 +76,7 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
 
   private final Logger logger;
   private final PacketFactory5 packetFactory;
-  private final SelectorTask selectorTask;
+
   private final MqttKeepAliveManager keepAliveManager;
 
   @Getter
@@ -154,7 +152,7 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
     keepAlive = mqttConfig.getMaxServerKeepAlive() * 1000L;
     minimumKeepAlive = mqttConfig.getMinServerKeepAlive();
     keepAliveManager = new MqttKeepAliveManager();
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    createSelectorTask(false);
     packetListenerFactory = new PacketListenerFactory5();
     packetFactory = new PacketFactory5(this);
     closed = false;
@@ -252,9 +250,6 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
   }
 
 
-  public void registerRead() throws IOException {
-    selectorTask.register(SelectionKey.OP_READ);
-  }
 
   @Override
   public String getSessionId() {
@@ -379,7 +374,7 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
     if (!isClosing) {
       int pos = packet.position();
       try {
-        while (packet.hasRemaining()) {
+        while (packet.hasRemaining() && !isEstablishmentPending()) {
           handleMQTTEvent(packet);
           pos = packet.position();
         }
@@ -426,6 +421,10 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
       }
       handleResponse(response);
     }
+  }
+
+  public void sendConnectAck(ConnAck5 response) {
+    handleResponse(response);
   }
 
   private void handleResponse(MQTTPacket5 response) {

@@ -41,6 +41,7 @@ import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
 import io.mapsmessaging.network.io.Timeoutable;
 import io.mapsmessaging.network.io.impl.SelectorCallback;
+import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.transformation.ProtocolMessageTransformation;
 import io.mapsmessaging.selector.operators.ParserExecutor;
 import io.mapsmessaging.utilities.filtering.NamespaceFilter;
@@ -63,6 +64,9 @@ import java.util.concurrent.*;
 
 public abstract class Protocol implements SelectorCallback, MessageListener, Timeoutable {
   protected final EndPoint endPoint;
+  protected SelectorTask selectorTask;
+  private final java.util.concurrent.atomic.AtomicBoolean establishmentStarted = new java.util.concurrent.atomic.AtomicBoolean();
+  private final java.util.concurrent.atomic.AtomicBoolean establishmentPending = new java.util.concurrent.atomic.AtomicBoolean();
 
   @Getter
   protected final Map<String, InterServerTransformation> destinationTransformerMap;
@@ -131,6 +135,30 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
     topicNameAnalyserMap = new ConcurrentHashMap<>();
     resourceNameAnalyserMap = new ConcurrentHashMap<>();
     endPoint.setBoundProtocol(this);
+  }
+
+  protected final SelectorTask createSelectorTask(boolean udp) {
+    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig(), udp);
+    return selectorTask;
+  }
+
+  public void registerRead() throws IOException {
+    if (selectorTask != null) selectorTask.register(java.nio.channels.SelectionKey.OP_READ);
+  }
+
+  public final void suspendReadUntilEstablished() throws IOException {
+    if (establishmentStarted.compareAndSet(false, true)) {
+      establishmentPending.set(true);
+      selectorTask.suspendReads();
+    }
+  }
+
+  public final boolean isEstablishmentPending() {
+    return establishmentPending.get();
+  }
+
+  public final void establishmentComplete() {
+    if (establishmentPending.compareAndSet(true, false)) selectorTask.resumeReadsOnSelector();
   }
 
   public abstract Subject getSubject();

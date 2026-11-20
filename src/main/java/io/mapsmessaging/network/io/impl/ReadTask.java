@@ -126,6 +126,15 @@ public class ReadTask implements Selectable {
     }
   }
 
+  void processBufferedData() throws IOException {
+    if (packet.position() > 0) {
+      handleDataToProcess(0);
+    }
+    if (hasBufferedReadData()) {
+      read();
+    }
+  }
+
   public void read() throws IOException {
     int response;
     do {

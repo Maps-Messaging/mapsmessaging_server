@@ -35,7 +35,6 @@ import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
-import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.stomp.frames.Connect;
@@ -71,7 +70,7 @@ public class StompProtocol extends Protocol {
 
   private final FrameFactory factory;
   private final SessionState sessionState;
-  private final SelectorTask selectorTask;
+
   private final int heartbeatCanSendMillis;
   private final int heartbeatWantsReceiveMillis;
   private final int heartbeatToleranceMillis;
@@ -105,7 +104,7 @@ public class StompProtocol extends Protocol {
     heartbeatPending = new AtomicBoolean(false);
     keepAliveFrame = new KeepAliveFrame(heartbeatPending);
     version = "1.2";
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    createSelectorTask(false);
     factory = new FrameFactory(maxBufferSize, endPoint.isClient(), base64Encode);
     activeFrame = null;
     sessionState = new SessionState(this);
@@ -263,9 +262,6 @@ public class StompProtocol extends Protocol {
         messageEvent.getCompletionTask());
   }
 
-  public void registerRead() throws IOException {
-    selectorTask.register(OP_READ);
-  }
 
   public boolean processPacket(Packet packet) throws IOException {
     boolean result = true;

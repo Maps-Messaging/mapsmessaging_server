@@ -82,7 +82,13 @@ public class ConnectListener extends BaseConnectionListener {
     if ((!connect.isCleanSession() && sessionId.isEmpty()) || !clientIdAllowed(sessionId, strict)) {
       connAck.setResponseCode(ConnAck.IDENTIFIER_REJECTED);
     } else {
-      createSession(sessionId, connect, connAck, endPoint, (MQTTProtocol) protocol);
+      try {
+        ((MQTTProtocol) protocol).suspendReadUntilEstablished();
+        createSession(sessionId, connect, connAck, endPoint, (MQTTProtocol) protocol);
+      } catch (IOException failure) {
+        handleSessionException(connAck, protocol);
+        return connAck;
+      }
       return null; // Delayed response
     }
     return connAck;
@@ -105,8 +111,8 @@ public class ConnectListener extends BaseConnectionListener {
         try {
           protocol.setSession(session);
           setupConnAck(session, connAck, protocol);
-          protocol.registerRead();
           protocol.sendFrame(connAck);
+          protocol.establishmentComplete();
           connectionTrace.info("MQTT3 CONNACK queued: clientId=" + sessionId);
           if(connAck.getCallback() != null) {
             connAck.getCallback().run();

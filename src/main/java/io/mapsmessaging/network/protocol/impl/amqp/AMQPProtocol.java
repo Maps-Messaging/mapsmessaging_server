@@ -30,7 +30,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.amqp.proton.ProtonEngine;
 import lombok.Getter;
@@ -49,7 +48,7 @@ import java.util.Map;
 public class AMQPProtocol extends Protocol {
 
   private final Logger logger;
-  private final SelectorTask selectorTask;
+
   private final ProtonEngine protonEngine;
   private final Map<String, SessionManager> activeSessions;
   private boolean isJms;
@@ -69,7 +68,7 @@ public class AMQPProtocol extends Protocol {
     super(endPoint,  endPoint.getConfig().getProtocolConfig("amqp"));
     version = "1.0";
     logger = LoggerFactory.getLogger("AMQP Protocol on " + endPoint.getName());
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    createSelectorTask(false);
     ThreadContext.put("endpoint", endPoint.getName());
     ThreadContext.put("protocol", getName());
     ThreadContext.put("version", getVersion());
@@ -124,11 +123,6 @@ public class AMQPProtocol extends Protocol {
     }
   }
 
-  public void registerRead() throws IOException {
-    if (selectorTask != null) {
-      selectorTask.register(SelectionKey.OP_READ);
-    }
-  }
 
   public void deregisterRead() throws IOException {
     selectorTask.cancel(SelectionKey.OP_READ);

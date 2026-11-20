@@ -184,6 +184,11 @@ public class TCPEndPoint extends EndPoint {
   }
 
   @Override
+  public void executeOnSelector(Runnable callback) {
+    selector.execute(callback);
+  }
+
+  @Override
   public FutureTask<SelectionKey> register(int selection, Selectable runner) {
     return selector.register(socketChannel, selection, runner);
   }

@@ -66,7 +66,7 @@ public class MQTT_SNProtocol extends Protocol {
 
   protected final Logger logger;
   protected final PacketFactory packetFactory;
-  protected final SelectorTask selectorTask;
+
   protected final MQTTSNInterfaceManager factory;
   protected final StateEngine stateEngine;
   @Getter

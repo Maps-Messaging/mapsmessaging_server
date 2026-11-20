@@ -192,7 +192,7 @@ class MQTTConnectionSessionIdentityTest {
     when(endPoint.getEndPointStatus()).thenReturn(mock(EndPointStatus.class));
     when(endPoint.getServer()).thenReturn(mock(EndPointServerStatus.class));
     Protocol protocol = mqtt5 ? spy(new MQTT5Protocol(endPoint)) : spy(new MQTTProtocol(endPoint));
-    Field field = protocol.getClass().getDeclaredField("selectorTask");
+    Field field = io.mapsmessaging.network.protocol.Protocol.class.getDeclaredField("selectorTask");
     field.setAccessible(true);
     field.set(protocol, mock(SelectorTask.class));
     List<ServerPacket> frames = new ArrayList<>();

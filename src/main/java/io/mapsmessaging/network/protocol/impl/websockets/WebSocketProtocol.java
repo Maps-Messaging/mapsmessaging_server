@@ -27,7 +27,6 @@ import io.mapsmessaging.dto.rest.protocol.ProtocolInformationDTO;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
-import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.websockets.endpoint.WebSocketEndPoint;
 import java.io.IOException;
@@ -38,14 +37,14 @@ import org.jetbrains.annotations.NotNull;
 public class WebSocketProtocol extends Protocol {
 
   private final Connecting connectingHandler;
-  private final SelectorTask selectorTask;
+
   private boolean upgraded;
   private boolean waitingForUpgrade;
 
   public WebSocketProtocol(EndPoint endPoint, Packet packet) throws IOException {
     super(endPoint, new ProtocolConfigDTO());
     connectingHandler = new Connecting();
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    createSelectorTask(false);
 
     boolean complete = processPacket(packet);
     selectorTask.getReadTask().pushOutstandingData(packet);

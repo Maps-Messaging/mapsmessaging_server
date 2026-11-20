@@ -39,7 +39,6 @@ import io.mapsmessaging.logging.ThreadContext;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
 import io.mapsmessaging.network.io.ServerPacket;
-import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.mqtt.listeners.PacketListener;
@@ -56,7 +55,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
-import java.nio.channels.SelectionKey;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -69,7 +67,7 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
   private final Logger logger;
   private final PacketFactory packetFactory;
   private final PacketListenerFactory packetListenerFactory;
-  private final SelectorTask selectorTask;
+
   private final MqttKeepAliveManager keepAliveManager;
   @Getter
   private final PacketIdManager packetIdManager;
@@ -106,7 +104,7 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
     maxBufferSize =  mqttConfig.getMaximumBufferSize();
     keepAlive = mqttConfig.getMaxServerKeepAlive() * 1000L;
     keepAliveManager = new MqttKeepAliveManager();
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    createSelectorTask(false);
     packetListenerFactory = new PacketListenerFactory();
     packetFactory = new PacketFactory(this);
     closed = false;
@@ -226,9 +224,6 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
     return "3.1.1";
   }
 
-  public void registerRead() throws IOException {
-    selectorTask.register(SelectionKey.OP_READ);
-  }
 
   @Override
   public String getSessionId() {
@@ -345,7 +340,7 @@ public class MQTTProtocol extends Protocol implements RemoteSubscriptionProtocol
     int pos = packet.position();
     try {
       boolean resume = false;
-      while (packet.hasRemaining()) {
+      while (packet.hasRemaining() && !isEstablishmentPending()) {
         resume = handleMQTTEvent(packet);
         pos = packet.position();
         if (rejectingConnection) {

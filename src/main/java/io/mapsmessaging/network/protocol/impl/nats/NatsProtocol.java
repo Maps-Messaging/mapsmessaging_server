@@ -33,7 +33,6 @@ import io.mapsmessaging.logging.LoggerFactory;
 import io.mapsmessaging.logging.ServerLogMessages;
 import io.mapsmessaging.network.io.EndPoint;
 import io.mapsmessaging.network.io.Packet;
-import io.mapsmessaging.network.io.impl.SelectorTask;
 import io.mapsmessaging.network.protocol.EndOfBufferException;
 import io.mapsmessaging.network.protocol.Protocol;
 import io.mapsmessaging.network.protocol.impl.nats.frames.ErrFrame;
@@ -58,7 +57,6 @@ public class NatsProtocol extends Protocol {
   @Getter
   private final Logger logger;
 
-  private final SelectorTask selectorTask;
   @Getter
   private final FrameFactory factory;
   @Getter
@@ -76,7 +74,7 @@ public class NatsProtocol extends Protocol {
     natsConfig = (NatsConfigDTO) protocolConfig;
     int maxBufferSize = natsConfig.getMaxBufferSize();
     maxReceiveSize = natsConfig.getMaxReceive();
-    selectorTask = new SelectorTask(this, endPoint.getConfig().getEndPointConfig());
+    createSelectorTask(false);
     factory = new FrameFactory(maxBufferSize, false);
     sessionState = new SessionState(this);
     keepAlive = natsConfig.getKeepAlive();
@@ -171,9 +169,6 @@ public class NatsProtocol extends Protocol {
     return information;
   }
 
-  public void registerRead() throws IOException {
-    selectorTask.register(OP_READ);
-  }
 
   public void writeFrame(NatsFrame frame) {
     outboundCompletions.track(frame);

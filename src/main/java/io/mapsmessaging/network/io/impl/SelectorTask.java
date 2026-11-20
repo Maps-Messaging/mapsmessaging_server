@@ -51,10 +51,12 @@ public class SelectorTask implements Selectable {
   private final WriteTask writeTask;
 
   private int selectionOps;
+  private boolean readsSuspended;
+  private boolean readRequested;
   private FutureTask<SelectionKey> future;
   private SelectionKey selectionKey;
   @Getter
-  private boolean isOpen;
+  private volatile boolean isOpen;
 
   public SelectorTask(SelectorCallback selectorCallback, EndPointConfigDTO properties) {
     this(selectorCallback, properties, false);
@@ -109,6 +111,13 @@ public class SelectorTask implements Selectable {
   }
 
   public synchronized void register(int selection) throws IOException {
+    if ((selection & OP_READ) != 0) {
+      readRequested = true;
+      if (readsSuspended) {
+        selection &= ~OP_READ;
+        if (selection == 0) return;
+      }
+    }
     if (isOpen) {
       logger.log(ServerLogMessages.SELECTOR_REGISTERING, selectorOpToString(selection));
       selectionOps = selection | selectionOps;
@@ -134,6 +143,7 @@ public class SelectorTask implements Selectable {
   }
 
   public synchronized void cancel(int selection) throws IOException {
+    if ((selection & OP_READ) != 0) readRequested = false;
     selectionOps = selectionOps & ~selection;
     if (future != null) {
       try {
@@ -151,6 +161,29 @@ public class SelectorTask implements Selectable {
       logger.log(ServerLogMessages.SELECTOR_CANCELLING, selectorOpToString(selection), selectorOpToString(selectionOps));
       future = endPoint.register(selectionOps, this);
     }
+  }
+
+  public synchronized void suspendReads() throws IOException {
+    if (readsSuspended) return;
+    readsSuspended = true;
+    cancel(OP_READ);
+    readRequested = true;
+  }
+
+  public void resumeReadsOnSelector() {
+    endPoint.executeOnSelector(() -> {
+      if (!isOpen || endPoint.isClosed()) return;
+      try {
+        readTask.processBufferedData();
+        synchronized (this) {
+          readsSuspended = false;
+          if (isOpen && !endPoint.isClosed() && readRequested) register(OP_READ);
+        }
+      } catch (IOException | RuntimeException failure) {
+        logger.log(ServerLogMessages.READ_TASK_EXCEPTION, failure);
+        readTask.closeProtocol();
+      }
+    });
   }
 
   @Override

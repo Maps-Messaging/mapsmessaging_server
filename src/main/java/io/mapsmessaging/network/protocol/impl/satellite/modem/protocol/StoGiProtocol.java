@@ -82,7 +82,7 @@ public class StoGiProtocol extends Protocol implements Consumer<Packet> {
   private final Logger logger = LoggerFactory.getLogger(StoGiProtocol.class);
 
   private final Session session;
-  private final SelectorTask selectorTask;
+
   private final Modem modem;
   private final SatelliteMessageRebuilder satelliteMessageRebuilder;
   private final StatsManager statsManager;
