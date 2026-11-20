@@ -119,7 +119,7 @@ def blockFor = { String className ->
     if (className.startsWith("io.mapsmessaging.api.")) {
         return "JUnit - API"
     }
-    if (className.startsWith("io.mapsmessaging.aggregator.") ||
+    if (className.startsWith("io.mapsmessaging.fusion.") ||
         className.startsWith("io.mapsmessaging.analytics.")) {
         return "JUnit - Event Fusion-Analytics"
     }
