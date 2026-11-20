@@ -381,8 +381,8 @@ public class MQTT5Protocol extends Protocol implements RemoteSubscriptionProtoco
         registerRead();
       } catch (BufferUnderflowException eob) {
         packet.position(pos); // rewind back so we can start again
-        packet.compact();
-        packet.flip();
+        registerRead();
+        return false;
       } catch (MalformedException malformed) {
         logger.log(ServerLogMessages.MALFORMED, malformed, malformed.getMessage());
         endPoint.close();
