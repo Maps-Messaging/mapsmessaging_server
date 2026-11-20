@@ -99,7 +99,7 @@ class MQTT5ProtocolLifecycleCoverageTest {
   }
 
   @Test
-  void bufferUnderflowRewindsCompactsAndPreservesConnection() throws Exception {
+  void bufferUnderflowRewindsAndReregistersWithoutCompacting() throws Exception {
     Fixture fixture = fixture();
     Packet packet = mock(Packet.class);
     when(packet.position()).thenReturn(7);
@@ -107,12 +107,12 @@ class MQTT5ProtocolLifecycleCoverageTest {
     doThrow(new BufferUnderflowException())
         .when(fixture.protocol).handleMQTTEvent(packet);
 
-    assertTrue(fixture.protocol.processPacket(packet));
+    assertFalse(fixture.protocol.processPacket(packet));
 
     verify(packet).position(7);
-    verify(packet).compact();
-    verify(packet).flip();
-    verify(fixture.selectorTask, never()).register(anyInt());
+    verify(packet, never()).compact();
+    verify(packet, never()).flip();
+    verify(fixture.selectorTask).register(SelectionKey.OP_READ);
     verify(fixture.endPoint, never()).close();
   }
 
