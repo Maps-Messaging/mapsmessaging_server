@@ -19,8 +19,8 @@
 
 package io.mapsmessaging.dto.rest.config;
 
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorContributionMode;
-import io.mapsmessaging.dto.rest.config.aggregator.AggregatorInputConfigDTO;
+import io.mapsmessaging.dto.rest.config.fusion.FusionContributionMode;
+import io.mapsmessaging.dto.rest.config.fusion.FusionInputConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.TransformationConfigDTO;
 import io.mapsmessaging.dto.rest.config.transformer.impl.JsonQueryTransformationDTO;
 import org.junit.jupiter.api.Test;
@@ -103,20 +103,20 @@ class DtoCopyConstructorTest {
   }
 
   @Test
-  void aggregatorInput_copyConstructor_copiesConfiguredValues() {
-    AggregatorInputConfigDTO source = new AggregatorInputConfigDTO();
+  void fusionInput_copyConstructor_copiesConfiguredValues() {
+    FusionInputConfigDTO source = new FusionInputConfigDTO();
     List<TransformationConfigDTO> transformers = new ArrayList<>();
     transformers.add(new JsonQueryTransformationDTO());
     source.setTopicName("input/topic");
     source.setSelector("priority > 1");
     source.setTransformer(transformers);
-    source.setContributionMode(AggregatorContributionMode.FIRST);
+    source.setContributionMode(FusionContributionMode.FIRST);
 
-    AggregatorInputConfigDTO copy = new AggregatorInputConfigDTO(source);
+    FusionInputConfigDTO copy = new FusionInputConfigDTO(source);
 
     assertEquals("input/topic", copy.getTopicName());
     assertEquals("priority > 1", copy.getSelector());
     assertSame(transformers, copy.getTransformer());
-    assertEquals(AggregatorContributionMode.FIRST, copy.getContributionMode());
+    assertEquals(FusionContributionMode.FIRST, copy.getContributionMode());
   }
 }

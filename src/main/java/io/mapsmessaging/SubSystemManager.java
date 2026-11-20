@@ -22,7 +22,7 @@ package io.mapsmessaging;
 import io.mapsmessaging.modules.MapsModule;
 import io.mapsmessaging.modules.ModuleContext;
 import io.mapsmessaging.modules.ModuleManager;
-import io.mapsmessaging.aggregator.AggregatorManager;
+import io.mapsmessaging.fusion.FusionManager;
 import io.mapsmessaging.auth.AuthManager;
 import io.mapsmessaging.configuration.EnvironmentConfig;
 import io.mapsmessaging.dto.rest.system.SubSystemStatusDTO;
@@ -191,7 +191,7 @@ public class SubSystemManager {
    * The method initializes and adds various agents to the agentMap, which is used to manage the start and stop order of the agents.
    * The agents added to the agentMap include:
    * - AuthManager
-   * - AggregatorManager
+   * - FusionManager
    * - SchemaManager
    * - NetworkInterfaceMonitor
    * - TransactionManager
@@ -229,7 +229,7 @@ public class SubSystemManager {
     addToMap(600, 300, new SessionManager(securityManager, destinationManager, EnvironmentConfig.getInstance().getPathLookups().get("MAPS_DATA"),sessionPipeLines));
     addToMap(700, 150, new NetworkManager(featureManager));
     addToMap(900, 200, new NetworkConnectionManager());
-    addToMap(750, 250, new AggregatorManager());
+    addToMap(750, 250, new FusionManager());
 
 
     if(featureManager.isEnabled("management.restApi")) {

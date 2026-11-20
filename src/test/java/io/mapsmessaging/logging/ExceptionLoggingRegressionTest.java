@@ -26,9 +26,9 @@ import static org.mockito.Mockito.*;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.read.ListAppender;
-import io.mapsmessaging.aggregator.worker.AggregatorStripe;
-import io.mapsmessaging.aggregator.worker.AggregatorStripeWorker;
-import io.mapsmessaging.aggregator.worker.AggregatorWorkItem;
+import io.mapsmessaging.fusion.worker.FusionStripe;
+import io.mapsmessaging.fusion.worker.FusionStripeWorker;
+import io.mapsmessaging.fusion.worker.FusionWorkItem;
 import io.mapsmessaging.api.MessageBuilder;
 import io.mapsmessaging.api.Session;
 import io.mapsmessaging.api.auth.SubscriptionAuthorisationCheck;
@@ -101,10 +101,10 @@ class ExceptionLoggingRegressionTest {
   }
 
   @Test
-  void aggregator_drain_failure_logs_original_exception_and_continues_to_next_item() {
-    try (LogCapture logs = new LogCapture(AggregatorStripeWorker.class.getName())) {
-      AggregatorStripe stripe = new AggregatorStripe();
-      AggregatorStripeWorker worker = new AggregatorStripeWorker(stripe, 2, 0);
+  void fusion_drain_failure_logs_original_exception_and_continues_to_next_item() {
+    try (LogCapture logs = new LogCapture(FusionStripeWorker.class.getName())) {
+      FusionStripe stripe = new FusionStripe();
+      FusionStripeWorker worker = new FusionStripeWorker(stripe, 2, 0);
       IllegalStateException failure = new IllegalStateException("drain failed");
       stripe.signal(new TestWorkItem("failed-drain", () -> { throw failure; }, () -> {}));
       stripe.signal(new TestWorkItem("next-item", worker::shutdown, () -> {}));
@@ -116,14 +116,14 @@ class ExceptionLoggingRegressionTest {
   }
 
   @Test
-  void aggregator_timeout_failure_logs_original_exception_and_continues_to_next_item() throws Exception {
-    try (LogCapture logs = new LogCapture(AggregatorStripeWorker.class.getName())) {
-      AggregatorStripe stripe = new AggregatorStripe();
-      AggregatorStripeWorker worker = new AggregatorStripeWorker(stripe, 2, 0);
+  void fusion_timeout_failure_logs_original_exception_and_continues_to_next_item() throws Exception {
+    try (LogCapture logs = new LogCapture(FusionStripeWorker.class.getName())) {
+      FusionStripe stripe = new FusionStripe();
+      FusionStripeWorker worker = new FusionStripeWorker(stripe, 2, 0);
       IllegalStateException failure = new IllegalStateException("timeout failed");
       stripe.add(new TestWorkItem("failed-timeout", () -> {}, () -> { throw failure; }));
       stripe.add(new TestWorkItem("next-item", () -> {}, worker::shutdown));
-      java.lang.reflect.Field lastTick = AggregatorStripeWorker.class.getDeclaredField("lastTimeoutTickMillis");
+      java.lang.reflect.Field lastTick = FusionStripeWorker.class.getDeclaredField("lastTimeoutTickMillis");
       lastTick.setAccessible(true);
       lastTick.setLong(worker, 0L);
       assertDoesNotThrow(worker::run);
@@ -133,7 +133,7 @@ class ExceptionLoggingRegressionTest {
     }
   }
 
-  private static class TestWorkItem implements AggregatorWorkItem {
+  private static class TestWorkItem implements FusionWorkItem {
     private final String name;
     private final Runnable drain;
     private final Runnable timeout;

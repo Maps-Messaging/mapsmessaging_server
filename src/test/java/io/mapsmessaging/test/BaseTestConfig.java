@@ -57,7 +57,7 @@ import javax.security.auth.login.LoginException;
 @Timeout(value = 240000, unit = TimeUnit.MILLISECONDS)
 public class BaseTestConfig extends BaseTest {
 
-  private static final String[] EXCLUDE_LIST = {"/aggregator", "/vcan0", "/mavlink","/semtech"};
+  private static final String[] EXCLUDE_LIST = {"/fusion", "/vcan0", "/mavlink","/semtech"};
   private static final String[] USERNAMES = {"user1", "admin", "user2", "anonymous"};
   private static final char[][] PASSWORDS = {"password1".toCharArray(), "admin1".toCharArray(), "password2".toCharArray(), "".toCharArray()};
   private static final String[] GROUPS = {"everyone"};

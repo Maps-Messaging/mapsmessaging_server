@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
     discriminatorProperty = "type",
     requiredProperties = {"type"},
     oneOf = {
-        AggregatorManagerConfigDTO.class,
+        FusionManagerConfigDTO.class,
         NetworkConnectionManagerConfigDTO.class,
         RestApiManagerConfigDTO.class,
         RoutingManagerConfigDTO.class,
@@ -32,7 +32,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
     }
     ,
     discriminatorMapping = {
-        @DiscriminatorMapping(value = "AggregatorManagerConfigDTO", schema = AggregatorManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "FusionManagerConfigDTO", schema = FusionManagerConfigDTO.class),
+        @DiscriminatorMapping(value = "AggregatorManagerConfigDTO", schema = FusionManagerConfigDTO.class),
         @DiscriminatorMapping(value = "NetworkConnectionManagerConfigDTO", schema = NetworkConnectionManagerConfigDTO.class),
         @DiscriminatorMapping(value = "RestApiManagerConfigDTO", schema = RestApiManagerConfigDTO.class),
         @DiscriminatorMapping(value = "RoutingManagerConfigDTO", schema = RoutingManagerConfigDTO.class),
