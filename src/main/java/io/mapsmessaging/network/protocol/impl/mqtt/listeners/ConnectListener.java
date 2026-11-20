@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ConnectListener extends BaseConnectionListener {
 
-  private static final java.util.logging.Logger connectionTrace = java.util.logging.Logger.getLogger(ConnectListener.class.getName() + ".connectionTrace");
 
   private static final String RESTRICTED_CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   private static final int RESTRICTED_LENGTH = 23;
@@ -100,25 +99,20 @@ public class ConnectListener extends BaseConnectionListener {
   }
 
   void createSession(String sessionId, Connect connect, ConnAck connAck, EndPoint endPoint, MQTTProtocol protocol) {
-    connectionTrace.info("MQTT3 session creation started: clientId=" + sessionId + ", cleanSession=" + connect.isCleanSession());
     CompletableFuture<Session> sessionFuture = constructSession(endPoint, protocol, sessionId, connect);
     sessionFuture.whenComplete((session, throwable) -> {
       if (throwable != null) {
-        connectionTrace.warning("MQTT3 session creation failed: clientId=" + sessionId + ", reason=" + throwable);
         handleSessionException(connAck, protocol);
       } else {
-        connectionTrace.info("MQTT3 session ready: clientId=" + sessionId + ", closed=" + session.isClosed());
         try {
           protocol.setSession(session);
           setupConnAck(session, connAck, protocol);
           protocol.sendFrame(connAck);
           protocol.establishmentComplete();
-          connectionTrace.info("MQTT3 CONNACK queued: clientId=" + sessionId);
           if(connAck.getCallback() != null) {
             connAck.getCallback().run();
           }
         } catch (IOException | java.io.UncheckedIOException e) {
-          connectionTrace.warning("MQTT3 CONNACK setup failed: clientId=" + sessionId + ", reason=" + e);
           handleSessionException(connAck, protocol);
         }
       }
