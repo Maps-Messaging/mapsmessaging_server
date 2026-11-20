@@ -127,6 +127,7 @@ public class AuthListener5 extends PacketListener5 {
       return null;
     }
 
+    context.setFinalAuthenticationData(serverResponse);
     MQTTPacket5 initial = context.getConnectMsg();
     MQTTPacket5 response = ((MQTT5Protocol) protocol).getPacketListenerFactory().getListener(initial.getControlPacketId()).handlePacket(initial, session, endPoint, protocol);
 

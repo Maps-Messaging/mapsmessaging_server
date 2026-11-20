@@ -204,6 +204,10 @@ public class ConnectListener5 extends PacketListener5 {
     if(protocol.getAuthenticationContext() != null && protocol.getAuthenticationContext().getAuthenticationMethod() != null){
       String auth = protocol.getAuthenticationContext().getAuthenticationMethod().getAuthenticationMethod();
       connAck.add(new AuthenticationMethod(auth));
+      byte[] finalData = protocol.getAuthenticationContext().getFinalAuthenticationData();
+      if (finalData != null && finalData.length > 0) {
+        connAck.add(new AuthenticationData(finalData));
+      }
     }
     connAck.setCallback(() -> {
       protocol.recoverOutgoingDeliveries().thenRun(() -> {

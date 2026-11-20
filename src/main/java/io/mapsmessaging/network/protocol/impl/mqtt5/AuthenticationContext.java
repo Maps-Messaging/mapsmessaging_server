@@ -45,6 +45,7 @@ public class AuthenticationContext implements AutoCloseable {
   @Getter
   @Setter
   private MQTTPacket5 connectMsg;
+  private byte[] finalAuthenticationData;
 
   public AuthenticationContext(String authMethod, String serverName, String protocol, EndPointServerConfigDTO properties) throws IOException {
     this.authMethod = authMethod;
@@ -52,6 +53,14 @@ public class AuthenticationContext implements AutoCloseable {
     Map<String, String> props = new HashMap<>();
     props.put(Sasl.QOP, "auth");
     mechanism = new SaslAuthenticationMechanism(authMethod, serverName, protocol, props, properties);
+  }
+
+  public void setFinalAuthenticationData(byte[] data) {
+    finalAuthenticationData = data == null ? null : data.clone();
+  }
+
+  public byte[] getFinalAuthenticationData() {
+    return finalAuthenticationData == null ? null : finalAuthenticationData.clone();
   }
 
   public byte[] evaluateResponse(byte[] authenticationData) throws IOException {
@@ -68,6 +77,8 @@ public class AuthenticationContext implements AutoCloseable {
 
   @Override
   public void close() throws IOException {
+    if (finalAuthenticationData != null) java.util.Arrays.fill(finalAuthenticationData, (byte) 0);
+    finalAuthenticationData = null;
     mechanism.close();
   }
 }

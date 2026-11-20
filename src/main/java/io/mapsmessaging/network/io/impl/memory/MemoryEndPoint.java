@@ -127,6 +127,11 @@ public class MemoryEndPoint extends EndPoint implements BufferedReadEndPoint {
   }
 
   @Override
+  public void executeOnSelector(Runnable callback) {
+    readiness.executeOnSelector(callback);
+  }
+
+  @Override
   public FutureTask<SelectionKey> register(int selection, Selectable runner) throws IOException {
     if (closed.get()) {
       throw new ClosedChannelException();

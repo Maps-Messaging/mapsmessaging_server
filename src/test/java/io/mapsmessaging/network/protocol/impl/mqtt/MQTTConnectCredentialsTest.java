@@ -163,7 +163,7 @@ class MQTTConnectCredentialsTest {
     when(endpoint.getEndPointStatus()).thenReturn(mock(EndPointStatus.class));
     when(endpoint.getServer()).thenReturn(mock(EndPointServerStatus.class));
     Protocol protocol = mqtt5 ? spy(new MQTT5Protocol(endpoint)) : spy(new MQTTProtocol(endpoint));
-    Field selector = protocol.getClass().getDeclaredField("selectorTask");
+    Field selector = Protocol.class.getDeclaredField("selectorTask");
     selector.setAccessible(true);
     selector.set(protocol, mock(SelectorTask.class));
     List<ServerPacket> frames = new ArrayList<>();

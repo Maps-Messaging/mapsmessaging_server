@@ -95,6 +95,43 @@ class SelectorResumptionTest {
   }
 
   @Test
+  void establishmentTransitionExecutesBeforeBufferedPacketReplay() throws Exception {
+    SelectorCallback callback = mock(SelectorCallback.class);
+    EndPoint endpoint = mock(EndPoint.class);
+    when(callback.getEndPoint()).thenReturn(endpoint);
+    EndPointConfigDTO config = mock(EndPointConfigDTO.class);
+    when(config.getServerReadBufferSize()).thenReturn(1024L);
+    when(config.getServerWriteBufferSize()).thenReturn(1024L);
+    SelectorTask task = new SelectorTask(callback, config);
+    java.util.concurrent.atomic.AtomicBoolean established = new java.util.concurrent.atomic.AtomicBoolean();
+    when(callback.processPacket(any(Packet.class))).thenAnswer(invocation -> {
+      assertTrue(established.get(), "Establishment must transition on the selector before replay");
+      Packet packet = invocation.getArgument(0);
+      packet.position(packet.limit());
+      return true;
+    });
+    task.register(SelectionKey.OP_READ);
+    task.suspendReads();
+    Packet bytes = new Packet(8, false);
+    bytes.put(new byte[]{1});
+    bytes.flip();
+    task.getReadTask().pushOutstandingData(bytes);
+
+    AtomicReference<Runnable> continuation = new AtomicReference<>();
+    doAnswer(invocation -> {
+      continuation.set(invocation.getArgument(0));
+      return null;
+    }).when(endpoint).executeOnSelector(any(Runnable.class));
+    task.resumeReadsOnSelector(() -> established.set(true));
+    assertFalse(established.get());
+    verify(callback, never()).processPacket(any(Packet.class));
+
+    continuation.get().run();
+    assertTrue(established.get());
+    verify(callback).processPacket(any(Packet.class));
+  }
+
+  @Test
   void cancelledReadIsNotRestoredAfterReplay() throws Exception {
     SelectorCallback callback = mock(SelectorCallback.class);
     EndPoint endpoint = mock(EndPoint.class);

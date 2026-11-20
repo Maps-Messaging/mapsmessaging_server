@@ -67,6 +67,7 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   protected SelectorTask selectorTask;
   private final java.util.concurrent.atomic.AtomicBoolean establishmentStarted = new java.util.concurrent.atomic.AtomicBoolean();
   private final java.util.concurrent.atomic.AtomicBoolean establishmentPending = new java.util.concurrent.atomic.AtomicBoolean();
+  private final java.util.concurrent.atomic.AtomicBoolean establishmentResumptionQueued = new java.util.concurrent.atomic.AtomicBoolean();
 
   @Getter
   protected final Map<String, InterServerTransformation> destinationTransformerMap;
@@ -158,7 +159,9 @@ public abstract class Protocol implements SelectorCallback, MessageListener, Tim
   }
 
   public final void establishmentComplete() {
-    if (establishmentPending.compareAndSet(true, false)) selectorTask.resumeReadsOnSelector();
+    if (establishmentPending.get() && establishmentResumptionQueued.compareAndSet(false, true)) {
+      selectorTask.resumeReadsOnSelector(() -> establishmentPending.set(false));
+    }
   }
 
   public abstract Subject getSubject();

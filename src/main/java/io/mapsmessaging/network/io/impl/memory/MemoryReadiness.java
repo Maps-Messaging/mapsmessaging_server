@@ -92,6 +92,10 @@ final class MemoryReadiness implements Closeable, Selectable {
     watcher = Thread.ofVirtual().name("memory-readiness").unstarted(this::watch);
   }
 
+  void executeOnSelector(Runnable callback) {
+    selector.execute(callback);
+  }
+
   synchronized void start() {
     if (open && watcher.getState() == Thread.State.NEW) {
       watcher.start();

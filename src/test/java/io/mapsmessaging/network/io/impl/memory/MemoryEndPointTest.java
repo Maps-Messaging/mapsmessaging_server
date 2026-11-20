@@ -120,6 +120,28 @@ class MemoryEndPointTest {
   }
 
   @Test
+  void connectionResumptionRunsOnTheOwningSelector() throws Exception {
+    MemoryConnection connection = mock(MemoryConnection.class);
+    when(connection.remoteAddress()).thenReturn("peer");
+    Selector selector = new Selector();
+    Thread selectorThread = Thread.ofPlatform().start(selector);
+    CountDownLatch resumed = new CountDownLatch(1);
+    AtomicReference<Thread> callbackThread = new AtomicReference<>();
+    try (MemoryEndPoint endpoint = new MemoryEndPoint(8, connection, selector, status(), List.of(), 1000)) {
+      endpoint.executeOnSelector(() -> {
+        callbackThread.set(Thread.currentThread());
+        resumed.countDown();
+      });
+      assertTrue(resumed.await(2, TimeUnit.SECONDS));
+      assertSame(selectorThread, callbackThread.get());
+    } finally {
+      selector.close();
+      selector.wakeup();
+      selectorThread.join(2000);
+    }
+  }
+
+  @Test
   void closing_peer_closes_endpoint_without_waiting_for_payload() throws Exception {
     MemoryConnection connection = mock(MemoryConnection.class);
     when(connection.remoteAddress()).thenReturn("peer");

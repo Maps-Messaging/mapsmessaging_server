@@ -171,9 +171,14 @@ public class SelectorTask implements Selectable {
   }
 
   public void resumeReadsOnSelector() {
+    resumeReadsOnSelector(() -> { });
+  }
+
+  public void resumeReadsOnSelector(Runnable beforeReplay) {
     endPoint.executeOnSelector(() -> {
       if (!isOpen || endPoint.isClosed()) return;
       try {
+        beforeReplay.run();
         readTask.processBufferedData();
         synchronized (this) {
           readsSuspended = false;
